@@ -1,0 +1,27 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+issueTrackerURL = "https://github.com/5thlayer/craftworks/issues"
+license = "MIT"
+
+[[mods]]
+modId = "craftworks"
+version = "${version}"
+displayName = "Craftworks"
+authors = "5thlayer"
+description = '''
+The Personal Assembler: ask for an item, and every intermediate is planned, the whole cost is paid up front, and the crafts run one after another over time.
+'''
+
+[[dependencies.craftworks]]
+modId = "neoforge"
+type = "required"
+versionRange = "[26.1.2.77,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.craftworks]]
+modId = "minecraft"
+type = "required"
+versionRange = "[26.1.2]"
+ordering = "NONE"
+side = "BOTH"

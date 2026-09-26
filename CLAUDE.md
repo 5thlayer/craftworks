@@ -8,6 +8,16 @@ Doc and plumbing changes go straight to `main`: no feature branch, no `/code-rev
 `CLAUDE.md`, `CONTEXT.md`, ADRs, `docs/`, `.claude/` (skills, settings), submodule bumps, and tooling
 or CI config. Anything that changes the mod's behaviour still gets a feature branch and a review.
 
+## Releases
+
+A change a player or pack author notices adds its line under `## Unreleased` in `CHANGELOG.md` as it lands. Before bumping `mod_version`, publishing to `~/.m2` or tagging a release, read `docs/agents/releases.md`: releases go through `scripts/release.sh`, and a published version never changes.
+
+A release that must reach the Pack follows the `release-train` skill: one owning session per checkout, and pushes only on the user's word.
+
+## Testing
+
+`sh ./gradlew build` runs the JUnit tests (the planner core, no Minecraft); `sh ./gradlew runGameTestServer` runs the game tests headless (a real player on a server) and names each one it ran. A new game test class registers itself in `gametest/CraftworksGameTests`.
+
 ## Agent skills
 
 ### Issue tracker
