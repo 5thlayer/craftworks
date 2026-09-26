@@ -73,6 +73,11 @@ tasks.named('runGameTestServer') {
 }
 
 dependencies {
+    // DataFixerUpper, and only that: `Codec` is Mojang's serialisation library, not a Minecraft type,
+    // so the planner's codecs round-trip on a plain JVM. Minecraft stays off the test classpath, which
+    // keeps the planner core free of it. The version is the one Minecraft 26.1.2 ships.
+    testImplementation 'com.mojang:datafixerupper:9.0.19'
+
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
