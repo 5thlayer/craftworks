@@ -10,7 +10,7 @@ Each change a player or pack author notices adds its line under `## Unreleased` 
 
 ## Cutting a release
 
-`scripts/release.sh <version>` from a clean main. The script refuses a version that is already tagged or in `~/.m2`, and an empty Unreleased. It then:
+`scripts/release.sh <version>` from a clean main. ADR-0008 sets the semver: below 1.0 only a change that breaks a pack author's data, config, calls or players' saves bumps the minor version, and an addition or a fix is the next patch. The script refuses a version that is already tagged or in `~/.m2`, and an empty Unreleased. It then:
 
 1. sets `mod_version` and turns `## Unreleased` into `## <version>` under a fresh, empty Unreleased
 2. runs the build and the game tests, putting both files back if either fails
