@@ -1,23 +1,32 @@
-# Personal Assembler
+# Craftworks
 
-A player-held crafting planner: the player asks for an item, the mod resolves every intermediate, takes
-the whole cost up front, and crafts serially over time.
+A player-held crafting planner, the **Personal Assembler**: the player asks for an item, the mod resolves
+every intermediate, takes the whole cost up front, and crafts serially over time.
 
 ## Language
 
 **Personal Assembler**:
-The player's hand-crafting planner. It is a surface, not a machine: it crafts nothing directly, and every
-craft is a **Crafting Plan**.
+The player's own crafting planner: their **Assembler queue** and the Crafting Plans it runs, shown on the
+inventory screen and the HUD. Every player has one from the start. It belongs to the player, not to a
+block or an item, and it replaces the inventory's crafting grid. It crafts nothing directly: every craft is
+a **Crafting Plan**.
 _Avoid_: hand crafter, portable crafter, auto crafter
 
 **Crafting Plan**:
-The resolved, flattened tree of crafts produced when the player chooses an amount; the unit paid for in
-full at Start and refunded on cancel. It is never re-resolved.
+The resolved, flattened tree of crafts produced when the player asks for an amount; the unit paid for in
+full when queued and refunded on cancel. Once queued it is never re-resolved, except by a **Partial
+cancel**.
 _Avoid_: crafting job, batch, order
 
+**Partial cancel**:
+Cancelling fewer of a Crafting Plan's final items than it makes. The plan is refunded whole and what
+remains is resolved again against the refunded inventory, keeping its place in the queue.
+_Avoid_: reduce, trim
+
 **Assembler queue**:
-The serial list of Crafting Plans. One runs at a time; a plan that cannot proceed pauses and stops the
-plans behind it rather than dropping or cancelling anything. Refunded into the inventory on death.
+The serial list of Crafting Plans; one per player, held by the player. One runs at a time; a plan that
+cannot proceed pauses and stops the plans behind it rather than dropping or cancelling anything. Refunded
+into the inventory on death.
 _Avoid_: crafting queue, backlog
 
 **Missing**:
@@ -29,30 +38,21 @@ A recipe the Assembler could make but the **Lock source** says this player may n
 **Missing**: the two demand different actions.
 _Avoid_: blocked, gated
 
-**Access gate**:
-What a player needs before the Assembler works: nothing, a **Gate item**, or a Gate item holding energy.
-Losing the gate pauses the queue.
-_Avoid_: requirement, unlock
-
-**Gate item**:
-Any item in the gate tag, found in the main inventory or offhand. The mod ships one.
-_Avoid_: tool, key item
-
-**Display**:
-Where the Assembler is shown: on the inventory screen, or on a screen of its own.
-_Avoid_: mode, UI
-
-**Admitted recipe**:
-A recipe the Assembler may plan with — one of its own type, or one of a configured foreign type not
-denied. Shape is ignored; only ingredients and result count. Items only, never fluids.
-_Avoid_: hand recipe, valid recipe
+**Assembling recipe**:
+A recipe of the mod's own assembling type, the only kind the Assembler plans with: ingredients, one result,
+a craft time and a **Route priority**. Items only, never fluids. An ingredient's own remainder (an empty
+bucket) returns to the inventory when its step completes; a plan never counts on it.
+_Avoid_: hand recipe, admitted recipe
 
 **Route priority**:
-The number that decides which of several admitted recipes makes an item; higher wins, ties go to recipe
-id. It applies at every level of a plan and is the pack author's to set.
+The number that decides which of several Assembling recipes makes an item: the highest-priority route the
+player can resolve, with nothing Missing or Locked, wins; ties go to the lowest recipe id. Only when no
+route resolves does the plan report the top route's Missing and Locked. It applies at every level of a plan and is
+the pack author's to set.
 _Avoid_: preference, weight
 
 **Lock source**:
-What decides whether a recipe is **Locked** for a player: nothing, the vanilla recipe book, or a pack's
-own hook.
+What decides whether a recipe is **Locked** for a player: nothing or the vanilla recipe book, plus any
+hook a pack or another mod registers. A recipe is Locked if any of them says so; the Assembler asks, and
+never knows why.
 _Avoid_: research, unlock provider
