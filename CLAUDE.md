@@ -1,6 +1,6 @@
-# Personal Assembler
+# Craftworks
 
-A player-held crafting planner. See `CONTEXT.md` for the domain glossary.
+A player-held crafting planner, the Personal Assembler. See `CONTEXT.md` for the domain glossary.
 
 ## Workflow
 
@@ -12,7 +12,7 @@ or CI config. Anything that changes the mod's behaviour still gets a feature bra
 
 ### Issue tracker
 
-Issues and specs live in GitHub Issues on `5thlayer/personal-assembler`. See `docs/agents/issue-tracker.md`.
+Issues and specs live in GitHub Issues on `5thlayer/craftworks`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
