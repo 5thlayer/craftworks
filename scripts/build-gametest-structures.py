@@ -19,7 +19,7 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 STRUCTURES = os.path.join(ROOT, "src", "main", "resources", "data", "craftworks", "structure", "gametest")
 
 DATA_VERSION = 4790  # 26.1.2
-# Room for a block and what stands round it: a door or a bed, and the blocks either side.
+# Room for a player and the blocks a test sets round them.
 SIZE = (9, 5, 9)
 TEMPLATES = {"platform.nbt": SIZE}
 

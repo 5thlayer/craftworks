@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 5thlayer
+# SPDX-License-Identifier: MIT
+#
 # Release Craftworks <version> from HEAD: the changelog's Unreleased entries become <version>'s, the
 # build and game tests pass, and the jar is published to the local maven repository and tagged.
 #

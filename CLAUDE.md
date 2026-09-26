@@ -16,7 +16,7 @@ A release that must reach the Pack follows the `release-train` skill: one owning
 
 ## Testing
 
-`sh ./gradlew build` runs the JUnit tests (the planner core, no Minecraft); `sh ./gradlew runGameTestServer` runs the game tests headless (a real player on a server) and names each one it ran. A new game test class registers itself in `gametest/CraftworksGameTests`.
+`sh ./gradlew build` runs the JUnit tests (the Assembler's planning, with no Minecraft); `sh ./gradlew runGameTestServer` runs the game tests headless (a real player on a server) and names each one it ran. A new game test class is registered by a line in `CraftworksGameTests.registerTests`.
 
 ## Agent skills
 
