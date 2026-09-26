@@ -300,12 +300,11 @@ public final class Resolver {
         /**
          * The Crafting Plan the queue takes, which only a complete resolution has.
          *
-         * <p>It is for the root step's result, the last step's, counted in items made.
+         * <p>Only the parts queueing needs cross: the ordered steps and the cost. The display lists stay
+         * behind, because a running plan has nothing left to be Missing.
          */
-        public CraftingPlan toPlan(UUID id) {
-            if (!complete()) throw new IllegalStateException("an incomplete resolution is not a plan");
-            ItemAmount made = steps.getLast().outputs().getFirst();
-            return new CraftingPlan(id, made.item(), made.count(), rawCost, steps);
+        public CraftingPlan toPlan(UUID id, String rootItem, int amount) {
+            return new CraftingPlan(id, rootItem, amount, rawCost, steps);
         }
     }
 }

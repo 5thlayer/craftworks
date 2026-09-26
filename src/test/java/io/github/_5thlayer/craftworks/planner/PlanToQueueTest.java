@@ -53,7 +53,7 @@ class PlanToQueueTest {
 
         TestPlayerItems items = stocked(inventory);
         AssemblerQueue queue = new AssemblerQueue();
-        assertTrue(queue.enqueue(resolution.toPlan(UUID.randomUUID()), items));
+        assertTrue(queue.enqueue(resolution.toPlan(UUID.randomUUID(), "inserter", 1), items));
 
         runToCompletion(queue, items);
 
@@ -81,7 +81,7 @@ class PlanToQueueTest {
 
             TestPlayerItems items = stocked(inventory);
             AssemblerQueue queue = new AssemblerQueue();
-            assertTrue(queue.enqueue(resolution.toPlan(UUID.randomUUID()), items));
+            assertTrue(queue.enqueue(resolution.toPlan(UUID.randomUUID(), "inserter", amount), items));
 
             runToCompletion(queue, items);
 
@@ -95,7 +95,7 @@ class PlanToQueueTest {
         UUID id = UUID.randomUUID();
         TestPlayerItems items = stocked(inventory);
         AssemblerQueue queue = new AssemblerQueue();
-        queue.enqueue(RESOLVER.resolve("inserter", 1, inventory).toPlan(id), items);
+        queue.enqueue(RESOLVER.resolve("inserter", 1, inventory).toPlan(id, "inserter", 1), items);
         for (int tick = 0; tick < 12; tick++) queue.tick(items);
 
         assertTrue(queue.cancel(id, items).cancelled());
@@ -114,12 +114,12 @@ class PlanToQueueTest {
         UUID id = UUID.randomUUID();
         TestPlayerItems items = stocked(inventory);
         AssemblerQueue queue = new AssemblerQueue();
-        queue.enqueue(RESOLVER.resolve("inserter", 3, inventory).toPlan(id), items);
+        queue.enqueue(RESOLVER.resolve("inserter", 3, inventory).toPlan(id, "inserter", 3), items);
         for (int tick = 0; tick < 12; tick++) queue.tick(items);
 
         AssemblerQueue.Replanner replan = (recipe, crafts, planId) -> {
             Resolver.Resolution rest = RESOLVER.resolve(recipe, crafts, inventoryOf(items));
-            return rest.complete() ? Optional.of(rest.toPlan(planId)) : Optional.empty();
+            return rest.complete() ? Optional.of(rest.toPlan(planId, "inserter", crafts)) : Optional.empty();
         };
         assertTrue(queue.cancel(id, 1, items, replan).cancelled());
         assertEquals(id, queue.entries().get(0).plan().id(), "a Partial cancel keeps the row's id");

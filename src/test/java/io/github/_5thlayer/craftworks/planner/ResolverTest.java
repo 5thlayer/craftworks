@@ -138,14 +138,6 @@ class ResolverTest {
     }
 
     @Test
-    void thePlanIsForTheRootsResultCountedInItemsMade() {
-        CraftingPlan plan = resolver().resolve("cable", 3, have("copper", 3)).toPlan(java.util.UUID.randomUUID());
-
-        assertEquals("cable", plan.rootItem());
-        assertEquals(6, plan.amount());
-    }
-
-    @Test
     void anUnknownRecipeResolvesToNothingRatherThanThrowing() {
         Resolver.Resolution resolution = resolver().resolve("nonesuch", 1, have("plate", 64));
 
