@@ -24,6 +24,9 @@ tasks.withType(Jar).configureEach {
 
 def gameTestReport = layout.buildDirectory.file('reports/gametest.xml').get().asFile
 
+// EMI for 26.1: the unofficial port.
+def emi = 'curse.maven:emi-unofficial-port-1544558:8630349'
+
 repositories {
     // EMI for 26.1 is an unofficial port, published on CurseForge only.
     maven { url = 'https://cursemaven.com' }
@@ -79,9 +82,16 @@ tasks.named('runGameTestServer') {
     }
 }
 
+// Mods on the dev runs that the published jar does not depend on.
+configurations {
+    localRuntime
+    runtimeClasspath.extendsFrom localRuntime
+}
+
 dependencies {
-    // EMI is optional: compiled against, never on a run, so the game tests prove the Mod loads without it.
+    // EMI is optional to players, and on every dev run so its Assembling category can be looked at.
     compileOnly 'curse.maven:emi-unofficial-port-1544558:8630349'
+    localRuntime 'curse.maven:emi-unofficial-port-1544558:8630349'
 
     // DataFixerUpper, and only that: `Codec` is Mojang's serialisation library, not a Minecraft type,
     // so the planner's codecs round-trip on a plain JVM. Minecraft stays off the test classpath, which
