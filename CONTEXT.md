@@ -19,8 +19,9 @@ cancel**.
 _Avoid_: crafting job, batch, order
 
 **Partial cancel**:
-Cancelling fewer of a Crafting Plan's final items than it makes. The plan is refunded whole and what
-remains is resolved again against the refunded inventory, keeping its place in the queue.
+Cancelling fewer crafts of a Crafting Plan's final recipe than it has left. The plan is refunded whole and
+what remains is resolved again against the refunded inventory, keeping its place in the queue. A cancel
+counts crafts, not items, so it can't leave a recipe making 4 planks half done.
 _Avoid_: reduce, trim
 
 **Assembler queue**:

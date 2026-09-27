@@ -24,9 +24,11 @@ it (#290).
 - **The queue** is drawn in the area the removed 2x2 grid left blank, in the hotbar overlay's row
   format, two rows and a "+N more" line, as Factorio does. The overlay hides while the inventory is
   open.
-- **Cancel is Factorio's.** On either icon of a row: left cancels 1, right 5, Shift all, of the row's
-  final item. Fewer left than asked cancels what is there; any other button cancels nothing. The step
-  icon cancels final items, never the intermediate alone, which would leave a row that cannot finish.
+- **Cancel is Factorio's.** On either icon of a row: left cancels 1, right 5, Shift all, counted in
+  crafts of the row's final recipe. Fewer left than asked cancels what is there; any other button
+  cancels nothing. The step icon cancels crafts of the final recipe, never the intermediate alone,
+  which would leave a row that cannot finish. The row shows items, so where the final recipe makes
+  more than one (a log makes 4 planks), one left click takes that many off the row.
 - **The Crafting Plan's Close** returns to the inventory screen.
 
 **Partial cancel re-resolves the rest.** A row is a resolved plan, and how many gears three belts want
