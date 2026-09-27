@@ -22,6 +22,10 @@ import net.minecraft.world.item.Items;
  *
  * <p>The Personal Assembler is the inventory screen rather than a block, so the category has no
  * workstation; the crafter is only its icon, until the category has one of its own.
+ *
+ * <p>Fill Recipe reaches the Assembler through a handler on the player's inventory, which EMI keys under a
+ * null menu type since {@code InventoryMenu} has none. So Fill Recipe queues from the inventory screen and
+ * nowhere else.
  */
 @EmiEntrypoint
 public final class AssemblingEmiPlugin implements EmiPlugin {
@@ -36,5 +40,6 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
         registry.getRecipeMap()
                 .byType(CraftworksRecipes.ASSEMBLING_TYPE.get())
                 .forEach(holder -> registry.addRecipe(new AssemblingEmiRecipe(ASSEMBLING, holder)));
+        registry.addRecipeHandler(null, new PersonalAssemblerEmiHandler());
     }
 }

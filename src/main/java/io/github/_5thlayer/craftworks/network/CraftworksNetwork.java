@@ -30,6 +30,8 @@ public final class CraftworksNetwork {
         var registrar = event.registrar(VERSION);
         registrar.playToClient(AssemblingRecipeSetPacket.TYPE, AssemblingRecipeSetPacket.STREAM_CODEC,
                 AssemblingRecipeSetPacket::handle);
+        registrar.playToClient(QueueSyncPacket.TYPE, QueueSyncPacket.STREAM_CODEC, QueueSyncPacket::handle);
+        registrar.playToServer(FillRecipePacket.TYPE, FillRecipePacket.STREAM_CODEC, FillRecipePacket::handle);
     }
 
     /**

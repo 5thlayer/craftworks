@@ -81,6 +81,7 @@ public final class CraftworksGameTests {
         var tests = new Registrar(event, environment);
         LoadTests.register(tests);
         AssemblingRecipeTests.register(tests);
+        AssemblerTests.register(tests);
     }
 
     private static Identifier id(String path) {

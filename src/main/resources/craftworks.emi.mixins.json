@@ -1,0 +1,9 @@
+{
+  "required": false,
+  "package": "io.github._5thlayer.craftworks.mixin.emi",
+  "compatibilityLevel": "JAVA_25",
+  "client": ["RecipeFillButtonWidgetMixin"],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

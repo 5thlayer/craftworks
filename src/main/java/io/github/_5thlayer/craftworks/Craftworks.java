@@ -3,6 +3,7 @@
 
 package io.github._5thlayer.craftworks;
 
+import io.github._5thlayer.craftworks.assembler.PersonalAssembler;
 import io.github._5thlayer.craftworks.gametest.CraftworksGameTests;
 import io.github._5thlayer.craftworks.network.CraftworksNetwork;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
@@ -21,6 +22,7 @@ public final class Craftworks {
     public Craftworks(IEventBus modBus) {
         CraftworksRecipes.register(modBus);
         CraftworksNetwork.register(modBus);
+        PersonalAssembler.register(modBus);
         CraftworksGameTests.register(modBus);
     }
 }
