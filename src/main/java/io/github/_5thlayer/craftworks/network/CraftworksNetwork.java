@@ -3,6 +3,7 @@
 
 package io.github._5thlayer.craftworks.network;
 
+import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
 import io.github._5thlayer.craftworks.recipe.RuntimeAssemblingRecipes;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
@@ -34,8 +35,12 @@ public final class CraftworksNetwork {
     /**
      * The Assembling recipe set, sent on the two occasions it can change: datapack sync fires on login
      * with one player and on {@code /reload} with none.
+     *
+     * <p>The recipes themselves go too: a client is sent only the recipe types asked for, and a recipe
+     * viewer on a dedicated server's client has nothing else to draw them from.
      */
     private static void onDatapackSync(OnDatapackSyncEvent event) {
+        event.sendRecipes(CraftworksRecipes.ASSEMBLING_TYPE.get());
         if (event.getPlayer() != null) {
             sendRecipeSet(event.getPlayer());
         } else {

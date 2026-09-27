@@ -17,13 +17,14 @@ import net.minecraft.gametest.framework.GameTestHelper;
  * from PlanetaryFactory's HandSetTests.
  *
  * <p>The glue no unit test reaches: that the recipe manager holds a datapack's recipes under the type,
- * that {@link RuntimeAssemblingRecipes} finds them there, that a tag ingredient arrives as the items it
+ * that {@link RuntimeAssemblingRecipes} finds them there, that a recipe of another type stays out, that a tag ingredient arrives as the items it
  * names, that {@code time} and {@code priority} default when left out, and that a spent item's remainder
  * rides on its ingredient. The recipes are the game tests' own datapack's ({@code gametest_pack/}).
  */
 final class AssemblingRecipeTests {
 
     private static final String OAK_SAPLING = "craftworks:gametest/oak_sapling";
+    private static final String OAK_PLANKS = "minecraft:oak_planks";
     private static final String SLIME_BALL = "craftworks:gametest/slime_ball";
 
     private AssemblingRecipeTests() {
@@ -49,6 +50,17 @@ final class AssemblingRecipeTests {
         }
         if (!recipes.routes("minecraft:oak_sapling").contains(sapling)) {
             helper.fail("the set does not know " + OAK_SAPLING + " makes an oak sapling");
+            return;
+        }
+        // Loaded, but vanilla's crafting type: the Assembler plans with its own type and no other.
+        boolean loaded = helper.getLevel().getServer().getRecipeManager().recipeMap().values().stream()
+                .anyMatch(holder -> holder.id().identifier().toString().equals(OAK_PLANKS));
+        if (!loaded) {
+            helper.fail(OAK_PLANKS + " is not in the recipe manager, so its absence below proves nothing");
+            return;
+        }
+        if (recipes.byId(OAK_PLANKS) != null) {
+            helper.fail(OAK_PLANKS + " is a minecraft:crafting recipe and is in the Assembling recipe set");
             return;
         }
         helper.succeed();
