@@ -3,7 +3,16 @@
 
 package io.github._5thlayer.craftworks.assembler;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.function.Predicate;
+
+import io.github._5thlayer.craftworks.CraftworksConfig;
+import io.github._5thlayer.craftworks.api.LockHooks;
+import io.github._5thlayer.craftworks.planner.Locks;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 
 import io.github._5thlayer.craftworks.planner.AssemblingRecipe;
 import io.github._5thlayer.craftworks.planner.ItemBag;
@@ -21,7 +30,8 @@ import net.minecraft.world.item.ItemStack;
  * what the Resolver cannot get for itself: the Assembling recipe set and the player's inventory as a
  * multiset.
  *
- * <p><b>Nothing is Locked</b> until the Lock source exists (#10).
+ * <p>What is Locked is asked of the Lock source afresh on every resolve: the configured
+ * {@code lockSource} and every {@link LockHooks} hook, for this player.
  */
 public final class RuntimePlanSource implements PlanSource {
 
@@ -38,7 +48,29 @@ public final class RuntimePlanSource implements PlanSource {
     }
 
     private static Resolver resolverFor(ServerPlayer player) {
-        return new Resolver(RuntimeAssemblingRecipes.recipes(player.level()), recipeId -> false);
+        return new Resolver(RuntimeAssemblingRecipes.recipes(player.level()), lockedFor(player));
+    }
+
+    /** The Lock source for one player, as the Resolver asks it: by recipe id. */
+    public static Predicate<String> lockedFor(ServerPlayer player) {
+        List<Predicate<String>> hooks = new ArrayList<>();
+        for (LockHooks.LockHook hook : LockHooks.all()) {
+            hooks.add(recipe -> {
+                Identifier id = Identifier.tryParse(recipe);
+                return id != null && hook.isLocked(player, id);
+            });
+        }
+        return Locks.of(configuredSource(player), hooks);
+    }
+
+    private static Predicate<String> configuredSource(ServerPlayer player) {
+        return switch (CraftworksConfig.lockSource()) {
+            case NONE -> recipe -> false;
+            case RECIPE_BOOK -> recipe -> {
+                Identifier id = Identifier.tryParse(recipe);
+                return id == null || !player.getRecipeBook().contains(ResourceKey.create(Registries.RECIPE, id));
+            };
+        };
     }
 
     /**

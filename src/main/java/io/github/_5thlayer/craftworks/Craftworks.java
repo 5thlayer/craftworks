@@ -8,7 +8,9 @@ import io.github._5thlayer.craftworks.gametest.CraftworksGameTests;
 import io.github._5thlayer.craftworks.network.CraftworksNetwork;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
 
 /**
  * The Mod's common half. Its feature is the Personal Assembler, the player's own crafting planner
@@ -19,7 +21,8 @@ public final class Craftworks {
 
     public static final String MOD_ID = "craftworks";
 
-    public Craftworks(IEventBus modBus) {
+    public Craftworks(IEventBus modBus, ModContainer container) {
+        container.registerConfig(ModConfig.Type.SERVER, CraftworksConfig.SPEC);
         CraftworksRecipes.register(modBus);
         CraftworksNetwork.register(modBus);
         PersonalAssembler.register(modBus);
