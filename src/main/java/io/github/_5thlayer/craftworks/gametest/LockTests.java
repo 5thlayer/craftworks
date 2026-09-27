@@ -40,7 +40,7 @@ final class LockTests {
 
     private static void bothLock(GameTestHelper helper) {
         CraftworksConfig.LockSource before = CraftworksConfig.LOCK_SOURCE.get();
-        CraftworksConfig.LOCK_SOURCE.set(CraftworksConfig.LockSource.RECIPE_BOOK);
+        CraftworksConfig.LOCK_SOURCE.set(CraftworksConfig.LockSource.recipeBook);
         try {
             ServerPlayer player = AssemblerTests.playerHolding(helper, new ItemStack(Items.OAK_LOG, 2));
             player.addTag(LOCKED_BY_HOOK);
@@ -49,6 +49,15 @@ final class LockTests {
             Predicate<String> locked = RuntimePlanSource.lockedFor(player);
             helper.assertTrue(locked.test(AssemblerTests.OAK_SAPLING.toString()), "the recipe book did not lock the sapling");
             helper.assertTrue(locked.test(SLIME_BALL.toString()), "the hook did not lock the slime ball");
+
+            // Config and hook read here and restored before returning: nothing else runs in between, since
+            // a test body runs whole on the server thread.
+            CraftworksConfig.LOCK_SOURCE.set(CraftworksConfig.LockSource.none);
+            helper.assertTrue(RuntimePlanSource.lockedFor(player).test(SLIME_BALL.toString()),
+                    "the hook alone did not lock the slime ball");
+            helper.assertFalse(RuntimePlanSource.lockedFor(player).test(AssemblerTests.OAK_SAPLING.toString()),
+                    "with lockSource none the sapling is still Locked");
+            CraftworksConfig.LOCK_SOURCE.set(CraftworksConfig.LockSource.recipeBook);
 
             player.removeTag(LOCKED_BY_HOOK);
             helper.assertFalse(RuntimePlanSource.lockedFor(player).test(SLIME_BALL.toString()),

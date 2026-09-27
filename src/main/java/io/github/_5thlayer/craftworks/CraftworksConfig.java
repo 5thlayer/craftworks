@@ -10,10 +10,11 @@ public final class CraftworksConfig {
 
     /** What decides, besides any registered hook, whether a recipe is Locked for a player. */
     public enum LockSource {
+        // Named as a pack author writes them in the TOML, which is what the spec gives.
         /** Nothing: only hooks lock. */
-        NONE,
+        none,
         /** A recipe is Locked until it is in the player's vanilla recipe book. */
-        RECIPE_BOOK
+        recipeBook
     }
 
     static final ModConfigSpec SPEC;
@@ -24,8 +25,8 @@ public final class CraftworksConfig {
         var builder = new ModConfigSpec.Builder();
         LOCK_SOURCE = builder
                 .comment("What locks a recipe for a player, on top of any hook a mod registers:",
-                        "NONE, or RECIPE_BOOK (Locked until the recipe is in the player's recipe book).")
-                .defineEnum("lockSource", LockSource.NONE);
+                        "none, or recipeBook (Locked until the recipe is in the player's recipe book).")
+                .defineEnum("lockSource", LockSource.none);
         SPEC = builder.build();
     }
 
@@ -34,6 +35,6 @@ public final class CraftworksConfig {
 
     /** The configured source; {@link LockSource#NONE} until a world's config is loaded. */
     public static LockSource lockSource() {
-        return SPEC.isLoaded() ? LOCK_SOURCE.get() : LockSource.NONE;
+        return SPEC.isLoaded() ? LOCK_SOURCE.get() : LockSource.none;
     }
 }

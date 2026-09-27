@@ -10,15 +10,14 @@ import java.util.function.Predicate;
 
 import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.api.LockHooks;
-import io.github._5thlayer.craftworks.planner.Locks;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
-
 import io.github._5thlayer.craftworks.planner.AssemblingRecipe;
 import io.github._5thlayer.craftworks.planner.ItemBag;
+import io.github._5thlayer.craftworks.planner.Locks;
 import io.github._5thlayer.craftworks.planner.Resolver;
 import io.github._5thlayer.craftworks.recipe.RuntimeAssemblingRecipes;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
@@ -51,25 +50,21 @@ public final class RuntimePlanSource implements PlanSource {
         return new Resolver(RuntimeAssemblingRecipes.recipes(player.level()), lockedFor(player));
     }
 
-    /** The Lock source for one player, as the Resolver asks it: by recipe id. */
+    /** The Lock source for one player, as the Resolver asks it: by recipe id. An id that does not parse is Locked. */
     public static Predicate<String> lockedFor(ServerPlayer player) {
         List<Predicate<String>> hooks = new ArrayList<>();
         for (LockHooks.LockHook hook : LockHooks.all()) {
-            hooks.add(recipe -> {
-                Identifier id = Identifier.tryParse(recipe);
-                return id != null && hook.isLocked(player, id);
-            });
+            hooks.add(recipe -> hook.isLocked(player, Identifier.parse(recipe)));
         }
-        return Locks.of(configuredSource(player), hooks);
+        Predicate<String> locked = Locks.of(configuredSource(player), hooks);
+        return recipe -> Identifier.tryParse(recipe) == null || locked.test(recipe);
     }
 
     private static Predicate<String> configuredSource(ServerPlayer player) {
         return switch (CraftworksConfig.lockSource()) {
-            case NONE -> recipe -> false;
-            case RECIPE_BOOK -> recipe -> {
-                Identifier id = Identifier.tryParse(recipe);
-                return id == null || !player.getRecipeBook().contains(ResourceKey.create(Registries.RECIPE, id));
-            };
+            case none -> recipe -> false;
+            case recipeBook -> recipe -> !player.getRecipeBook()
+                    .contains(ResourceKey.create(Registries.RECIPE, Identifier.parse(recipe)));
         };
     }
 
