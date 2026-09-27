@@ -21,14 +21,14 @@ import net.minecraft.world.item.Items;
  * names an EMI type, so the Mod loads without it.
  *
  * <p>The Personal Assembler is the inventory screen rather than a block, so the category has no
- * workstation; the crafting table is only its icon.
+ * workstation; the crafter is only its icon, until the category has one of its own.
  */
 @EmiEntrypoint
 public final class AssemblingEmiPlugin implements EmiPlugin {
 
     public static final EmiRecipeCategory ASSEMBLING = new EmiRecipeCategory(
             Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, CraftworksRecipes.ASSEMBLING),
-            EmiStack.of(Items.CRAFTING_TABLE));
+            EmiStack.of(Items.CRAFTER));
 
     @Override
     public void register(EmiRegistry registry) {
