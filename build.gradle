@@ -40,6 +40,9 @@ neoForge {
         // production never shows.
         configureEach {
             systemProperty 'neoforge.warnings.onlyin.hide', 'true'
+            // A few Assembling recipes, a datapack in the jar that only the dev runs turn on: the game
+            // tests read them, and a dev world has something to plan with.
+            systemProperty 'craftworks.devPack', 'true'
         }
         // The same player every launch, so a dev save keeps its inventory and position.
         client {
@@ -55,8 +58,6 @@ neoForge {
             type = 'gameTestServer'
             gameDirectory = project.file('run/gametest')
             programArguments.addAll '--tests', "${mod_id}:*", '--report', gameTestReport.absolutePath
-            // The game tests' own recipes, a datapack in the jar that only this run turns on.
-            systemProperty 'craftworks.gametestPack', 'true'
         }
     }
 

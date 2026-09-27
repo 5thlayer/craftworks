@@ -19,12 +19,13 @@ import net.minecraft.gametest.framework.GameTestHelper;
  * <p>The glue no unit test reaches: that the recipe manager holds a datapack's recipes under the type,
  * that {@link RuntimeAssemblingRecipes} finds them there, that a recipe of another type stays out, that a tag ingredient arrives as the items it
  * names, that {@code time} and {@code priority} default when left out, and that a spent item's remainder
- * rides on its ingredient. The recipes are the game tests' own datapack's ({@code gametest_pack/}).
+ * rides on its ingredient. The recipes are the dev runs' datapack's ({@code dev_pack/}).
  */
 final class AssemblingRecipeTests {
 
     private static final String OAK_SAPLING = "craftworks:gametest/oak_sapling";
     private static final String OAK_PLANKS = "minecraft:oak_planks";
+    private static final String FLINT_AND_STEEL = "minecraft:flint_and_steel";
     private static final String SLIME_BALL = "craftworks:gametest/slime_ball";
 
     private AssemblingRecipeTests() {
@@ -34,6 +35,7 @@ final class AssemblingRecipeTests {
         tests.test("assembling_recipes_are_read_off_their_type", 20, AssemblingRecipeTests::readOffTheirType);
         tests.test("assembling_recipe_fields_default", 20, AssemblingRecipeTests::fieldsDefault);
         tests.test("an_ingredient_carries_its_remainder", 20, AssemblingRecipeTests::remainder);
+        tests.test("an_assembling_recipe_replaces_vanillas_at_its_id", 20, AssemblingRecipeTests::replacesVanilla);
     }
 
     private static void readOffTheirType(GameTestHelper helper) {
@@ -106,6 +108,27 @@ final class AssemblingRecipeTests {
         }
         if (slime.ingredients().get(1).remainder("minecraft:lime_dye") != null) {
             helper.fail("lime dye leaves nothing, and " + SLIME_BALL + " says it does");
+            return;
+        }
+        helper.succeed();
+    }
+
+    /**
+     * A datapack recipe at vanilla's id, of the Assembling type, replaces vanilla's shapeless one: the
+     * shape the built-in vanilla pack will take.
+     */
+    private static void replacesVanilla(GameTestHelper helper) {
+        var holder = helper.getLevel().getServer().getRecipeManager().recipeMap().values().stream()
+                .filter(recipe -> recipe.id().identifier().toString().equals(FLINT_AND_STEEL))
+                .findFirst();
+        if (holder.isEmpty() || holder.get().value().getType() != CraftworksRecipes.ASSEMBLING_TYPE.get()) {
+            helper.fail(FLINT_AND_STEEL + " should be the dev pack's Assembling recipe, and is "
+                    + holder.map(recipe -> recipe.value().getType().toString()).orElse("missing"));
+            return;
+        }
+        AssemblingRecipe flint = RuntimeAssemblingRecipes.recipes(helper.getLevel()).byId(FLINT_AND_STEEL);
+        if (flint == null || !flint.result().item().equals("minecraft:flint_and_steel")) {
+            helper.fail(FLINT_AND_STEEL + " is not in the Assembling recipe set as a flint and steel");
             return;
         }
         helper.succeed();

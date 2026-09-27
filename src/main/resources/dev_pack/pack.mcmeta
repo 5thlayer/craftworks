@@ -1,6 +1,6 @@
 {
   "pack": {
-    "description": "Craftworks game test recipes",
+    "description": "Craftworks dev recipes",
     "min_format": [101, 1],
     "max_format": [101, 1]
   }

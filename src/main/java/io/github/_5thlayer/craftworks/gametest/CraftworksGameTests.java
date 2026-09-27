@@ -33,7 +33,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  */
 public final class CraftworksGameTests {
 
-    private static final String GAMETEST_PACK = "craftworks.gametestPack";
+    private static final String DEV_PACK = "craftworks.devPack";
 
     private static final Identifier PLATFORM = id("gametest/platform");
 
@@ -51,15 +51,15 @@ public final class CraftworksGameTests {
         TEST_TYPES.register(modBus);
         // Posted only when game tests are enabled, so a production server never registers the tests.
         modBus.addListener(CraftworksGameTests::registerTests);
-        if (Boolean.getBoolean(GAMETEST_PACK)) modBus.addListener(CraftworksGameTests::addGameTestPack);
+        if (Boolean.getBoolean(DEV_PACK)) modBus.addListener(CraftworksGameTests::addDevPack);
     }
 
     /**
-     * The recipes the game tests read, in {@code gametest_pack/} in the jar. Only the {@code gameTestServer}
-     * run sets {@value #GAMETEST_PACK}, so a player's world never sees them.
+     * The recipes the game tests read, in {@code dev_pack/} in the jar, which a dev world plans with too.
+     * Only the dev runs set {@value #DEV_PACK}, so a player's world never sees them.
      */
-    private static void addGameTestPack(AddPackFindersEvent event) {
-        event.addPackFinders(id("gametest_pack"), PackType.SERVER_DATA, Component.literal("Craftworks game tests"),
+    private static void addDevPack(AddPackFindersEvent event) {
+        event.addPackFinders(id("dev_pack"), PackType.SERVER_DATA, Component.literal("Craftworks dev recipes"),
                 PackSource.BUILT_IN, true, Pack.Position.TOP);
     }
 

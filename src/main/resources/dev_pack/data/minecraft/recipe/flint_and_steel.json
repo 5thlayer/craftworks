@@ -1,0 +1,8 @@
+{
+  "type": "craftworks:assembling",
+  "ingredients": [
+    { "ingredient": "minecraft:iron_ingot", "count": 1 },
+    { "ingredient": "minecraft:flint", "count": 1 }
+  ],
+  "result": "minecraft:flint_and_steel"
+}
