@@ -4,6 +4,8 @@
 package io.github._5thlayer.craftworks.assembler;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 import io.github._5thlayer.craftworks.Craftworks;
@@ -87,6 +89,32 @@ public final class PersonalAssembler {
         }
         sync(player);
         return queued;
+    }
+
+    /**
+     * Cancels {@code crafts} of a row's final recipe and refunds their share (ADR-0005). What is left is
+     * re-resolved against the refunded inventory, so the intermediates already made are used again.
+     * Anything that will not fit goes to the player the way a closed container's contents do -- a
+     * cancel is their own action, unlike a finished craft, which pauses rather than drops.
+     */
+    public static boolean cancel(ServerPlayer player, UUID planId, int crafts) {
+        AssemblerQueue queue = queueOf(player);
+        AssemblerQueue.CancelResult result = queue.cancel(planId, crafts,
+                new InventoryPlayerItems(player.getInventory()),
+                (recipe, left, id) -> {
+                    Identifier parsed = Identifier.tryParse(recipe);
+                    if (parsed == null) return Optional.empty();
+                    return Optional.ofNullable(PlanSource.ACTIVE.resolve(player, parsed, left).plan())
+                            .map(plan -> plan.withId(id));
+                });
+        if (result.cancelled()) {
+            for (ItemAmount leftover : result.notReturned()) {
+                player.getInventory().placeItemBackInInventory(ItemKeys.toStack(leftover, player.registryAccess()));
+            }
+            player.setData(QUEUE, queue);
+        }
+        sync(player);
+        return result.cancelled();
     }
 
     /** One tick of one player's queue, run whether or not any screen is open. */

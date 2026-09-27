@@ -630,4 +630,27 @@ class AssemblerQueueTest {
         assertEquals(3, items.count(IRON), "six reserved, two spent on the gear, one re-taken");
         assertEquals(2, queue.entries().get(0).remainingAmount());
     }
+
+    @Test
+    void aPartialCancelOfARecipeThatMakesSeveralTakesOneCraftsWorth() {
+        // A log makes 4 planks. The row shows 12 planks; one left click is one craft, so 4 planks go and
+        // one log comes back, not one plank's share of a log.
+        String log = "oak_log";
+        String planks = "oak_planks";
+        AssemblerQueue.Replanner fromLogs = (recipe, crafts, id) -> Optional.of(
+                new CraftingPlan(id, planks, 4 * crafts, List.of(new ItemAmount(log, crafts)),
+                        List.of(new CraftStep(recipe, List.of(new ItemAmount(log, crafts)),
+                                List.of(new ItemAmount(planks, 4 * crafts)), 2, crafts))));
+        CraftingPlan three = fromLogs.plan("planks", 3, UUID.nameUUIDFromBytes("planks".getBytes())).orElseThrow();
+        TestPlayerItems items = new TestPlayerItems().with(log, 3);
+        AssemblerQueue queue = new AssemblerQueue();
+        queue.enqueue(three, items);
+        assertEquals(12, queue.entries().get(0).remainingAmount());
+
+        queue.cancel(three.id(), 1, items, fromLogs);
+
+        assertEquals(1, items.count(log), "one craft's share of the cost comes back");
+        assertEquals(8, queue.entries().get(0).remainingAmount(), "one craft's worth of planks is off the row");
+        assertEquals(three.id(), queue.entries().get(0).plan().id());
+    }
 }

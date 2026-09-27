@@ -82,6 +82,7 @@ public final class CraftworksGameTests {
         LoadTests.register(tests);
         AssemblingRecipeTests.register(tests);
         AssemblerTests.register(tests);
+        InventoryScreenTests.register(tests);
     }
 
     private static Identifier id(String path) {

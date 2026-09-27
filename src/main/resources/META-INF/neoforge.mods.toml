@@ -28,6 +28,10 @@ versionRange = "[${minecraft_version}]"
 ordering = "NONE"
 side = "BOTH"
 
+# Removes the inventory's 2x2 crafting grid, keeping its slots (ADR-0007).
+[[mixins]]
+config = "craftworks.mixins.json"
+
 # Records which mouse button pressed EMI's Fill Recipe (ADR-0004). Not required: a pack without EMI has
 # nothing for it to apply to.
 [[mixins]]

@@ -6,13 +6,29 @@ package io.github._5thlayer.craftworks;
 import io.github._5thlayer.craftworks.assembler.client.AssemblerClient;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.ModLoader;
+import net.neoforged.fml.ModLoadingIssue;
 import net.neoforged.fml.common.Mod;
 
 /** The Mod's client half, which a dedicated server never loads. */
 @Mod(value = Craftworks.MOD_ID, dist = Dist.CLIENT)
 public final class CraftworksClient {
 
+    /**
+     * The message a client with no recipe viewer stops on. Passed as the issue's translation key,
+     * which FML shows as written when nothing translates it: the loading screen appears before any
+     * resource pack, so a key in the Mod's lang file would never be read there.
+     */
+    private static final String NO_RECIPE_VIEWER =
+            "Craftworks needs a recipe viewer: install EMI or JEI. The Personal Assembler has no item list"
+                    + " of its own, and asks for items through the viewer's Fill Recipe.";
+
     public CraftworksClient(IEventBus modBus) {
+        // Client only: a dedicated server resolves plans itself and never talks to the viewer (ADR-0009).
+        if (!ModList.get().isLoaded("emi") && !ModList.get().isLoaded("jei")) {
+            ModLoader.addLoadingIssue(ModLoadingIssue.error(NO_RECIPE_VIEWER));
+        }
         AssemblerClient.register(modBus);
     }
 }

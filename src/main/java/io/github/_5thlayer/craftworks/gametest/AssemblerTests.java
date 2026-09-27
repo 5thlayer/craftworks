@@ -48,7 +48,7 @@ import org.jspecify.annotations.Nullable;
 final class AssemblerTests {
 
     /** Two oak logs make one sapling, in 10 ticks: the game tests' own recipe. */
-    private static final Identifier OAK_SAPLING = Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "gametest/oak_sapling");
+    static final Identifier OAK_SAPLING = Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "gametest/oak_sapling");
 
     private AssemblerTests() {
     }
@@ -124,7 +124,7 @@ final class AssemblerTests {
         helper.succeed();
     }
 
-    private static ServerPlayer playerHolding(GameTestHelper helper, ItemStack stack) {
+    static ServerPlayer playerHolding(GameTestHelper helper, ItemStack stack) {
         ServerPlayer player = player(helper);
         player.getInventory().add(stack);
         return player;
@@ -157,7 +157,7 @@ final class AssemblerTests {
         }
     }
 
-    private static int count(ServerPlayer player, Item item) {
+    static int count(ServerPlayer player, Item item) {
         return player.getInventory().getNonEquipmentItems().stream()
                 .filter(stack -> stack.is(item))
                 .mapToInt(ItemStack::getCount)

@@ -16,7 +16,8 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
- * The client half of the Personal Assembler: the queue beside the hotbar.
+ * The client half of the Personal Assembler: the queue beside the hotbar, and the inventory screen
+ * that is the Assembler (ADR-0005).
  *
  * <p>Called only from {@code CraftworksClient}, so nothing here is loaded on a dedicated server.
  */
@@ -28,6 +29,12 @@ public final class AssemblerClient {
     public static void register(IEventBus modBus) {
         modBus.addListener(AssemblerClient::registerHud);
         NeoForge.EVENT_BUS.addListener(AssemblerClient::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(InventoryGridBlank::onScreenOpening);
+        NeoForge.EVENT_BUS.addListener(InventoryGridBlank::onScreenInit);
+        NeoForge.EVENT_BUS.addListener(InventoryGridBlank::onScreenForeground);
+        NeoForge.EVENT_BUS.addListener(InventoryQueue::onRender);
+        NeoForge.EVENT_BUS.addListener(InventoryQueue::onTooltip);
+        NeoForge.EVENT_BUS.addListener(InventoryQueue::onClick);
     }
 
     /**

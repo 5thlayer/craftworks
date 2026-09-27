@@ -5,5 +5,8 @@
   "craftworks.fill_recipe.right": "Right-click: queue 5",
   "craftworks.fill_recipe.shift": "Shift-click: queue all you can afford",
   "craftworks.fill_recipe.middle": "Middle-click: show the Crafting Plan",
-  "craftworks.queue.and_more": "... and %s more"
+  "craftworks.queue.and_more": "... and %s more",
+  "craftworks.queue.cancel.left": "Left-click: cancel 1 craft",
+  "craftworks.queue.cancel.right": "Right-click: cancel 5 crafts",
+  "craftworks.queue.cancel.shift": "Shift-click: cancel all"
 }
