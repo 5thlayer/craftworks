@@ -56,3 +56,8 @@ What decides whether a recipe is **Locked** for a player: nothing or the vanilla
 hook a pack or another mod registers. A recipe is Locked if any of them says so; the Assembler asks, and
 never knows why.
 _Avoid_: research, unlock provider
+
+**Recipe viewer**:
+The item list and recipe screen through which the player asks the Assembler for items: EMI or JEI. A
+player cannot use Craftworks without one.
+_Avoid_: item interface, recipe browser, JEI (for both)
