@@ -19,7 +19,8 @@ import net.minecraft.gametest.framework.GameTestHelper;
  * <p>The glue no unit test reaches: that the recipe manager holds a datapack's recipes under the type,
  * that {@link RuntimeAssemblingRecipes} finds them there, that a recipe of another type stays out, that a tag ingredient arrives as the items it
  * names, that {@code time} and {@code priority} default when left out, and that a spent item's remainder
- * rides on its ingredient. The recipes are the dev runs' datapack's ({@code dev_pack/}).
+ * rides on its ingredient. The recipes are the game tests' own datapack's ({@code gametest_pack/}), and flint and steel the dev
+ * runs' ({@code dev_pack/}).
  */
 final class AssemblingRecipeTests {
 
