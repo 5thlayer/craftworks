@@ -7,7 +7,7 @@ import io.github._5thlayer.craftworks.assembler.client.AssemblerClient;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
-import net.neoforged.fml.ModLoader;
+import net.neoforged.fml.ModLoadingException;
 import net.neoforged.fml.ModLoadingIssue;
 import net.neoforged.fml.common.Mod;
 
@@ -27,7 +27,9 @@ public final class CraftworksClient {
     public CraftworksClient(IEventBus modBus) {
         // Client only: a dedicated server resolves plans itself and never talks to the viewer (ADR-0009).
         if (!ModList.get().isLoaded("emi") && !ModList.get().isLoaded("jei")) {
-            ModLoader.addLoadingIssue(ModLoadingIssue.error(NO_RECIPE_VIEWER));
+            // Thrown, not added: FML checks added issues before mods are constructed, so one added here
+            // would only be shown when load warnings are on.
+            throw new ModLoadingException(ModLoadingIssue.error(NO_RECIPE_VIEWER));
         }
         AssemblerClient.register(modBus);
     }

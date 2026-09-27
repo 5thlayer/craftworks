@@ -17,8 +17,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * Cancel {@code crafts} of one row's final recipe, by the row's id (ADR-0005). {@code Integer.MAX_VALUE}
- * cancels the row whole; the server caps the count at what is left.
+ * Cancel {@code crafts} of one row's final recipe, by the row's id (ADR-0005).
+ * {@link io.github._5thlayer.craftworks.planner.AssemblerQueue#ALL} cancels the row whole; the server caps the count at what is left.
  *
  * <p>The plan is the unit and an index would not do: the queue moves under the player as plans
  * finish, so an index cancels whatever happens to be there when the packet lands.
