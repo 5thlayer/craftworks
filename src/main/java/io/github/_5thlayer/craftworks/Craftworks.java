@@ -4,6 +4,8 @@
 package io.github._5thlayer.craftworks;
 
 import io.github._5thlayer.craftworks.gametest.CraftworksGameTests;
+import io.github._5thlayer.craftworks.network.CraftworksNetwork;
+import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 
@@ -17,6 +19,8 @@ public final class Craftworks {
     public static final String MOD_ID = "craftworks";
 
     public Craftworks(IEventBus modBus) {
+        CraftworksRecipes.register(modBus);
+        CraftworksNetwork.register(modBus);
         CraftworksGameTests.register(modBus);
     }
 }

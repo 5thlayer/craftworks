@@ -14,9 +14,14 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestInstance;
 import net.minecraft.gametest.framework.TestData;
 import net.minecraft.gametest.framework.TestEnvironmentDefinition;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.repository.Pack;
+import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Rotation;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.event.AddPackFindersEvent;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -27,6 +32,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * what it needs itself, so the setup is in the diff.
  */
 public final class CraftworksGameTests {
+
+    private static final String GAMETEST_PACK = "craftworks.gametestPack";
 
     private static final Identifier PLATFORM = id("gametest/platform");
 
@@ -44,6 +51,16 @@ public final class CraftworksGameTests {
         TEST_TYPES.register(modBus);
         // Posted only when game tests are enabled, so a production server never registers the tests.
         modBus.addListener(CraftworksGameTests::registerTests);
+        if (Boolean.getBoolean(GAMETEST_PACK)) modBus.addListener(CraftworksGameTests::addGameTestPack);
+    }
+
+    /**
+     * The recipes the game tests read, in {@code gametest_pack/} in the jar. Only the {@code gameTestServer}
+     * run sets {@value #GAMETEST_PACK}, so a player's world never sees them.
+     */
+    private static void addGameTestPack(AddPackFindersEvent event) {
+        event.addPackFinders(id("gametest_pack"), PackType.SERVER_DATA, Component.literal("Craftworks game tests"),
+                PackSource.BUILT_IN, true, Pack.Position.TOP);
     }
 
     private static void registerTests(RegisterGameTestsEvent event) {
@@ -51,6 +68,7 @@ public final class CraftworksGameTests {
         var environment = event.registerEnvironment(id("default"), new TestEnvironmentDefinition.AllOf(List.of()));
         var tests = new Registrar(event, environment);
         LoadTests.register(tests);
+        AssemblingRecipeTests.register(tests);
     }
 
     private static Identifier id(String path) {

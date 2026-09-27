@@ -24,6 +24,11 @@ tasks.withType(Jar).configureEach {
 
 def gameTestReport = layout.buildDirectory.file('reports/gametest.xml').get().asFile
 
+repositories {
+    // EMI for 26.1 is an unofficial port, published on CurseForge only.
+    maven { url = 'https://cursemaven.com' }
+}
+
 neoForge {
     version = neoforge_version
 
@@ -42,6 +47,8 @@ neoForge {
             type = 'gameTestServer'
             gameDirectory = project.file('run/gametest')
             programArguments.addAll '--tests', "${mod_id}:*", '--report', gameTestReport.absolutePath
+            // The game tests' own recipes, a datapack in the jar that only this run turns on.
+            systemProperty 'craftworks.gametestPack', 'true'
         }
     }
 
@@ -73,6 +80,9 @@ tasks.named('runGameTestServer') {
 }
 
 dependencies {
+    // EMI is optional: compiled against, never on a run, so the game tests prove the Mod loads without it.
+    compileOnly 'curse.maven:emi-unofficial-port-1544558:8630349'
+
     // DataFixerUpper, and only that: `Codec` is Mojang's serialisation library, not a Minecraft type,
     // so the planner's codecs round-trip on a plain JVM. Minecraft stays off the test classpath, which
     // keeps the planner core free of it. The version is the one Minecraft 26.1.2 ships.
