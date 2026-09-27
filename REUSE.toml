@@ -14,6 +14,7 @@ path = [
     "scripts/*.sh",
     "**/*.md",
     "src/main/resources/**/*.json",
+    "src/main/resources/**/pack.mcmeta",
     "src/main/resources/**/*.nbt",
     "LICENSE",
     ".github/**",
