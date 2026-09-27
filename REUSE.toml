@@ -15,6 +15,7 @@ path = [
     "src/main/resources/**/*.json",
     "src/main/resources/**/*.nbt",
     "LICENSE",
+    ".github/**",
 ]
 SPDX-FileCopyrightText = "2026 5thlayer"
 SPDX-License-Identifier = "MIT"

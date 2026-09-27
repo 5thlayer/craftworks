@@ -87,10 +87,15 @@ test {
     useJUnitPlatform()
 }
 
+// neoforge.mods.toml names nothing of its own: it is filled from gradle.properties.
+def modProperties = [
+        mod_id: mod_id, mod_name: mod_name, mod_description: mod_description, version: mod_version,
+        minecraft_version: minecraft_version, neoforge_version: neoforge_version,
+]
 processResources {
-    inputs.property 'version', version
+    inputs.properties modProperties
     filesMatching('META-INF/neoforge.mods.toml') {
-        expand version: version
+        expand modProperties
     }
 }
 
@@ -113,6 +118,6 @@ tasks.withType(PublishToMavenLocal).configureEach {
     def published = new File(local.url.path, "${maven_group.replace('.', '/')}/$archives_name/$mod_version")
     doFirst {
         if (published.exists()) throw new GradleException(
-                "Craftworks $mod_version is already in $published, and a published version never changes: bump mod_version")
+                "$mod_name $mod_version is already in $published, and a published version never changes: bump mod_version")
     }
 }

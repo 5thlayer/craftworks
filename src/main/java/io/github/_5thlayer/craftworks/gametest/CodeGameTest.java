@@ -9,6 +9,7 @@ import java.util.function.Consumer;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github._5thlayer.craftworks.Craftworks;
 import net.minecraft.core.Holder;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestInstance;
@@ -65,6 +66,6 @@ final class CodeGameTest extends GameTestInstance {
 
     @Override
     protected MutableComponent typeDescription() {
-        return Component.literal("craftworks code");
+        return Component.literal(Craftworks.MOD_ID + " code");
     }
 }

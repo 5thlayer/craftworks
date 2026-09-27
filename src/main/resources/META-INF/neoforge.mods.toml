@@ -1,27 +1,29 @@
 modLoader = "javafml"
 loaderVersion = "[4,)"
-issueTrackerURL = "https://github.com/5thlayer/craftworks/issues"
+issueTrackerURL = "https://github.com/5thlayer/${mod_id}/issues"
 license = "MIT"
 
+# processResources fills each dollar-brace value from gradle.properties, so this file names
+# nothing of the Mod's own.
 [[mods]]
-modId = "craftworks"
+modId = "${mod_id}"
 version = "${version}"
-displayName = "Craftworks"
+displayName = "${mod_name}"
 authors = "5thlayer"
 description = '''
-The Personal Assembler: ask for an item, and every intermediate is planned, the whole cost is paid up front, and the crafts run one after another over time.
+${mod_description}
 '''
 
-[[dependencies.craftworks]]
+[[dependencies.${mod_id}]]
 modId = "neoforge"
 type = "required"
-versionRange = "[26.1.2.77,)"
+versionRange = "[${neoforge_version},)"
 ordering = "NONE"
 side = "BOTH"
 
-[[dependencies.craftworks]]
+[[dependencies.${mod_id}]]
 modId = "minecraft"
 type = "required"
-versionRange = "[26.1.2]"
+versionRange = "[${minecraft_version}]"
 ordering = "NONE"
 side = "BOTH"
