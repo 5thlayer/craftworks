@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted, its rule superseded by libworks ADR 0001
 ---
 
 # A breaking change for a pack author bumps the minor
