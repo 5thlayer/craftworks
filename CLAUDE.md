@@ -12,13 +12,13 @@ tooling or CI config.
 
 ## Releases
 
-A change a player or pack author notices adds its line under `## Unreleased` in `CHANGELOG.md` as it lands. Before bumping `mod_version`, publishing to `~/.m2` or tagging a release, read `docs/agents/releases.md`: releases go through `scripts/release.sh`, and a published version never changes.
+A change a player or pack author notices adds its line under `## Unreleased` in `CHANGELOG.md` as it lands. Before bumping `mod_version`, publishing to `~/.m2`, tagging a release or uploading to Modrinth or CurseForge, read `docs/agents/releases.md`: releases go through `scripts/release.sh`, which uploads last with `scripts/upload.py`, and a published version never changes, in `~/.m2` or on either site.
 
 A release that must reach the Pack follows the `release-train` skill: one owning session per checkout, and pushes only on the user's word.
 
 ## Testing
 
-`sh ./gradlew build` runs the JUnit tests (the Assembler's planning, with no Minecraft); `sh ./gradlew runGameTestServer` runs the game tests headless (a real player on a server) and names each one it ran. A new game test class is registered by a line in `CraftworksGameTests.registerTests`.
+`sh ./gradlew build` runs the JUnit tests (the Assembler's planning, with no Minecraft); `sh ./gradlew runGameTestServer` runs the game tests headless (a real player on a server) and names each one it ran. `python3 -m unittest discover scripts/tests` tests the upload step against a stand-in server on localhost. A new game test class is registered by a line in `CraftworksGameTests.registerTests`.
 
 ## Agent skills
 
