@@ -28,4 +28,4 @@ Craftworks replaces the crafting grid with the **Personal Assembler**: ask for a
 
 ## License
 
-MIT. Source is on [GitHub](https://github.com/5thlayer/craftworks).
+MIT. The cover art uses Minecraft's item textures, which remain Mojang's. Source is on [GitHub](https://github.com/5thlayer/craftworks).

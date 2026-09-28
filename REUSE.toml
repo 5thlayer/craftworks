@@ -28,3 +28,10 @@ path = ["gradlew", "gradlew.bat", "gradle/wrapper/**"]
 precedence = "override"
 SPDX-FileCopyrightText = "Gradle"
 SPDX-License-Identifier = "Apache-2.0"
+
+# Cover and icon for mod pages. Their backdrop is Minecraft's own item textures,
+# which stay Mojang's; see LICENSES/LicenseRef-Mojang.txt.
+[[annotations]]
+path = ["publish/*.png"]
+SPDX-FileCopyrightText = ["Mojang AB", "2026 5thlayer"]
+SPDX-License-Identifier = "LicenseRef-Mojang"
