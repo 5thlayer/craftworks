@@ -17,6 +17,7 @@ path = [
     "src/main/resources/**/pack.mcmeta",
     "src/main/resources/**/*.nbt",
     "LICENSE",
+    "publish/summary.txt",
     ".github/**",
 ]
 SPDX-FileCopyrightText = "2026 5thlayer"
