@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+## 0.1.3
+
 - The jar carries its MIT licence.
 - The inventory no longer shows a white sliver of the removed crafting grid's result slot beside the queue. (#19)
 
