@@ -4,6 +4,7 @@
 package io.github._5thlayer.craftworks.assembler.client;
 
 import java.util.List;
+import java.util.Map;
 
 import io.github._5thlayer.craftworks.assembler.AssemblerQueueView;
 import io.github._5thlayer.craftworks.assembler.CraftButtons;
@@ -19,6 +20,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
@@ -31,7 +33,8 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  * which already lists the queue. Close returns there with the queue still running.
  *
  * <p>Locked is its own column beside Missing because the two ask different things of the player:
- * unlock one, gather the other.
+ * unlock one, gather the other. A Locked entry the Lock source gave a reason for says it under its count,
+ * cut to the column and whole on hover (#18).
  *
  * <p>Drawn from fills rather than a texture, as a flat panel.
  */
@@ -63,6 +66,9 @@ final class CraftingPlanScreen extends AbstractContainerScreen<CraftingPlanMenu>
      * the screen has, because a tooltip painted from inside the background would be drawn over.
      */
     private ItemStack hovered = ItemStack.EMPTY;
+
+    /** A Locked entry's reason under the cursor, or null; spent after the screen draws, as {@link #hovered} is. */
+    private Component hoveredReason;
 
     private Button one;
     private Button five;
@@ -113,9 +119,11 @@ final class CraftingPlanScreen extends AbstractContainerScreen<CraftingPlanMenu>
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         hovered = ItemStack.EMPTY;
+        hoveredReason = null;
         refreshButtons();
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         if (!hovered.isEmpty()) graphics.setTooltipForNextFrame(font, hovered, mouseX, mouseY);
+        else if (hoveredReason != null) graphics.setTooltipForNextFrame(font, hoveredReason, mouseX, mouseY);
     }
 
     @Override
@@ -125,13 +133,15 @@ final class CraftingPlanScreen extends AbstractContainerScreen<CraftingPlanMenu>
         graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, PANEL);
         PlanDisplay display = menu.display();
         int width = (imageWidth - 16) / COLUMNS;
-        column(graphics, leftPos + 8, "consume", display.consume(), ChatFormatting.AQUA, mouseX, mouseY);
-        column(graphics, leftPos + 8 + width, "to_craft", display.toCraft(), ChatFormatting.WHITE, mouseX, mouseY);
-        column(graphics, leftPos + 8 + 2 * width, "missing", display.missing(), ChatFormatting.RED, mouseX, mouseY);
-        column(graphics, leftPos + 8 + 3 * width, "locked", display.locked(), ChatFormatting.GOLD, mouseX, mouseY);
+        column(graphics, leftPos + 8, width, "consume", display.consume(), Map.of(), ChatFormatting.AQUA, mouseX, mouseY);
+        column(graphics, leftPos + 8 + width, width, "to_craft", display.toCraft(), Map.of(), ChatFormatting.WHITE,
+                mouseX, mouseY);
+        column(graphics, leftPos + 8 + 2 * width, width, "missing", display.missing(), Map.of(), ChatFormatting.RED,
+                mouseX, mouseY);
+        column(graphics, leftPos + 8 + 3 * width, width, "locked", display.locked(), display.lockReasons(),
+                ChatFormatting.GOLD, mouseX, mouseY);
         // Its own line above the buttons: a translated sentence of unknown width.
-        Component reason = !display.complete()
-                ? Component.translatable("craftworks.plan.reason." + reason(display))
+        Component reason = !display.complete() ? refusal(display)
                 : menu.shortOf() > 0 ? Component.translatable("craftworks.plan.reason.not_enough_for", menu.shortOf())
                 : null;
         if (reason != null) {
@@ -139,6 +149,18 @@ final class CraftingPlanScreen extends AbstractContainerScreen<CraftingPlanMenu>
                     leftPos + 8, topPos + imageHeight - 38, 0xFFFF5555, false);
         }
         renderQueue(graphics);
+    }
+
+    /** The "Can't start" line, naming the first Locked entry's reason when the Lock source gave one. */
+    private static Component refusal(PlanDisplay display) {
+        String why = reason(display);
+        if (why.equals("locked")) {
+            for (ItemAmount amount : display.locked()) {
+                Component lockReason = display.lockReasons().get(amount.item());
+                if (lockReason != null) return Component.translatable("craftworks.plan.reason.locked_because", lockReason);
+            }
+        }
+        return Component.translatable("craftworks.plan.reason." + why);
     }
 
     /**
@@ -179,8 +201,8 @@ final class CraftingPlanScreen extends AbstractContainerScreen<CraftingPlanMenu>
         }
     }
 
-    private void column(GuiGraphicsExtractor graphics, int x, String key, List<ItemAmount> amounts,
-            ChatFormatting colour, int mouseX, int mouseY) {
+    private void column(GuiGraphicsExtractor graphics, int x, int width, String key, List<ItemAmount> amounts,
+            Map<String, Component> reasons, ChatFormatting colour, int mouseX, int mouseY) {
         graphics.text(font, Component.translatable("craftworks.plan." + key).withStyle(colour),
                 x, topPos + 22, 0xFFFFFFFF, false);
         int y = topPos + 34;
@@ -188,7 +210,15 @@ final class CraftingPlanScreen extends AbstractContainerScreen<CraftingPlanMenu>
             // The icon, not the name: the name is one hover away, from vanilla's own tooltip.
             ItemStack stack = PlanItems.stack(amount.item());
             graphics.item(stack, x, y);
-            graphics.text(font, "x " + amount.count(), x + 20, y + 5, 0xFFCCCCCC, false);
+            Component reason = reasons.get(amount.item());
+            if (reason == null) {
+                graphics.text(font, "x " + amount.count(), x + 20, y + 5, 0xFFCCCCCC, false);
+            } else {
+                graphics.text(font, "x " + amount.count(), x + 20, y, 0xFFCCCCCC, false);
+                List<FormattedCharSequence> lines = font.split(reason, width - 22);
+                if (!lines.isEmpty()) graphics.text(font, lines.get(0), x + 20, y + 9, 0xFFFFAA00, false);
+                if (mouseX >= x + 20 && mouseX < x + width && mouseY >= y && mouseY < y + 18) hoveredReason = reason;
+            }
             if (!stack.isEmpty() && mouseX >= x && mouseX < x + 16 && mouseY >= y && mouseY < y + 16) {
                 hovered = stack;
             }

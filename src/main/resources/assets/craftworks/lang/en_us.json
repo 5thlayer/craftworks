@@ -19,6 +19,8 @@
   "craftworks.plan.queue": "Queue",
   "craftworks.plan.queue_empty": "Nothing queued",
   "craftworks.plan.reason.locked": "Can't start: a recipe it needs is Locked.",
+  "craftworks.plan.reason.locked_because": "Can't start: Locked. %s",
+  "craftworks.plan.lock_reason.research": "Research: %s",
   "craftworks.plan.reason.missing": "Can't start: something it needs is Missing.",
   "craftworks.plan.reason.not_enough": "Can't start: not enough items.",
   "craftworks.plan.reason.not_enough_for": "Can't queue %s: not enough items.",

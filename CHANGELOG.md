@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- A Locked recipe in the Crafting Plan can say why, for example "Research: Steel Axe", beside the entry and in the "Can't start" line. With `lockSources = ["researchd"]` it names the research that unlocks the recipe. Mods and packs can give reasons through `LockHooks.registerReasoned`. (#18)
+
 ## 0.1.1
 
 - The Crafting Plan: a middle click on Fill Recipe opens it, and so does a request your inventory can't cover, naming why (Missing, Locked or not enough). It lists what a craft consumes, the intermediates it makes, and what is Missing and Locked. +1, +5 and All queue straight away and grey out when your inventory can't cover them; the plan stays open and updates as you queue, showing the first queue rows. Close returns to the inventory. (#7)

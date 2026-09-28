@@ -1,6 +1,6 @@
 ---
 status: accepted
-amends: [10]
+amends: [10, 18]
 ---
 
 # Researchd is a Lock source a pack names in config
@@ -35,3 +35,14 @@ completes, which a static list cannot say.
 - No game test runs against Researchd, which needs its own library on the run; the game tests cover the
   source listed with Researchd absent.
 - Each further mod that deserves a built-in source is a new value here, not a hook in the pack.
+
+**Amended by #18: a Locked recipe says why.** A player told only "Locked" cannot tell what to research.
+`LockHooks.ReasonedLockHook`, registered with `registerReasoned` beside the unchanged `LockHook`, may
+return a text `Component` with its yes. The Resolver still sees only Locked or not; the reasons are kept
+by recipe id beside the predicate and carried into the Crafting Plan, which shows them beside each Locked
+entry and in the "Can't start" line. The Assembler relays the text and never reads it, so it still never
+knows why in any way it acts on. The `researchd` source fills the reason from
+`ResearchdApi.researchesUnlocking(Player, ResourceKey)` and `researchName(Level, ResourceKey)`, by method
+handle as `isRecipeBlocked` is. It names the research the recipe sits under, not necessarily the next
+step: parents are not filtered. An empty answer (no team, or stale team data) or a Researchd without
+these calls falls back to plain "Locked"; the missing calls are logged once.

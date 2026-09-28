@@ -4,6 +4,7 @@
 package io.github._5thlayer.craftworks.gametest;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 import io.github._5thlayer.craftworks.Craftworks;
@@ -15,6 +16,7 @@ import io.github._5thlayer.craftworks.assembler.PersonalAssembler;
 import io.github._5thlayer.craftworks.assembler.RuntimePlanSource;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
@@ -30,6 +32,11 @@ final class LockTests {
     /** Only players carrying this tag are locked by the test's hook, so no other test sees it. */
     private static final String LOCKED_BY_HOOK = "craftworks.gametest.locked_by_hook";
 
+    /** Only players carrying this tag are locked by the test's reasoned hook. */
+    private static final String LOCKED_WITH_REASON = "craftworks.gametest.locked_with_reason";
+
+    private static final String REASON = "Research: Gametest Slime";
+
     private static final Identifier SLIME_BALL = Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "gametest/slime_ball");
 
     private LockTests() {
@@ -37,7 +44,10 @@ final class LockTests {
 
     static void register(CraftworksGameTests.Registrar tests) {
         LockHooks.register((player, recipe) -> player.entityTags().contains(LOCKED_BY_HOOK) && recipe.equals(SLIME_BALL));
+        LockHooks.registerReasoned((player, recipe) -> player.entityTags().contains(LOCKED_WITH_REASON)
+                && recipe.equals(SLIME_BALL) ? LockHooks.Lock.because(Component.literal(REASON)) : Optional.empty());
         tests.test("the_recipe_book_and_a_hook_each_lock", 20, LockTests::bothLock);
+        tests.test("a_reasoned_hook_s_reason_reaches_the_plan", 20, LockTests::reasonShown);
         tests.test("researchd_listed_but_not_installed_locks_nothing", 20, LockTests::researchdAbsent);
     }
 
@@ -72,6 +82,26 @@ final class LockTests {
             helper.assertTrue(player.containerMenu instanceof CraftingPlanMenu menu && !menu.display().locked().isEmpty()
                             && menu.display().missing().isEmpty(),
                     "Fill Recipe on a Locked recipe should open the plan showing it Locked, not Missing");
+        } finally {
+            CraftworksConfig.LOCK_SOURCES.set(before);
+        }
+        helper.succeed();
+    }
+
+    /** Fill Recipe on a recipe a reasoned hook locks opens the plan with the hook's reason beside the entry. */
+    private static void reasonShown(GameTestHelper helper) {
+        List<? extends String> before = CraftworksConfig.LOCK_SOURCES.get();
+        CraftworksConfig.LOCK_SOURCES.set(List.of());
+        try {
+            ServerPlayer player = AssemblerTests.playerHolding(helper, ItemStack.EMPTY);
+            player.addTag(LOCKED_WITH_REASON);
+            PersonalAssembler.fill(player, SLIME_BALL, FillRequest.ONE);
+            helper.assertTrue(player.containerMenu instanceof CraftingPlanMenu, "Fill Recipe did not open the plan");
+            CraftingPlanMenu menu = (CraftingPlanMenu) player.containerMenu;
+            helper.assertTrue(menu.display().locked().size() == 1, "the slime ball is not the one Locked entry");
+            Component reason = menu.display().lockReasons().get(menu.display().locked().get(0).item());
+            helper.assertTrue(reason != null && reason.getString().equals(REASON),
+                    "the plan does not carry the hook's reason, got " + reason);
         } finally {
             CraftworksConfig.LOCK_SOURCES.set(before);
         }

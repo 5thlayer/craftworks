@@ -55,7 +55,8 @@ _Avoid_: preference, weight
 **Lock source**:
 What decides whether a recipe is **Locked** for a player: the sources a pack lists (the vanilla recipe
 book, Researchd), plus any hook a pack or another mod registers. A recipe is Locked if any of them says so; the Assembler asks, and
-never knows why.
+never knows why in any way it acts on. A source may give a reason with its yes (Researchd names the research
+that unlocks the recipe), which the Crafting Plan shows the player as text the Assembler never reads.
 _Avoid_: research, unlock provider
 
 **Recipe viewer**:
