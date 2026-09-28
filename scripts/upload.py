@@ -209,9 +209,9 @@ class Release:
             show("GET", files, api_headers)
             show("GET", f"{upload}/api/game/version-types", upload_headers)
             show("GET", f"{upload}/api/game/versions", upload_headers,
-                 note=f"picks the ids of Minecraft {self.minecraft} and NeoForge")
+                 note=f"picks the ids of Minecraft {self.minecraft}, NeoForge, Client and Server")
             show("POST", f"{upload}/api/projects/{project}/upload-file", upload_headers,
-                 metadata=json.dumps({**metadata, "gameVersions": f"<ids of {self.minecraft}, NeoForge>"}, indent=2),
+                 metadata=json.dumps({**metadata, "gameVersions": f"<ids of {self.minecraft}, NeoForge, Client, Server>"}, indent=2),
                  file=self.described())
             return
         # A published version is final on CurseForge too: it is never replaced.
@@ -238,13 +238,16 @@ class Release:
             page_index += 1
 
     def curseforge_game_versions(self, upload, headers):
-        """The ids of the Minecraft version and of NeoForge, which the upload API names by id."""
+        """The ids of the Minecraft version, of NeoForge, and of both environments (the Mod is needed on
+        client and server alike), which the upload API names by id."""
         types = send("GET", f"{upload}/api/game/version-types", headers)
         minecraft = {t["id"] for t in types if t["slug"].startswith("minecraft-")}
         loaders = {t["id"] for t in types if t["slug"] == "modloader"}
+        environments = {t["id"] for t in types if t["slug"] == "environment"}
         versions = send("GET", f"{upload}/api/game/versions", headers)
         ids = []
-        for name, kinds in [(self.minecraft, minecraft), ("NeoForge", loaders)]:
+        for name, kinds in [(self.minecraft, minecraft), ("NeoForge", loaders),
+                            ("Client", environments), ("Server", environments)]:
             found = [v["id"] for v in versions if v["name"] == name and v["gameVersionTypeID"] in kinds]
             if len(found) != 1:
                 raise Refused(f"CurseForge names {len(found)} game versions {name}; it needs exactly one.")

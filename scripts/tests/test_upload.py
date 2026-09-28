@@ -298,8 +298,8 @@ exec "$@"
         self.assertEqual(metadata["changelog"], NOTES)
         self.assertEqual(metadata["changelogType"], "markdown")
         self.assertEqual(metadata["displayName"], "Craftworks 0.3.9")
-        # 26.1.2 the Minecraft version, not the Bukkit one, and NeoForge the loader.
-        self.assertEqual(sorted(metadata["gameVersions"]), [101, 301])
+        # 26.1.2 the Minecraft version, not the Bukkit one, NeoForge the loader, and both environments.
+        self.assertEqual(sorted(metadata["gameVersions"]), [101, 301, 401, 402])
         self.assertEqual(metadata["releaseType"], "beta")
         self.assertEqual(metadata["relations"], {"projects": [{"slug": "emi", "type": "requiredDependency"}]})
 
