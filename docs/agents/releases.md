@@ -28,7 +28,7 @@ It pushes nothing to git, and ends by printing the push command. The Pack then m
 
 The projects default to Craftworks' own, Modrinth `v6CdwRwB` and CurseForge `1715876`, and `MODRINTH_PROJECT_ID` and `CURSEFORGE_PROJECT_ID` override them.
 
-It refuses, before contacting either site, a version missing from `~/.m2` or from the changelog. Each site then goes on its own: a site that already has the version, or whose upload fails, is refused without touching the other, and `--site modrinth` or `--site curseforge` retries just that one. `--dry-run` prints the requests and contacts nothing. `MODRINTH_API_URL`, `CURSEFORGE_UPLOAD_URL` and `CURSEFORGE_API_URL` (the listing's site) point it elsewhere, and its tests (`python3 -m unittest discover scripts/tests`) run it against a stand-in server on localhost.
+It refuses, before contacting either site, a version missing from `~/.m2` or from the changelog, and a jar lacking the licensing `checkJarLicensing` requires (`LICENSE` and `LICENSES/MIT.txt`, which the build puts in every jar from 0.1.3 on). Each site then goes on its own: a site that already has the version, or whose upload fails, is refused without touching the other, and `--site modrinth` or `--site curseforge` retries just that one. `--dry-run` prints the requests and contacts nothing. `MODRINTH_API_URL`, `CURSEFORGE_UPLOAD_URL` and `CURSEFORGE_API_URL` (the listing's site) point it elsewhere, and its tests (`python3 -m unittest discover scripts/tests`) run it against a stand-in server on localhost.
 
 ## A published version is final
 

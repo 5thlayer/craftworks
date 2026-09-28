@@ -47,10 +47,14 @@ minecraft_version = 26.1.2
 """
 
 
-def jar():
+def jar(**overrides):
+    entries = {"LICENSE": "MIT", "LICENSES/MIT.txt": "MIT",
+               "io/github/_5thlayer/craftworks/Craftworks.class": b"\xca\xfe\xba\xbe", **overrides}
     out = io.BytesIO()
     with zipfile.ZipFile(out, "w") as z:
-        z.writestr("io/github/_5thlayer/craftworks/Craftworks.class", b"\xca\xfe\xba\xbe")
+        for name, data in entries.items():
+            if data is not None:
+                z.writestr(name, data)
     return out.getvalue()
 
 
@@ -125,6 +129,13 @@ class Upload(unittest.TestCase):
     def test_refuses_a_version_the_changelog_lacks(self):
         self.publish("0.3.7")
         self.assertRefusedBeforeAnyRequest(self.upload("0.3.7"), "CHANGELOG.md")
+
+    def test_refuses_a_jar_that_lacks_its_licensing(self):
+        for lacking in ["LICENSE", "LICENSES/MIT.txt"]:
+            with self.subTest(lacking):
+                shutil.rmtree(self.maven, ignore_errors=True)
+                self.publish("0.3.9", jar(**{lacking: None}))
+                self.assertRefusedBeforeAnyRequest(self.upload("0.3.9"), lacking)
 
     def test_a_missing_token_is_fetched_through_op_run(self):
         # A stand-in for the 1Password CLI, first on PATH: it fills each op:// reference in the env

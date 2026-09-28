@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- The jar carries its MIT licence.
+
 ## 0.1.2
 
 - A Locked recipe in the Crafting Plan can say why, for example "Research: Steel Axe", beside the entry and in the "Can't start" line. With `lockSources = ["researchd"]` it names the research that unlocks the recipe. Mods and packs can give reasons through `LockHooks.registerReasoned`. (#18)

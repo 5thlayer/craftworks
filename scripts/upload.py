@@ -28,6 +28,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,6 +38,8 @@ CURSEFORGE_PROJECT = "1715876"
 CURSEFORGE_UPLOAD = "https://minecraft.curseforge.com"
 # The upload API can't list a project's files, so the website's own listing, which needs no key, does.
 CURSEFORGE_API = "https://www.curseforge.com"
+# What checkJarLicensing in build.gradle requires of the jar.
+LICENSING = ["LICENSE", "LICENSES/MIT.txt"]
 # EMI, which a client needs: the Assembler takes its requests through EMI's Fill Recipe.
 MODRINTH_EMI = "fRiHVvU7"
 CURSEFORGE_EMI = "emi"
@@ -72,6 +75,12 @@ def changelog(version):
     if not found or not lines:
         fail(f"CHANGELOG.md has no entries under \"## {version}\"; the notes are that section.")
     return "\n".join(lines)
+
+
+def lacking_licensing(data):
+    with zipfile.ZipFile(io.BytesIO(data)) as z:
+        names = set(z.namelist())
+    return [name for name in LICENSING if name not in names]
 
 
 def multipart(fields):
@@ -139,6 +148,9 @@ class Release:
         if not self.jar.is_file():
             fail(f"{version} is not in {repo}; only a released version is uploaded.")
         self.data = self.jar.read_bytes()
+        missing = lacking_licensing(self.data)
+        if missing:
+            fail(f"{self.jar.name} lacks its licensing: {', '.join(missing)}")
         self.notes = changelog(version)
 
     def file_part(self):
