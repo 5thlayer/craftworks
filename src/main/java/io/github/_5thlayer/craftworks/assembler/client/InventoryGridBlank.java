@@ -46,10 +46,11 @@ import net.neoforged.neoforge.client.event.ScreenEvent;
  */
 final class InventoryGridBlank {
 
-    /** The result slot's own well, the arrow and the 2x2, plus the title line above them. */
+    /** The result slot's own well, the arrow and the 2x2, plus the title line above them. RIGHT is exclusive: the
+     * well's white highlight is column 170. */
     private static final int LEFT = 97;
     private static final int TOP = 5;
-    private static final int RIGHT = 170;
+    private static final int RIGHT = 171;
     private static final int BOTTOM = 54;
 
     /** Vanilla's GUI panel grey, which is what the covered region would have been. */
