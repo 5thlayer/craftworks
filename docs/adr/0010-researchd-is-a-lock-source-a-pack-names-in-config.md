@@ -30,6 +30,8 @@ completes, which a static list cannot say.
 
 - The signature is checked by nothing at build time. A Researchd that renames the call fails soft, and
   only its log line says so.
+- A call that is found but throws is not failed soft: the resolve that asked fails, loudly, since a
+  lock that cannot be answered must not quietly read as unlocked.
 - No game test runs against Researchd, which needs its own library on the run; the game tests cover the
   source listed with Researchd absent.
 - Each further mod that deserves a built-in source is a new value here, not a hook in the pack.

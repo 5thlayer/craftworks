@@ -34,7 +34,7 @@ public final class ResearchdLocks {
 
     /** {@code ResearchdApi.isRecipeBlocked(Player, ResourceKey<Recipe<?>>)}, or null when unreachable. */
     private static MethodHandle isRecipeBlocked;
-    private static boolean looked;
+    private static volatile boolean looked;
 
     private ResearchdLocks() {
     }
@@ -49,22 +49,30 @@ public final class ResearchdLocks {
         }
     }
 
-    private static synchronized MethodHandle handle() {
+    /** The lookup, once. {@code looked} is written last, so a reader that sees it sees the handle too. */
+    private static MethodHandle handle() {
         if (looked) return isRecipeBlocked;
-        looked = true;
+        synchronized (ResearchdLocks.class) {
+            if (!looked) {
+                isRecipeBlocked = lookUp();
+                looked = true;
+            }
+        }
+        return isRecipeBlocked;
+    }
+
+    private static MethodHandle lookUp() {
         if (!ModList.get().isLoaded(MOD_ID)) {
             LOGGER.error("lockSources lists researchd, but Researchd is not installed: it locks nothing");
             return null;
         }
         try {
-            isRecipeBlocked = MethodHandles.publicLookup()
-                    .findStatic(Class.forName(API), "isRecipeBlocked",
-                            MethodType.methodType(boolean.class, Player.class, ResourceKey.class))
-                    .asType(MethodType.methodType(boolean.class, Player.class, ResourceKey.class));
+            return MethodHandles.publicLookup().findStatic(Class.forName(API), "isRecipeBlocked",
+                    MethodType.methodType(boolean.class, Player.class, ResourceKey.class));
         } catch (ReflectiveOperationException missing) {
             LOGGER.error("This Researchd has no {}.isRecipeBlocked(Player, ResourceKey): the researchd lock source locks nothing",
                     API, missing);
+            return null;
         }
-        return isRecipeBlocked;
     }
 }
