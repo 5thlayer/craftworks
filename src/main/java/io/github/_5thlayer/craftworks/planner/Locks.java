@@ -31,8 +31,9 @@ public final class Locks {
     }
 
     /**
-     * The Lock source with reasons. Every reasoned lock is asked, even of a recipe a plain one already
-     * locks, so a reason is not lost to whichever lock happened to answer first.
+     * The Lock source with reasons. Reasoned locks are asked first, in order, until one gives a reason,
+     * so a reason is not lost to a plain lock that happened to answer first; the plain locks are asked
+     * only when no reasoned lock said Locked.
      */
     public static <R> Reasoned<R> reasoned(List<? extends Predicate<String>> sources,
             List<? extends Predicate<String>> hooks,

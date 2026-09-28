@@ -86,7 +86,9 @@ public final class ResearchdLocks {
             }
             return Component.translatable("craftworks.plan.lock_reason.research", names);
         } catch (Throwable failure) {
-            throw new IllegalStateException("Researchd failed naming the research that unlocks " + recipe, failure);
+            // The lock itself was answered; a reason is only text, so its failure is not the plan's.
+            LOGGER.error("Researchd failed naming the research that unlocks {}: shown as plain Locked", recipe, failure);
+            return null;
         }
     }
 
