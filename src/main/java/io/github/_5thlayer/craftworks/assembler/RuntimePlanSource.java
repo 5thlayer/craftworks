@@ -10,6 +10,7 @@ import java.util.function.Predicate;
 
 import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.api.LockHooks;
+import io.github._5thlayer.craftworks.compat.researchd.ResearchdLocks;
 import io.github._5thlayer.craftworks.planner.AssemblingRecipe;
 import io.github._5thlayer.craftworks.planner.ItemBag;
 import io.github._5thlayer.craftworks.planner.Locks;
@@ -30,7 +31,7 @@ import net.minecraft.world.item.ItemStack;
  * multiset.
  *
  * <p>What is Locked is asked of the Lock source afresh on every resolve: the configured
- * {@code lockSource} and every {@link LockHooks} hook, for this player.
+ * {@code lockSources} and every {@link LockHooks} hook, for this player.
  */
 public final class RuntimePlanSource implements PlanSource {
 
@@ -56,16 +57,21 @@ public final class RuntimePlanSource implements PlanSource {
         for (LockHooks.LockHook hook : LockHooks.all()) {
             hooks.add(recipe -> hook.isLocked(player, Identifier.parse(recipe)));
         }
-        Predicate<String> locked = Locks.of(configuredSource(player), hooks);
+        Predicate<String> locked = Locks.of(configuredSources(player), hooks);
         return recipe -> Identifier.tryParse(recipe) == null || locked.test(recipe);
     }
 
-    private static Predicate<String> configuredSource(ServerPlayer player) {
-        return switch (CraftworksConfig.lockSource()) {
-            case none -> recipe -> false;
-            case recipeBook -> recipe -> !player.getRecipeBook()
-                    .contains(ResourceKey.create(Registries.RECIPE, Identifier.parse(recipe)));
-        };
+    /** Every source {@code lockSources} lists, for this player. */
+    private static List<Predicate<String>> configuredSources(ServerPlayer player) {
+        List<Predicate<String>> sources = new ArrayList<>();
+        for (CraftworksConfig.LockSource source : CraftworksConfig.lockSources()) {
+            sources.add(switch (source) {
+                case recipeBook -> recipe -> !player.getRecipeBook()
+                        .contains(ResourceKey.create(Registries.RECIPE, Identifier.parse(recipe)));
+                case researchd -> recipe -> ResearchdLocks.isLocked(player, Identifier.parse(recipe));
+            });
+        }
+        return sources;
     }
 
     /**

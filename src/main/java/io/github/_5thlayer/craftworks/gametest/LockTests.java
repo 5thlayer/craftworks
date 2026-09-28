@@ -3,6 +3,7 @@
 
 package io.github._5thlayer.craftworks.gametest;
 
+import java.util.List;
 import java.util.function.Predicate;
 
 import io.github._5thlayer.craftworks.Craftworks;
@@ -36,11 +37,12 @@ final class LockTests {
     static void register(CraftworksGameTests.Registrar tests) {
         LockHooks.register((player, recipe) -> player.entityTags().contains(LOCKED_BY_HOOK) && recipe.equals(SLIME_BALL));
         tests.test("the_recipe_book_and_a_hook_each_lock", 20, LockTests::bothLock);
+        tests.test("researchd_listed_but_not_installed_locks_nothing", 20, LockTests::researchdAbsent);
     }
 
     private static void bothLock(GameTestHelper helper) {
-        CraftworksConfig.LockSource before = CraftworksConfig.LOCK_SOURCE.get();
-        CraftworksConfig.LOCK_SOURCE.set(CraftworksConfig.LockSource.recipeBook);
+        List<? extends String> before = CraftworksConfig.LOCK_SOURCES.get();
+        CraftworksConfig.LOCK_SOURCES.set(List.of("recipeBook"));
         try {
             ServerPlayer player = AssemblerTests.playerHolding(helper, new ItemStack(Items.OAK_LOG, 2));
             player.addTag(LOCKED_BY_HOOK);
@@ -52,12 +54,12 @@ final class LockTests {
 
             // Config and hook read here and restored before returning: nothing else runs in between, since
             // a test body runs whole on the server thread.
-            CraftworksConfig.LOCK_SOURCE.set(CraftworksConfig.LockSource.none);
+            CraftworksConfig.LOCK_SOURCES.set(List.of());
             helper.assertTrue(RuntimePlanSource.lockedFor(player).test(SLIME_BALL.toString()),
                     "the hook alone did not lock the slime ball");
             helper.assertFalse(RuntimePlanSource.lockedFor(player).test(AssemblerTests.OAK_SAPLING.toString()),
-                    "with lockSource none the sapling is still Locked");
-            CraftworksConfig.LOCK_SOURCE.set(CraftworksConfig.LockSource.recipeBook);
+                    "with no lockSources the sapling is still Locked");
+            CraftworksConfig.LOCK_SOURCES.set(List.of("recipeBook"));
 
             player.removeTag(LOCKED_BY_HOOK);
             helper.assertFalse(RuntimePlanSource.lockedFor(player).test(SLIME_BALL.toString()),
@@ -67,7 +69,21 @@ final class LockTests {
             helper.assertTrue(PersonalAssembler.queueOf(player).isEmpty(), "a Locked recipe was queued");
             helper.assertTrue(AssemblerTests.count(player, Items.OAK_LOG) == 2, "a Locked recipe took its cost");
         } finally {
-            CraftworksConfig.LOCK_SOURCE.set(before);
+            CraftworksConfig.LOCK_SOURCES.set(before);
+        }
+        helper.succeed();
+    }
+
+    /** The game-test server has no Researchd, so listing it is logged and locks nothing, rather than crashing. */
+    private static void researchdAbsent(GameTestHelper helper) {
+        List<? extends String> before = CraftworksConfig.LOCK_SOURCES.get();
+        CraftworksConfig.LOCK_SOURCES.set(List.of("researchd"));
+        try {
+            ServerPlayer player = AssemblerTests.playerHolding(helper, ItemStack.EMPTY);
+            helper.assertFalse(RuntimePlanSource.lockedFor(player).test(AssemblerTests.OAK_SAPLING.toString()),
+                    "researchd locked a recipe with Researchd not installed");
+        } finally {
+            CraftworksConfig.LOCK_SOURCES.set(before);
         }
         helper.succeed();
     }

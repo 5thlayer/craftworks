@@ -3,38 +3,55 @@
 
 package io.github._5thlayer.craftworks;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /** Craftworks' server config, {@code craftworks-server.toml} in a world's {@code serverconfig}. */
 public final class CraftworksConfig {
 
-    /** What decides, besides any registered hook, whether a recipe is Locked for a player. */
+    /**
+     * What can lock a recipe for a player, besides any registered hook (CONTEXT.md, Lock source).
+     * Named as a pack author writes them in the TOML.
+     */
     public enum LockSource {
-        // Named as a pack author writes them in the TOML, which is what the spec gives.
-        /** Nothing: only hooks lock. */
-        none,
-        /** A recipe is Locked until it is in the player's vanilla recipe book. */
-        recipeBook
+        /** Locked until the recipe is in the player's vanilla recipe book. */
+        recipeBook,
+        /** Locked while Researchd says the recipe is blocked for the player's team (ADR-0010). */
+        researchd
     }
 
     static final ModConfigSpec SPEC;
 
-    public static final ModConfigSpec.EnumValue<LockSource> LOCK_SOURCE;
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> LOCK_SOURCES;
 
     static {
         var builder = new ModConfigSpec.Builder();
-        LOCK_SOURCE = builder
-                .comment("What locks a recipe for a player, on top of any hook a mod registers:",
-                        "none, or recipeBook (Locked until the recipe is in the player's recipe book).")
-                .defineEnum("lockSource", LockSource.none);
+        LOCK_SOURCES = builder
+                .comment("What locks a recipe for a player, on top of any hook a mod registers. A recipe is",
+                        "Locked if any listed source says so. Empty (the default) locks nothing.",
+                        "  recipeBook: Locked until the recipe is in the player's recipe book.",
+                        "  researchd:  Locked while Researchd blocks the recipe for the player's team.",
+                        "For example [\"researchd\"].")
+                .defineListAllowEmpty("lockSources", List.of(), () -> LockSource.researchd.name(),
+                        value -> value instanceof String name
+                                && Arrays.stream(LockSource.values()).anyMatch(source -> source.name().equals(name)));
         SPEC = builder.build();
     }
 
     private CraftworksConfig() {
     }
 
-    /** The configured source; {@link LockSource#NONE} until a world's config is loaded. */
-    public static LockSource lockSource() {
-        return SPEC.isLoaded() ? LOCK_SOURCE.get() : LockSource.none;
+    /** The configured sources, each once; none until a world's config is loaded. */
+    public static List<LockSource> lockSources() {
+        if (!SPEC.isLoaded()) return List.of();
+        List<LockSource> sources = new ArrayList<>();
+        for (String name : LOCK_SOURCES.get()) {
+            LockSource source = LockSource.valueOf(name);
+            if (!sources.contains(source)) sources.add(source);
+        }
+        return sources;
     }
 }

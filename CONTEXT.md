@@ -53,8 +53,8 @@ the pack author's to set.
 _Avoid_: preference, weight
 
 **Lock source**:
-What decides whether a recipe is **Locked** for a player: nothing or the vanilla recipe book, plus any
-hook a pack or another mod registers. A recipe is Locked if any of them says so; the Assembler asks, and
+What decides whether a recipe is **Locked** for a player: the sources a pack lists (the vanilla recipe
+book, Researchd), plus any hook a pack or another mod registers. A recipe is Locked if any of them says so; the Assembler asks, and
 never knows why.
 _Avoid_: research, unlock provider
 
