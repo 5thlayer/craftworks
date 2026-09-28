@@ -49,6 +49,10 @@ neoForge {
             programArguments.addAll '--username', 'Developer', '--uuid', '123456781234123412341234567890ab'
             // -PquickPlay=<save> opens that save straight from launch (the skillworks:quicklaunch skill).
             programArguments.addAll providers.gradleProperty('quickPlay').map { ['--quickPlaySingleplayer', it] }.orElse([])
+            // -PdevLockReason=<recipe id> locks that recipe with a reason, to see one on the Crafting Plan (#18).
+            if (providers.gradleProperty('devLockReason').isPresent()) {
+                systemProperty 'craftworks.devLockReason', providers.gradleProperty('devLockReason').get()
+            }
         }
         // Runs the Mod's game tests headless and exits, non-zero if any fails. 26.1 has no
         // namespace property, so the selector is what keeps vanilla's tests out.
@@ -108,6 +112,25 @@ dependencies {
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// Researchd on the dev runs, only with -PwithResearchd, to try the researchd Lock source for real
+// (ADR-0010). Its jar is in no public maven, only the local one its own build publishes to, so a clean
+// checkout and CI never ask for it. Porting-Dead-Libs, which it requires, comes with it.
+if (providers.gradleProperty('withResearchd').isPresent()) {
+    repositories {
+        mavenLocal {
+            // Porting-Dead-Libs is there as a bare jar, with no pom beside it.
+            metadataSources { mavenPom(); gradleMetadata(); artifact() }
+            content {
+                includeGroup 'com.portingdeadmods.researchd'
+                includeGroup 'com.github.Porting-Dead-Mods'
+            }
+        }
+    }
+    dependencies {
+        localRuntime 'com.portingdeadmods.researchd:researchd:1.3.4-26.1'
+    }
 }
 
 test {

@@ -4,10 +4,12 @@
 package io.github._5thlayer.craftworks.gametest;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import com.mojang.serialization.MapCodec;
 import io.github._5thlayer.craftworks.Craftworks;
+import io.github._5thlayer.craftworks.api.LockHooks;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -54,6 +56,20 @@ public final class CraftworksGameTests {
         modBus.addListener(CraftworksGameTests::registerTests);
         if (Boolean.getBoolean(DEV_PACK)) modBus.addListener(CraftworksGameTests::addDevPack);
         if (Boolean.getBoolean(GAMETEST_PACK)) modBus.addListener(CraftworksGameTests::addGameTestPack);
+        registerDevLockReason();
+    }
+
+    /**
+     * Locks the one recipe {@code -Dcraftworks.devLockReason} names, with a reason, so a dev client can see
+     * the Crafting Plan show one without Researchd (#18). Only the client run passes it, and only when asked.
+     */
+    private static void registerDevLockReason() {
+        String recipe = System.getProperty("craftworks.devLockReason");
+        if (recipe == null || recipe.isBlank()) return;
+        Identifier locked = Identifier.parse(recipe);
+        LockHooks.registerReasoned((player, asked) -> asked.equals(locked)
+                ? LockHooks.Lock.because(Component.literal("Research: Dev Test"))
+                : Optional.empty());
     }
 
     /**
