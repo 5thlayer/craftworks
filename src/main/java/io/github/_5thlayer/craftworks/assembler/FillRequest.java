@@ -46,4 +46,17 @@ public enum FillRequest {
             case PLAN -> 0;
         };
     }
+
+    /**
+     * How many crafts this request asked for, given what {@link #queueCount} decided: what the Crafting
+     * Plan names as not covered when nothing was queued. 0 for the plan itself, which refuses nothing.
+     */
+    public int asked(int queueCount) {
+        return switch (this) {
+            case ONE -> 1;
+            case FIVE -> 5;
+            case ALL -> Math.max(1, queueCount);
+            case PLAN -> 0;
+        };
+    }
 }

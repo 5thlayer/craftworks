@@ -71,4 +71,12 @@ class FillRequestTest {
     void thePlanQueuesNothingHoweverMuchIsAffordable() {
         assertEquals(0, FillRequest.PLAN.queueCount(50));
     }
+
+    @Test
+    void theRefusedCountIsWhatWasAskedFor() {
+        assertEquals(1, FillRequest.ONE.asked(0));
+        assertEquals(5, FillRequest.FIVE.asked(0));
+        assertEquals(1, FillRequest.ALL.asked(0), "all of nothing asks for at least one");
+        assertEquals(0, FillRequest.PLAN.asked(0), "the plan refuses nothing");
+    }
 }

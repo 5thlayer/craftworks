@@ -35,6 +35,7 @@ final class CraftingPlanTests {
         helper.assertTrue(AssemblerTests.count(player, Items.OAK_LOG) == 4, "opening the plan took items");
         helper.assertTrue(menu.display().complete(), "two logs of four should plan complete");
         helper.assertTrue(menu.buttons().allCount() == 2, "all should be 2 crafts, and is " + menu.buttons().allCount());
+        helper.assertTrue(menu.shortOf() == 0, "a middle click refused nothing");
         helper.succeed();
     }
 
@@ -48,6 +49,7 @@ final class CraftingPlanTests {
         helper.assertTrue(menu.display().missing().stream().map(ItemAmount::item).anyMatch(item -> item.contains("oak_log")),
                 "the plan should name the logs Missing, and lists " + menu.display().missing());
         helper.assertFalse(menu.buttons().one(), "+1 is lit with nothing affordable");
+        helper.assertTrue(menu.shortOf() == 5, "the plan should name the 5 refused, and names " + menu.shortOf());
         helper.succeed();
     }
 

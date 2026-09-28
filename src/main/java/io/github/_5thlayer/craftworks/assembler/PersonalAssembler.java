@@ -84,7 +84,7 @@ public final class PersonalAssembler {
     public static void fill(ServerPlayer player, Identifier recipe, FillRequest request) {
         int count = request.queueCount(PlanSource.ACTIVE.largestAffordable(player, recipe));
         if (count > 0 && craft(player, recipe, count)) return;
-        openPlan(player, recipe);
+        openPlan(player, recipe, request.asked(count));
     }
 
     /**
@@ -92,14 +92,20 @@ public final class PersonalAssembler {
      * shown is the price of the next {@code +1}.
      */
     public static void openPlan(ServerPlayer player, Identifier recipe) {
+        openPlan(player, recipe, 0);
+    }
+
+    /** As {@link #openPlan(ServerPlayer, Identifier)}, naming the {@code refused} crafts a request could not queue. */
+    private static void openPlan(ServerPlayer player, Identifier recipe, int refused) {
         PlanView view = planView(player, recipe);
         player.openMenu(
                 new SimpleMenuProvider(
-                        (id, inventory, who) -> new CraftingPlanMenu(id, view.display(), view.all()),
+                        (id, inventory, who) -> new CraftingPlanMenu(id, view.display(), view.all(), refused),
                         Component.translatable("craftworks.plan.title")),
                 buffer -> {
                     PlanDisplay.STREAM_CODEC.encode(buffer, view.display());
                     buffer.writeVarInt(view.all());
+                    buffer.writeVarInt(refused);
                 });
         sync(player);
     }

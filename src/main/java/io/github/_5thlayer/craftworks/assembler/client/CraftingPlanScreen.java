@@ -129,10 +129,13 @@ final class CraftingPlanScreen extends AbstractContainerScreen<CraftingPlanMenu>
         column(graphics, leftPos + 8 + width, "to_craft", display.toCraft(), ChatFormatting.WHITE, mouseX, mouseY);
         column(graphics, leftPos + 8 + 2 * width, "missing", display.missing(), ChatFormatting.RED, mouseX, mouseY);
         column(graphics, leftPos + 8 + 3 * width, "locked", display.locked(), ChatFormatting.GOLD, mouseX, mouseY);
-        if (!display.complete()) {
-            // Its own line above the buttons: a translated sentence of unknown width.
-            graphics.text(font, Component.translatable("craftworks.plan.reason." + reason(display))
-                            .withStyle(ChatFormatting.RED),
+        // Its own line above the buttons: a translated sentence of unknown width.
+        Component reason = !display.complete()
+                ? Component.translatable("craftworks.plan.reason." + reason(display))
+                : menu.shortOf() > 0 ? Component.translatable("craftworks.plan.reason.not_enough_for", menu.shortOf())
+                : null;
+        if (reason != null) {
+            graphics.text(font, reason.copy().withStyle(ChatFormatting.RED),
                     leftPos + 8, topPos + imageHeight - 38, 0xFFFF5555, false);
         }
         renderQueue(graphics);

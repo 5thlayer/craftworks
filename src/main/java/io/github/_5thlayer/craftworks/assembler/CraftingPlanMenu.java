@@ -25,19 +25,32 @@ public final class CraftingPlanMenu extends AbstractContainerMenu {
     private PlanDisplay display;
     private int largestAffordable;
 
-    public CraftingPlanMenu(int containerId, PlanDisplay display, int largestAffordable) {
+    /**
+     * How many crafts the request that opened the plan asked for and could not queue, or 0 when nothing
+     * was refused (a middle click). A plan is shown for one craft, so without this a +5 that one craft's
+     * items cover would open a complete plan with no word on why nothing was queued.
+     */
+    private final int refused;
+
+    public CraftingPlanMenu(int containerId, PlanDisplay display, int largestAffordable, int refused) {
         super(PersonalAssembler.CRAFTING_PLAN.get(), containerId);
         this.display = display;
         this.largestAffordable = largestAffordable;
+        this.refused = refused;
     }
 
     /** The client's side, from the opening data {@link PersonalAssembler#openPlan} writes. */
     public CraftingPlanMenu(int containerId, Inventory inventory, RegistryFriendlyByteBuf buffer) {
-        this(containerId, PlanDisplay.STREAM_CODEC.decode(buffer), buffer.readVarInt());
+        this(containerId, PlanDisplay.STREAM_CODEC.decode(buffer), buffer.readVarInt(), buffer.readVarInt());
     }
 
     public PlanDisplay display() {
         return display;
+    }
+
+    /** The refused count while the inventory still does not cover it, else 0: what "not enough" names. */
+    public int shortOf() {
+        return refused > Math.max(0, largestAffordable) ? refused : 0;
     }
 
     public CraftButtons buttons() {
