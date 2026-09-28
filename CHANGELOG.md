@@ -4,6 +4,9 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- The Crafting Plan: a middle click on Fill Recipe opens it, and so does a request your inventory can't cover, naming why (Missing, Locked or not enough). It lists what a craft consumes, the intermediates it makes, and what is Missing and Locked. +1, +5 and All queue straight away and grey out when your inventory can't cover them; the plan stays open and updates as you queue, showing the first queue rows. Close returns to the inventory. (#7)
+- Fill Recipe on a Locked recipe now opens the Crafting Plan showing it Locked, rather than queueing nothing silently. (#10)
+
 ## 0.1.0
 
 - Assembling recipes: a datapack can add `craftworks:assembling` recipes (ingredients with counts and tags, one result, `time` in ticks defaulting to 10, `priority` defaulting to 0). EMI shows them in an Assembling category. (#4)

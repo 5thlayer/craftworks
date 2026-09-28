@@ -7,11 +7,13 @@ import java.util.List;
 
 import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.assembler.AssemblerQueueView;
+import io.github._5thlayer.craftworks.assembler.PersonalAssembler;
 import io.github._5thlayer.craftworks.network.QueueSyncPacket;
 import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.common.NeoForge;
 
@@ -28,6 +30,7 @@ public final class AssemblerClient {
 
     public static void register(IEventBus modBus) {
         modBus.addListener(AssemblerClient::registerHud);
+        modBus.addListener(AssemblerClient::registerScreens);
         NeoForge.EVENT_BUS.addListener(AssemblerClient::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(InventoryGridBlank::onScreenOpening);
         NeoForge.EVENT_BUS.addListener(InventoryGridBlank::onScreenInit);
@@ -43,6 +46,10 @@ public final class AssemblerClient {
      */
     private static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         AssemblerQueueView.accept(new QueueSyncPacket(List.of(), false));
+    }
+
+    private static void registerScreens(RegisterMenuScreensEvent event) {
+        event.register(PersonalAssembler.CRAFTING_PLAN.get(), CraftingPlanScreen::new);
     }
 
     /** Above the hotbar in draw order, so the queue is not painted under it. */

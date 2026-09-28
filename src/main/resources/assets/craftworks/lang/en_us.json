@@ -8,5 +8,18 @@
   "craftworks.queue.and_more": "... and %s more",
   "craftworks.queue.cancel.left": "Left-click: cancel 1 craft",
   "craftworks.queue.cancel.right": "Right-click: cancel 5 crafts",
-  "craftworks.queue.cancel.shift": "Shift-click: cancel all"
+  "craftworks.queue.cancel.shift": "Shift-click: cancel all",
+  "craftworks.plan.title": "Crafting Plan",
+  "craftworks.plan.consume": "Consume",
+  "craftworks.plan.to_craft": "To craft",
+  "craftworks.plan.missing": "Missing",
+  "craftworks.plan.locked": "Locked",
+  "craftworks.plan.all": "All",
+  "craftworks.plan.close": "Close",
+  "craftworks.plan.queue": "Queue",
+  "craftworks.plan.queue_empty": "Nothing queued",
+  "craftworks.plan.reason.locked": "Can't start: a recipe it needs is Locked.",
+  "craftworks.plan.reason.missing": "Can't start: something it needs is Missing.",
+  "craftworks.plan.reason.not_enough": "Can't start: not enough items.",
+  "craftworks.plan.reason.unplannable": "Can't start: this recipe can't be planned."
 }

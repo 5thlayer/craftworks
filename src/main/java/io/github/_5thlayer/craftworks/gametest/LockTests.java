@@ -9,6 +9,7 @@ import java.util.function.Predicate;
 import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.api.LockHooks;
+import io.github._5thlayer.craftworks.assembler.CraftingPlanMenu;
 import io.github._5thlayer.craftworks.assembler.FillRequest;
 import io.github._5thlayer.craftworks.assembler.PersonalAssembler;
 import io.github._5thlayer.craftworks.assembler.RuntimePlanSource;
@@ -68,6 +69,9 @@ final class LockTests {
             PersonalAssembler.fill(player, AssemblerTests.OAK_SAPLING, FillRequest.ONE);
             helper.assertTrue(PersonalAssembler.queueOf(player).isEmpty(), "a Locked recipe was queued");
             helper.assertTrue(AssemblerTests.count(player, Items.OAK_LOG) == 2, "a Locked recipe took its cost");
+            helper.assertTrue(player.containerMenu instanceof CraftingPlanMenu menu && !menu.display().locked().isEmpty()
+                            && menu.display().missing().isEmpty(),
+                    "Fill Recipe on a Locked recipe should open the plan showing it Locked, not Missing");
         } finally {
             CraftworksConfig.LOCK_SOURCES.set(before);
         }

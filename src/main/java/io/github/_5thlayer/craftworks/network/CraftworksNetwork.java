@@ -16,7 +16,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 public final class CraftworksNetwork {
 
     /** Bumped when a payload's shape changes; clients on the old shape are refused, not confused. */
-    private static final String VERSION = "2";
+    private static final String VERSION = "3";
 
     private CraftworksNetwork() {
     }
@@ -33,6 +33,8 @@ public final class CraftworksNetwork {
         registrar.playToClient(QueueSyncPacket.TYPE, QueueSyncPacket.STREAM_CODEC, QueueSyncPacket::handle);
         registrar.playToServer(FillRecipePacket.TYPE, FillRecipePacket.STREAM_CODEC, FillRecipePacket::handle);
         registrar.playToServer(PlanCancelPacket.TYPE, PlanCancelPacket.STREAM_CODEC, PlanCancelPacket::handle);
+        registrar.playToServer(PlanCraftPacket.TYPE, PlanCraftPacket.STREAM_CODEC, PlanCraftPacket::handle);
+        registrar.playToClient(PlanUpdatePacket.TYPE, PlanUpdatePacket.STREAM_CODEC, PlanUpdatePacket::handle);
     }
 
     /**

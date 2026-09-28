@@ -9,16 +9,22 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import io.github._5thlayer.craftworks.Craftworks;
+import io.github._5thlayer.craftworks.network.PlanUpdatePacket;
 import io.github._5thlayer.craftworks.network.QueueSyncPacket;
 import io.github._5thlayer.craftworks.planner.AssemblerCodecs;
 import io.github._5thlayer.craftworks.planner.AssemblerQueue;
 import io.github._5thlayer.craftworks.planner.ItemAmount;
 import io.github._5thlayer.craftworks.planner.Resolver;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
+import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
@@ -47,11 +53,19 @@ public final class PersonalAssembler {
                     .serialize(AssemblerCodecs.QUEUE.fieldOf("queue"))
                     .build());
 
+    private static final DeferredRegister<MenuType<?>> MENUS =
+            DeferredRegister.create(Registries.MENU, Craftworks.MOD_ID);
+
+    /** The Crafting Plan (#7). */
+    public static final Supplier<MenuType<CraftingPlanMenu>> CRAFTING_PLAN =
+            MENUS.register("crafting_plan", () -> IMenuTypeExtension.create(CraftingPlanMenu::new));
+
     private PersonalAssembler() {
     }
 
     public static void register(IEventBus modBus) {
         ATTACHMENTS.register(modBus);
+        MENUS.register(modBus);
         AssemblerTicker.register();
     }
 
@@ -60,15 +74,54 @@ public final class PersonalAssembler {
     }
 
     /**
-     * EMI's {@code + Fill Recipe} on the inventory screen: queue what was asked (ADR-0004).
+     * EMI's {@code + Fill Recipe} on the inventory screen: queue what was asked, or show why not
+     * (ADR-0004, #7).
      *
      * <p>The count is decided here from the Resolver's ceiling, never taken from the client. A request
-     * the inventory does not cover, a Missing leaf and a Locked recipe all afford nothing, and queue
-     * nothing. Opening the Crafting Plan for them instead is the Crafting Plan screen's (#7).
+     * the inventory does not cover (a Missing leaf and a Locked recipe afford nothing) opens the
+     * Crafting Plan, and so does a queue that loses a race with the inventory, and a middle click.
      */
     public static void fill(ServerPlayer player, Identifier recipe, FillRequest request) {
         int count = request.queueCount(PlanSource.ACTIVE.largestAffordable(player, recipe));
-        if (count > 0) craft(player, recipe, count);
+        if (count > 0 && craft(player, recipe, count)) return;
+        openPlan(player, recipe);
+    }
+
+    /**
+     * The Crafting Plan for one craft, and the ceiling beside it (#7). Opening queues nothing; the plan
+     * shown is the price of the next {@code +1}.
+     */
+    public static void openPlan(ServerPlayer player, Identifier recipe) {
+        PlanView view = planView(player, recipe);
+        player.openMenu(
+                new SimpleMenuProvider(
+                        (id, inventory, who) -> new CraftingPlanMenu(id, view.display(), view.all()),
+                        Component.translatable("craftworks.plan.title")),
+                buffer -> {
+                    PlanDisplay.STREAM_CODEC.encode(buffer, view.display());
+                    buffer.writeVarInt(view.all());
+                });
+        sync(player);
+    }
+
+    /**
+     * Re-sends the open Crafting Plan, if one is open: after a press and on the queue's sync beat, since
+     * a running queue spends and returns items, and a lit {@code +5} the inventory stopped covering would
+     * be a promise broken.
+     */
+    public static void refreshPlan(ServerPlayer player) {
+        if (!(player.containerMenu instanceof CraftingPlanMenu menu)) return;
+        PlanView view = planView(player, menu.display().recipe());
+        PacketDistributor.sendToPlayer(player, new PlanUpdatePacket(menu.containerId, view.display(), view.all()));
+    }
+
+    /** What the screen shows, resolved one way for the open and every update so the two cannot drift. */
+    private static PlanView planView(ServerPlayer player, Identifier recipe) {
+        return new PlanView(PlanSource.ACTIVE.resolve(player, recipe, 1).display(),
+                PlanSource.ACTIVE.largestAffordable(player, recipe));
+    }
+
+    private record PlanView(PlanDisplay display, int all) {
     }
 
     /**
@@ -88,6 +141,7 @@ public final class PersonalAssembler {
             if (queued) player.setData(QUEUE, queue);
         }
         sync(player);
+        refreshPlan(player);
         return queued;
     }
 

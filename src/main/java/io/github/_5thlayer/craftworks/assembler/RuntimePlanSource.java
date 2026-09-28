@@ -38,8 +38,10 @@ public final class RuntimePlanSource implements PlanSource {
     @Override
     public ResolvedPlan resolve(ServerPlayer player, Identifier recipe, int crafts) {
         Resolver.Resolution resolution = resolverFor(player).resolve(recipe.toString(), crafts, inventoryOf(player));
-        if (!resolution.complete()) return new ResolvedPlan(null);
-        return new ResolvedPlan(resolution.toPlan(UUID.randomUUID(), rootItemOf(player, recipe), crafts));
+        PlanDisplay display = new PlanDisplay(recipe, resolution.rawCost(), resolution.toCraft(),
+                resolution.missing(), resolution.locked(), resolution.complete());
+        if (!resolution.complete()) return new ResolvedPlan(display, null);
+        return new ResolvedPlan(display, resolution.toPlan(UUID.randomUUID(), rootItemOf(player, recipe), crafts));
     }
 
     @Override

@@ -38,6 +38,11 @@ final class AssemblerTicker {
 
     private static void onPlayerTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        // The plan re-resolves on the sync beat whether or not the queue is running: the player can pick
+        // items up with it open, and a +5 the inventory newly covers should light.
+        if (player.containerMenu instanceof CraftingPlanMenu && player.tickCount % SYNC_INTERVAL_TICKS == 0) {
+            PersonalAssembler.refreshPlan(player);
+        }
         AssemblerQueue queue = PersonalAssembler.queueOf(player);
         boolean wasEmpty = queue.isEmpty();
         PersonalAssembler.tick(player);

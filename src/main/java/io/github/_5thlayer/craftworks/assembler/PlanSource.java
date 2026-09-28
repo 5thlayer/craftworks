@@ -28,8 +28,11 @@ public interface PlanSource {
      */
     int largestAffordable(ServerPlayer player, Identifier recipe);
 
-    /** A resolution. {@code plan} is null exactly when the plan is incomplete, which is what queueing refuses on. */
-    record ResolvedPlan(CraftingPlan plan) {
+    /**
+     * A resolution: what the Crafting Plan shows, and the plan to queue. {@code plan} is null exactly
+     * when the plan is incomplete, which is what queueing refuses on.
+     */
+    record ResolvedPlan(PlanDisplay display, CraftingPlan plan) {
 
         public boolean complete() {
             return plan != null;
