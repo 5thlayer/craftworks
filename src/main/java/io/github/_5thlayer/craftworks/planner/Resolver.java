@@ -111,7 +111,8 @@ public final class Resolver {
      */
     private final class Walk {
 
-        // Not final: a route tried and abandoned puts every one of them back (see Mark).
+        // Not final: a route tried and abandoned puts every one of them back (see Mark). So never hold
+        // one in a local across a recursive take: after a restore it would be a discarded bag.
         private ItemBag available;
         private ItemBag surplus = new ItemBag();
         private ItemBag rawCost = new ItemBag();
@@ -205,7 +206,7 @@ public final class Resolver {
             AssemblingRecipe maker = null;
             String blocked = null;
             for (String item : ingredient.items()) {
-                AssemblingRecipe route = firstRoute(item);
+                AssemblingRecipe route = topRoute(item);
                 if (route == null) continue;
                 if (Resolver.this.locked.test(route.id())) {
                     if (blocked == null) blocked = item;
@@ -279,7 +280,7 @@ public final class Resolver {
         }
 
         /** The route reported when none resolves: the item's top route, highest priority first. */
-        private AssemblingRecipe firstRoute(String item) {
+        private AssemblingRecipe topRoute(String item) {
             List<AssemblingRecipe> routes = recipes.routes(item);
             return routes.isEmpty() ? null : routes.get(0);
         }
