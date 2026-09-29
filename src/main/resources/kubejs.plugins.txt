@@ -1,0 +1,1 @@
+io.github._5thlayer.craftworks.compat.kubejs.CraftworksKubeJSPlugin

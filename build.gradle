@@ -30,7 +30,17 @@ def emi = 'curse.maven:emi-unofficial-port-1544558:8630349'
 repositories {
     // EMI for 26.1 is an unofficial port, published on CurseForge only.
     maven { url = 'https://cursemaven.com' }
+    // KubeJS and Rhino, its script engine.
+    maven {
+        url = 'https://maven.latvian.dev/releases'
+        content { includeGroup 'dev.latvian.mods'; includeGroup 'dev.latvian.apps' }
+    }
 }
+
+// KubeJS for 26.1. Compiled against for its plugin (compat/kubejs), which only KubeJS ever loads.
+// 8.0.3 is the last that runs on NeoForge 26.1.2.77; later ones ask for .84. Rhino is the one it names.
+def kubejs = 'dev.latvian.mods:kubejs-neoforge:26.1.2-8.0.3'
+def rhino = 'dev.latvian.mods:rhino:2101.2.7-build.85'
 
 neoForge {
     version = neoforge_version
@@ -159,6 +169,10 @@ dependencies {
     // keeps the planner core free of it. The version is the one Minecraft 26.1.2 ships.
     testImplementation 'com.mojang:datafixerupper:9.0.19'
 
+    // KubeJS is optional to players (#11). Its jar and Rhino, which the plugin's event types extend.
+    compileOnly(kubejs) { transitive = false }
+    compileOnly(rhino) { transitive = false }
+
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -181,6 +195,29 @@ if (providers.gradleProperty('withResearchd').isPresent()) {
     dependencies {
         localRuntime 'com.portingdeadmods.researchd:researchd:1.3.4-26.1'
     }
+}
+
+// KubeJS on the dev runs, only with -PwithKubeJS, to try the recipe schema and the lock event for real
+// (#11). The sample scripts in kubejs/ are copied into each run's game directory, so the client and the
+// game tests read the same ones; the game tests then run the KubeJS tests too.
+if (providers.gradleProperty('withKubeJS').isPresent()) {
+    dependencies {
+        // Its gif and web-server libraries ride inside its jar, and the gif one is on no maven here.
+        localRuntime(kubejs) { exclude group: 'com.github.rtyley'; exclude group: 'dev.latvian.apps' }
+    }
+    neoForge.runs.configureEach {
+        systemProperty 'craftworks.kubejsTests', 'true'
+    }
+    def copyKubeJSScripts = { String name, String gameDir ->
+        tasks.register(name, Copy) {
+            from 'kubejs'
+            into "$gameDir/kubejs"
+        }
+    }
+    def toClient = copyKubeJSScripts('copyKubeJSScriptsToClient', 'run')
+    def toGameTests = copyKubeJSScripts('copyKubeJSScriptsToGameTests', 'run/gametest')
+    tasks.matching { it.name == 'runClient' }.configureEach { dependsOn toClient }
+    tasks.matching { it.name == 'runGameTestServer' }.configureEach { dependsOn toGameTests }
 }
 
 test {

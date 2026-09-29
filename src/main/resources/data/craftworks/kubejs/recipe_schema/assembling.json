@@ -1,0 +1,30 @@
+{
+	"keys": [
+		{
+			"name": "result",
+			"role": "output",
+			"type": "item_stack"
+		},
+		{
+			"name": "ingredients",
+			"role": "input",
+			"type": {
+				"type": "list",
+				"component": "sized_ingredient"
+			}
+		},
+		{
+			"name": "time",
+			"role": "other",
+			"type": "ticks",
+			"optional": 10
+		},
+		{
+			"name": "priority",
+			"role": "other",
+			"type": "int",
+			"optional": 0
+		}
+	],
+	"unique": ["result"]
+}

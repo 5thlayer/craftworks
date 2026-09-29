@@ -28,6 +28,15 @@ versionRange = "[${minecraft_version}]"
 ordering = "NONE"
 side = "BOTH"
 
+# Scripts get an Assembling recipe schema and a lock event (#11). Not required: Craftworks works without it,
+# and its plugin is only loaded by KubeJS. The range is the KubeJS the plugin is compiled against.
+[[dependencies.${mod_id}]]
+modId = "kubejs"
+type = "optional"
+versionRange = "[26.1.2-8.0.3,)"
+ordering = "NONE"
+side = "BOTH"
+
 # Removes the inventory's 2x2 crafting grid, keeping its slots (ADR-0007).
 [[mixins]]
 config = "craftworks.mixins.json"

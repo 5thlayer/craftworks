@@ -1,6 +1,6 @@
 ---
 status: accepted
-amends: [10, 18]
+amends: [10, 18, 11]
 ---
 
 # Researchd is a Lock source a pack names in config
@@ -46,3 +46,11 @@ knows why in any way it acts on. The `researchd` source fills the reason from
 handle as `isRecipeBlocked` is. It names the research the recipe sits under, not necessarily the next
 step: parents are not filtered. An empty answer (no team, or stale team data) or a Researchd without
 these calls falls back to plain "Locked"; the missing calls are logged once.
+
+**Amended by #11: KubeJS scripts lock through an event.** With KubeJS installed, Craftworks' own KubeJS
+plugin registers one `ReasonedLockHook` that posts `CraftworksEvents.lock` (a server-script event) for
+each recipe asked about; a script calls `event.lock()` or `event.lock(reason)`. It is a hook, not a
+`lockSources` value: it locks only what a script says, so there is nothing to switch on. A script that
+throws fails the resolve, as a throwing Researchd call does. The plugin is found by KubeJS through
+`kubejs.plugins.txt`, so without KubeJS no class of it loads. This replaces the startup script calling
+`LockHooks.register` considered above.
