@@ -1,0 +1,8 @@
+{
+  "type": "craftworks:assembling",
+  "ingredients": [
+    { "ingredient": "minecraft:bamboo", "count": 2 }
+  ],
+  "result": "minecraft:stick",
+  "priority": 1
+}

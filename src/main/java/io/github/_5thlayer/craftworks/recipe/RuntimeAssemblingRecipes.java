@@ -118,7 +118,8 @@ public final class RuntimeAssemblingRecipes {
             return null;
         }
         return new io.github._5thlayer.craftworks.planner.AssemblingRecipe(
-                id, ingredients, new ItemAmount(result, recipe.result().count()), recipe.time());
+                id, ingredients, new ItemAmount(result, recipe.result().count()), recipe.time(),
+                recipe.priority());
     }
 
     /**

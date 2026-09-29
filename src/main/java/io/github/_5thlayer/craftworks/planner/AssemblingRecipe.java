@@ -6,14 +6,19 @@ package io.github._5thlayer.craftworks.planner;
 import java.util.List;
 
 /**
- * An Assembling recipe as the Resolver sees it: what it eats, the one item it makes, and how long one
- * craft takes in ticks.
+ * An Assembling recipe as the Resolver sees it: what it eats, the one item it makes, how long one
+ * craft takes in ticks, and its Route priority among the recipes making the same item.
  *
  * <p>Not the recipe the recipe manager holds: the Resolver plans over a set of these, and keeping the
  * set free of any Minecraft type is what lets the recursion be checked by an ordinary unit test. The
  * Minecraft side reads each loaded {@code craftworks:assembling} recipe into one of these.
  */
-public record AssemblingRecipe(String id, List<Ingredient> ingredients, ItemAmount result, int time) {
+public record AssemblingRecipe(String id, List<Ingredient> ingredients, ItemAmount result, int time, int priority) {
+
+    /** A recipe at the default Route priority, 0. */
+    public AssemblingRecipe(String id, List<Ingredient> ingredients, ItemAmount result, int time) {
+        this(id, ingredients, result, time, 0);
+    }
 
     public AssemblingRecipe {
         if (id == null || id.isBlank()) throw new IllegalArgumentException("a recipe needs an id");

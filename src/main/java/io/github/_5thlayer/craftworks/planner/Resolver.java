@@ -111,12 +111,13 @@ public final class Resolver {
      */
     private final class Walk {
 
-        private final ItemBag available;
-        private final ItemBag surplus = new ItemBag();
-        private final ItemBag rawCost = new ItemBag();
-        private final ItemBag missing = new ItemBag();
-        private final ItemBag locked = new ItemBag();
-        private final ItemBag toCraft = new ItemBag();
+        // Not final: a route tried and abandoned puts every one of them back (see Mark).
+        private ItemBag available;
+        private ItemBag surplus = new ItemBag();
+        private ItemBag rawCost = new ItemBag();
+        private ItemBag missing = new ItemBag();
+        private ItemBag locked = new ItemBag();
+        private ItemBag toCraft = new ItemBag();
         private final List<CraftStep> steps = new ArrayList<>();
 
         private Walk(ItemBag available) {
@@ -185,6 +186,22 @@ public final class Resolver {
             owed -= drawAcross(available, ingredient, owed, drawn, true);
             if (owed <= 0) return drawn;
 
+            // Route priority: the first route, in the set's order, whose whole subtree resolves. A
+            // route is tried against what remains and, if anything under it comes up Missing or
+            // Locked, rolled back whole, so an abandoned route never spends what a later step needs.
+            for (String item : ingredient.items()) {
+                for (AssemblingRecipe route : recipes.routes(item)) {
+                    if (Resolver.this.locked.test(route.id()) || ancestors.contains(route.id())) continue;
+                    Mark mark = new Mark();
+                    if (make(route, owed, ancestors) && mark.clean()) {
+                        drawn.add(new ItemAmount(item, owed));
+                        return drawn;
+                    }
+                    mark.restore();
+                }
+            }
+
+            // No route resolves: the plan reports the top route's Missing and Locked, walked again.
             AssemblingRecipe maker = null;
             String blocked = null;
             for (String item : ingredient.items()) {
@@ -211,6 +228,12 @@ public final class Resolver {
                 return drawn;
             }
 
+            if (make(maker, owed, ancestors)) drawn.add(new ItemAmount(maker.result().item(), owed));
+            return drawn;
+        }
+
+        /** Crafts {@code owed} of what {@code maker} makes and takes it out of the surplus, or says it could not. */
+        private boolean make(AssemblingRecipe maker, int owed, List<String> ancestors) {
             String makeable = maker.result().item();
             int runs = ceilDiv(owed, maker.result().count());
             // Refused, not clamped. Clamping would make fewer intermediates than the parent step's
@@ -219,14 +242,43 @@ public final class Resolver {
             // Missing puts the refusal in front of the player, where every other shortfall goes.
             if (runs > MAX_CRAFTS || !craft(maker, runs, ancestors)) {
                 missing.add(makeable, owed);
-                return drawn;
+                return false;
             }
             surplus.remove(makeable, owed);
-            drawn.add(new ItemAmount(makeable, owed));
-            return drawn;
+            return true;
         }
 
-        /** The route the Resolver plans an item with: its first, until Route priority brings fallback. */
+        /**
+         * The walk as it stood before a route was tried: enough to put it back exactly if the route
+         * turns out to leave something Missing or Locked.
+         */
+        private final class Mark {
+
+            private final ItemBag available = Walk.this.available.copy();
+            private final ItemBag surplus = Walk.this.surplus.copy();
+            private final ItemBag rawCost = Walk.this.rawCost.copy();
+            private final ItemBag missing = Walk.this.missing.copy();
+            private final ItemBag locked = Walk.this.locked.copy();
+            private final ItemBag toCraft = Walk.this.toCraft.copy();
+            private final int steps = Walk.this.steps.size();
+
+            /** Whether nothing has come up Missing or Locked since the mark. */
+            private boolean clean() {
+                return missing.equals(Walk.this.missing) && locked.equals(Walk.this.locked);
+            }
+
+            private void restore() {
+                Walk.this.available = available;
+                Walk.this.surplus = surplus;
+                Walk.this.rawCost = rawCost;
+                Walk.this.missing = missing;
+                Walk.this.locked = locked;
+                Walk.this.toCraft = toCraft;
+                Walk.this.steps.subList(steps, Walk.this.steps.size()).clear();
+            }
+        }
+
+        /** The route reported when none resolves: the item's top route, highest priority first. */
         private AssemblingRecipe firstRoute(String item) {
             List<AssemblingRecipe> routes = recipes.routes(item);
             return routes.isEmpty() ? null : routes.get(0);

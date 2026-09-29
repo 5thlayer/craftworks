@@ -74,8 +74,9 @@ public final class CraftworksGameTests {
 
     /**
      * A dev world's Assembling recipes, in {@code dev_pack/} in the jar: vanilla's flint and steel at its
-     * own id, until the built-in vanilla pack exists. Only the dev runs set {@value #DEV_PACK}, so a
-     * player's world never sees it.
+     * own id, until the built-in vanilla pack exists, and two stick routes at different Route priorities
+     * (planks over bamboo) to show the fallback. Only the dev runs set {@value #DEV_PACK}, so a player's
+     * world never sees it.
      */
     private static void addDevPack(AddPackFindersEvent event) {
         event.addPackFinders(id("dev_pack"), PackType.SERVER_DATA, Component.literal("Craftworks dev recipes"),

@@ -37,4 +37,9 @@ final class TestBags {
     static AssemblingRecipe recipe(String id, String result, int count, int time, Ingredient... ingredients) {
         return new AssemblingRecipe(id, List.of(ingredients), new ItemAmount(result, count), time);
     }
+
+    /** An Assembling recipe at a Route priority: {@code route("sticks_from_bamboo", "stick", 1, 5, ...)}. */
+    static AssemblingRecipe route(String id, String result, int count, int priority, Ingredient... ingredients) {
+        return new AssemblingRecipe(id, List.of(ingredients), new ItemAmount(result, count), 10, priority);
+    }
 }

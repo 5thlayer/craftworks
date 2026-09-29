@@ -1,0 +1,8 @@
+{
+  "type": "craftworks:assembling",
+  "ingredients": [
+    { "ingredient": "#minecraft:planks", "count": 2 }
+  ],
+  "result": { "id": "minecraft:stick", "count": 4 },
+  "priority": 5
+}

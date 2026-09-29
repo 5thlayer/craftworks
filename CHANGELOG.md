@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- Several Assembling recipes can make the same item. The Assembler takes the highest `priority` route that resolves with nothing Missing or Locked, ties going to the lowest recipe id, and falls back down the list: sticks come from bamboo when there are no planks. (#8)
+
 ## 0.1.3
 
 - The jar carries its MIT licence.

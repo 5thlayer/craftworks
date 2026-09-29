@@ -4,6 +4,7 @@
 package io.github._5thlayer.craftworks.planner;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,9 +14,9 @@ import java.util.Set;
  * The Assembling recipes, in the two directions the Resolver walks them: by recipe id, which is what a
  * request names, and by the item a recipe makes, which is what chain-crafting needs.
  *
- * <p>An item's recipes are its routes, in the order they were added. The Resolver plans with the
- * first route only, PlanetaryFactory's one-recipe-per-item rule; Route priority and fallback replace
- * that ordering and that rule (ADR-0006).
+ * <p>An item's recipes are its routes, highest Route priority first and, among equals, lowest recipe id
+ * first: the order the Resolver tries them in. This replaces PlanetaryFactory's one-recipe-per-item
+ * rule (ADR-0006).
  */
 public final class AssemblingRecipeSet {
 
@@ -42,7 +43,7 @@ public final class AssemblingRecipeSet {
         return byId.get(recipeId);
     }
 
-    /** The recipes that make this item, preferred first; empty when nothing makes it, a plan's leaf. */
+    /** The recipes that make this item, highest priority then lowest id first; empty when nothing makes it, a plan's leaf. */
     public List<AssemblingRecipe> routes(String item) {
         return byResult.getOrDefault(item, List.of());
     }
@@ -55,6 +56,9 @@ public final class AssemblingRecipeSet {
     public Set<String> ids() {
         return byId.keySet();
     }
+
+    private static final Comparator<AssemblingRecipe> PREFERRED_FIRST =
+            Comparator.comparing(AssemblingRecipe::priority, Comparator.reverseOrder()).thenComparing(AssemblingRecipe::id);
 
     public static final class Builder {
 
@@ -73,7 +77,7 @@ public final class AssemblingRecipeSet {
 
         public AssemblingRecipeSet build() {
             Map<String, List<AssemblingRecipe>> routes = new LinkedHashMap<>();
-            byResult.forEach((item, recipes) -> routes.put(item, List.copyOf(recipes)));
+            byResult.forEach((item, recipes) -> routes.put(item, recipes.stream().sorted(PREFERRED_FIRST).toList()));
             return new AssemblingRecipeSet(Map.copyOf(byId), Map.copyOf(routes));
         }
     }
