@@ -45,6 +45,13 @@ a craft time and a **Route priority**. Items only, never fluids. An ingredient's
 bucket) returns to the inventory when its step completes; a plan never counts on it.
 _Avoid_: hand recipe, admitted recipe
 
+**Converted recipe**:
+An Assembling recipe Craftworks makes from a shaped or shapeless crafting recipe, at that recipe's own id,
+replacing it: its slots become a bag of ingredients, with the default craft time and Route priority.
+Vanilla's come built in; every other mod's are converted as recipes load, unless the pack excludes them or
+already has an Assembling recipe at that id.
+_Avoid_: imported recipe, ported recipe
+
 **Route priority**:
 The number that decides which of several Assembling recipes makes an item: the highest-priority route the
 player can resolve, with nothing Missing or Locked, wins; ties go to the lowest recipe id. Only when no
