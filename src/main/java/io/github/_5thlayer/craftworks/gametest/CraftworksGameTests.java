@@ -35,7 +35,6 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  */
 public final class CraftworksGameTests {
 
-    private static final String DEV_PACK = "craftworks.devPack";
     private static final String GAMETEST_PACK = "craftworks.gametestPack";
 
     private static final Identifier PLATFORM = id("gametest/platform");
@@ -54,7 +53,6 @@ public final class CraftworksGameTests {
         TEST_TYPES.register(modBus);
         // Posted only when game tests are enabled, so a production server never registers the tests.
         modBus.addListener(CraftworksGameTests::registerTests);
-        if (Boolean.getBoolean(DEV_PACK)) modBus.addListener(CraftworksGameTests::addDevPack);
         if (Boolean.getBoolean(GAMETEST_PACK)) modBus.addListener(CraftworksGameTests::addGameTestPack);
         registerDevLockReason();
     }
@@ -70,17 +68,6 @@ public final class CraftworksGameTests {
         LockHooks.registerReasoned((player, asked) -> asked.equals(locked)
                 ? LockHooks.Lock.because(Component.literal("Research: Dev Test"))
                 : Optional.empty());
-    }
-
-    /**
-     * A dev world's Assembling recipes, in {@code dev_pack/} in the jar: vanilla's flint and steel at its
-     * own id, until the built-in vanilla pack exists, and two stick routes at different Route priorities
-     * (planks over bamboo) to show the fallback. Only the dev runs set {@value #DEV_PACK}, so a player's
-     * world never sees it.
-     */
-    private static void addDevPack(AddPackFindersEvent event) {
-        event.addPackFinders(id("dev_pack"), PackType.SERVER_DATA, Component.literal("Craftworks dev recipes"),
-                PackSource.BUILT_IN, true, Pack.Position.TOP);
     }
 
     /**
@@ -102,6 +89,11 @@ public final class CraftworksGameTests {
         InventoryScreenTests.register(tests);
         LockTests.register(tests);
         CraftingPlanTests.register(tests);
+        VanillaPackTests.register(tests);
+        // Its own environment, so its own batch: it reloads the server's recipes, which no test running
+        // beside it could stand.
+        var reloading = event.registerEnvironment(id("reloads_recipes"), new TestEnvironmentDefinition.AllOf(List.of()));
+        VanillaPackTests.registerReloading(new Registrar(event, reloading));
     }
 
     private static Identifier id(String path) {

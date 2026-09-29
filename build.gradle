@@ -40,8 +40,6 @@ neoForge {
         // production never shows.
         configureEach {
             systemProperty 'neoforge.warnings.onlyin.hide', 'true'
-            // A dev world's Assembling recipes, a datapack in the jar that only the dev runs turn on.
-            systemProperty 'craftworks.devPack', 'true'
         }
         // The same player every launch, so a dev save keeps its inventory and position.
         client {
@@ -92,6 +90,58 @@ tasks.named('runGameTestServer') {
         if (failed) throw new GradleException("$failed of ${cases.size()} game tests failed")
     }
 }
+
+// The built-in vanilla pack (#9): vanilla's crafting recipes as Assembling recipes at their own ids,
+// generated from the game jar and never written by hand. Shaped and shapeless recipes are read as bags
+// of ingredients; every other type, the special recipes and transmutes among them, has no fixed bag and
+// result and stays at the crafting table.
+def vanillaPackDir = layout.buildDirectory.dir('generated/vanillaPack')
+def generateVanillaPack = tasks.register('generateVanillaPack') {
+    def gameJar = tasks.named('createMinecraftArtifacts').flatMap { it.gameJarArtifact }
+    inputs.file gameJar
+    outputs.dir vanillaPackDir
+    doLast {
+        def root = vanillaPackDir.get().dir('vanilla_pack').asFile
+        project.delete(root)
+        def recipes = new File(root, 'data/minecraft/recipe')
+        recipes.mkdirs()
+        def slurper = new groovy.json.JsonSlurper()
+        def converted = 0
+        new java.util.zip.ZipFile(gameJar.get().asFile).withCloseable { zip ->
+            zip.entries().findAll { !it.directory && it.name ==~ 'data/minecraft/recipe/.+\\.json' }.each { entry ->
+                def recipe = slurper.parse(zip.getInputStream(entry), 'UTF-8')
+                List<Object> slots
+                switch (recipe.type) {
+                    case 'minecraft:crafting_shapeless':
+                        slots = recipe.ingredients
+                        break
+                    case 'minecraft:crafting_shaped':
+                        slots = recipe.pattern.join('').toList().findAll { it != ' ' }.collect { recipe.key[it] }
+                        break
+                    default:
+                        return
+                }
+                // One entry per distinct ingredient, counted: a bag, not a grid.
+                def bag = new LinkedHashMap<String, Map>()
+                slots.each { slot ->
+                    def key = groovy.json.JsonOutput.toJson(slot)
+                    def sized = bag.computeIfAbsent(key) { [ingredient: slot, count: 0] }
+                    sized.count++
+                }
+                def assembling = [type: 'craftworks:assembling', ingredients: bag.values() as List, result: recipe.result]
+                def file = new File(recipes, entry.name.substring('data/minecraft/recipe/'.length()))
+                file.parentFile.mkdirs()
+                file.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(assembling)) + '\n'
+                converted++
+            }
+        }
+        if (converted == 0) throw new GradleException('No vanilla crafting recipes found in ' + gameJar.get().asFile)
+        new File(root, 'pack.mcmeta').text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(
+                [pack: [description: 'Craftworks: vanilla crafting as Assembling recipes', min_format: [101, 1], max_format: [101, 1]]])) + '\n'
+        logger.lifecycle("Built-in vanilla pack: $converted recipe(s) converted")
+    }
+}
+sourceSets.main.resources.srcDir(files(vanillaPackDir).builtBy(generateVanillaPack))
 
 // Mods on the dev runs that the published jar does not depend on.
 configurations {

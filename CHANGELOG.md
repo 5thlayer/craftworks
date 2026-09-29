@@ -4,6 +4,7 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- Craftworks is playable out of the box: vanilla's crafting recipes are Assembling recipes at their own ids, so the crafting table no longer makes them instantly. Special recipes (fireworks, dyeing, map cloning, repair and the like) stay at the crafting table. A pack turns this off with `vanillaRecipes = false` in `craftworks-server.toml`. (#9)
 - Several Assembling recipes can make the same item. The Assembler takes the highest `priority` route that resolves with nothing Missing or Locked, ties going to the lowest recipe id, and falls back down the list: sticks come from bamboo when there are no planks. (#8)
 
 ## 0.1.3

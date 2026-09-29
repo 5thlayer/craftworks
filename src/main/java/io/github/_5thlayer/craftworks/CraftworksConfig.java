@@ -27,6 +27,8 @@ public final class CraftworksConfig {
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> LOCK_SOURCES;
 
+    public static final ModConfigSpec.BooleanValue VANILLA_RECIPES;
+
     static {
         var builder = new ModConfigSpec.Builder();
         LOCK_SOURCES = builder
@@ -38,10 +40,19 @@ public final class CraftworksConfig {
                 .defineListAllowEmpty("lockSources", List.of(), () -> LockSource.researchd.name(),
                         value -> value instanceof String name
                                 && Arrays.stream(LockSource.values()).anyMatch(source -> source.name().equals(name)));
+        VANILLA_RECIPES = builder
+                .comment("Whether vanilla's crafting recipes are Assembling recipes, from the pack built into the",
+                        "mod. Off, they stay at the crafting table and a pack ships its own Assembling recipes.")
+                .define("vanillaRecipes", true);
         SPEC = builder.build();
     }
 
     private CraftworksConfig() {
+    }
+
+    /** Whether the built-in vanilla pack is on; its default, on, until a world's config is loaded. */
+    public static boolean vanillaRecipes() {
+        return !SPEC.isLoaded() || VANILLA_RECIPES.get();
     }
 
     /** The configured sources, each once; none until a world's config is loaded. */
