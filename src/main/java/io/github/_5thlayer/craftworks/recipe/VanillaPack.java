@@ -69,13 +69,21 @@ public final class VanillaPack {
      * itself, on its own thread, before the tick loop that would let a player in.
      */
     private static void onServerStarted(ServerStartedEvent event) {
-        follow(event.getServer());
+        followConfig(event.getServer());
     }
 
     private static void onConfigReloaded(ModConfigEvent.Reloading event) {
         if (event.getConfig().getType() != ModConfig.Type.SERVER) return;
         MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-        if (server != null) server.execute(() -> follow(server));
+        if (server != null) server.execute(() -> followConfig(server));
+    }
+
+    /**
+     * Puts the recipes in line with the server config: this pack, then the mods' Converted recipes
+     * ({@link ModRecipes}), which a reload for the pack has already brought in line.
+     */
+    private static void followConfig(MinecraftServer server) {
+        follow(server).thenCompose(ignored -> ModRecipes.follow(server));
     }
 
     /**

@@ -93,11 +93,14 @@ public final class CraftworksGameTests {
         LockTests.register(tests);
         CraftingPlanTests.register(tests);
         VanillaPackTests.register(tests);
+        ModRecipesTests.register(tests);
         if (Boolean.getBoolean(KUBEJS_TESTS)) KubeJSTests.register(tests);
         // Its own environment, so its own batch: it reloads the server's recipes, which no test running
         // beside it could stand.
         var reloading = event.registerEnvironment(id("reloads_recipes"), new TestEnvironmentDefinition.AllOf(List.of()));
-        VanillaPackTests.registerReloading(new Registrar(event, reloading));
+        var reloadingTests = new Registrar(event, reloading);
+        VanillaPackTests.registerReloading(reloadingTests);
+        ModRecipesTests.registerReloading(reloadingTests);
     }
 
     private static Identifier id(String path) {

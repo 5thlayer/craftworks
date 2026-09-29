@@ -19,6 +19,7 @@ Craftworks replaces the crafting grid with the **Personal Assembler**: ask for a
 
 - **Assembling recipes.** A datapack adds `craftworks:assembling` recipes: ingredients with counts and tags, one result, a `time` in ticks (default 10) and a `priority` (default 0). Items only, no fluids. EMI shows them in an Assembling category.
 - **Vanilla recipes built in.** Vanilla's crafting recipes are Assembling recipes out of the box, at their own ids, so they replace the crafting table's; special recipes like fireworks and dyeing stay at the table. Set `vanillaRecipes = false` in the server config to ship your own set instead.
+- **Other mods' recipes converted.** Every other mod's shaped and shapeless crafting recipes become Assembling recipes at their own ids as recipes load, after your datapacks and KubeJS scripts; your own Assembling recipe at the same id wins. Keep a mod's or a recipe's at the table with `modRecipesExcluded = ["modid", "modid:recipe"]`, or turn it off with `modRecipes = false`.
 - **Route priority.** When several recipes make the same item, the Assembler uses the highest-priority one the player can complete, at every level of the plan.
 - **Locking recipes.** The server config `lockSources` decides what keeps a recipe Locked for a player: `recipeBook` (until the recipe is in their recipe book) and `researchd` (while Researchd blocks it for their team). The Crafting Plan names the research that unlocks it. Other mods add their own locks, with or without a reason, through `io.github._5thlayer.craftworks.api.LockHooks`.
 

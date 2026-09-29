@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /** Craftworks' server config, {@code craftworks-server.toml} in a world's {@code serverconfig}. */
@@ -29,6 +30,10 @@ public final class CraftworksConfig {
 
     public static final ModConfigSpec.BooleanValue VANILLA_RECIPES;
 
+    public static final ModConfigSpec.BooleanValue MOD_RECIPES;
+
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> MOD_RECIPES_EXCLUDED;
+
     static {
         var builder = new ModConfigSpec.Builder();
         LOCK_SOURCES = builder
@@ -44,6 +49,17 @@ public final class CraftworksConfig {
                 .comment("Whether vanilla's crafting recipes are Assembling recipes, from the pack built into the",
                         "mod. Off, they stay at the crafting table and a pack ships its own Assembling recipes.")
                 .define("vanillaRecipes", true);
+        MOD_RECIPES = builder
+                .comment("Whether other mods' shaped and shapeless crafting recipes become Assembling recipes at",
+                        "their own ids as recipes load (ADR-0011). Off, they stay at the crafting table.")
+                .define("modRecipes", true);
+        MOD_RECIPES_EXCLUDED = builder
+                .comment("Mods' crafting recipes that modRecipes leaves at the crafting table: a namespace keeps",
+                        "all of a mod's, a recipe id just that one. For example [\"create\", \"mekanism:jetpack\"].")
+                .defineListAllowEmpty("modRecipesExcluded", List.of(), () -> "modid",
+                        value -> value instanceof String entry && (entry.contains(":")
+                                ? Identifier.tryParse(entry) != null
+                                : Identifier.isValidNamespace(entry)));
         SPEC = builder.build();
     }
 
@@ -53,6 +69,16 @@ public final class CraftworksConfig {
     /** Whether the built-in vanilla pack is on; its default, on, until a world's config is loaded. */
     public static boolean vanillaRecipes() {
         return !SPEC.isLoaded() || VANILLA_RECIPES.get();
+    }
+
+    /** Whether mods' crafting recipes convert; its default, on, until a world's config is loaded. */
+    public static boolean modRecipes() {
+        return !SPEC.isLoaded() || MOD_RECIPES.get();
+    }
+
+    /** The namespaces and recipe ids kept from conversion; none until a world's config is loaded. */
+    public static List<String> modRecipesExcluded() {
+        return SPEC.isLoaded() ? List.copyOf(MOD_RECIPES_EXCLUDED.get()) : List.of();
     }
 
     /** The configured sources, each once; none until a world's config is loaded. */

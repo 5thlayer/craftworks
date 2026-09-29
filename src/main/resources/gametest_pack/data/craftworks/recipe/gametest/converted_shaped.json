@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": ["AA", "B "],
+  "key": { "A": "minecraft:cobblestone", "B": "minecraft:dirt" },
+  "result": { "id": "minecraft:gravel", "count": 2 }
+}

@@ -10,6 +10,9 @@ ServerEvents.recipes(event => {
 
   // An existing one edited in place: the built-in vanilla pack's stick takes twice as long.
   event.forEachRecipe({ type: 'craftworks:assembling', id: 'minecraft:stick' }, recipe => recipe.set('time', 20))
+
+  // A plain crafting recipe, as another mod would ship one: Craftworks converts it as the recipes load.
+  event.shapeless('minecraft:emerald', ['minecraft:dirt', 'minecraft:dirt']).id('craftworks:kubejs_sample/emerald')
 })
 
 // Locks the sample diamond for any player tagged craftworks.kubejs_locked, saying why.
