@@ -1,0 +1,9 @@
+{
+  "required": false,
+  "package": "io.github._5thlayer.craftworks.mixin.jei",
+  "compatibilityLevel": "JAVA_25",
+  "client": ["IconButtonInputMixin"],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

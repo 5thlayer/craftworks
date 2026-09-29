@@ -37,6 +37,15 @@ versionRange = "[26.1.2-8.0.3,)"
 ordering = "NONE"
 side = "BOTH"
 
+# A JEI category for Assembling recipes and a recipe button that queues on the Assembler (#12). Not
+# required: its plugin is only loaded by JEI. The range is the JEI the plugin is compiled against.
+[[dependencies.${mod_id}]]
+modId = "jei"
+type = "optional"
+versionRange = "[29.20.0.53,)"
+ordering = "NONE"
+side = "CLIENT"
+
 # Removes the inventory's 2x2 crafting grid, keeping its slots (ADR-0007).
 [[mixins]]
 config = "craftworks.mixins.json"
@@ -45,3 +54,8 @@ config = "craftworks.mixins.json"
 # nothing for it to apply to.
 [[mixins]]
 config = "craftworks.emi.mixins.json"
+
+# Lets the Assembler's JEI recipe button take a right and a middle click (#12). Not required: a pack
+# without JEI has nothing for it to apply to.
+[[mixins]]
+config = "craftworks.jei.mixins.json"

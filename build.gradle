@@ -35,7 +35,15 @@ repositories {
         url = 'https://maven.latvian.dev/releases'
         content { includeGroup 'dev.latvian.mods'; includeGroup 'dev.latvian.apps' }
     }
+    // JEI.
+    maven {
+        url = 'https://maven.blamejared.com'
+        content { includeGroup 'mezz.jei' }
+    }
 }
+
+// JEI for 26.1.2. 29.20.0.53 is the last that runs on NeoForge 26.1.2.77; later ones ask for .81 and up.
+def jei = '29.20.0.53'
 
 // KubeJS for 26.1. Compiled against for its plugin (compat/kubejs), which only KubeJS ever loads.
 // 8.0.3 is the last that runs on NeoForge 26.1.2.77; later ones ask for .84. Rhino is the one it names.
@@ -161,8 +169,17 @@ configurations {
 
 dependencies {
     // EMI is optional to players, and on every dev run so its Assembling category can be looked at.
+    // -PwithJEI puts JEI on the dev runs in its place (#12): a pack ships one viewer, not both.
     compileOnly 'curse.maven:emi-unofficial-port-1544558:8630349'
-    localRuntime 'curse.maven:emi-unofficial-port-1544558:8630349'
+    if (providers.gradleProperty('withJEI').isPresent()) {
+        localRuntime "mezz.jei:jei-26.1.2-neoforge:$jei"
+    } else {
+        localRuntime 'curse.maven:emi-unofficial-port-1544558:8630349'
+    }
+
+    // JEI is optional to players too (#12). Its API, which only its plugin (compat/jei) names.
+    compileOnly "mezz.jei:jei-26.1.2-common-api:$jei"
+    compileOnly "mezz.jei:jei-26.1.2-neoforge-api:$jei"
 
     // DataFixerUpper, and only that: `Codec` is Mojang's serialisation library, not a Minecraft type,
     // so the planner's codecs round-trip on a plain JVM. Minecraft stays off the test classpath, which
