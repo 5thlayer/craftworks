@@ -11,10 +11,11 @@ import io.github._5thlayer.craftworks.network.FillRecipePacket;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import mezz.jei.api.gui.IRecipeLayoutDrawable;
 import mezz.jei.api.gui.buttons.IButtonState;
+import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.buttons.IIconButtonController;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.inputs.IJeiUserInput;
-import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
@@ -85,7 +86,7 @@ public final class AssemblingRecipeButton implements IIconButtonController {
     }
 
     /** The crafter, scaled to JEI's small side button. */
-    private record ItemIcon(ItemStack stack) implements mezz.jei.api.gui.drawable.IDrawable {
+    private record ItemIcon(ItemStack stack) implements IDrawable {
         @Override
         public int getWidth() {
             return 16;
@@ -97,7 +98,7 @@ public final class AssemblingRecipeButton implements IIconButtonController {
         }
 
         @Override
-        public void draw(net.minecraft.client.gui.GuiGraphicsExtractor graphics, int x, int y) {
+        public void draw(GuiGraphicsExtractor graphics, int x, int y) {
             graphics.item(stack, x, y);
         }
     }

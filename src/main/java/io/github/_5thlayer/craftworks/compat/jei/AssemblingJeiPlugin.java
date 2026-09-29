@@ -51,14 +51,17 @@ public final class AssemblingJeiPlugin implements IModPlugin {
 
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
-        registration.addRecipeCategories(new AssemblingJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        int maxInputs = assemblingRecipes().stream().mapToInt(holder -> holder.value().ingredients().size()).max().orElse(1);
+        registration.addRecipeCategories(new AssemblingJeiCategory(registration.getJeiHelpers().getGuiHelper(), maxInputs));
     }
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
-        List<RecipeHolder<AssemblingRecipe>> recipes =
-                List.copyOf(received.byType(CraftworksRecipes.ASSEMBLING_TYPE.get()));
-        registration.addRecipes(ASSEMBLING, recipes);
+        registration.addRecipes(ASSEMBLING, assemblingRecipes());
+    }
+
+    private static List<RecipeHolder<AssemblingRecipe>> assemblingRecipes() {
+        return List.copyOf(received.byType(CraftworksRecipes.ASSEMBLING_TYPE.get()));
     }
 
     /** The recipe button, on Assembling recipes and no other (see {@link AssemblingRecipeButton}). */

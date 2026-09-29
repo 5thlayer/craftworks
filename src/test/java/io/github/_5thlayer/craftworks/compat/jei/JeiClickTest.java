@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
  */
 class JeiClickTest {
 
-    private static final int SHIFT = 0x1;
+    private static final int SHIFT = JeiClick.MOD_SHIFT;
     private static final int CONTROL = 0x2;
 
     @Test

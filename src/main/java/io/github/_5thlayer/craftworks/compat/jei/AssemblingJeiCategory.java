@@ -22,18 +22,19 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
  * One Assembling recipe as JEI draws it, laid out as in EMI: the ingredients in a row, an arrow timed
  * to the craft, the result. A row and not a grid, because an ingredient count is what a grid cannot say.
  *
- * <p>The row is as wide as the widest recipe allows, {@link #MAX_INPUTS} ingredients; a JEI category has
- * one width for all its recipes.
+ * <p>A JEI category has one width for all its recipes, so the row is as wide as the recipe with the
+ * most ingredients, counted when the recipes are registered.
  */
 final class AssemblingJeiCategory implements IRecipeCategory<RecipeHolder<AssemblingRecipe>> {
 
     private static final int SLOT = 18;
-    private static final int MAX_INPUTS = 9;
     private static final int ARROW = 30;
 
     private final IDrawable icon;
+    private final int maxInputs;
 
-    AssemblingJeiCategory(IGuiHelper guiHelper) {
+    AssemblingJeiCategory(IGuiHelper guiHelper, int maxInputs) {
+        this.maxInputs = maxInputs;
         this.icon = guiHelper.createDrawableItemLike(Items.CRAFTER);
     }
 
@@ -49,7 +50,7 @@ final class AssemblingJeiCategory implements IRecipeCategory<RecipeHolder<Assemb
 
     @Override
     public int getWidth() {
-        return MAX_INPUTS * SLOT + ARROW + SLOT;
+        return maxInputs * SLOT + ARROW + SLOT;
     }
 
     @Override
