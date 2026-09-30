@@ -16,7 +16,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 public final class CraftworksNetwork {
 
     /** Bumped when a payload's shape changes; clients on the old shape are refused, not confused. */
-    private static final String VERSION = "3";
+    private static final String VERSION = "4";
 
     private CraftworksNetwork() {
     }
@@ -54,7 +54,6 @@ public final class CraftworksNetwork {
     }
 
     private static void sendRecipeSet(ServerPlayer player) {
-        PacketDistributor.sendToPlayer(player,
-                AssemblingRecipeSetPacket.of(RuntimeAssemblingRecipes.recipes(player.level()).ids()));
+        PacketDistributor.sendToPlayer(player, AssemblingRecipeSetPacket.of(RuntimeAssemblingRecipes.recipes(player.level())));
     }
 }

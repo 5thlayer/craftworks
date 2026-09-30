@@ -3,7 +3,10 @@
 
 package io.github._5thlayer.craftworks;
 
+import io.github._5thlayer.craftworks.api.IndexTab;
+import io.github._5thlayer.craftworks.api.IndexTabs;
 import io.github._5thlayer.craftworks.assembler.client.AssemblerClient;
+import io.github._5thlayer.craftworks.tabs.TabFiles;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
@@ -24,6 +27,10 @@ public final class CraftworksClient {
             "Craftworks needs a recipe viewer: install EMI or JEI. The Personal Assembler has no item list"
                     + " of its own, and asks for items through the viewer's Fill Recipe.";
 
+    /** The index tab Craftworks ships: everything the Assembler makes, under the Assembling category's icon (#15). */
+    private static final IndexTab ASSEMBLING_TAB = new IndexTab(
+            Craftworks.MOD_ID + ":assembling", "minecraft:crafter", "craftworks.tab.assembling", "@" + Craftworks.MOD_ID, 0);
+
     public CraftworksClient(IEventBus modBus) {
         // Client only: a dedicated server resolves plans itself and never talks to the viewer (ADR-0009).
         if (!ModList.get().isLoaded("emi") && !ModList.get().isLoaded("jei")) {
@@ -32,5 +39,7 @@ public final class CraftworksClient {
             throw new ModLoadingException(ModLoadingIssue.error(NO_RECIPE_VIEWER));
         }
         AssemblerClient.register(modBus);
+        IndexTabs.register(ASSEMBLING_TAB);
+        TabFiles.register(modBus);
     }
 }

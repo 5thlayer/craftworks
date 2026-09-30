@@ -50,8 +50,9 @@ side = "CLIENT"
 [[mixins]]
 config = "craftworks.mixins.json"
 
-# Records which mouse button pressed EMI's Fill Recipe (ADR-0004). Not required: a pack without EMI has
-# nothing for it to apply to.
+# Records which mouse button pressed EMI's Fill Recipe (ADR-0004), makes @craftworks find what the Assembler
+# makes, and draws the index tabs (#15). Not required: a pack without EMI has nothing for it to apply to, and
+# its plugin skips, with an error, any mixin whose EMI method is gone.
 [[mixins]]
 config = "craftworks.emi.mixins.json"
 

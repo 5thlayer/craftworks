@@ -24,13 +24,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(value = RecipeFillButtonWidget.class, remap = false)
 public abstract class RecipeFillButtonWidgetMixin {
 
-    @Inject(method = "mouseClicked", at = @At("HEAD"))
+    @Inject(method = "mouseClicked(III)Z", at = @At("HEAD"))
     private void craftworks$recordButton(int mouseX, int mouseY, int button,
             CallbackInfoReturnable<Boolean> cir) {
         FillClick.press(button);
     }
 
-    @Inject(method = "mouseClicked", at = @At("RETURN"))
+    @Inject(method = "mouseClicked(III)Z", at = @At("RETURN"))
     private void craftworks$clearButton(int mouseX, int mouseY, int button,
             CallbackInfoReturnable<Boolean> cir) {
         FillClick.release();

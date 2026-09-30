@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.github._5thlayer.craftworks.CraftworksConfig;
+import io.github._5thlayer.craftworks.network.AssemblingRecipeSetPacket;
 import io.github._5thlayer.craftworks.planner.AssemblingRecipe;
 import io.github._5thlayer.craftworks.planner.Ingredient;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
@@ -38,6 +39,7 @@ final class VanillaPackTests {
     static void register(CraftworksGameTests.Registrar tests) {
         tests.test("the_vanilla_pack_replaces_vanilla_crafting_at_its_ids", 20, VanillaPackTests::replaces);
         tests.test("special_recipes_stay_at_the_crafting_table", 20, VanillaPackTests::specialsStay);
+        tests.test("the_synced_recipe_set_names_the_vanilla_items_it_makes", 20, VanillaPackTests::syncsItemsMade);
     }
 
     static void registerReloading(CraftworksGameTests.Registrar tests) {
@@ -65,6 +67,22 @@ final class VanillaPackTests {
         AssemblingRecipe flint = RuntimeAssemblingRecipes.recipes(helper.getLevel()).byId(FLINT_AND_STEEL);
         if (flint == null || flint.ingredients().size() != 2) {
             helper.fail(FLINT_AND_STEEL + " should take an iron ingot and a flint, and is " + flint);
+            return;
+        }
+        helper.succeed();
+    }
+
+    /** What EMI's {@code @craftworks} lists (#15): the client is sent every item the recipe set makes. */
+    private static void syncsItemsMade(GameTestHelper helper) {
+        List<String> made = AssemblingRecipeSetPacket.of(RuntimeAssemblingRecipes.recipes(helper.getLevel())).itemsMade();
+        for (String item : List.of(STICK, FLINT_AND_STEEL)) {
+            if (!made.contains(item)) {
+                helper.fail("the synced recipe set should name " + item + " as made, and names " + made.size() + " items without it");
+                return;
+            }
+        }
+        if (made.contains(BLACK_SHULKER_BOX)) {
+            helper.fail(BLACK_SHULKER_BOX + " is only made at the crafting table, and the synced set names it as made");
             return;
         }
         helper.succeed();

@@ -8,7 +8,10 @@ import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.stack.EmiStack;
+import dev.emi.emi.screen.EmiScreenManager;
+import dev.emi.emi.search.EmiSearch;
 import io.github._5thlayer.craftworks.Craftworks;
+import io.github._5thlayer.craftworks.assembler.AssemblingRecipeIds;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Items;
@@ -34,6 +37,14 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
             Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, CraftworksRecipes.ASSEMBLING),
             EmiStack.of(Items.CRAFTER));
 
+    /**
+     * Runs the search again when the recipe set syncs, so {@code @craftworks} lists what it makes after
+     * {@code /reload} without the player retyping it. Not before EMI has baked its search.
+     */
+    private static void searchAgain() {
+        if (!EmiScreenManager.isDisabled()) EmiSearch.update();
+    }
+
     @Override
     public void register(EmiRegistry registry) {
         registry.addCategory(ASSEMBLING);
@@ -41,5 +52,6 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
                 .byType(CraftworksRecipes.ASSEMBLING_TYPE.get())
                 .forEach(holder -> registry.addRecipe(new AssemblingEmiRecipe(ASSEMBLING, holder)));
         registry.addRecipeHandler(null, new PersonalAssemblerEmiHandler());
+        AssemblingRecipeIds.onSync(AssemblingEmiPlugin::searchAgain);
     }
 }

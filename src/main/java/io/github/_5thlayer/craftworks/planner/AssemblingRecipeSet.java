@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * The Assembling recipes, in the two directions the Resolver walks them: by recipe id, which is what a
@@ -55,6 +56,14 @@ public final class AssemblingRecipeSet {
     /** Every recipe id in the set. */
     public Set<String> ids() {
         return byId.keySet();
+    }
+
+    /**
+     * Every item some recipe in the set makes, as bare item ids: what {@code @craftworks} lists in EMI
+     * (#15). The same for every player, since a Locked route still makes its item.
+     */
+    public Set<String> itemsMade() {
+        return byResult.keySet().stream().map(ItemKey::itemId).collect(Collectors.toUnmodifiableSet());
     }
 
     private static final Comparator<AssemblingRecipe> PREFERRED_FIRST =
