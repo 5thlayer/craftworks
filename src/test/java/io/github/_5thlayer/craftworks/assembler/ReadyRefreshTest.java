@@ -158,6 +158,50 @@ class ReadyRefreshTest {
         assertEquals(3, begun.size());
     }
 
+    /** A queue delivering every few ticks never lets the inventory go quiet; the heartbeat still refreshes. */
+    @Test
+    void theHeartbeatStillRefreshesWhileTheInventoryKeepsChanging() {
+        ReadyRefresh refresh = refresh();
+        refresh.open();
+        refresh.tick();
+        for (int t = 0; t < 4 * ReadyRefresh.HEARTBEAT_TICKS; t++) {
+            if (t % 3 == 0) refresh.inventoryChanged();
+            refresh.tick();
+        }
+        assertTrue(published.size() >= 4, "only " + published.size() + " refreshes published while the inventory kept changing");
+    }
+
+    /** A heartbeat pass spread over many ticks finishes, though changes keep arriving while it runs. */
+    @Test
+    void aHeartbeatPassOutlastsChangesThatArriveWhileItRuns() {
+        candidates = 40;
+        cost = MS;
+        ReadyRefresh refresh = refresh();
+        refresh.open();
+        tick(refresh, 20);
+        int before = published.size();
+        for (int t = 0; t < 4 * ReadyRefresh.HEARTBEAT_TICKS; t++) {
+            if (t % 3 == 0) refresh.inventoryChanged();
+            refresh.tick();
+        }
+        assertTrue(published.size() > before, "no pass finished while the inventory kept changing");
+    }
+
+    /** The change a heartbeat pass could not see still gets its quiet refresh once the inventory settles. */
+    @Test
+    void aChangeDuringAHeartbeatPassIsRefreshedOnceQuiet() {
+        ReadyRefresh refresh = refresh();
+        refresh.open();
+        refresh.tick();
+        for (int t = 0; t < ReadyRefresh.HEARTBEAT_TICKS + 1; t++) {
+            if (t % 3 == 0) refresh.inventoryChanged();
+            refresh.tick();
+        }
+        int afterTrickle = published.size();
+        tick(refresh, ReadyRefresh.QUIET_TICKS);
+        assertEquals(afterTrickle + 1, published.size(), "the last change was never refreshed");
+    }
+
     @Test
     void theHeartbeatCountsFromTheEndOfALongPass() {
         candidates = 30;

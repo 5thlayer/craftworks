@@ -18,7 +18,9 @@ import java.util.function.Supplier;
  * {@value #QUIET_TICKS} ticks after a change, and on a {@value #HEARTBEAT_TICKS}-tick heartbeat, which is
  * the only thing that notices a Lock source changing its mind, since none of them says when. The
  * heartbeat counts from the last pass's start or end, whichever is later: a pack whose pass takes longer
- * than a heartbeat would otherwise never stop resolving.
+ * than a heartbeat would otherwise never stop resolving. The heartbeat fires whether or not a change is
+ * waiting out its quiet ticks: a queue delivering every few ticks never lets the inventory go quiet, and
+ * would otherwise hold the list back for as long as it runs.
  *
  * <p><b>Budget.</b> A tick resolves candidates until {@value #BUDGET_NANOS} ns are spent, checked between
  * whole resolves, because one resolve cannot be paused partway. Every tick that has a pass running
@@ -27,7 +29,10 @@ import java.util.function.Supplier;
  * <p><b>Supersession.</b> A change to the inventory, a new open or a close drops the pass in flight: its
  * answer is about an inventory that is gone. It is never published, so a set is never published over a
  * newer one. A change waits out the quiet ticks before the next pass starts, so a queue delivering
- * every few ticks does not restart a pass on each one.
+ * every few ticks does not restart a pass on each one. The one exception is a pass the heartbeat started
+ * while a change was waiting: changes arriving during it do not drop it, or under a steady trickle it
+ * would never finish. Its answer lags the inventory by the pass's length, and the waiting change still
+ * gets its own pass once the inventory is quiet.
  *
  * <p>Runs on the server thread and nowhere else.
  */
@@ -77,6 +82,8 @@ public final class ReadyRefresh {
     private int lastRefresh;
 
     private Pass pass;
+    /** The running pass was started by the heartbeat while a change waited, and outlasts later changes. */
+    private boolean outlastsChanges;
     private long spent;
     private int passTicks;
 
@@ -96,6 +103,7 @@ public final class ReadyRefresh {
         startNow = true;
         changePending = false;
         pass = null;
+        outlastsChanges = false;
     }
 
     /** The screen closed: nothing is resolved from here until it opens again. */
@@ -104,6 +112,7 @@ public final class ReadyRefresh {
         startNow = false;
         changePending = false;
         pass = null;
+        outlastsChanges = false;
     }
 
     public boolean watching() {
@@ -115,7 +124,7 @@ public final class ReadyRefresh {
         if (!watching) return;
         changePending = true;
         lastChange = tick;
-        pass = null;
+        if (!outlastsChanges) pass = null;
     }
 
     /** One server tick. Does nothing, not even counting, unless the screen is open. */
@@ -140,13 +149,14 @@ public final class ReadyRefresh {
 
     private boolean due() {
         if (startNow) return true;
-        if (changePending) return tick - lastChange >= QUIET_TICKS;
+        if (changePending && tick - lastChange >= QUIET_TICKS) return true;
         return tick - lastRefresh >= HEARTBEAT_TICKS;
     }
 
     private void start() {
+        outlastsChanges = !startNow && changePending && tick - lastChange < QUIET_TICKS;
         startNow = false;
-        changePending = false;
+        if (!outlastsChanges) changePending = false;
         lastRefresh = tick;
         spent = 0;
         passTicks = 0;
