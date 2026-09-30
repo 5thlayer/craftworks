@@ -8,6 +8,7 @@ import java.util.List;
 import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.assembler.AssemblerQueueView;
 import io.github._5thlayer.craftworks.assembler.PersonalAssembler;
+import io.github._5thlayer.craftworks.assembler.ReadyRecipeIds;
 import io.github._5thlayer.craftworks.network.QueueSyncPacket;
 import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
@@ -32,6 +33,7 @@ public final class AssemblerClient {
         modBus.addListener(AssemblerClient::registerHud);
         modBus.addListener(AssemblerClient::registerScreens);
         NeoForge.EVENT_BUS.addListener(AssemblerClient::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(InventoryWatch::onClientTick);
         NeoForge.EVENT_BUS.addListener(InventoryGridBlank::onScreenOpening);
         NeoForge.EVENT_BUS.addListener(InventoryGridBlank::onScreenInit);
         NeoForge.EVENT_BUS.addListener(InventoryGridBlank::onScreenForeground);
@@ -42,10 +44,13 @@ public final class AssemblerClient {
 
     /**
      * Forgets the queue on leaving a world. The view is only ever replaced by a sync, and a server
-     * without Craftworks never sends one, so the last world's rows would stay beside the hotbar.
+     * without Craftworks never sends one, so the last world's rows would stay beside the hotbar. The
+     * Ready set goes the same way (ADR-0012), or the next world's craftables would list the last one's.
      */
     private static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         AssemblerQueueView.accept(new QueueSyncPacket(List.of(), false));
+        ReadyRecipeIds.clear();
+        InventoryWatch.reset();
     }
 
     private static void registerScreens(RegisterMenuScreensEvent event) {

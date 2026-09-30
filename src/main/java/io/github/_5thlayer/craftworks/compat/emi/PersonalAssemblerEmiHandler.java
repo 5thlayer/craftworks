@@ -11,6 +11,7 @@ import dev.emi.emi.api.recipe.handler.EmiCraftContext;
 import dev.emi.emi.api.recipe.handler.EmiRecipeHandler;
 import io.github._5thlayer.craftworks.assembler.AssemblingRecipeIds;
 import io.github._5thlayer.craftworks.assembler.FillRequest;
+import io.github._5thlayer.craftworks.assembler.ReadyRecipeIds;
 import io.github._5thlayer.craftworks.network.FillRecipePacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -72,15 +73,21 @@ public final class PersonalAssemblerEmiHandler implements EmiRecipeHandler<Inven
     }
 
     /**
-     * Always, and this is the non-standard half of the contract.
+     * Fill Recipe is always possible; EMI's craftables list is possible only for a Ready recipe.
      *
      * <p>The button must stay enabled when the player lacks the ingredients, because showing what is
-     * missing is the Crafting Plan's entire job. Which recipes get a button at all is
-     * {@link #supportsRecipe}'s question, and a different one.
+     * missing is the Crafting Plan's entire job. So every context but one answers true. The exception is
+     * {@code Type.CRAFTABLE}, which is EMI asking whether to list the recipe's result under Craftables,
+     * and that is answered from the Ready set the server syncs (ADR-0012): what Fill Recipe would queue
+     * right now, intermediates included. Before the first sync it is empty, so nothing is listed.
+     *
+     * <p>Which recipes get a button at all is {@link #supportsRecipe}'s question, and a different one.
      */
     @Override
     public boolean canCraft(EmiRecipe recipe, EmiCraftContext<InventoryMenu> context) {
-        return true;
+        if (context.getType() != EmiCraftContext.Type.CRAFTABLE) return true;
+        Identifier id = recipe.getId();
+        return id != null && ReadyRecipeIds.contains(id.toString());
     }
 
     /**

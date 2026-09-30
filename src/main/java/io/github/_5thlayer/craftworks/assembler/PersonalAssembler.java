@@ -67,6 +67,7 @@ public final class PersonalAssembler {
         ATTACHMENTS.register(modBus);
         MENUS.register(modBus);
         AssemblerTicker.register();
+        ReadyWatch.register();
     }
 
     public static AssemblerQueue queueOf(Player player) {

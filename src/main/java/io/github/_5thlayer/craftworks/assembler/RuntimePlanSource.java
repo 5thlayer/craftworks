@@ -142,7 +142,7 @@ public final class RuntimePlanSource implements PlanSource {
      * <p>They have to be the same slots. A plan resolved against armour the queue then cannot spend
      * would resolve complete and then be refused when queued.
      */
-    private static ItemBag inventoryOf(ServerPlayer player) {
+    static ItemBag inventoryOf(ServerPlayer player) {
         ItemBag bag = new ItemBag();
         for (ItemStack stack : player.getInventory().getNonEquipmentItems()) {
             if (stack.isEmpty()) continue;

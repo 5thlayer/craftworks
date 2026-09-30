@@ -12,7 +12,9 @@ import dev.emi.emi.screen.EmiScreenManager;
 import dev.emi.emi.search.EmiSearch;
 import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.assembler.AssemblingRecipeIds;
+import io.github._5thlayer.craftworks.assembler.ReadyRecipeIds;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Items;
 
@@ -45,6 +47,15 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
         if (!EmiScreenManager.isDisabled()) EmiSearch.update();
     }
 
+    /**
+     * Works EMI's craftables out again when the Ready set changes. EMI does so only when the player's
+     * items differ from the last time it looked, and a Lock lifting or a sync arriving changes no item.
+     * Not before EMI has loaded, and not without a player: EMI reads the inventory to do it.
+     */
+    private static void craftablesAgain() {
+        if (!EmiScreenManager.isDisabled() && Minecraft.getInstance().player != null) EmiScreenManager.forceRecalculate();
+    }
+
     @Override
     public void register(EmiRegistry registry) {
         registry.addCategory(ASSEMBLING);
@@ -53,5 +64,6 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
                 .forEach(holder -> registry.addRecipe(new AssemblingEmiRecipe(ASSEMBLING, holder)));
         registry.addRecipeHandler(null, new PersonalAssemblerEmiHandler());
         AssemblingRecipeIds.onSync(AssemblingEmiPlugin::searchAgain);
+        ReadyRecipeIds.onChange(AssemblingEmiPlugin::craftablesAgain);
     }
 }

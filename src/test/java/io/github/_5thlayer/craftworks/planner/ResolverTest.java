@@ -316,4 +316,30 @@ class ResolverTest {
         assertTrue(fromSwiftness.complete());
         assertEquals(Map.of(swiftness, 2), asMap(fromSwiftness.rawCost()));
     }
+
+    /**
+     * Levels of interchangeable items, none of which the player holds or anything makes at the bottom: every
+     * way down fails, and trying them all is 3 to the 14th crafts. The Resolver gives up and reports it
+     * incomplete rather than hanging the server thread (#17 resolves every recipe, so one such recipe
+     * would stall every refresh).
+     */
+    @Test
+    void aSearchThatCannotSucceedGivesUpInsteadOfTryingEveryCombination() {
+        AssemblingRecipeSet.Builder set = AssemblingRecipeSet.builder();
+        int levels = 14;
+        for (int level = 0; level < levels; level++) {
+            List<String> below = List.of("a" + (level + 1) + "_0", "a" + (level + 1) + "_1", "a" + (level + 1) + "_2");
+            for (int variant = 0; variant < 3; variant++) {
+                set.add(recipe("r" + level + "_" + variant, "a" + level + "_" + variant, 1, 10, new Ingredient(below, 1)));
+            }
+        }
+        set.add(recipe("root", "root", 1, 10, new Ingredient(List.of("a0_0", "a0_1", "a0_2"), 1)));
+        Resolver resolver = new Resolver(set.build(), Set.of()::contains);
+
+        Resolver.Resolution resolution = org.junit.jupiter.api.Assertions.assertTimeoutPreemptively(
+                java.time.Duration.ofSeconds(5), () -> resolver.resolve("root", 1, have()));
+
+        assertFalse(resolution.complete());
+        assertFalse(resolution.missing().isEmpty());
+    }
 }

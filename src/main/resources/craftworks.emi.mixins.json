@@ -3,7 +3,7 @@
   "package": "io.github._5thlayer.craftworks.mixin.emi",
   "plugin": "io.github._5thlayer.craftworks.compat.emi.EmiMixinPlugin",
   "compatibilityLevel": "JAVA_25",
-  "client": ["EmiScreenManagerMixin", "ModQueryMixin", "RecipeFillButtonWidgetMixin"],
+  "client": ["EmiPlayerInventoryMixin", "EmiScreenManagerMixin", "ModQueryMixin", "RecipeFillButtonWidgetMixin"],
   "injectors": {
     "defaultRequire": 1
   }

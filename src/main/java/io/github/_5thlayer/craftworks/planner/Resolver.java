@@ -36,6 +36,18 @@ public final class Resolver {
      */
     public static final int MAX_CRAFTS = 100_000;
 
+    /**
+     * The most recipe applications one resolve may try before it gives up and reports the plan Missing.
+     *
+     * <p>A route that fails is rolled back and the next one tried, at every level, so a recipe whose
+     * ingredients each accept several items that each have several routes (a banner: wool in sixteen
+     * colours, each dyed from its own dyes) costs the product of them when nothing at the bottom is held.
+     * Nothing bounded that, and a resolve cannot be paused partway, so one such recipe stalls the server
+     * thread. A plan that resolves tries a handful, far under this; only a search that is failing gets
+     * here, and reporting it Missing is what it would have ended as.
+     */
+    static final int SEARCH_LIMIT = 5_000;
+
     private final AssemblingRecipeSet recipes;
     private final Predicate<String> locked;
 
@@ -120,6 +132,8 @@ public final class Resolver {
         private ItemBag locked = new ItemBag();
         private ItemBag toCraft = new ItemBag();
         private final List<CraftStep> steps = new ArrayList<>();
+        /** Recipe applications tried so far, abandoned routes included: see {@link #SEARCH_LIMIT}. */
+        private int tried;
 
         private Walk(ItemBag available) {
             this.available = available;
@@ -134,10 +148,11 @@ public final class Resolver {
          * <p>It refuses when scaling the recipe would overflow an {@code int}. {@link #MAX_CRAFTS}
          * bounds the craft count and not the product of a count with an ingredient's amount, and a
          * wrapped negative demand reads as already satisfied: a complete plan that reserves nothing
-         * and then cannot feed its own first step.
+         * and then cannot feed its own first step. It refuses too once the walk has tried
+         * {@link #SEARCH_LIMIT} applications, which unwinds every open route the same way.
          */
         private boolean craft(AssemblingRecipe recipe, int n, List<String> ancestors) {
-            if (overflows(recipe, n)) return false;
+            if (++tried > SEARCH_LIMIT || overflows(recipe, n)) return false;
             List<String> path = new ArrayList<>(ancestors);
             path.add(recipe.id());
             // Merged rather than one entry per ingredient. An ingredient satisfied from two items
