@@ -21,14 +21,14 @@ import net.minecraft.world.item.ItemStack;
 /**
  * KubeJS support (#11), against the sample script in {@code kubejs/server_scripts/}: a recipe it creates
  * and one it edits through the {@code craftworks:assembling} schema, its {@code CraftworksEvents.lock}
- * listener, and a crafting recipe it adds, which converts (#13). Registered only on a
- * {@code -PwithKubeJS} run, which puts KubeJS and the script on the server; the plain run, without
- * KubeJS, is the check that Craftworks loads and works without it.
+ * listener; and a crafting recipe the game tests' own script in {@code kubejs_gametest/} adds, which
+ * converts (#13). Registered only on a {@code -PwithKubeJS} run, which puts KubeJS and the scripts on the
+ * server; the plain run, without KubeJS, is the check that Craftworks loads and works without it.
  */
 final class KubeJSTests {
 
     private static final String DIAMOND = "craftworks:kubejs_sample/diamond";
-    private static final String EMERALD = "craftworks:kubejs_sample/emerald";
+    private static final String EMERALD = "craftworks:kubejs_gametest/emerald";
     private static final String STICK = "minecraft:stick";
     private static final String LOCKED_TAG = "craftworks.kubejs_locked";
     private static final String REASON = "Sample: untag yourself to craft this";

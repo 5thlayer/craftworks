@@ -225,14 +225,15 @@ if (providers.gradleProperty('withKubeJS').isPresent()) {
     neoForge.runs.configureEach {
         systemProperty 'craftworks.kubejsTests', 'true'
     }
-    def copyKubeJSScripts = { String name, String gameDir ->
+    // The game tests also get kubejs_gametest/, the scripts only they read.
+    def copyKubeJSScripts = { String name, String gameDir, List<String> sources ->
         tasks.register(name, Copy) {
-            from 'kubejs'
+            from sources
             into "$gameDir/kubejs"
         }
     }
-    def toClient = copyKubeJSScripts('copyKubeJSScriptsToClient', 'run')
-    def toGameTests = copyKubeJSScripts('copyKubeJSScriptsToGameTests', 'run/gametest')
+    def toClient = copyKubeJSScripts('copyKubeJSScriptsToClient', 'run', ['kubejs'])
+    def toGameTests = copyKubeJSScripts('copyKubeJSScriptsToGameTests', 'run/gametest', ['kubejs', 'kubejs_gametest'])
     tasks.matching { it.name == 'runClient' }.configureEach { dependsOn toClient }
     tasks.matching { it.name == 'runGameTestServer' }.configureEach { dependsOn toGameTests }
 }
