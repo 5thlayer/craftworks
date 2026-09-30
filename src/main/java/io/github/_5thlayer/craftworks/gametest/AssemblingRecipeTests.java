@@ -14,7 +14,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 
 /**
  * That Assembling recipes are read off {@code craftworks:assembling} as the server loaded them, adapted
- * from PlanetaryFactory's HandSetTests.
+ * from the FactoryWorks Pack's HandSetTests.
  *
  * <p>The glue no unit test reaches: that the recipe manager holds a datapack's recipes under the type,
  * that {@link RuntimeAssemblingRecipes} finds them there, that a recipe of another type stays out, that a tag ingredient arrives as the items it

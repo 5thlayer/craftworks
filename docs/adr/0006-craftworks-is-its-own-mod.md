@@ -10,6 +10,9 @@ served one pack: Factorio's recipes, Researchd's locks, EMI only. Craftworks tak
 pack can use (5thlayer/craftworks#1), and PlanetaryFactory pins its jar and deletes its own copy. This ADR
 records where Craftworks departs from those five; everything they decide that is not named here stands.
 
+The Pack has since been renamed FactoryWorks, at 5thlayer/factoryworks (its ADR-0101). PlanetaryFactory in
+these ADRs names that Pack, and links to adamico/planetary-factory redirect there.
+
 **The mod is Craftworks; the planner is still the Personal Assembler.** The name leaves room for the mod to
 grow without committing it to. The glossary keeps every term the imported ADRs use.
 

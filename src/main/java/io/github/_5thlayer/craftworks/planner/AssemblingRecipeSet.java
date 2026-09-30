@@ -15,7 +15,7 @@ import java.util.Set;
  * request names, and by the item a recipe makes, which is what chain-crafting needs.
  *
  * <p>An item's recipes are its routes, highest Route priority first and, among equals, lowest recipe id
- * first: the order the Resolver tries them in. This replaces PlanetaryFactory's one-recipe-per-item
+ * first: the order the Resolver tries them in. This replaces the FactoryWorks Pack's one-recipe-per-item
  * rule (ADR-0006).
  */
 public final class AssemblingRecipeSet {
