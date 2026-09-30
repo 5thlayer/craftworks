@@ -39,6 +39,12 @@ A recipe the Assembler could make but the **Lock source** says this player may n
 **Missing**: the two demand different actions.
 _Avoid_: blocked, gated
 
+**Ready**:
+An Assembling recipe is Ready for a player when one craft of it resolves as a Crafting Plan with nothing
+Missing or Locked, intermediates included: what Fill Recipe would queue right now. What the Recipe viewer's
+craftables list shows.
+_Avoid_: craftable (a recipe viewer's own sense: its direct inputs are held)
+
 **Assembling recipe**:
 A recipe of the mod's own assembling type, the only kind the Assembler plans with: ingredients, one result,
 a craft time and a **Route priority**. Items only, never fluids. An ingredient's own remainder (an empty
