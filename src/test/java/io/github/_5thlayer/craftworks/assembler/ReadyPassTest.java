@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 class ReadyPassTest {
 
     private static AssemblingRecipe recipe(String id, String result, int priority, Ingredient... ingredients) {
-        return new AssemblingRecipe(id, List.of(ingredients), new ItemAmount(result, 1), 10, priority);
+        return new AssemblingRecipe(id, List.of(ingredients), new ItemAmount(result, 1), 10, priority, true);
     }
 
     private static final AssemblingRecipeSet RECIPES = AssemblingRecipeSet.builder()

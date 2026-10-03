@@ -12,23 +12,26 @@ import io.github._5thlayer.craftworks.planner.AssemblingRecipeSet;
 import io.github._5thlayer.craftworks.planner.Ingredient;
 import io.github._5thlayer.craftworks.planner.ItemAmount;
 import io.github._5thlayer.craftworks.planner.Locks;
+import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
 import io.github._5thlayer.craftworks.recipe.RuntimeAssemblingRecipes;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
 
 /**
  * KubeJS support (#11), against the sample script in {@code kubejs/server_scripts/}: a recipe it creates
  * and one it edits through the {@code craftworks:assembling} schema, its {@code CraftworksEvents.lock}
- * listener; and a crafting recipe the game tests' own script in {@code kubejs_gametest/} adds, which
- * converts (#13). Registered only on a {@code -PwithKubeJS} run, which puts KubeJS and the scripts on the
+ * listener; and what the game tests' own script in {@code kubejs_gametest/} adds: a crafting recipe, which
+ * converts (#13), and an Assembling recipe with fluids (5thlayer/factoryworks#578). Registered only on a {@code -PwithKubeJS} run, which puts KubeJS and the scripts on the
  * server; the plain run, without KubeJS, is the check that Craftworks loads and works without it.
  */
 final class KubeJSTests {
 
     private static final String DIAMOND = "craftworks:kubejs_sample/diamond";
     private static final String EMERALD = "craftworks:kubejs_gametest/emerald";
+    private static final String FLUID = "craftworks:kubejs_gametest/fluid";
     private static final String STICK = "minecraft:stick";
     private static final String LOCKED_TAG = "craftworks.kubejs_locked";
     private static final String REASON = "Sample: untag yourself to craft this";
@@ -40,6 +43,7 @@ final class KubeJSTests {
         tests.test("a_kubejs_script_creates_an_assembling_recipe", 20, KubeJSTests::created);
         tests.test("a_kubejs_script_edits_an_assembling_recipe", 20, KubeJSTests::edited);
         tests.test("a_kubejs_crafting_recipe_converts", 20, KubeJSTests::converted);
+        tests.test("a_kubejs_script_writes_fluids_and_hand_craftable", 20, KubeJSTests::fluid);
         tests.test("a_kubejs_lock_event_locks_with_its_reason", 20, KubeJSTests::locked);
     }
 
@@ -58,6 +62,22 @@ final class KubeJSTests {
         AssemblingRecipe emerald = RuntimeAssemblingRecipes.recipes(helper.getLevel()).byId(EMERALD);
         helper.assertTrue(emerald != null, "the sample script's crafting " + EMERALD + " is not a Converted recipe");
         helper.assertTrue(emerald.ingredients().equals(List.of(Ingredient.of("minecraft:dirt", 2))), "it takes " + emerald.ingredients());
+        helper.succeed();
+    }
+
+    private static void fluid(GameTestHelper helper) {
+        var recipe = helper.getLevel().getServer().getRecipeManager().recipeMap()
+                .byType(CraftworksRecipes.ASSEMBLING_TYPE.get()).stream()
+                .filter(holder -> holder.id().identifier().toString().equals(FLUID))
+                .findFirst().map(RecipeHolder::value).orElse(null);
+        helper.assertTrue(recipe != null, "the game tests' script's " + FLUID + " is not an Assembling recipe");
+        helper.assertTrue(recipe.fluidIngredients().size() == 1 && recipe.fluidIngredients().getFirst().amount() == 250,
+                "it takes the fluids " + recipe.fluidIngredients() + ", not 250 water");
+        helper.assertTrue(recipe.fluidResults().size() == 1 && recipe.fluidResults().getFirst().amount() == 50,
+                "it makes the fluids " + recipe.fluidResults() + ", not 50 lava");
+        helper.assertFalse(recipe.handCraftable(), "the script set hand_craftable false");
+        helper.assertTrue(RuntimeAssemblingRecipes.recipes(helper.getLevel()).byId(FLUID) == null,
+                "the planner's set holds " + FLUID);
         helper.succeed();
     }
 

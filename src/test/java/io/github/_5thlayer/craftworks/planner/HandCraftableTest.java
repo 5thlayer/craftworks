@@ -16,9 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * A recipe that is not hand-craftable is never in a Crafting Plan (ADR-0109). A recipe with a fluid in or
- * out reads as not hand-craftable on the Minecraft side, which needs registries: the game tests cover that
- * and the decoding of the new fields.
+ * A recipe that is not Hand-craftable is never in a Crafting Plan (5thlayer/factoryworks#578). That a
+ * recipe with a fluid reads as not Hand-craftable needs registries, so the game tests hold it.
  */
 class HandCraftableTest {
 

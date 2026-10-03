@@ -4,7 +4,7 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
-- Assembling recipes can name fluids: `fluid_ingredients` (a list of `{ingredient: "minecraft:water", amount}`) and `fluid_results` (a list of `{id, amount}`), both optional, and `hand_craftable`, default true. The Personal Assembler plans only through hand-craftable recipes with no fluid in or out, so any other never appears in a Crafting Plan, and EMI and JEI still list it. A recipe written before these fields reads unchanged. (5thlayer/factoryworks#578)
+- Assembling recipes can name fluids: `fluid_ingredients` (a list of `{ingredient: "minecraft:water", amount}`) and `fluid_results` (a list of `{id, amount}`), both optional, and `hand_craftable`, default true. The Personal Assembler plans only through a Hand-craftable recipe: `hand_craftable` true and no fluid in or out. Any other never appears in a Crafting Plan, and EMI and JEI still list it. A recipe written before these fields reads unchanged. KubeJS sets them with `.fluidIngredients([Fluid.of('minecraft:water', 250)])`, `.fluidResults([...])` and `.handCraftable(false)`. (5thlayer/factoryworks#578)
 
 ## 0.2.0
 

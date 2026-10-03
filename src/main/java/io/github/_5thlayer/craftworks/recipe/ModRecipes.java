@@ -125,7 +125,8 @@ public final class ModRecipes {
         for (Ingredient slot : slots) bag.merge(slot, 1, Integer::sum);
         List<SizedIngredient> ingredients = new ArrayList<>();
         bag.forEach((ingredient, count) -> ingredients.add(new SizedIngredient(ingredient, count)));
-        return new AssemblingRecipe(ingredients, result, AssemblingRecipe.DEFAULT_TIME, AssemblingRecipe.DEFAULT_PRIORITY);
+        return new AssemblingRecipe(ingredients, result, AssemblingRecipe.DEFAULT_TIME, AssemblingRecipe.DEFAULT_PRIORITY,
+                List.of(), List.of(), true);
     }
 
     private static boolean assemblesItsOwn(Recipe<?> recipe) {

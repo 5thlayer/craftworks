@@ -79,7 +79,7 @@ public final class AssemblingRecipeSet {
 
         /**
          * Adds a recipe; a second recipe under an id already added is ignored, and so is one that is not
-         * hand-craftable, which no Crafting Plan may name.
+         * Hand-craftable, which no Crafting Plan may name (5thlayer/factoryworks#578).
          */
         public Builder add(AssemblingRecipe recipe) {
             if (!recipe.handCraftable()) return this;

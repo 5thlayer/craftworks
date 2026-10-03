@@ -24,6 +24,33 @@
 			"role": "other",
 			"type": "int",
 			"optional": 0
+		},
+		{
+			"name": "fluid_ingredients",
+			"role": "input",
+			"type": {
+				"type": "list",
+				"component": "sized_fluid_ingredient"
+			},
+			"default_optional": true,
+			"excluded": true
+		},
+		{
+			"name": "fluid_results",
+			"role": "output",
+			"type": {
+				"type": "list",
+				"component": "fluid_stack"
+			},
+			"default_optional": true,
+			"excluded": true
+		},
+		{
+			"name": "hand_craftable",
+			"role": "other",
+			"type": "boolean",
+			"optional": true,
+			"excluded": true
 		}
 	],
 	"unique": ["result"]

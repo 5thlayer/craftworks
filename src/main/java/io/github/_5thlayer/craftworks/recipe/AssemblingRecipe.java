@@ -33,9 +33,8 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
  * and defaults to 0. A pack changes either by overriding the recipe.
  *
  * <p>{@code fluid_ingredients} and {@code fluid_results} default to empty and {@code hand_craftable} to
- * true, so a recipe written before they existed reads unchanged. Fluids are NeoForge's own types, so a
- * recipe names no Library. The Personal Assembler plans only through a {@link #plannable} recipe
- * (ADR-0109); what a placed machine does with the fluids is the machine's.
+ * true, so a recipe written before they existed reads unchanged. Fluids are NeoForge's own types so that
+ * Craftworks names no fluid Library (5thlayer/factoryworks#578).
  *
  * <p>The result is a template, not a stack: {@code ItemStack.CODEC} refuses an item whose components
  * are not bound yet, which they are not during the datapack load that reads recipes.
@@ -50,18 +49,9 @@ public record AssemblingRecipe(
     public static final int DEFAULT_TIME = 10;
     public static final int DEFAULT_PRIORITY = 0;
 
-    public AssemblingRecipe(List<SizedIngredient> ingredients, ItemStackTemplate result, int time, int priority) {
-        this(ingredients, result, time, priority, List.of(), List.of(), true);
-    }
-
     public AssemblingRecipe {
         fluidIngredients = List.copyOf(fluidIngredients);
         fluidResults = List.copyOf(fluidResults);
-    }
-
-    /** Whether the Personal Assembler may plan through this recipe: hand-craftable and with no fluid in or out. */
-    public boolean plannable() {
-        return handCraftable && fluidIngredients.isEmpty() && fluidResults.isEmpty();
     }
 
     @Override
@@ -109,7 +99,7 @@ public record AssemblingRecipe(
         return new RecipeSerializer<>(CODEC, STREAM_CODEC);
     }
 
-    static final MapCodec<AssemblingRecipe> CODEC = RecordCodecBuilder.mapCodec(
+    private static final MapCodec<AssemblingRecipe> CODEC = RecordCodecBuilder.mapCodec(
             instance -> instance.group(
                     SizedIngredient.NESTED_CODEC.listOf().fieldOf("ingredients").forGetter(AssemblingRecipe::ingredients),
                     ItemStackTemplate.CODEC.fieldOf("result").forGetter(AssemblingRecipe::result),

@@ -17,7 +17,7 @@ Craftworks replaces the crafting grid with the **Personal Assembler**: ask for a
 
 ## For pack authors
 
-- **Assembling recipes.** A datapack adds `craftworks:assembling` recipes: ingredients with counts and tags, one result, a `time` in ticks (default 10) and a `priority` (default 0). Items only, no fluids. EMI shows them in an Assembling category.
+- **Assembling recipes.** A datapack adds `craftworks:assembling` recipes: ingredients with counts and tags, one result, a `time` in ticks (default 10) and a `priority` (default 0). Optional `fluid_ingredients` and `fluid_results` are for a machine to handle, and `hand_craftable` (default true) set false keeps an item-only recipe for one: the Personal Assembler plans only through a recipe that is hand-craftable and names no fluid. EMI shows them in an Assembling category.
 - **Vanilla recipes built in.** Vanilla's crafting recipes are Assembling recipes out of the box, at their own ids, so they replace the crafting table's; special recipes like fireworks and dyeing stay at the table. Set `vanillaRecipes = false` in the server config to ship your own set instead.
 - **Other mods' recipes converted.** Every other mod's shaped and shapeless crafting recipes become Assembling recipes at their own ids as recipes load, after your datapacks and KubeJS scripts; your own Assembling recipe at the same id wins. Keep a mod's or a recipe's at the table with `modRecipesExcluded = ["modid", "modid:recipe"]`, or turn it off with `modRecipes = false`.
 - **Route priority.** When several recipes make the same item, the Assembler uses the highest-priority one the player can complete, at every level of the plan.

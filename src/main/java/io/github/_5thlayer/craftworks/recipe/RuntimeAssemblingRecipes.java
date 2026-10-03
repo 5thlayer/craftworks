@@ -78,8 +78,6 @@ public final class RuntimeAssemblingRecipes {
     private static io.github._5thlayer.craftworks.planner.AssemblingRecipe read(
             String id, AssemblingRecipe recipe, HolderLookup.Provider registries, List<String> refused) {
         List<Ingredient> ingredients = new ArrayList<>();
-        // Not refused: a machine-only recipe is meant, so it is no warning.
-        if (!recipe.plannable()) return null;
         for (SizedIngredient sized : recipe.ingredients()) {
             List<String> items = new ArrayList<>();
             Map<String, String> remainders = new LinkedHashMap<>();
@@ -119,9 +117,12 @@ public final class RuntimeAssemblingRecipes {
             refused.add(id + " (a time of " + recipe.time() + " ticks)");
             return null;
         }
+        // A recipe with a fluid is never Hand-craftable, whatever its flag says (5thlayer/factoryworks#578).
+        boolean handCraftable = recipe.handCraftable()
+                && recipe.fluidIngredients().isEmpty() && recipe.fluidResults().isEmpty();
         return new io.github._5thlayer.craftworks.planner.AssemblingRecipe(
                 id, ingredients, new ItemAmount(result, recipe.result().count()), recipe.time(),
-                recipe.priority());
+                recipe.priority(), handCraftable);
     }
 
     /**

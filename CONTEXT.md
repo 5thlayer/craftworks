@@ -46,10 +46,19 @@ craftables list shows.
 _Avoid_: craftable (a recipe viewer's own sense: its direct inputs are held)
 
 **Assembling recipe**:
-A recipe of the mod's own assembling type, the only kind the Assembler plans with: ingredients, one result,
-a craft time and a **Route priority**. Items only, never fluids. An ingredient's own remainder (an empty
-bucket) returns to the inventory when its step completes; a plan never counts on it.
+A recipe of the mod's own assembling type, the only kind the Assembler plans with: item ingredients, one
+item result, a craft time and a **Route priority**, and optionally fluid ingredients and fluid results. The
+Assembler plans only through one that is **Hand-craftable**; any other is still listed by the Recipe viewer,
+for a machine to make. An ingredient's own remainder (an empty bucket) returns to the inventory when its
+step completes; a plan never counts on it.
 _Avoid_: hand recipe, admitted recipe
+
+**Hand-craftable**:
+An Assembling recipe whose `hand_craftable` flag is true (the default) and that names no fluid in or out.
+A recipe with a fluid is never Hand-craftable, whatever its flag says: the player has no hands for a
+fluid. A pack sets the flag false for an item-only recipe it keeps for a machine. Only a Hand-craftable
+recipe appears in a Crafting Plan.
+_Avoid_: plannable, machine-only
 
 **Converted recipe**:
 An Assembling recipe Craftworks makes from a shaped or shapeless crafting recipe, at that recipe's own id,
