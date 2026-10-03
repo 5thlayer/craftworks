@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- Assembling recipes can name fluids: `fluid_ingredients` (a list of `{ingredient: "minecraft:water", amount}`) and `fluid_results` (a list of `{id, amount}`), both optional, and `hand_craftable`, default true. The Personal Assembler plans only through hand-craftable recipes with no fluid in or out, so any other never appears in a Crafting Plan, and EMI and JEI still list it. A recipe written before these fields reads unchanged. (5thlayer/factoryworks#578)
+
 ## 0.2.0
 
 - A request whose plan the Assembler would have to search endlessly for, such as a banner when you hold nothing towards any of its dyes, stops after 5,000 tries and shows as Missing, where it used to freeze the server. (#17)

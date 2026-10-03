@@ -77,8 +77,12 @@ public final class AssemblingRecipeSet {
         private Builder() {
         }
 
-        /** Adds a recipe; a second recipe under an id already added is ignored. */
+        /**
+         * Adds a recipe; a second recipe under an id already added is ignored, and so is one that is not
+         * hand-craftable, which no Crafting Plan may name.
+         */
         public Builder add(AssemblingRecipe recipe) {
+            if (!recipe.handCraftable()) return this;
             if (byId.putIfAbsent(recipe.id(), recipe) != null) return this;
             byResult.computeIfAbsent(recipe.result().item(), item -> new ArrayList<>()).add(recipe);
             return this;

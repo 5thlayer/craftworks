@@ -78,6 +78,8 @@ public final class RuntimeAssemblingRecipes {
     private static io.github._5thlayer.craftworks.planner.AssemblingRecipe read(
             String id, AssemblingRecipe recipe, HolderLookup.Provider registries, List<String> refused) {
         List<Ingredient> ingredients = new ArrayList<>();
+        // Not refused: a machine-only recipe is meant, so it is no warning.
+        if (!recipe.plannable()) return null;
         for (SizedIngredient sized : recipe.ingredients()) {
             List<String> items = new ArrayList<>();
             Map<String, String> remainders = new LinkedHashMap<>();
