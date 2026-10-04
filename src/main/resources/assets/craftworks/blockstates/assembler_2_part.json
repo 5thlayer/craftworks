@@ -1,0 +1,9 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "craftworks:block/assembler_2_part"
+      }
+    }
+  ]
+}

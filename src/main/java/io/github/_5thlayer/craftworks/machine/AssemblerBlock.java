@@ -1,0 +1,87 @@
+// SPDX-FileCopyrightText: 2026 5thlayer
+// SPDX-License-Identifier: MIT
+
+package io.github._5thlayer.craftworks.machine;
+
+import com.mojang.serialization.MapCodec;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.phys.BlockHitResult;
+import org.jspecify.annotations.Nullable;
+
+/**
+ * An Assembler tier's Origin block: the footprint's block that holds the block entity and the facing
+ * (Groundworks' ADR 0009). Its other 26 positions are {@link io.github._5thlayer.groundworks.FootprintPartBlock}s.
+ */
+public final class AssemblerBlock extends HorizontalDirectionalBlock implements EntityBlock {
+
+    private final AssemblerTier tier;
+    private final MapCodec<AssemblerBlock> codec;
+
+    public AssemblerBlock(Properties properties, AssemblerTier tier) {
+        super(properties);
+        this.tier = tier;
+        this.codec = simpleCodec(props -> new AssemblerBlock(props, tier));
+        registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH));
+    }
+
+    public AssemblerTier tier() {
+        return tier;
+    }
+
+    @Override
+    protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
+        return codec;
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FACING);
+    }
+
+    @Override
+    public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new AssemblerBlockEntity(pos, state);
+    }
+
+    @Override
+    public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        if (!(level instanceof ServerLevel) || type != Assemblers.BLOCK_ENTITY.get()) {
+            return null;
+        }
+        return (world, pos, blockState, entity) -> ((AssemblerBlockEntity) entity).serverTick((ServerLevel) world);
+    }
+
+    /** One block entity type serves every tier, so a Fast Replace to another tier keeps it and what it holds. */
+    @Override
+    protected boolean shouldChangedStateKeepBlockEntity(BlockState oldState) {
+        return oldState.getBlock() instanceof AssemblerBlock;
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof AssemblerBlockEntity machine) {
+            player.openMenu(machine, buffer -> buffer.writeBlockPos(pos));
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    /** Going takes the footprint's parts with it. */
+    @Override
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel level, BlockPos pos, boolean movedByPiston) {
+        super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
+        Assemblers.footprint(tier).teardown(level, pos, state.getValue(FACING), pos);
+    }
+}

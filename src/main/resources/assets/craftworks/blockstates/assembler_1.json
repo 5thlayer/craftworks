@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "craftworks:block/assembler_1"
+    },
+    "facing=east": {
+      "model": "craftworks:block/assembler_1"
+    },
+    "facing=south": {
+      "model": "craftworks:block/assembler_1"
+    },
+    "facing=west": {
+      "model": "craftworks:block/assembler_1"
+    }
+  }
+}

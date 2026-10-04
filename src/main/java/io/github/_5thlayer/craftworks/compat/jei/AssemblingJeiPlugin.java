@@ -14,6 +14,7 @@ import mezz.jei.api.recipe.types.IRecipeHolderType;
 import mezz.jei.api.registration.IAdvancedRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
+import mezz.jei.api.registration.IRecipeTransferRegistration;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeMap;
@@ -58,6 +59,12 @@ public final class AssemblingJeiPlugin implements IModPlugin {
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
         registration.addRecipes(ASSEMBLING, assemblingRecipes());
+    }
+
+    /** With an Assembler open, the recipe's {@code +} sets its Held recipe (see {@link AssemblerTransferHandler}). */
+    @Override
+    public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
+        registration.addRecipeTransferHandler(new AssemblerTransferHandler(), ASSEMBLING);
     }
 
     private static List<RecipeHolder<AssemblingRecipe>> assemblingRecipes() {

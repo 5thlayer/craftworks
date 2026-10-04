@@ -1,0 +1,22 @@
+{
+  "type": "craftworks:assembling",
+  "ingredients": [
+    {
+      "ingredient": "craftworks:assembler_1",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:gold_ingot",
+      "count": 6
+    },
+    {
+      "ingredient": "minecraft:redstone",
+      "count": 10
+    }
+  ],
+  "result": {
+    "id": "craftworks:assembler_2",
+    "count": 1
+  },
+  "time": 400
+}

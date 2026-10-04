@@ -16,6 +16,7 @@ path = [
     "src/main/resources/**/*.json",
     "src/main/resources/**/pack.mcmeta",
     "src/main/resources/**/*.nbt",
+    "src/main/resources/**/*.png",
     "LICENSE",
     "publish/summary.txt",
     ".github/**",

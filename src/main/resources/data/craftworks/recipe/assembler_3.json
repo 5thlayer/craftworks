@@ -1,0 +1,22 @@
+{
+  "type": "craftworks:assembling",
+  "ingredients": [
+    {
+      "ingredient": "craftworks:assembler_2",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:diamond",
+      "count": 4
+    },
+    {
+      "ingredient": "minecraft:redstone_block",
+      "count": 2
+    }
+  ],
+  "result": {
+    "id": "craftworks:assembler_3",
+    "count": 1
+  },
+  "time": 600
+}
