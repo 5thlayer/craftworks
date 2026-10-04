@@ -24,6 +24,20 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
+      # Groundworks is taken from ~/.m2, which a runner starts without, so the version gradle.properties
+      # names is built from its tag and published there, as its release does on a maintainer's machine.
+      - id: groundworks
+        run: echo "version=$(sed -n 's/^groundworks_version *= *//p' gradle.properties)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        with:
+          repository: 5thlayer/groundworks
+          ref: v${{ steps.groundworks.outputs.version }}
+          path: .groundworks
+
+      - run: ./gradlew publishToMavenLocal
+        working-directory: .groundworks
+
       # The build, with the JUnit tests.
       - run: ./gradlew build
 

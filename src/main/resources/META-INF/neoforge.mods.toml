@@ -34,7 +34,7 @@ side = "BOTH"
 [[dependencies.${mod_id}]]
 modId = "groundworks"
 type = "required"
-versionRange = "[0.5.4,)"
+versionRange = "[${groundworks_version},)"
 ordering = "NONE"
 side = "BOTH"
 

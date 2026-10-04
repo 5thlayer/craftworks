@@ -2,7 +2,7 @@
 
 A release reaches the Pack (5thlayer/factoryworks) through the local maven repository (`~/.m2`) at a version of its own. The Pack pins that version and compares the jar's sha256. That only works if the jar published at a version is the one jar that version ever names.
 
-Craftworks is a car in the `release-train` skill: it requires Groundworks (not bundled, never jar-in-jar, from `~/.m2` only) and not Beltworks, and the Pack pins its jar directly. CI has no `~/.m2` to take Groundworks from yet. A released version is then uploaded to Modrinth and CurseForge from the maintainer's machine (below). CI builds and tests on every push but never publishes.
+Craftworks is a car in the `release-train` skill: it requires Groundworks (not bundled, never jar-in-jar, from `~/.m2` only) and not Beltworks, and the Pack pins its jar directly. `groundworks_version` in `gradle.properties` names it, and CI builds that version's tag, `v<version>` in 5thlayer/groundworks, into its own `~/.m2` before the build, so a bump needs that tag pushed first, as the train pushes Groundworks before Craftworks. A released version is then uploaded to Modrinth and CurseForge from the maintainer's machine (below). CI builds and tests on every push but never publishes.
 
 ## The changelog
 
