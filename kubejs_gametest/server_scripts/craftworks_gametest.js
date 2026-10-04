@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 5thlayer
+// SPDX-License-Identifier: MIT
+
 // Craftworks game tests only (#13): copied into the game tests' run, never the client's or a pack's.
 // gametest/KubeJSTests names its ids: change them together.
 

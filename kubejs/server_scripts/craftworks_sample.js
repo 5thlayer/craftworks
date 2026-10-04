@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 5thlayer
+// SPDX-License-Identifier: MIT
+
 // Craftworks with KubeJS (#11): a sample the dev runs load with -PwithKubeJS, and the game tests check
 // (gametest/KubeJSTests names its ids, tag and reason: change them together).
 

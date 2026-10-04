@@ -19,6 +19,7 @@ path = [
     "src/main/resources/**/*.png",
     "LICENSE",
     "publish/summary.txt",
+    "src/main/resources/kubejs.plugins.txt",
     ".github/**",
 ]
 SPDX-FileCopyrightText = "2026 5thlayer"
