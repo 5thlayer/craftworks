@@ -45,6 +45,9 @@ LICENSING = ["LICENSE", "LICENSES/MIT.txt"]
 # EMI, which a client needs: the Assembler takes its requests through EMI's Fill Recipe.
 MODRINTH_EMI = "fRiHVvU7"
 CURSEFORGE_EMI = "emi"
+# Groundworks, which the Assemblers stand on (#21): a required mod, never jar-in-jar (FactoryWorks ADR-0115).
+MODRINTH_GROUNDWORKS = "AJ3Q7hSr"
+CURSEFORGE_GROUNDWORKS = "groundworks"
 SECRET_HEADERS = {"Authorization", "X-Api-Token"}
 # What upload_release_type may name; both sites call the three types alike.
 RELEASE_TYPES = ["release", "beta", "alpha"]
@@ -180,7 +183,8 @@ class Release:
             "name": self.name,
             "version_number": self.version,
             "changelog": self.notes,
-            "dependencies": [{"project_id": MODRINTH_EMI, "dependency_type": "required"}],
+            "dependencies": [{"project_id": MODRINTH_EMI, "dependency_type": "required"},
+                             {"project_id": MODRINTH_GROUNDWORKS, "dependency_type": "required"}],
             "game_versions": [self.minecraft],
             "version_type": self.release_type,
             "loaders": ["neoforge"],
@@ -216,7 +220,8 @@ class Release:
             "changelogType": "markdown",
             "displayName": self.name,
             "releaseType": self.release_type,
-            "relations": {"projects": [{"slug": CURSEFORGE_EMI, "type": "requiredDependency"}]},
+            "relations": {"projects": [{"slug": CURSEFORGE_EMI, "type": "requiredDependency"},
+                                       {"slug": CURSEFORGE_GROUNDWORKS, "type": "requiredDependency"}]},
         }
         if self.dry_run:
             show("GET", files, api_headers)

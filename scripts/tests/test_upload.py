@@ -295,7 +295,8 @@ exec "$@"
         self.assertEqual(data["game_versions"], ["26.1.2"])
         self.assertEqual(data["loaders"], ["neoforge"])
         self.assertEqual(data["version_type"], "beta")
-        self.assertEqual(data["dependencies"], [{"project_id": "fRiHVvU7", "dependency_type": "required"}])
+        self.assertEqual(data["dependencies"], [{"project_id": "fRiHVvU7", "dependency_type": "required"},
+                                                {"project_id": "AJ3Q7hSr", "dependency_type": "required"}])
         self.assertEqual(data["file_parts"], ["file"])
 
     def test_a_release_from_1_0_is_a_release_on_both_sites(self):
@@ -341,7 +342,8 @@ exec "$@"
         # 26.1.2 the Minecraft version, not the Bukkit one, NeoForge the loader, and both environments.
         self.assertEqual(sorted(metadata["gameVersions"]), [101, 301, 401, 402])
         self.assertEqual(metadata["releaseType"], "beta")
-        self.assertEqual(metadata["relations"], {"projects": [{"slug": "emi", "type": "requiredDependency"}]})
+        self.assertEqual(metadata["relations"], {"projects": [{"slug": "emi", "type": "requiredDependency"},
+                                                             {"slug": "groundworks", "type": "requiredDependency"}]})
 
     def test_refuses_a_version_curseforge_already_has(self):
         self.publish("0.3.9")
