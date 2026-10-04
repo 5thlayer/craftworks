@@ -54,9 +54,10 @@ public final class HeldRecipes {
     }
 
     /**
-     * Whether one craft's remainders fit the one remainder slot: all one item, and no more of it than a
-     * stack holds. Asked of every item each ingredient could be, so a recipe held never jams on whichever
-     * one is put in.
+     * Whether one craft's remainders fit the one remainder slot: all one item with the same components, so
+     * they stack, and no more of it than a stack holds. Asked of every item each ingredient could be, so a
+     * recipe held never jams on whichever one is put in. Not cheap: an Assembler asks once per recipe
+     * instance, through {@link #canRun}.
      */
     public static boolean remaindersFit(AssemblingRecipe recipe) {
         ItemStackTemplate kind = null;
@@ -68,7 +69,7 @@ public final class HeldRecipes {
                 if (remainder == null) {
                     continue;
                 }
-                if (kind != null && !kind.item().equals(remainder.item())) {
+                if (kind != null && !ItemStack.isSameItemSameComponents(kind.create(), remainder.create())) {
                     return false;
                 }
                 kind = remainder;
@@ -79,10 +80,11 @@ public final class HeldRecipes {
         return kind == null || owed <= kind.create().getMaxStackSize();
     }
 
-    /** The recipe at this id if an Assembler can run it, else empty: what a Held recipe that cannot run idles on. */
-    public static Optional<AssemblingRecipe> runnable(ServerLevel level, Identifier id) {
-        return find(level, id).map(RecipeHolder::value).filter(recipe -> !namesFluid(recipe) && fitsSlots(recipe) && remaindersFit(recipe));
+    /** Whether an Assembler can run this recipe: no fluid, fits the input slots, and its remainders fit. */
+    public static boolean canRun(AssemblingRecipe recipe) {
+        return !namesFluid(recipe) && fitsSlots(recipe) && remaindersFit(recipe);
     }
+
 
     /** What Fill Recipe on an open Assembler would answer for this player: the Lock source is asked here, and only here. */
     public static HoldVerdict verdict(ServerPlayer player, Identifier id) {

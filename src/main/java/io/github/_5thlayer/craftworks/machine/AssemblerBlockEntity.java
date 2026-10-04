@@ -22,6 +22,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
@@ -61,6 +62,9 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     private static final String ENERGY_KEY = "energy";
 
     private @Nullable Identifier held;
+    /** The recipe instance {@link #runnable} last checked, and whether an Assembler can run it. Never saved. */
+    private @Nullable AssemblingRecipe checked;
+    private boolean checkedRuns;
     private int progress;
 
     private final ItemStacksResourceHandler inventory = new ItemStacksResourceHandler(AssemblerSlots.SIZE) {
@@ -177,8 +181,20 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
 
     // -- the Held recipe ------------------------------------------------------------------------
 
+    /**
+     * The Held recipe if this Assembler can run it. Asked every tick and by every pipe, so whether it can run
+     * is worked out once per recipe instance: a reload hands back new ones.
+     */
     private Optional<AssemblingRecipe> runnable(ServerLevel server) {
-        return held == null ? Optional.empty() : HeldRecipes.runnable(server, held);
+        if (held == null) {
+            return Optional.empty();
+        }
+        Optional<AssemblingRecipe> recipe = HeldRecipes.find(server, held).map(RecipeHolder::value);
+        recipe.filter(found -> found != checked).ifPresent(found -> {
+            checked = found;
+            checkedRuns = HeldRecipes.canRun(found);
+        });
+        return recipe.filter(found -> checkedRuns);
     }
 
     /**
