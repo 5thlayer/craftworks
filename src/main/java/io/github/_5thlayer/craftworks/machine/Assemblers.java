@@ -13,6 +13,7 @@ import io.github._5thlayer.groundworks.Footprint;
 import io.github._5thlayer.groundworks.FootprintItem;
 import io.github._5thlayer.groundworks.FootprintPartBlock;
 import io.github._5thlayer.groundworks.FootprintShape;
+import io.github._5thlayer.groundworks.FootprintShape.Local;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -38,13 +39,16 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * footprint of its own, one shared block entity type, the menu, and the component that carries the Held
  * recipe on the item.
  *
- * <p>The footprint is 3x3x3, the origin at the bottom centre ({@link FootprintShape#standing}). Each tier
+ * <p>The footprint is 3x3x1, Factorio's tile square one block tall, the origin at its centre. Each tier
  * has a part block of its own, since a part names the footprint it belongs to; the Mod registers them from
  * Groundworks' class and declares each footprint at construction, on both sides.
  */
 public final class Assemblers {
 
-    private static final FootprintShape SHAPE = FootprintShape.standing(3, 3);
+    private static final FootprintShape SHAPE = FootprintShape.of(
+            new Local(-1, 0, -1), new Local(-1, 0, 0), new Local(-1, 0, 1),
+            new Local(0, 0, -1), new Local(0, 0, 1),
+            new Local(1, 0, -1), new Local(1, 0, 0), new Local(1, 0, 1));
 
     private static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(Craftworks.MOD_ID);
     private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Craftworks.MOD_ID);

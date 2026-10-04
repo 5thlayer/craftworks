@@ -78,7 +78,7 @@ final class AssemblerMachineTests {
     /** Only players carrying this tag are locked out of the sapling by the tests' hook. */
     private static final String LOCKED = "craftworks.gametest.assembler_locked";
 
-    /** The origin stands at the middle of the platform's floor, so the 3x3x3 footprint fits whichever way it faces. */
+    /** The origin stands at the middle of the platform's floor, so the 3x3x1 footprint fits whichever way it faces. */
     private static final BlockPos ORIGIN = new BlockPos(4, 1, 4);
 
     private AssemblerMachineTests() {
@@ -254,7 +254,7 @@ final class AssemblerMachineTests {
         assembler.machine().inventory().set(AssemblerSlots.PRODUCT, ItemResource.of(Items.OAK_SAPLING), 3);
         feed(assembler, supply(), 1000);
         // A part, not the origin: the whole footprint goes, and the contents with it.
-        BlockPos part = helper.absolutePos(ORIGIN.above(2));
+        BlockPos part = helper.absolutePos(ORIGIN.north().east());
         assembler.player().gameMode.destroyBlock(part);
         for (BlockPos pos : footprint(helper, assembler.tier(), assembler.facing())) {
             helper.assertTrue(helper.getLevel().getBlockState(pos).isAir(), "the break left " + helper.getLevel().getBlockState(pos) + " at " + pos);
@@ -371,7 +371,7 @@ final class AssemblerMachineTests {
                 checked++;
             }
         }
-        helper.assertTrue(checked == 27 * 6, "checked " + checked + " faces, not 162");
+        helper.assertTrue(checked == 9 * 6, "checked " + checked + " faces, not 54");
 
         ResourceHandler<ItemResource> face = assembler.items(Direction.NORTH);
         assembler.machine().inventory().set(0, ItemResource.of(Items.OAK_LOG), 2);
@@ -410,7 +410,7 @@ final class AssemblerMachineTests {
         feed(assembler, supply(), 700);
         AssemblerBlockEntity machine = assembler.machine();
 
-        swap(helper, assembler, AssemblerTier.THREE, ORIGIN.above(2));
+        swap(helper, assembler, AssemblerTier.THREE, ORIGIN.north().east());
         helper.assertTrue(helper.getBlockEntity(ORIGIN, AssemblerBlockEntity.class) == machine, "the swap replaced the block entity");
         expectStanding(helper, AssemblerTier.THREE, assembler.facing());
         helper.assertTrue(machine.tier() == AssemblerTier.THREE, "the block entity did not follow to tier 3");
@@ -607,7 +607,7 @@ final class AssemblerMachineTests {
     private static void expectStanding(GameTestHelper helper, AssemblerTier tier, Direction facing) {
         var footprint = Assemblers.footprint(tier);
         List<BlockPos> positions = footprint.positions(helper.absolutePos(ORIGIN), facing);
-        helper.assertTrue(positions.size() == 27, "a 3x3x3 footprint has " + positions.size() + " blocks");
+        helper.assertTrue(positions.size() == 9, "a 3x3x1 footprint has " + positions.size() + " blocks");
         for (int i = 0; i < positions.size(); i++) {
             helper.assertTrue(helper.getLevel().getBlockState(positions.get(i)).equals(footprint.stateAt(i, facing)),
                     "block " + i + " at " + positions.get(i) + " is " + helper.getLevel().getBlockState(positions.get(i)));
