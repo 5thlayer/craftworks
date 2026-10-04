@@ -31,11 +31,11 @@ into the inventory on death.
 _Avoid_: crafting queue, backlog
 
 **Missing**:
-A leaf of a Crafting Plan the player does not hold and the Assembler cannot make.
+A leaf of a Crafting Plan the player does not hold and the Personal Assembler cannot make.
 _Avoid_: shortfall, unavailable
 
 **Locked**:
-A recipe the Assembler could make but the **Lock source** says this player may not use yet. Distinct from
+A recipe the Personal Assembler could make but the **Lock source** says this player may not use yet. Distinct from
 **Missing**: the two demand different actions.
 _Avoid_: blocked, gated
 
@@ -46,19 +46,31 @@ craftables list shows.
 _Avoid_: craftable (a recipe viewer's own sense: its direct inputs are held)
 
 **Assembling recipe**:
-A recipe of the mod's own assembling type, the only kind the Assembler plans with: item ingredients, one
+A recipe of the mod's own assembling type, the only kind the Personal Assembler plans with: item ingredients, one
 item result, a craft time and a **Route priority**, and optionally fluid ingredients and fluid results. The
-Assembler plans only through one that is **Hand-craftable**; any other is still listed by the Recipe viewer,
-for a machine to make. An ingredient's own remainder (an empty bucket) returns to the inventory when its
+Personal Assembler plans only through one that is **Hand-craftable**; any other is still listed by the Recipe viewer,
+for an **Assembler** to make. An ingredient's own remainder (an empty bucket) returns to the inventory when its
 step completes; a plan never counts on it.
 _Avoid_: hand recipe, admitted recipe
 
 **Hand-craftable**:
 An Assembling recipe whose `hand_craftable` flag is true (the default) and that names no fluid in or out.
 A recipe with a fluid is never Hand-craftable, whatever its flag says: the player has no hands for a
-fluid. A pack sets the flag false for an item-only recipe it keeps for a machine. Only a Hand-craftable
+fluid. A pack sets the flag false for an item-only recipe it keeps for an Assembler. Only a Hand-craftable
 recipe appears in a Crafting Plan.
 _Avoid_: plannable, machine-only
+
+**Assembler**:
+A placed machine, in tiers 1 to 3, that makes its **Held recipe** over and over from the items and power
+it is given. Never the **Personal Assembler**, which always takes its full name.
+_Avoid_: assembling machine, crafter, auto crafter, machine (alone)
+
+**Held recipe**:
+The one Assembling recipe an Assembler is set to make, chosen by a player through the Recipe viewer's
+Fill Recipe on the open Assembler; never matched from the items put in. It is refused if it is Locked for the
+player who sets it, and once held it is never checked again. An Assembler with none, or that cannot run
+its own, holds it and idles.
+_Avoid_: selected recipe, active recipe, machine recipe
 
 **Converted recipe**:
 An Assembling recipe Craftworks makes from a shaped or shapeless crafting recipe, at that recipe's own id,
@@ -76,12 +88,12 @@ _Avoid_: preference, weight
 
 **Lock source**:
 What decides whether a recipe is **Locked** for a player: the sources a pack lists (the vanilla recipe
-book, Researchd), plus any hook a pack or another mod registers. A recipe is Locked if any of them says so; the Assembler asks, and
+book, Researchd), plus any hook a pack or another mod registers. A recipe is Locked if any of them says so; the Personal Assembler asks, and
 never knows why in any way it acts on. A source may give a reason with its yes (Researchd names the research
-that unlocks the recipe), which the Crafting Plan shows the player as text the Assembler never reads.
+that unlocks the recipe), which the Crafting Plan shows the player as text the Personal Assembler never reads.
 _Avoid_: research, unlock provider
 
 **Recipe viewer**:
-The item list and recipe screen through which the player asks the Assembler for items: EMI or JEI. A
+The item list and recipe screen through which the player asks the Personal Assembler for items: EMI or JEI. A
 player cannot use Craftworks without one.
 _Avoid_: item interface, recipe browser, JEI (for both)
