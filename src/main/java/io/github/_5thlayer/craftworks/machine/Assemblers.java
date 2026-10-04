@@ -3,7 +3,9 @@
 
 package io.github._5thlayer.craftworks.machine;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -39,16 +41,13 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * footprint of its own, one shared block entity type, the menu, and the component that carries the Held
  * recipe on the item.
  *
- * <p>The footprint is 3x3x1, Factorio's tile square one block tall, the origin at its centre. Each tier
+ * <p>The footprint is 3x2x3, Factorio's tile square two blocks tall, the origin at its bottom centre. Each tier
  * has a part block of its own, since a part names the footprint it belongs to; the Mod registers them from
  * Groundworks' class and declares each footprint at construction, on both sides.
  */
 public final class Assemblers {
 
-    private static final FootprintShape SHAPE = FootprintShape.of(
-            new Local(-1, 0, -1), new Local(-1, 0, 0), new Local(-1, 0, 1),
-            new Local(0, 0, -1), new Local(0, 0, 1),
-            new Local(1, 0, -1), new Local(1, 0, 0), new Local(1, 0, 1));
+    private static final FootprintShape SHAPE = square(2);
 
     private static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(Craftworks.MOD_ID);
     private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Craftworks.MOD_ID);
@@ -94,6 +93,21 @@ public final class Assemblers {
                     .build());
 
     private Assemblers() {
+    }
+
+    /** Factorio's 3x3 tile square, {@code height} blocks tall, the origin at its bottom centre. */
+    private static FootprintShape square(int height) {
+        List<Local> parts = new ArrayList<>();
+        for (int y = 0; y < height; y++) {
+            for (int x = -1; x <= 1; x++) {
+                for (int z = -1; z <= 1; z++) {
+                    if (x != 0 || y != 0 || z != 0) {
+                        parts.add(new Local(x, y, z));
+                    }
+                }
+            }
+        }
+        return FootprintShape.of(parts.toArray(Local[]::new));
     }
 
     private static BlockBehaviour.Properties machine(BlockBehaviour.Properties properties) {

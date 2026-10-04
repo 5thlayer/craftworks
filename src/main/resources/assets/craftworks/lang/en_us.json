@@ -36,6 +36,7 @@
   "craftworks.assembler.fill_recipe": "Set as this Assembler's recipe",
   "craftworks.assembler.refused.not_assembling": "%s is not an Assembling recipe the Assembler can hold.",
   "craftworks.assembler.refused.has_fluid": "%s needs a fluid, which this Assembler can't take.",
+  "craftworks.assembler.refused.remainders_dont_fit": "%s leaves more behind than the Assembler's one remainder slot holds.",
   "craftworks.assembler.refused.too_many_ingredients": "%s has more than 5 different ingredients, and the Assembler has 5 input slots.",
   "craftworks.assembler.refused.locked": "%s is Locked for you."
 }

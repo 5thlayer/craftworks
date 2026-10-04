@@ -20,6 +20,8 @@ public enum HoldVerdict {
     HAS_FLUID("craftworks.assembler.refused.has_fluid"),
     /** The recipe names more distinct ingredients than the Assembler has input slots. */
     TOO_MANY_INGREDIENTS("craftworks.assembler.refused.too_many_ingredients"),
+    /** One craft's remainders are two items, or more than a stack, so the one remainder slot can't take them. */
+    REMAINDERS_DONT_FIT("craftworks.assembler.refused.remainders_dont_fit"),
     /** The Lock source says the recipe is Locked for the player pressing. */
     LOCKED("craftworks.assembler.refused.locked");
 
@@ -29,7 +31,8 @@ public enum HoldVerdict {
         this.messageKey = messageKey;
     }
 
-    public static HoldVerdict of(boolean resolves, boolean namesFluid, boolean fitsSlots, boolean locked) {
+    public static HoldVerdict of(boolean resolves, boolean namesFluid, boolean fitsSlots, boolean remaindersFit,
+            boolean locked) {
         if (!resolves) {
             return NOT_ASSEMBLING;
         }
@@ -38,6 +41,9 @@ public enum HoldVerdict {
         }
         if (!fitsSlots) {
             return TOO_MANY_INGREDIENTS;
+        }
+        if (!remaindersFit) {
+            return REMAINDERS_DONT_FIT;
         }
         return locked ? LOCKED : HELD;
     }

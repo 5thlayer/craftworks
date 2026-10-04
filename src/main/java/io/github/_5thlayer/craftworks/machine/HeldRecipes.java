@@ -7,21 +7,26 @@ import java.util.Optional;
 
 import io.github._5thlayer.craftworks.assembler.RuntimePlanSource;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.neoforged.neoforge.common.crafting.SizedIngredient;
 
 /**
  * What an Assembler may hold, read off the server's recipe manager when asked: a Held recipe is an id,
  * resolved lazily because a block entity loads before the recipes do.
  *
- * <p>Every Assembling recipe is one, Hand-craftable or not, except two kinds this tier cannot run: one
- * naming a fluid (tiers 2 and 3 take them in 5thlayer/factoryworks#580) and one with more distinct
- * ingredients than the five input slots.
+ * <p>Every Assembling recipe is one, Hand-craftable or not, except three kinds this tier cannot run: one
+ * naming a fluid (tiers 2 and 3 take them in 5thlayer/factoryworks#580), one with more distinct
+ * ingredients than the five input slots, and one whose remainders don't fit the one remainder slot.
  */
 public final class HeldRecipes {
 
@@ -48,16 +53,42 @@ public final class HeldRecipes {
         return recipe.ingredients().size() <= AssemblerSlots.INPUTS;
     }
 
+    /**
+     * Whether one craft's remainders fit the one remainder slot: all one item, and no more of it than a
+     * stack holds. Asked of every item each ingredient could be, so a recipe held never jams on whichever
+     * one is put in.
+     */
+    public static boolean remaindersFit(AssemblingRecipe recipe) {
+        ItemStackTemplate kind = null;
+        int owed = 0;
+        for (SizedIngredient sized : recipe.ingredients()) {
+            int most = 0;
+            for (Holder<Item> item : sized.ingredient().items().toList()) {
+                ItemStackTemplate remainder = item.value().getCraftingRemainder(new ItemStack(item));
+                if (remainder == null) {
+                    continue;
+                }
+                if (kind != null && !kind.item().equals(remainder.item())) {
+                    return false;
+                }
+                kind = remainder;
+                most = Math.max(most, remainder.count() * sized.count());
+            }
+            owed += most;
+        }
+        return kind == null || owed <= kind.create().getMaxStackSize();
+    }
+
     /** The recipe at this id if an Assembler can run it, else empty: what a Held recipe that cannot run idles on. */
     public static Optional<AssemblingRecipe> runnable(ServerLevel level, Identifier id) {
-        return find(level, id).map(RecipeHolder::value).filter(recipe -> !namesFluid(recipe) && fitsSlots(recipe));
+        return find(level, id).map(RecipeHolder::value).filter(recipe -> !namesFluid(recipe) && fitsSlots(recipe) && remaindersFit(recipe));
     }
 
     /** What Fill Recipe on an open Assembler would answer for this player: the Lock source is asked here, and only here. */
     public static HoldVerdict verdict(ServerPlayer player, Identifier id) {
         Optional<AssemblingRecipe> recipe = find(player.level(), id).map(RecipeHolder::value);
         return HoldVerdict.of(recipe.isPresent(), recipe.map(HeldRecipes::namesFluid).orElse(false),
-                recipe.map(HeldRecipes::fitsSlots).orElse(false),
+                recipe.map(HeldRecipes::fitsSlots).orElse(false), recipe.map(HeldRecipes::remaindersFit).orElse(false),
                 recipe.isPresent() && RuntimePlanSource.lockedFor(player).test(id.toString()));
     }
 

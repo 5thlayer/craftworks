@@ -74,11 +74,12 @@ final class AssemblerMachineTests {
     private static final Identifier MACHINE_ONLY = id("gametest/machine_only");
     private static final Identifier FLUID_RECIPE = id("gametest/fluid_recipe");
     private static final Identifier SIX_INGREDIENTS = id("gametest/six_ingredients");
+    private static final Identifier TWO_REMAINDERS = id("gametest/two_remainders");
 
     /** Only players carrying this tag are locked out of the sapling by the tests' hook. */
     private static final String LOCKED = "craftworks.gametest.assembler_locked";
 
-    /** The origin stands at the middle of the platform's floor, so the 3x3x1 footprint fits whichever way it faces. */
+    /** The origin stands at the middle of the platform's floor, so the 3x2x3 footprint fits whichever way it faces. */
     private static final BlockPos ORIGIN = new BlockPos(4, 1, 4);
 
     private AssemblerMachineTests() {
@@ -102,7 +103,7 @@ final class AssemblerMachineTests {
         tests.test("an_assembler_with_no_recipe_draws_nothing", 20, AssemblerMachineTests::idleDrawsNothing);
         tests.test("fill_recipe_with_a_recipe_locked_for_that_player_is_refused", 20, AssemblerMachineTests::lockedIsRefused);
         tests.test("a_held_recipe_is_never_checked_against_the_lock_again", 20, AssemblerMachineTests::heldIsNeverRechecked);
-        tests.test("fill_recipe_refuses_a_fluid_recipe_and_more_than_five_ingredients", 20, AssemblerMachineTests::cannotRun);
+        tests.test("fill_recipe_refuses_a_fluid_recipe_more_than_five_ingredients_and_remainders_that_dont_fit", 20, AssemblerMachineTests::cannotRun);
         tests.test("an_assembler_holds_and_crafts_a_recipe_the_player_cannot_hand_craft", 20, AssemblerMachineTests::machineOnly);
         tests.test("breaking_an_assembler_drops_its_contents_and_the_item_keeps_its_held_recipe", 20, AssemblerMachineTests::breaking);
         tests.test("a_cake_craft_puts_its_buckets_in_the_remainder_slot", 20, AssemblerMachineTests::cake);
@@ -220,13 +221,16 @@ final class AssemblerMachineTests {
         Placed assembler = place(helper, AssemblerTier.TWO);
         HoldVerdict fluid = request(assembler, FLUID_RECIPE);
         HoldVerdict many = request(assembler, SIX_INGREDIENTS);
+        HoldVerdict remainders = request(assembler, TWO_REMAINDERS);
         HoldVerdict none = request(assembler, id("gametest/not_a_recipe"));
         helper.assertTrue(fluid == HoldVerdict.HAS_FLUID, "a fluid recipe was " + fluid);
         helper.assertTrue(many == HoldVerdict.TOO_MANY_INGREDIENTS, "six ingredients was " + many);
+        helper.assertTrue(remainders == HoldVerdict.REMAINDERS_DONT_FIT, "a bucket and a bottle left behind was " + remainders);
         helper.assertTrue(none == HoldVerdict.NOT_ASSEMBLING, "an id naming no recipe was " + none);
         helper.assertTrue(assembler.machine().heldRecipe().isEmpty(), "a refused recipe was held");
         helper.assertTrue(assembler.player().heard.containsAll(List.of("craftworks.assembler.refused.has_fluid",
-                "craftworks.assembler.refused.too_many_ingredients", "craftworks.assembler.refused.not_assembling")),
+                "craftworks.assembler.refused.too_many_ingredients", "craftworks.assembler.refused.remainders_dont_fit",
+                "craftworks.assembler.refused.not_assembling")),
                 "the player was told " + assembler.player().heard);
         helper.succeed();
     }
@@ -254,7 +258,7 @@ final class AssemblerMachineTests {
         assembler.machine().inventory().set(AssemblerSlots.PRODUCT, ItemResource.of(Items.OAK_SAPLING), 3);
         feed(assembler, supply(), 1000);
         // A part, not the origin: the whole footprint goes, and the contents with it.
-        BlockPos part = helper.absolutePos(ORIGIN.north().east());
+        BlockPos part = helper.absolutePos(ORIGIN.above().north().east());
         assembler.player().gameMode.destroyBlock(part);
         for (BlockPos pos : footprint(helper, assembler.tier(), assembler.facing())) {
             helper.assertTrue(helper.getLevel().getBlockState(pos).isAir(), "the break left " + helper.getLevel().getBlockState(pos) + " at " + pos);
@@ -371,7 +375,7 @@ final class AssemblerMachineTests {
                 checked++;
             }
         }
-        helper.assertTrue(checked == 9 * 6, "checked " + checked + " faces, not 54");
+        helper.assertTrue(checked == 18 * 6, "checked " + checked + " faces, not 108");
 
         ResourceHandler<ItemResource> face = assembler.items(Direction.NORTH);
         assembler.machine().inventory().set(0, ItemResource.of(Items.OAK_LOG), 2);
@@ -410,7 +414,7 @@ final class AssemblerMachineTests {
         feed(assembler, supply(), 700);
         AssemblerBlockEntity machine = assembler.machine();
 
-        swap(helper, assembler, AssemblerTier.THREE, ORIGIN.north().east());
+        swap(helper, assembler, AssemblerTier.THREE, ORIGIN.above().north().east());
         helper.assertTrue(helper.getBlockEntity(ORIGIN, AssemblerBlockEntity.class) == machine, "the swap replaced the block entity");
         expectStanding(helper, AssemblerTier.THREE, assembler.facing());
         helper.assertTrue(machine.tier() == AssemblerTier.THREE, "the block entity did not follow to tier 3");
@@ -607,7 +611,7 @@ final class AssemblerMachineTests {
     private static void expectStanding(GameTestHelper helper, AssemblerTier tier, Direction facing) {
         var footprint = Assemblers.footprint(tier);
         List<BlockPos> positions = footprint.positions(helper.absolutePos(ORIGIN), facing);
-        helper.assertTrue(positions.size() == 9, "a 3x3x1 footprint has " + positions.size() + " blocks");
+        helper.assertTrue(positions.size() == 18, "a 3x2x3 footprint has " + positions.size() + " blocks");
         for (int i = 0; i < positions.size(); i++) {
             helper.assertTrue(helper.getLevel().getBlockState(positions.get(i)).equals(footprint.stateAt(i, facing)),
                     "block " + i + " at " + positions.get(i) + " is " + helper.getLevel().getBlockState(positions.get(i)));
