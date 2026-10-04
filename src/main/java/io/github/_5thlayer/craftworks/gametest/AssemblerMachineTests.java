@@ -571,7 +571,7 @@ final class AssemblerMachineTests {
     }
 
     /** An Assembler placed in a test, with the player who placed it and the way it faces. */
-    private record Placed(GameTestHelper helper, FakeBuilder player, AssemblerTier tier, Direction facing) {
+    record Placed(GameTestHelper helper, FakeBuilder player, AssemblerTier tier, Direction facing) {
 
         AssemblerBlockEntity machine() {
             return helper.getBlockEntity(ORIGIN, AssemblerBlockEntity.class);
@@ -592,7 +592,7 @@ final class AssemblerMachineTests {
         }
     }
 
-    private static Placed place(GameTestHelper helper, AssemblerTier tier) {
+    static Placed place(GameTestHelper helper, AssemblerTier tier) {
         return placeItem(helper, tier, new ItemStack(Assemblers.item(tier).get()));
     }
 
@@ -631,13 +631,13 @@ final class AssemblerMachineTests {
         return menu.request(player, recipe);
     }
 
-    private static void hold(Placed assembler, Identifier recipe) {
+    static void hold(Placed assembler, Identifier recipe) {
         HoldVerdict verdict = request(assembler, recipe);
         assembler.helper().assertTrue(verdict == HoldVerdict.HELD, "Fill Recipe on " + recipe + " was " + verdict);
     }
 
     /** Puts items in through the item capability of a block of the footprint, the way a pipe would; how many went in. */
-    private static int insert(Placed assembler, int slot, Item item, int amount) {
+    static int insert(Placed assembler, int slot, Item item, int amount) {
         int inserted;
         try (Transaction tx = Transaction.openRoot()) {
             inserted = assembler.items(Direction.UP).insert(slot, ItemResource.of(item), amount, tx);

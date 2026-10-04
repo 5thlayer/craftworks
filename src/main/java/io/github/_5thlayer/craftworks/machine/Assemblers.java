@@ -20,6 +20,7 @@ import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -92,6 +93,18 @@ public final class Assemblers {
                     .networkSynchronized(Identifier.STREAM_CODEC)
                     .build());
 
+    /** Creative-only: no recipe, and the creative tab is the only way to get one. */
+    public static final DeferredBlock<CreativeEnergySourceBlock> CREATIVE_ENERGY_SOURCE =
+            BLOCKS.registerBlock("creative_energy_source", CreativeEnergySourceBlock::new,
+                    properties -> properties.strength(3.0f, 6.0f).sound(SoundType.METAL));
+
+    public static final DeferredItem<BlockItem> CREATIVE_ENERGY_SOURCE_ITEM =
+            ITEMS.registerSimpleBlockItem(CREATIVE_ENERGY_SOURCE);
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CreativeEnergySourceBlockEntity>> CREATIVE_ENERGY_SOURCE_ENTITY =
+            BLOCK_ENTITIES.register("creative_energy_source", () -> new BlockEntityType<>(CreativeEnergySourceBlockEntity::new,
+                    CREATIVE_ENERGY_SOURCE.get()));
+
     private Assemblers() {
     }
 
@@ -150,11 +163,13 @@ public final class Assemblers {
         // On every face of every block of the footprint: Groundworks' parts forward their lookups here.
         event.registerBlockEntity(Capabilities.Item.BLOCK, BLOCK_ENTITY.get(), (machine, side) -> machine.itemFace());
         event.registerBlockEntity(Capabilities.Energy.BLOCK, BLOCK_ENTITY.get(), (machine, side) -> machine.energyFace());
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, CREATIVE_ENERGY_SOURCE_ENTITY.get(), (source, side) -> source.energyFace());
     }
 
     private static void buildCreativeTabs(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             ITEM_BY_TIER.values().forEach(event::accept);
+            event.accept(CREATIVE_ENERGY_SOURCE_ITEM);
         }
     }
 }
