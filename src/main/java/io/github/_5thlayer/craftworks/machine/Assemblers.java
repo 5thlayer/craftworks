@@ -110,8 +110,12 @@ public final class Assemblers {
         return FootprintShape.of(parts.toArray(Local[]::new));
     }
 
+    /**
+     * The origin draws the whole machine from its own position, and a face of its model off the origin's own
+     * cube is lit by the light there: an occluding origin holds none, and the machine renders dark.
+     */
     private static BlockBehaviour.Properties machine(BlockBehaviour.Properties properties) {
-        return properties.strength(3.0f, 6.0f).sound(SoundType.METAL).pushReaction(PushReaction.BLOCK);
+        return properties.strength(3.0f, 6.0f).sound(SoundType.METAL).pushReaction(PushReaction.BLOCK).noOcclusion();
     }
 
     public static void register(IEventBus modBus) {
