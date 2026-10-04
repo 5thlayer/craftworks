@@ -1,4 +1,5 @@
 {
+  "ambientocclusion": false,
   "textures": {
     "b": "craftworks:block/assembler_3_b",
     "bl": "craftworks:block/assembler_3_bl",
