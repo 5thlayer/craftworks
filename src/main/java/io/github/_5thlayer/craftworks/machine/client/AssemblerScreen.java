@@ -65,12 +65,13 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
             graphics.text(font, product.getHoverName(), leftPos + 28, topPos + 20, TEXT, false);
         });
         for (Slot slot : menu.slots) {
-            if (slot.index >= AssemblerSlots.SIZE) {
-                break;
-            }
             int x = leftPos + slot.x;
             int y = topPos + slot.y;
             recess(graphics, x, y, 16, 16);
+            // The player's inventory follows the machine's slots, and takes only its recess.
+            if (slot.index >= AssemblerSlots.SIZE) {
+                continue;
+            }
             if (AssemblerSlots.isInput(slot.index) && menu.isShort(slot.index)) {
                 graphics.fill(x, y, x + 16, y + 16, SHORT);
             }
