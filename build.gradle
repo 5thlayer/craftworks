@@ -173,7 +173,8 @@ configurations {
 }
 
 // The Groundworks the Assemblers' footprint and Fast Replace are compiled against, and the least the Mod
-// accepts at load (neoforge.mods.toml): groundworks_version in gradle.properties.
+// accepts at load (neoforge.mods.toml, capped below the next minor, 0.6, which moves when the Mod takes
+// it): groundworks_version in gradle.properties.
 def groundworks = "io.github.5thlayer:groundworks:$groundworks_version"
 
 dependencies {
