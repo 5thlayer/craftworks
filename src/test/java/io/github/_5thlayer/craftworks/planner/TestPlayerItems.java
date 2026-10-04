@@ -7,7 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * A player's items that are a multiset and a slot count, which is all {@link AssemblerQueue} ever asks
+ * A player's items that are a multiset and a slot count, which is all {@link PlanQueue} ever asks
  * of them.
  *
  * <p>The slot count is the only reason this is not a bare map: "the inventory is full" is the

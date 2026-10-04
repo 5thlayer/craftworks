@@ -10,7 +10,7 @@ import java.util.List;
  * how long each one takes.
  *
  * <p>{@code inputs} and {@code outputs} are the whole batch's; {@code time} is <em>one</em> craft's,
- * and the Assembler queue runs and delivers the {@code crafts} one at a time. One record rather than
+ * and the Plan queue runs and delivers the {@code crafts} one at a time. One record rather than
  * one per craft keeps a large plan small on the player.
  *
  * <p>{@code remainders} are what the inputs leave behind once spent (an empty bucket), the batch's

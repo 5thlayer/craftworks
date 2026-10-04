@@ -32,7 +32,7 @@ class AssemblerCodecsTest {
     private static final String SWIFTNESS = "minecraft:potion[minecraft:potion_contents={potion:\"minecraft:swiftness\"}]";
     private static final String HEALING = "minecraft:potion[minecraft:potion_contents={potion:\"minecraft:healing\"}]";
 
-    private static AssemblerQueue midPlanQueue() {
+    private static PlanQueue midPlanQueue() {
         CraftStep gear = new CraftStep(
                 "gear", List.of(new ItemAmount("iron_plate", 2)), List.of(new ItemAmount("iron_gear", 1)), 40);
         CraftStep belt = new CraftStep(
@@ -47,7 +47,7 @@ class AssemblerCodecsTest {
                 List.of(new ItemAmount("iron_plate", 3)),
                 List.of(gear, belt));
         TestPlayerItems items = new TestPlayerItems().with("iron_plate", 3);
-        AssemblerQueue queue = new AssemblerQueue();
+        PlanQueue queue = new PlanQueue();
         queue.enqueue(plan, items);
         for (int i = 0; i < 41; i++) queue.tick(items); // the gear is made; the belt is part-way in
         return queue;
@@ -62,7 +62,7 @@ class AssemblerCodecsTest {
 
     @Test
     void aQueueMidPlanSurvivesTheRoundTrip() {
-        AssemblerQueue queue = midPlanQueue();
+        PlanQueue queue = midPlanQueue();
 
         assertEquals(queue.entries(), roundTrip(AssemblerCodecs.QUEUE, queue).entries());
     }
@@ -74,11 +74,11 @@ class AssemblerCodecsTest {
         CraftingPlan plan = new CraftingPlan(UUID.fromString("6f1b1e5e-0000-4000-8000-00000000beef"),
                 "iron_gear", 3, List.of(new ItemAmount("iron_plate", 6)), List.of(gears));
         TestPlayerItems items = new TestPlayerItems().with("iron_plate", 6);
-        AssemblerQueue queue = new AssemblerQueue();
+        PlanQueue queue = new PlanQueue();
         queue.enqueue(plan, items);
         for (int i = 0; i < 15; i++) queue.tick(items); // one gear made, the second half-way
 
-        AssemblerQueue restored = roundTrip(AssemblerCodecs.QUEUE, queue);
+        PlanQueue restored = roundTrip(AssemblerCodecs.QUEUE, queue);
 
         assertEquals(queue.entries(), restored.entries());
         assertEquals(1, restored.entries().get(0).craftsDone());
@@ -86,7 +86,7 @@ class AssemblerCodecsTest {
 
     @Test
     void theBufferSurvivesWithIt() {
-        AssemblerQueue restored = roundTrip(AssemblerCodecs.QUEUE, midPlanQueue());
+        PlanQueue restored = roundTrip(AssemblerCodecs.QUEUE, midPlanQueue());
 
         assertEquals(
                 Map.of("iron_gear", 1, "iron_plate", 1),
@@ -97,7 +97,7 @@ class AssemblerCodecsTest {
 
     @Test
     void aRestoredQueueGoesOnFromWhereItStopped() {
-        AssemblerQueue restored = roundTrip(AssemblerCodecs.QUEUE, midPlanQueue());
+        PlanQueue restored = roundTrip(AssemblerCodecs.QUEUE, midPlanQueue());
         TestPlayerItems items = new TestPlayerItems();
 
         for (int i = 0; i < 11; i++) restored.tick(items);
@@ -108,7 +108,7 @@ class AssemblerCodecsTest {
 
     @Test
     void anEmptyQueueRoundTripsToAnEmptyQueue() {
-        assertTrue(roundTrip(AssemblerCodecs.QUEUE, new AssemblerQueue()).isEmpty());
+        assertTrue(roundTrip(AssemblerCodecs.QUEUE, new PlanQueue()).isEmpty());
     }
 
     @Test
@@ -149,10 +149,10 @@ class AssemblerCodecsTest {
                 UUID.fromString("6f1b1e5e-0000-4000-8000-0000000fedcb"),
                 HEALING, 1, List.of(new ItemAmount(SWIFTNESS, 2)), List.of(step));
         TestPlayerItems items = new TestPlayerItems().with(SWIFTNESS, 2);
-        AssemblerQueue queue = new AssemblerQueue();
+        PlanQueue queue = new PlanQueue();
         queue.enqueue(plan, items);
 
-        AssemblerQueue restored = roundTrip(AssemblerCodecs.QUEUE, queue);
+        PlanQueue restored = roundTrip(AssemblerCodecs.QUEUE, queue);
 
         assertEquals(queue.entries(), restored.entries());
         assertEquals(Map.of(SWIFTNESS, 2), restored.entries().get(0).buffer());

@@ -5,7 +5,7 @@ package io.github._5thlayer.craftworks.assembler.client;
 
 import java.util.List;
 
-import io.github._5thlayer.craftworks.assembler.AssemblerQueueView;
+import io.github._5thlayer.craftworks.assembler.PlanQueueView;
 import io.github._5thlayer.craftworks.assembler.CancelClick;
 import io.github._5thlayer.craftworks.network.PlanCancelPacket;
 import io.github._5thlayer.craftworks.network.QueueSyncPacket;
@@ -20,7 +20,7 @@ import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 /**
- * The Assembler queue on the inventory screen, in the area the 2x2 grid left blank (ADR-0005).
+ * The Plan queue on the inventory screen, in the area the 2x2 grid left blank (ADR-0005).
  *
  * <p>The inventory screen is the Assembler: Fill Recipe queues from it, and this is where the queue is
  * watched and cancelled. A click on either icon of a row cancels crafts of that row's final recipe the
@@ -44,7 +44,7 @@ final class InventoryQueue {
 
     static void onRender(ScreenEvent.Render.Post event) {
         if (!(event.getScreen() instanceof InventoryScreen screen)) return;
-        List<QueueSyncPacket.Entry> entries = AssemblerQueueView.entries();
+        List<QueueSyncPacket.Entry> entries = PlanQueueView.entries();
         if (entries.isEmpty()) return;
         GuiGraphicsExtractor graphics = event.getGuiGraphics();
         Font font = Minecraft.getInstance().font;
@@ -65,7 +65,7 @@ final class InventoryQueue {
      */
     static void onTooltip(ScreenEvent.Render.Pre event) {
         if (!(event.getScreen() instanceof InventoryScreen screen)) return;
-        List<QueueSyncPacket.Entry> entries = AssemblerQueueView.entries();
+        List<QueueSyncPacket.Entry> entries = PlanQueueView.entries();
         Font font = Minecraft.getInstance().font;
         for (int index = 0; index < Math.min(ROWS, entries.size()); index++) {
             QueueSyncPacket.Entry entry = entries.get(index);
@@ -83,7 +83,7 @@ final class InventoryQueue {
 
     static void onClick(ScreenEvent.MouseButtonPressed.Pre event) {
         if (!(event.getScreen() instanceof InventoryScreen screen)) return;
-        List<QueueSyncPacket.Entry> entries = AssemblerQueueView.entries();
+        List<QueueSyncPacket.Entry> entries = PlanQueueView.entries();
         Font font = Minecraft.getInstance().font;
         for (int index = 0; index < Math.min(ROWS, entries.size()); index++) {
             QueueSyncPacket.Entry entry = entries.get(index);

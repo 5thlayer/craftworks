@@ -16,7 +16,7 @@ import java.util.List;
  * <p>Free of {@code net.minecraft.client} on purpose, so a dedicated server can load the packet's
  * handler class without reaching for a class that is not there.
  */
-public final class AssemblerQueueView {
+public final class PlanQueueView {
 
     private static volatile QueueSyncPacket latest = new QueueSyncPacket(List.of(), false);
 
@@ -26,7 +26,7 @@ public final class AssemblerQueueView {
 
     private static volatile long receivedAt = System.nanoTime();
 
-    private AssemblerQueueView() {
+    private PlanQueueView() {
     }
 
     public static void accept(QueueSyncPacket packet) {

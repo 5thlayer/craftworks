@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * How the Assembler queue and its Crafting Plans are written down, so that they survive a logout and
+ * How the Plan queue and its Crafting Plans are written down, so that they survive a logout and
  * reach the client.
  *
  * <p>Free of Minecraft, exactly like what it serialises. {@code Codec} is DataFixerUpper's, not
@@ -71,8 +71,8 @@ public final class AssemblerCodecs {
      * <p>Whether it is paused is not written: that is derived from the next tick, and a queue that
      * paused because the inventory was full must not come back paused into an inventory with room.
      */
-    public static final Codec<AssemblerQueue> QUEUE = QUEUED_PLAN.listOf()
-            .xmap(AssemblerQueue::of, AssemblerQueue::entries)
+    public static final Codec<PlanQueue> QUEUE = QUEUED_PLAN.listOf()
+            .xmap(PlanQueue::of, PlanQueue::entries)
             .fieldOf("plans")
             .codec();
 

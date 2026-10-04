@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The seam between the Resolver and the Assembler queue: a plan the Resolver calls complete must be
+ * The seam between the Resolver and the Plan queue: a plan the Resolver calls complete must be
  * one the queue can actually run to the end.
  *
  * <p>Asserted here because neither side can assert it alone, and because the failure is invisible from
@@ -37,7 +37,7 @@ class PlanToQueueTest {
     private static final Resolver RESOLVER = new Resolver(RECIPES, Set.of()::contains);
 
     /** Runs the queue to the end, and says how many ticks it took. Fails loudly if it never finishes. */
-    private static int runToCompletion(AssemblerQueue queue, TestPlayerItems items) {
+    private static int runToCompletion(PlanQueue queue, TestPlayerItems items) {
         for (int tick = 0; tick < 100_000; tick++) {
             if (queue.isEmpty()) return tick;
             queue.tick(items);
@@ -52,7 +52,7 @@ class PlanToQueueTest {
         assertTrue(resolution.complete());
 
         TestPlayerItems items = stocked(inventory);
-        AssemblerQueue queue = new AssemblerQueue();
+        PlanQueue queue = new PlanQueue();
         assertTrue(queue.enqueue(resolution.toPlan(UUID.randomUUID(), "inserter", 1), items));
 
         runToCompletion(queue, items);
@@ -80,7 +80,7 @@ class PlanToQueueTest {
             assertTrue(resolution.complete(), "plan for " + amount + " should be complete");
 
             TestPlayerItems items = stocked(inventory);
-            AssemblerQueue queue = new AssemblerQueue();
+            PlanQueue queue = new PlanQueue();
             assertTrue(queue.enqueue(resolution.toPlan(UUID.randomUUID(), "inserter", amount), items));
 
             runToCompletion(queue, items);
@@ -94,7 +94,7 @@ class PlanToQueueTest {
         ItemBag inventory = have("copper", 2, "plate", 4);
         UUID id = UUID.randomUUID();
         TestPlayerItems items = stocked(inventory);
-        AssemblerQueue queue = new AssemblerQueue();
+        PlanQueue queue = new PlanQueue();
         queue.enqueue(RESOLVER.resolve("inserter", 1, inventory).toPlan(id, "inserter", 1), items);
         for (int tick = 0; tick < 12; tick++) queue.tick(items);
 
@@ -113,11 +113,11 @@ class PlanToQueueTest {
         ItemBag inventory = have("copper", 6, "plate", 12);
         UUID id = UUID.randomUUID();
         TestPlayerItems items = stocked(inventory);
-        AssemblerQueue queue = new AssemblerQueue();
+        PlanQueue queue = new PlanQueue();
         queue.enqueue(RESOLVER.resolve("inserter", 3, inventory).toPlan(id, "inserter", 3), items);
         for (int tick = 0; tick < 12; tick++) queue.tick(items);
 
-        AssemblerQueue.Replanner replan = (recipe, crafts, planId) -> {
+        PlanQueue.Replanner replan = (recipe, crafts, planId) -> {
             Resolver.Resolution rest = RESOLVER.resolve(recipe, crafts, inventoryOf(items));
             return rest.complete() ? Optional.of(rest.toPlan(planId, "inserter", crafts)) : Optional.empty();
         };

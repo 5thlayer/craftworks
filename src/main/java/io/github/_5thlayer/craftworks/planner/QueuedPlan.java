@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * A Crafting Plan on the Assembler queue, and everything about it that survives a logout: which step
+ * A Crafting Plan on the Plan queue, and everything about it that survives a logout: which step
  * it is on, how many of that step's crafts are done, how far into the next one, and what it is holding.
  *
  * <p>The buffer is the plan's own pocket. It starts as the cost the queue took, loses a step's inputs

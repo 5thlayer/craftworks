@@ -6,7 +6,7 @@ every intermediate, takes the whole cost up front, and crafts serially over time
 ## Language
 
 **Personal Assembler**:
-The player's own crafting planner: their **Assembler queue** and the Crafting Plans it runs, shown on the
+The player's own crafting planner: their **Plan queue** and the Crafting Plans it runs, shown on the
 inventory screen and the HUD. Every player has one from the start. It belongs to the player, not to a
 block or an item, and it replaces the inventory's crafting grid. It crafts nothing directly: every craft is
 a **Crafting Plan**.
@@ -24,11 +24,11 @@ what remains is resolved again against the refunded inventory, keeping its place
 counts crafts, not items, so it can't leave a recipe making 4 planks half done.
 _Avoid_: reduce, trim
 
-**Assembler queue**:
+**Plan queue**:
 The serial list of Crafting Plans; one per player, held by the player. One runs at a time; a plan that
 cannot proceed pauses and stops the plans behind it rather than dropping or cancelling anything. Refunded
 into the inventory on death.
-_Avoid_: crafting queue, backlog
+_Avoid_: Assembler queue, crafting queue, backlog
 
 **Missing**:
 A leaf of a Crafting Plan the player does not hold and the Personal Assembler cannot make.

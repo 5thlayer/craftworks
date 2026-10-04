@@ -8,7 +8,7 @@ import java.util.UUID;
 import io.github._5thlayer.craftworks.assembler.FillRequest;
 import io.github._5thlayer.craftworks.assembler.PersonalAssembler;
 import io.github._5thlayer.craftworks.assembler.RemovedGridSlot;
-import io.github._5thlayer.craftworks.planner.AssemblerQueue;
+import io.github._5thlayer.craftworks.planner.PlanQueue;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -98,7 +98,7 @@ final class InventoryScreenTests {
     private static void partialCancel(GameTestHelper helper) {
         ServerPlayer player = AssemblerTests.playerHolding(helper, new ItemStack(Items.OAK_LOG, 10));
         PersonalAssembler.fill(player, AssemblerTests.OAK_SAPLING, FillRequest.FIVE);
-        AssemblerQueue queue = PersonalAssembler.queueOf(player);
+        PlanQueue queue = PersonalAssembler.queueOf(player);
         UUID row = queue.entries().get(0).plan().id();
 
         helper.assertTrue(PersonalAssembler.cancel(player, row, 1), "the cancel was refused");

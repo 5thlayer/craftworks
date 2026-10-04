@@ -6,7 +6,7 @@ package io.github._5thlayer.craftworks.assembler.client;
 import java.util.List;
 
 import io.github._5thlayer.craftworks.Craftworks;
-import io.github._5thlayer.craftworks.assembler.AssemblerQueueView;
+import io.github._5thlayer.craftworks.assembler.PlanQueueView;
 import io.github._5thlayer.craftworks.assembler.PersonalAssembler;
 import io.github._5thlayer.craftworks.assembler.ReadyRecipeIds;
 import io.github._5thlayer.craftworks.machine.Assemblers;
@@ -50,7 +50,7 @@ public final class AssemblerClient {
      * Ready set goes the same way (ADR-0012), or the next world's craftables would list the last one's.
      */
     private static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
-        AssemblerQueueView.accept(new QueueSyncPacket(List.of(), false));
+        PlanQueueView.accept(new QueueSyncPacket(List.of(), false));
         ReadyRecipeIds.clear();
         InventoryWatch.reset();
     }

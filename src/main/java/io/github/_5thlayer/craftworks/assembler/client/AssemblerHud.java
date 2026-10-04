@@ -3,7 +3,7 @@
 
 package io.github._5thlayer.craftworks.assembler.client;
 
-import io.github._5thlayer.craftworks.assembler.AssemblerQueueView;
+import io.github._5thlayer.craftworks.assembler.PlanQueueView;
 import io.github._5thlayer.craftworks.network.QueueSyncPacket;
 import java.util.List;
 import net.minecraft.client.DeltaTracker;
@@ -26,7 +26,7 @@ import net.minecraft.network.chat.Component;
  * HUD is up, so a button here would be a button nothing can press. Cancelling is on the inventory
  * screen, where the pointer is, and this hides while that screen is open.
  *
- * <p>It draws {@link AssemblerQueueView}, the same client copy the inventory screen draws, which the server
+ * <p>It draws {@link PlanQueueView}, the same client copy the inventory screen draws, which the server
  * re-syncs four times a second whether or not a screen is open.
  */
 final class AssemblerHud implements GuiLayer {
@@ -63,7 +63,7 @@ final class AssemblerHud implements GuiLayer {
         if (client.options.hideGui || client.player == null) return;
         // The inventory screen draws the queue itself, where it can be clicked (#6).
         if (client.screen instanceof InventoryScreen) return;
-        List<QueueSyncPacket.Entry> entries = AssemblerQueueView.entries();
+        List<QueueSyncPacket.Entry> entries = PlanQueueView.entries();
         if (entries.isEmpty()) return;
 
         int shown = Math.min(MAX_ROWS, entries.size());

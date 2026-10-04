@@ -10,7 +10,7 @@ import java.util.UUID;
  * A Crafting Plan: the flattened tree, in the order it will be crafted, and the raw cost that pays for
  * all of it.
  *
- * <p>This is what queueing hands the Assembler queue, and it is the unit of cancelling (ADR-0001). By
+ * <p>This is what queueing hands the Plan queue, and it is the unit of cancelling (ADR-0001). By
  * the time one exists it is complete: an incomplete resolution never becomes a plan, which is why
  * nothing in the queue asks whether a plan can be finished.
  *

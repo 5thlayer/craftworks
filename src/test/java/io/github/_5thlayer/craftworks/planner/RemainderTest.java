@@ -31,7 +31,7 @@ class RemainderTest {
 
     private static final Resolver RESOLVER = new Resolver(RECIPES, Set.of()::contains);
 
-    private static void run(AssemblerQueue queue, TestPlayerItems items, int ticks) {
+    private static void run(PlanQueue queue, TestPlayerItems items, int ticks) {
         for (int tick = 0; tick < ticks; tick++) queue.tick(items);
     }
 
@@ -39,7 +39,7 @@ class RemainderTest {
     void theRemainderReachesThePlayerWhenItsStepCompletes() {
         ItemBag inventory = have("milk_bucket", 3, "sugar", 2);
         TestPlayerItems items = stocked(inventory);
-        AssemblerQueue queue = new AssemblerQueue();
+        PlanQueue queue = new PlanQueue();
         assertTrue(queue.enqueue(RESOLVER.resolve("cake", 1, inventory).toPlan(UUID.randomUUID(), "cake", 1), items));
 
         run(queue, items, 9);
@@ -55,7 +55,7 @@ class RemainderTest {
     void eachCraftOfABatchReturnsItsOwnRemainders() {
         ItemBag inventory = have("milk_bucket", 6, "sugar", 4);
         TestPlayerItems items = stocked(inventory);
-        AssemblerQueue queue = new AssemblerQueue();
+        PlanQueue queue = new PlanQueue();
         queue.enqueue(RESOLVER.resolve("cake", 2, inventory).toPlan(UUID.randomUUID(), "cake", 2), items);
 
         run(queue, items, 10);
@@ -87,7 +87,7 @@ class RemainderTest {
         // and its buckets do not.
         ItemBag inventory = have("milk_bucket", 3, "sugar", 2);
         TestPlayerItems items = new TestPlayerItems(2, 64).with("milk_bucket", 3).with("sugar", 2);
-        AssemblerQueue queue = new AssemblerQueue();
+        PlanQueue queue = new PlanQueue();
         queue.enqueue(RESOLVER.resolve("cake", 1, inventory).toPlan(UUID.randomUUID(), "cake", 1), items);
         items.give("stone", 64);
 

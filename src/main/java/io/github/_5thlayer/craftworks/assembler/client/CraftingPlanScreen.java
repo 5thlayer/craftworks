@@ -6,7 +6,7 @@ package io.github._5thlayer.craftworks.assembler.client;
 import java.util.List;
 import java.util.Map;
 
-import io.github._5thlayer.craftworks.assembler.AssemblerQueueView;
+import io.github._5thlayer.craftworks.assembler.PlanQueueView;
 import io.github._5thlayer.craftworks.assembler.CraftButtons;
 import io.github._5thlayer.craftworks.assembler.CraftingPlanMenu;
 import io.github._5thlayer.craftworks.assembler.PlanDisplay;
@@ -184,7 +184,7 @@ final class CraftingPlanScreen extends AbstractContainerScreen<CraftingPlanMenu>
         graphics.text(font, Component.translatable("craftworks.plan.queue").withStyle(ChatFormatting.GRAY),
                 leftPos + 8, y, 0xFFAAAAAA, false);
         y += 12;
-        List<QueueSyncPacket.Entry> entries = AssemblerQueueView.entries();
+        List<QueueSyncPacket.Entry> entries = PlanQueueView.entries();
         if (entries.isEmpty()) {
             graphics.text(font, Component.translatable("craftworks.plan.queue_empty").withStyle(ChatFormatting.GRAY),
                     leftPos + 10, y + 4, 0xFFAAAAAA, false);

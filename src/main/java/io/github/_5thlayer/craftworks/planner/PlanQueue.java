@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * The Assembler queue: the serial list of Crafting Plans, ticked whether or not anybody is looking at
+ * The Plan queue: the serial list of Crafting Plans, ticked whether or not anybody is looking at
  * it (ADR-0001).
  *
  * <p>Three rules, and they are the whole class:
@@ -26,7 +26,7 @@ import java.util.UUID;
  * <p>No Minecraft type appears here, which is what lets the queue's rules be checked by an ordinary
  * unit test. {@link PlayerItems} is the seam.
  */
-public final class AssemblerQueue {
+public final class PlanQueue {
 
     /** A cancel count meaning the whole row. */
     public static final int ALL = Integer.MAX_VALUE;
@@ -34,12 +34,12 @@ public final class AssemblerQueue {
     private final List<QueuedPlan> entries = new ArrayList<>();
     private boolean blocked;
 
-    public AssemblerQueue() {
+    public PlanQueue() {
     }
 
     /** Restores a queue from what was persisted, mid-plan and all. */
-    public static AssemblerQueue of(List<QueuedPlan> entries) {
-        AssemblerQueue queue = new AssemblerQueue();
+    public static PlanQueue of(List<QueuedPlan> entries) {
+        PlanQueue queue = new PlanQueue();
         for (QueuedPlan entry : entries) {
             queue.entries.add(QueuedPlan.restored(
                     entry.plan(), entry.buffer(), entry.stepIndex(), entry.craftsDone(), entry.progressTicks()));

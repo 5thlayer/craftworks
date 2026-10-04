@@ -5,7 +5,7 @@ package io.github._5thlayer.craftworks.assembler;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import io.github._5thlayer.craftworks.planner.AssemblerQueue;
+import io.github._5thlayer.craftworks.planner.PlanQueue;
 import org.junit.jupiter.api.Test;
 
 /** A click on a queue icon cancels crafts of that row's final recipe, Factorio's way (ADR-0005). */
@@ -23,8 +23,8 @@ class CancelClickTest {
 
     @Test
     void shiftCancelsAllWhicheverButton() {
-        assertEquals(AssemblerQueue.ALL, CancelClick.crafts(0, true));
-        assertEquals(AssemblerQueue.ALL, CancelClick.crafts(1, true));
+        assertEquals(PlanQueue.ALL, CancelClick.crafts(0, true));
+        assertEquals(PlanQueue.ALL, CancelClick.crafts(1, true));
     }
 
     @Test

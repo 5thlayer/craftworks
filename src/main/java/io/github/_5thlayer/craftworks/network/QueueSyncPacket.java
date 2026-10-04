@@ -4,11 +4,11 @@
 package io.github._5thlayer.craftworks.network;
 
 import io.github._5thlayer.craftworks.Craftworks;
-import io.github._5thlayer.craftworks.planner.AssemblerQueue;
+import io.github._5thlayer.craftworks.planner.PlanQueue;
 import io.github._5thlayer.craftworks.planner.CraftStep;
 import io.github._5thlayer.craftworks.planner.ItemAmount;
 import io.github._5thlayer.craftworks.planner.QueuedPlan;
-import io.github._5thlayer.craftworks.assembler.AssemblerQueueView;
+import io.github._5thlayer.craftworks.assembler.PlanQueueView;
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.List;
@@ -94,7 +94,7 @@ public record QueueSyncPacket(List<Entry> entries, boolean blocked) implements C
             ByteBufCodecs.BOOL, QueueSyncPacket::blocked,
             QueueSyncPacket::new);
 
-    public static QueueSyncPacket of(AssemblerQueue queue) {
+    public static QueueSyncPacket of(PlanQueue queue) {
         List<Entry> entries = new ArrayList<>();
         for (QueuedPlan entry : queue.entries()) {
             List<CraftStep> steps = entry.plan().steps();
@@ -123,6 +123,6 @@ public record QueueSyncPacket(List<Entry> entries, boolean blocked) implements C
     }
 
     static void handle(QueueSyncPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> AssemblerQueueView.accept(packet));
+        context.enqueueWork(() -> PlanQueueView.accept(packet));
     }
 }

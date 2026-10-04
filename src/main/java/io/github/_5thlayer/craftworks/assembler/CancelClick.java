@@ -3,7 +3,7 @@
 
 package io.github._5thlayer.craftworks.assembler;
 
-import io.github._5thlayer.craftworks.planner.AssemblerQueue;
+import io.github._5thlayer.craftworks.planner.PlanQueue;
 
 /**
  * How many crafts a click on a queue icon cancels (ADR-0005): left one, right five, Shift all, as
@@ -11,7 +11,7 @@ import io.github._5thlayer.craftworks.planner.AssemblerQueue;
  * inventory screen never throws a craft away.
  *
  * <p>Counted in crafts of the row's final recipe, not items. A count beyond what the row has left
- * cancels what is there; {@link AssemblerQueue} caps it.
+ * cancels what is there; {@link PlanQueue} caps it.
  */
 public final class CancelClick {
 
@@ -20,7 +20,7 @@ public final class CancelClick {
 
     public static int crafts(int button, boolean shift) {
         if (button != 0 && button != 1) return 0;
-        if (shift) return AssemblerQueue.ALL;
+        if (shift) return PlanQueue.ALL;
         return button == 0 ? 1 : 5;
     }
 }

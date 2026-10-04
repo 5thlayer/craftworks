@@ -8,7 +8,7 @@ package io.github._5thlayer.craftworks.planner;
  * component patch, as a string.
  *
  * <p>A string and not an {@code ItemStack} on purpose: everything the planner does with an item is
- * counting it, and keeping the identity a string is what lets the Resolver and the Assembler queue be
+ * counting it, and keeping the identity a string is what lets the Resolver and the Plan queue be
  * unit tests rather than world loads.
  */
 public record ItemAmount(String item, int count) {

@@ -12,7 +12,7 @@ import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.network.PlanUpdatePacket;
 import io.github._5thlayer.craftworks.network.QueueSyncPacket;
 import io.github._5thlayer.craftworks.planner.AssemblerCodecs;
-import io.github._5thlayer.craftworks.planner.AssemblerQueue;
+import io.github._5thlayer.craftworks.planner.PlanQueue;
 import io.github._5thlayer.craftworks.planner.ItemAmount;
 import io.github._5thlayer.craftworks.planner.Resolver;
 import net.minecraft.core.registries.Registries;
@@ -42,14 +42,14 @@ public final class PersonalAssembler {
             DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, Craftworks.MOD_ID);
 
     /**
-     * The Assembler queue, one per player and saved with them.
+     * The Plan queue, one per player and saved with them.
      *
      * <p>Not copied on death: death refunds the queue into the inventory before the items drop
      * ({@link AssemblerTicker}), so the queue it would copy is always empty.
      */
-    public static final Supplier<AttachmentType<AssemblerQueue>> QUEUE = ATTACHMENTS.register(
+    public static final Supplier<AttachmentType<PlanQueue>> QUEUE = ATTACHMENTS.register(
             "assembler_queue",
-            () -> AttachmentType.builder(AssemblerQueue::new)
+            () -> AttachmentType.builder(PlanQueue::new)
                     .serialize(AssemblerCodecs.QUEUE.fieldOf("queue"))
                     .build());
 
@@ -70,7 +70,7 @@ public final class PersonalAssembler {
         ReadyWatch.register();
     }
 
-    public static AssemblerQueue queueOf(Player player) {
+    public static PlanQueue queueOf(Player player) {
         return player.getData(QUEUE);
     }
 
@@ -143,7 +143,7 @@ public final class PersonalAssembler {
         PlanSource.ResolvedPlan resolved = PlanSource.ACTIVE.resolve(player, recipe, wanted);
         boolean queued = false;
         if (resolved.complete()) {
-            AssemblerQueue queue = queueOf(player);
+            PlanQueue queue = queueOf(player);
             queued = queue.enqueue(resolved.plan(), new InventoryPlayerItems(player.getInventory()));
             if (queued) player.setData(QUEUE, queue);
         }
@@ -159,8 +159,8 @@ public final class PersonalAssembler {
      * cancel is their own action, unlike a finished craft, which pauses rather than drops.
      */
     public static boolean cancel(ServerPlayer player, UUID planId, int crafts) {
-        AssemblerQueue queue = queueOf(player);
-        AssemblerQueue.CancelResult result = queue.cancel(planId, crafts,
+        PlanQueue queue = queueOf(player);
+        PlanQueue.CancelResult result = queue.cancel(planId, crafts,
                 new InventoryPlayerItems(player.getInventory()),
                 (recipe, left, id) -> {
                     Identifier parsed = Identifier.tryParse(recipe);
@@ -180,7 +180,7 @@ public final class PersonalAssembler {
 
     /** One tick of one player's queue, run whether or not any screen is open. */
     public static void tick(ServerPlayer player) {
-        AssemblerQueue queue = queueOf(player);
+        PlanQueue queue = queueOf(player);
         if (queue.isEmpty()) return;
         queue.tick(new InventoryPlayerItems(player.getInventory()));
         player.setData(QUEUE, queue);
@@ -193,7 +193,7 @@ public final class PersonalAssembler {
      * rather than vanishing with the queue.
      */
     public static void refundAll(ServerPlayer player) {
-        AssemblerQueue queue = queueOf(player);
+        PlanQueue queue = queueOf(player);
         if (queue.isEmpty()) return;
         List<ItemAmount> notReturned = queue.refundAll(new InventoryPlayerItems(player.getInventory()));
         for (ItemAmount leftover : notReturned) {

@@ -33,11 +33,11 @@ import net.neoforged.neoforge.event.EventHooks;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The Assembler queue on a real player: Fill Recipe queues on the server, the player's tick delivers,
+ * The Plan queue on a real player: Fill Recipe queues on the server, the player's tick delivers,
  * the queue is saved with the player, and death refunds it before the items drop.
  *
  * <p>The queue's own rules (pausing on a full inventory, cancelling, remainders) are JUnit's, in
- * {@code AssemblerQueueTest}. What is checked here is the glue: the attachment, the tick listener and
+ * {@code PlanQueueTest}. What is checked here is the glue: the attachment, the tick listener and
  * the death listener.
  *
  * <p>The player is a real {@link ServerPlayer} whose connection sends nothing, placed in the test's level

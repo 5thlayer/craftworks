@@ -3,7 +3,7 @@
 
 package io.github._5thlayer.craftworks.assembler.client;
 
-import io.github._5thlayer.craftworks.assembler.AssemblerQueueView;
+import io.github._5thlayer.craftworks.assembler.PlanQueueView;
 import io.github._5thlayer.craftworks.network.QueueSyncPacket;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -39,7 +39,7 @@ final class QueueRow {
         Icons icons = layout(font, entry, x);
         boolean split = icons.second() >= 0;
         graphics.item(PlanItems.stack(split ? entry.stepItem() : entry.rootItem()), x, y);
-        if (head) RadialWipeRenderer.over(graphics, x, y, AssemblerQueueView.liveProgress(entry));
+        if (head) RadialWipeRenderer.over(graphics, x, y, PlanQueueView.liveProgress(entry));
         graphics.text(font, firstAmount(entry), x + ICON + 1, y + 4, textColor, shadow);
         if (!split) return icons;
         graphics.item(PlanItems.stack(entry.rootItem()), icons.second(), y);

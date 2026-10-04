@@ -3,7 +3,7 @@
 
 package io.github._5thlayer.craftworks.assembler;
 
-import io.github._5thlayer.craftworks.planner.AssemblerQueue;
+import io.github._5thlayer.craftworks.planner.PlanQueue;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
@@ -43,7 +43,7 @@ final class AssemblerTicker {
         if (player.containerMenu instanceof CraftingPlanMenu && player.tickCount % SYNC_INTERVAL_TICKS == 0) {
             PersonalAssembler.refreshPlan(player);
         }
-        AssemblerQueue queue = PersonalAssembler.queueOf(player);
+        PlanQueue queue = PersonalAssembler.queueOf(player);
         boolean wasEmpty = queue.isEmpty();
         PersonalAssembler.tick(player);
         if (wasEmpty && queue.isEmpty()) return;

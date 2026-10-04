@@ -4,7 +4,7 @@
 package io.github._5thlayer.craftworks.planner;
 
 /**
- * The player's items, as much of them as the Assembler queue needs: a multiset that can also be full.
+ * The player's items, as much of them as the Plan queue needs: a multiset that can also be full.
  *
  * <p>Being full is the whole reason this is an interface rather than a map. "A finished craft that
  * cannot fit pauses the queue" is a rule about slots, and a rule about slots cannot be asserted
