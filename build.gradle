@@ -28,7 +28,7 @@ def gameTestReport = layout.buildDirectory.file('reports/gametest.xml').get().as
 def emi = 'curse.maven:emi-unofficial-port-1544558:8630349'
 
 repositories {
-    // EMI for 26.1 is an unofficial port, published on CurseForge only.
+    // EMI for 26.1 is an unofficial port, published on CurseForge only; Groundworks is taken from there too.
     maven { url = 'https://cursemaven.com' }
     // KubeJS and Rhino, its script engine.
     maven {
@@ -39,10 +39,6 @@ repositories {
     maven {
         url = 'https://maven.blamejared.com'
         content { includeGroup 'mezz.jei' }
-    }
-    // Groundworks: its releases are published to the local maven repository only (5thlayer/groundworks#2).
-    mavenLocal {
-        content { includeGroup 'io.github.5thlayer' }
     }
 }
 
@@ -172,8 +168,9 @@ configurations {
 }
 
 // The Groundworks the Assemblers' footprint and Fast Replace are compiled against, and the least the Mod
-// accepts at load (neoforge.mods.toml).
-def groundworks = 'io.github.5thlayer:groundworks:0.5.2'
+// accepts at load (neoforge.mods.toml): 0.5.2, CurseForge file 9049565. Its maven is the local one only
+// (5thlayer/groundworks#2), which CI has not got, so it comes from CurseForge through Cursemaven.
+def groundworks = 'curse.maven:groundworks-1717892:9049565'
 
 dependencies {
     // Required, and never jar-in-jar: the Mod, Wireworks and the Pack share one Groundworks (FactoryWorks ADR-0115).
