@@ -1,0 +1,12 @@
+{
+  "type": "craftworks:assembling",
+  "ingredients": [
+    { "ingredient": "minecraft:stick", "count": 1 },
+    { "ingredient": "minecraft:flint", "count": 1 },
+    { "ingredient": "minecraft:feather", "count": 1 },
+    { "ingredient": "minecraft:string", "count": 1 },
+    { "ingredient": "minecraft:coal", "count": 1 },
+    { "ingredient": "minecraft:clay_ball", "count": 1 }
+  ],
+  "result": "minecraft:arrow"
+}
