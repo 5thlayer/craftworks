@@ -168,9 +168,9 @@ configurations {
 }
 
 // The Groundworks the Assemblers' footprint and Fast Replace are compiled against, and the least the Mod
-// accepts at load (neoforge.mods.toml): 0.5.2, CurseForge file 9049565. Its maven is the local one only
+// accepts at load (neoforge.mods.toml): 0.5.4, CurseForge file 9061590. Its maven is the local one only
 // (5thlayer/groundworks#2), which CI has not got, so it comes from CurseForge through Cursemaven.
-def groundworks = 'curse.maven:groundworks-1717892:9049565'
+def groundworks = 'curse.maven:groundworks-1717892:9061590'
 
 dependencies {
     // Required, and never jar-in-jar: the Mod, Wireworks and the Pack share one Groundworks (FactoryWorks ADR-0115).
