@@ -40,6 +40,10 @@ repositories {
         url = 'https://maven.blamejared.com'
         content { includeGroup 'mezz.jei' }
     }
+    // Groundworks: its releases are published to the local maven repository only (5thlayer/groundworks#2).
+    mavenLocal {
+        content { includeGroup 'io.github.5thlayer' }
+    }
 }
 
 // JEI for 26.1.2. 29.20.0.53 is the last that runs on NeoForge 26.1.2.77; later ones ask for .81 and up.
@@ -167,7 +171,14 @@ configurations {
     runtimeClasspath.extendsFrom localRuntime
 }
 
+// The Groundworks the Assemblers' footprint and Fast Replace are compiled against, and the least the Mod
+// accepts at load (neoforge.mods.toml).
+def groundworks = 'io.github.5thlayer:groundworks:0.5.2'
+
 dependencies {
+    // Required, and never jar-in-jar: the Mod, Wireworks and the Pack share one Groundworks (FactoryWorks ADR-0115).
+    implementation groundworks
+
     // EMI is optional to players, and on every dev run so its Assembling category can be looked at.
     // -PwithJEI puts JEI on the dev runs in its place (#12): a pack ships one viewer, not both.
     compileOnly 'curse.maven:emi-unofficial-port-1544558:8630349'

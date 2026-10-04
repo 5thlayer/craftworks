@@ -28,6 +28,16 @@ versionRange = "[${minecraft_version}]"
 ordering = "NONE"
 side = "BOTH"
 
+# The Assemblers stand on its footprint and swap tiers by its Fast Replace (#21). Not jar-in-jar: the Mod,
+# Wireworks and the Pack share one Groundworks (FactoryWorks ADR-0115). The range is the Groundworks the
+# Mod is compiled against.
+[[dependencies.${mod_id}]]
+modId = "groundworks"
+type = "required"
+versionRange = "[0.5.2,)"
+ordering = "NONE"
+side = "BOTH"
+
 # Scripts get an Assembling recipe schema and a lock event (#11). Not required: Craftworks works without it,
 # and its plugin is only loaded by KubeJS. The range is the KubeJS the plugin is compiled against.
 [[dependencies.${mod_id}]]
