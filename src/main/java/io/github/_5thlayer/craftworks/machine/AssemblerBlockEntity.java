@@ -337,7 +337,8 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     /**
      * Takes one craft's inputs, the {@code n}th ingredient from the {@code n}th slot, and places its
      * first result in the product slot and, in the remainder slot, the ingredients' remainders and its
-     * further results. Returns null if it all went, and otherwise what stopped it: {@link AssemblerState#MISSING_INGREDIENTS} or {@link AssemblerState#OUTPUT_FULL}. Never part of a
+     * further results. Returns null if it all went, and otherwise what stopped it:
+     * {@link AssemblerState#MISSING_INGREDIENTS} or {@link AssemblerState#OUTPUT_FULL}. Never part of a
      * craft: the caller aborts the transaction on a stop.
      */
     private @Nullable AssemblerState finish(AssemblingRecipe recipe, TransactionContext tx) {
@@ -356,7 +357,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
                 }
             }
         }
-        for (ItemStackTemplate extra : recipe.results().stream().skip(1).toList()) {
+        for (ItemStackTemplate extra : recipe.extraResults()) {
             if (inventory.insert(AssemblerSlots.REMAINDERS, ItemResource.of(extra), extra.count(), tx) != extra.count()) {
                 return AssemblerState.OUTPUT_FULL;
             }

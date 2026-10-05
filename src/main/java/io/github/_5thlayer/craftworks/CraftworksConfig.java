@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
+import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
 import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -83,11 +84,13 @@ public final class CraftworksConfig {
                     .comment("FE the energy buffer holds.")
                     .defineInRange("buffer", tier.defaultBuffer(), 1, Integer.MAX_VALUE);
             var categories = builder
-                    .comment("The categories of Assembling recipe this tier can hold, by Factorio's names: crafting,",
-                            "advanced-crafting, crafting-with-fluid, chemistry, oil-processing. Fill Recipe refuses a",
-                            "recipe whose category is not listed.")
-                    .defineListAllowEmpty("categories", tier.defaultCategories(), () -> "crafting",
-                            value -> value instanceof String name && !name.isBlank());
+                    .comment("The categories of Assembling recipe this tier can hold, by Factorio's names: "
+                            + AssemblingCategory.ids() + ".",
+                            "Fill Recipe refuses a recipe whose category is not listed.")
+                    .defineListAllowEmpty("categories",
+                            tier.defaultCategories().stream().map(AssemblingCategory::id).toList(),
+                            () -> AssemblingCategory.CRAFTING.id(),
+                            value -> value instanceof String name && AssemblingCategory.byId(name).isPresent());
             builder.pop();
             ASSEMBLERS.put(tier, new AssemblerSettings(speed, power, buffer, categories));
         }
@@ -128,8 +131,10 @@ public final class CraftworksConfig {
     }
 
     /** The recipe categories the tier holds; its defaults until a world's config is loaded. */
-    public static List<? extends String> assemblerCategories(AssemblerTier tier) {
-        return SPEC.isLoaded() ? ASSEMBLERS.get(tier).categories().get() : tier.defaultCategories();
+    public static List<AssemblingCategory> assemblerCategories(AssemblerTier tier) {
+        if (!SPEC.isLoaded()) return tier.defaultCategories();
+        return ASSEMBLERS.get(tier).categories().get().stream()
+                .flatMap(name -> AssemblingCategory.byId(name).stream()).toList();
     }
 
     /** The configured sources, each once; none until a world's config is loaded. */

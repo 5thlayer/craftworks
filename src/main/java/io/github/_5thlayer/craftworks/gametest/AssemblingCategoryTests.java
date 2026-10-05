@@ -16,6 +16,7 @@ import io.github._5thlayer.craftworks.machine.AssemblerSlots;
 import io.github._5thlayer.craftworks.machine.AssemblerState;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.HoldVerdict;
+import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
 import io.github._5thlayer.craftworks.recipe.RuntimeAssemblingRecipes;
@@ -69,12 +70,12 @@ final class AssemblingCategoryTests {
         String ingredients = "\"ingredients\": [{ \"ingredient\": \"minecraft:iron_ingot\", \"count\": 1 }]";
         AssemblingRecipe two = read(helper, "{" + ingredients + ", \"category\": \"advanced-crafting\", \"results\": ["
                 + "{ \"id\": \"minecraft:gold_nugget\", \"count\": 3 }, \"minecraft:stick\"] }").getOrThrow();
-        helper.assertTrue(two.category().equals("advanced-crafting"), "the category read as " + two.category());
+        helper.assertTrue(two.category() == AssemblingCategory.ADVANCED_CRAFTING, "the category read as " + two.category());
         helper.assertTrue(two.results().size() == 2 && two.results().getFirst().count() == 3 && two.results().get(1).count() == 1,
                 "the results read as " + two.results());
 
         AssemblingRecipe plain = read(helper, "{" + ingredients + ", \"results\": [\"minecraft:stick\"] }").getOrThrow();
-        helper.assertTrue(plain.category().equals("crafting"), "an omitted category read as " + plain.category());
+        helper.assertTrue(plain.category() == AssemblingCategory.CRAFTING, "an omitted category read as " + plain.category());
 
         AssemblingRecipe fluid = read(helper, "{" + ingredients + ", \"results\": [], \"fluid_results\": ["
                 + "{ \"id\": \"minecraft:lava\", \"amount\": 50 }] }").getOrThrow();
@@ -83,6 +84,9 @@ final class AssemblingCategoryTests {
         helper.assertTrue(read(helper, "{" + ingredients + ", \"results\": [] }").isError(), "an empty results with no fluid result was read");
         helper.assertTrue(read(helper, "{" + ingredients + ", \"results\": [], \"fluid_results\": [] }").isError(),
                 "an empty results with an empty fluid_results was read");
+        var unknown = read(helper, "{" + ingredients + ", \"category\": \"advanced_crafting\", \"results\": [\"minecraft:stick\"] }");
+        helper.assertTrue(unknown.isError() && unknown.error().orElseThrow().message().contains("advanced_crafting"),
+                "an unknown category was read, or its error does not name it: " + unknown);
         helper.assertTrue(read(helper, "{" + ingredients + ", \"result\": \"minecraft:stick\" }").isError(),
                 "the removed result was still read");
         helper.succeed();
@@ -91,13 +95,14 @@ final class AssemblingCategoryTests {
     // -- categories -----------------------------------------------------------------------------
 
     private static void configDefaults(GameTestHelper helper) {
-        List<String> tier1 = List.of("crafting", "advanced-crafting");
-        List<String> more = List.of("crafting", "advanced-crafting", "crafting-with-fluid");
-        helper.assertTrue(List.copyOf(CraftworksConfig.assemblerCategories(AssemblerTier.ONE)).equals(tier1),
+        List<AssemblingCategory> tier1 = List.of(AssemblingCategory.CRAFTING, AssemblingCategory.ADVANCED_CRAFTING);
+        List<AssemblingCategory> more = List.of(AssemblingCategory.CRAFTING, AssemblingCategory.ADVANCED_CRAFTING,
+                AssemblingCategory.CRAFTING_WITH_FLUID);
+        helper.assertTrue(CraftworksConfig.assemblerCategories(AssemblerTier.ONE).equals(tier1),
                 "tier 1 takes " + CraftworksConfig.assemblerCategories(AssemblerTier.ONE));
-        helper.assertTrue(List.copyOf(CraftworksConfig.assemblerCategories(AssemblerTier.TWO)).equals(more),
+        helper.assertTrue(CraftworksConfig.assemblerCategories(AssemblerTier.TWO).equals(more),
                 "tier 2 takes " + CraftworksConfig.assemblerCategories(AssemblerTier.TWO));
-        helper.assertTrue(List.copyOf(CraftworksConfig.assemblerCategories(AssemblerTier.THREE)).equals(more),
+        helper.assertTrue(CraftworksConfig.assemblerCategories(AssemblerTier.THREE).equals(more),
                 "tier 3 takes " + CraftworksConfig.assemblerCategories(AssemblerTier.THREE));
         helper.succeed();
     }

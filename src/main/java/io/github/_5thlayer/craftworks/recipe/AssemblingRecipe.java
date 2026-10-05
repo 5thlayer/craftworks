@@ -37,7 +37,7 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
  * true, so a recipe written before they existed reads unchanged. Fluids are NeoForge's own types so that
  * Craftworks names no fluid Library (5thlayer/factoryworks#578).
  *
- * <p>{@code category} names the recipe's kind, in Factorio's words, and decides which Assemblers may hold
+ * <p>{@code category} names the recipe's kind, one of {@link AssemblingCategory}'s five, and decides which Assemblers may hold
  * it; omitted, it is {@code crafting}. {@code results} is a list of item stacks, empty only when
  * {@code fluid_results} is not. The first goes to an Assembler's product slot and the rest to its remainder
  * slot; the Personal Assembler plans only a recipe with exactly one (CONTEXT.md, Hand-craftable).
@@ -50,13 +50,7 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 public record AssemblingRecipe(
         List<SizedIngredient> ingredients, List<ItemStackTemplate> results, int time, int priority,
         List<SizedFluidIngredient> fluidIngredients, List<FluidStackTemplate> fluidResults, boolean handCraftable,
-        String category) implements Recipe<RecipeInput> {
-
-    public static final String CRAFTING = "crafting";
-    public static final String ADVANCED_CRAFTING = "advanced-crafting";
-    public static final String CRAFTING_WITH_FLUID = "crafting-with-fluid";
-    public static final String CHEMISTRY = "chemistry";
-    public static final String OIL_PROCESSING = "oil-processing";
+        AssemblingCategory category) implements Recipe<RecipeInput> {
 
     public static final int DEFAULT_TIME = 10;
     public static final int DEFAULT_PRIORITY = 0;
@@ -79,7 +73,17 @@ public record AssemblingRecipe(
 
     /** What an Assembler's product slot gets: the first result, or nothing for a recipe that makes only fluids. */
     public ItemStack product() {
+        return productOf(results);
+    }
+
+    /** The first of {@code results} as a stack, or nothing: one rule for the recipe and for what the client is sent of it. */
+    public static ItemStack productOf(List<ItemStackTemplate> results) {
         return results.isEmpty() ? ItemStack.EMPTY : results.getFirst().create();
+    }
+
+    /** The results after the first, which an Assembler puts in its remainder slot. */
+    public List<ItemStackTemplate> extraResults() {
+        return results.isEmpty() ? List.of() : results.subList(1, results.size());
     }
 
     /**
@@ -140,7 +144,7 @@ public record AssemblingRecipe(
                     FluidStackTemplate.CODEC.listOf().optionalFieldOf("fluid_results", List.of())
                             .forGetter(AssemblingRecipe::fluidResults),
                     Codec.BOOL.optionalFieldOf("hand_craftable", true).forGetter(AssemblingRecipe::handCraftable),
-                    Codec.STRING.optionalFieldOf("category", CRAFTING).forGetter(AssemblingRecipe::category))
+                    AssemblingCategory.CODEC.optionalFieldOf("category", AssemblingCategory.CRAFTING).forGetter(AssemblingRecipe::category))
                     .apply(instance, AssemblingRecipe::new))
             .flatXmap(AssemblingRecipe::makesSomething, AssemblingRecipe::makesSomething);
 
@@ -152,6 +156,7 @@ public record AssemblingRecipe(
             SizedFluidIngredient.STREAM_CODEC.apply(ByteBufCodecs.list()), AssemblingRecipe::fluidIngredients,
             FluidStackTemplate.STREAM_CODEC.apply(ByteBufCodecs.list()), AssemblingRecipe::fluidResults,
             ByteBufCodecs.BOOL, AssemblingRecipe::handCraftable,
-            ByteBufCodecs.STRING_UTF8, AssemblingRecipe::category,
+            ByteBufCodecs.idMapper(ordinal -> AssemblingCategory.values()[ordinal], AssemblingCategory::ordinal),
+            AssemblingRecipe::category,
             AssemblingRecipe::new);
 }

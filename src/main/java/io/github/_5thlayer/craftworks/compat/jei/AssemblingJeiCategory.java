@@ -103,7 +103,7 @@ final class AssemblingJeiCategory implements IRecipeCategory<RecipeHolder<Assemb
                 String.format("%.1f", recipe.time() / 20F)), ARROW + SLOT, 10)
                 .setPosition(x + 3, 24)
                 .setColor(0xFF808080);
-        builder.addText(Component.translatable("jei.craftworks.assembling.category", recipe.category()), getWidth(), 10)
+        builder.addText(Component.translatable("jei.craftworks.assembling.category", recipe.category().id()), getWidth(), 10)
                 .setPosition(0, 33)
                 .setColor(0xFF808080);
     }

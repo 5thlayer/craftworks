@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import io.github._5thlayer.craftworks.network.AssemblerHeldPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -55,7 +56,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
 
         /** The first result, the one the product slot gets; empty for a recipe that makes only fluids. */
         public ItemStack product() {
-            return results.isEmpty() ? ItemStack.EMPTY : results.getFirst().create();
+            return AssemblingRecipe.productOf(results);
         }
     }
 

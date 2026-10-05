@@ -12,6 +12,7 @@ import io.github._5thlayer.craftworks.planner.AssemblingRecipeSet;
 import io.github._5thlayer.craftworks.planner.Ingredient;
 import io.github._5thlayer.craftworks.planner.ItemAmount;
 import io.github._5thlayer.craftworks.planner.Locks;
+import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
 import io.github._5thlayer.craftworks.recipe.RuntimeAssemblingRecipes;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -91,7 +92,7 @@ final class KubeJSTests {
         helper.assertTrue(recipe != null, "the game tests' script's " + TWO_RESULTS + " is not an Assembling recipe");
         helper.assertTrue(recipe.results().size() == 2 && recipe.results().getFirst().count() == 3
                 && recipe.results().get(1).count() == 1, "it makes " + recipe.results() + ", not 3 gold nuggets then a stick");
-        helper.assertTrue(recipe.category().equals("advanced-crafting"), "its category is " + recipe.category());
+        helper.assertTrue(recipe.category() == AssemblingCategory.ADVANCED_CRAFTING, "its category is " + recipe.category());
         helper.assertTrue(RuntimeAssemblingRecipes.recipes(helper.getLevel()).byId(TWO_RESULTS) == null,
                 "the planner's set holds " + TWO_RESULTS);
         helper.succeed();

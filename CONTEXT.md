@@ -68,8 +68,8 @@ it is given. Never the **Personal Assembler**, which always takes its full name.
 _Avoid_: assembling machine, crafter, auto crafter, machine (alone)
 
 **Category**:
-The kind an Assembling recipe is, a string in Factorio's names: `crafting` (the default), `advanced-crafting`,
-`crafting-with-fluid`, `chemistry`, `oil-processing`. Each tier of Assembler holds the categories its server
+The kind an Assembling recipe is, one of Factorio's five names and no other: `crafting` (the default),
+`advanced-crafting`, `crafting-with-fluid`, `chemistry`, `oil-processing`. Each tier of Assembler holds the categories its server
 config lists, and Fill Recipe refuses a recipe outside them. The Personal Assembler ignores it: it is no
 machine, and plans through any Hand-craftable recipe whatever its category.
 _Avoid_: type (the recipe's `type` is its Minecraft recipe type), tag

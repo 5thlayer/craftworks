@@ -26,8 +26,9 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
  * resolved lazily because a block entity loads before the recipes do.
  *
  * <p>Every Assembling recipe is one, Hand-craftable or not, except four kinds this tier cannot run: one
- * whose category the tier's server config does not list, one naming a fluid (tiers 2 and 3 take them in 5thlayer/factoryworks#580), one with more distinct
- * ingredients than the five input slots, and one whose remainders don't fit the one remainder slot.
+ * whose category the tier's server config does not list, one naming a fluid (tiers 2 and 3 take them in
+ * 5thlayer/factoryworks#580), one with more distinct ingredients than the five input slots, and one whose
+ * remainders don't fit the one remainder slot.
  */
 public final class HeldRecipes {
 
@@ -69,7 +70,7 @@ public final class HeldRecipes {
     public static boolean remaindersFit(AssemblingRecipe recipe) {
         ItemStackTemplate kind = null;
         int owed = 0;
-        for (ItemStackTemplate extra : recipe.results().stream().skip(1).toList()) {
+        for (ItemStackTemplate extra : recipe.extraResults()) {
             if (kind != null && !ItemStack.isSameItemSameComponents(kind.create(), extra.create())) {
                 return false;
             }
@@ -111,8 +112,8 @@ public final class HeldRecipes {
 
     /** The recipe's name for a message: its product's, or else its id. */
     public static Component name(ServerLevel level, Identifier id) {
-        return find(level, id).filter(holder -> !holder.value().results().isEmpty())
-                .map(holder -> holder.value().results().getFirst().create().getHoverName())
+        return find(level, id).map(holder -> holder.value().product()).filter(product -> !product.isEmpty())
+                .map(ItemStack::getHoverName)
                 .orElse(Component.literal(id.toString()));
     }
 }
