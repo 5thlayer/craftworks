@@ -32,10 +32,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundContainerSetDataPacket;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerSynchronizer;
+import net.minecraft.world.inventory.RemoteSlot;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
@@ -50,6 +54,7 @@ import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.common.util.FakePlayer;
+import net.neoforged.neoforge.network.payload.AdvancedContainerSetDataPayload;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.energy.EnergyHandlerUtil;
@@ -115,6 +120,7 @@ final class AssemblerMachineTests {
         tests.test("a_higher_tier_placed_over_an_assembler_swaps_it_whole_and_a_lower_one_swaps_it_back", 20, AssemblerMachineTests::fastReplace);
         tests.test("the_held_recipe_and_contents_survive_a_save_and_reload", 20, AssemblerMachineTests::survivesReload);
         tests.test("the_open_assemblers_held_recipe_crosses_to_the_client", 20, AssemblerMachineTests::heldCrossesTheWire);
+        tests.test("a_full_buffer_above_a_short_crosses_to_the_client_whole", 20, AssemblerMachineTests::energyCrossesTheWire);
         tests.test("each_tier_starts_from_its_default_speed_power_and_buffer", 20, AssemblerMachineTests::configDefaults);
         tests.test("craftworks_names_no_wireworks_pipeworks_or_factoryworks_type", 20, AssemblerMachineTests::namesNoSiblingType);
     }
@@ -489,6 +495,63 @@ final class AssemblerMachineTests {
         menu.broadcastChanges();
         menu.show(Optional.of(held));
         helper.assertTrue(menu.held().map(AssemblerMenu.Held::id).equals(Optional.of(SAPLING)), "the menu did not take the Held recipe");
+        helper.succeed();
+    }
+
+    /**
+     * The energy bar reads data slots, and vanilla's packet sends those as shorts, so 50,000 FE would wrap.
+     * NeoForge sends its own payload with the whole int instead; this runs the menu's data slots through
+     * that payload's codec into a client menu, and fails if a NeoForge without it lets the bar wrap.
+     */
+    private static void energyCrossesTheWire(GameTestHelper helper) {
+        Placed assembler = place(helper, AssemblerTier.ONE);
+        SimpleEnergyHandler supply = supply();
+        int capacity = CraftworksConfig.assemblerBuffer(AssemblerTier.ONE);
+        while (feed(assembler, supply, capacity) > 0) {
+        }
+        helper.assertTrue(assembler.machine().energy() == capacity && capacity > Short.MAX_VALUE,
+                "the buffer holds " + assembler.machine().energy() + " of " + capacity + ", which a short would not wrap");
+
+        RegistryFriendlyByteBuf vanilla = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        ClientboundContainerSetDataPacket.STREAM_CODEC.encode(vanilla, new ClientboundContainerSetDataPacket(1, 2, capacity));
+        helper.assertTrue(ClientboundContainerSetDataPacket.STREAM_CODEC.decode(vanilla).getValue() != capacity,
+                "vanilla's packet no longer wraps, so this test shows nothing");
+
+        AssemblerMenu server = (AssemblerMenu) assembler.machine().createMenu(1, assembler.player().getInventory(), assembler.player());
+        RegistryFriendlyByteBuf opening = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        opening.writeBlockPos(server.pos());
+        AssemblerMenu client = new AssemblerMenu(1, assembler.player().getInventory(), opening);
+        server.setSynchronizer(new ContainerSynchronizer() {
+            @Override
+            public void sendInitialData(AbstractContainerMenu menu, List<ItemStack> items, ItemStack carried, int[] data) {
+                for (int id = 0; id < data.length; id++) {
+                    sendDataChange(menu, id, data[id]);
+                }
+            }
+
+            @Override
+            public void sendDataChange(AbstractContainerMenu menu, int id, int value) {
+                RegistryFriendlyByteBuf wire = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+                AdvancedContainerSetDataPayload.STREAM_CODEC.encode(wire, new AdvancedContainerSetDataPayload((byte) menu.containerId, (short) id, value));
+                AdvancedContainerSetDataPayload read = AdvancedContainerSetDataPayload.STREAM_CODEC.decode(wire);
+                client.setData(read.dataId(), read.value());
+            }
+
+            @Override
+            public void sendSlotChange(AbstractContainerMenu menu, int slot, ItemStack stack) {
+            }
+
+            @Override
+            public void sendCarriedChange(AbstractContainerMenu menu, ItemStack stack) {
+            }
+
+            @Override
+            public RemoteSlot createSlot() {
+                return RemoteSlot.PLACEHOLDER;
+            }
+        });
+        helper.assertTrue(client.energy() == capacity && client.capacity() == capacity,
+                "the client's energy bar reads " + client.energy() + " of " + client.capacity() + " FE");
         helper.succeed();
     }
 
