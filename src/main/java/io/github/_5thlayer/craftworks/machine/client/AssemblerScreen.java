@@ -3,21 +3,18 @@
 
 package io.github._5thlayer.craftworks.machine.client;
 
-import java.util.List;
 import java.util.Optional;
 
+import io.github._5thlayer.craftworks.machine.AssemblerGhosts;
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import io.github._5thlayer.craftworks.machine.AssemblerSlots;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.common.crafting.SizedIngredient;
 
 /**
  * The Assembler's screen: the Held recipe, its five inputs, the product and the remainders, how far the
@@ -26,7 +23,8 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
  * <p>No recipe is picked here and none cleared; the recipe viewer's Fill Recipe is the only picker. The
  * Held recipe heads the screen as its product's icon and name, and is ghosted in the slots: each
  * ingredient in the input slot that takes it, with the count one craft needs, and the product in its slot.
- * A tag ingredient cycles through its members. An input holding less than one craft is red.
+ * A tag ingredient cycles through its members. An input holding less than one craft is red. What is ghosted,
+ * and where, is {@link AssemblerGhosts}'s; {@link #ghostAt} is how the recipe viewers ask what is under the mouse.
  */
 public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu> {
 
@@ -40,7 +38,6 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
     private static final int SHORT = 0xFFB84C4C;
     // Half the slot's own colour over a ghost, so it reads as a placeholder rather than an item.
     private static final int GHOST_VEIL = 0x808B8B8B;
-    private static final long CYCLE_MILLIS = 1000;
 
     private static final int BAR_X = AssemblerMenu.INPUT_X + AssemblerSlots.INPUTS * 18 + 4;
     private static final int BAR_WIDTH = AssemblerMenu.PRODUCT_X - 6 - BAR_X;
@@ -61,7 +58,7 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
         Optional<AssemblerMenu.Held> held = menu.held();
         held.ifPresent(recipe -> {
             ItemStack product = recipe.result().create();
-            graphics.item(product, leftPos + 8, topPos + 16);
+            graphics.item(product, leftPos + AssemblerGhosts.HEAD_X, topPos + AssemblerGhosts.HEAD_Y);
             graphics.text(font, product.getHoverName(), leftPos + 28, topPos + 20, TEXT, false);
         });
         for (Slot slot : menu.slots) {
@@ -75,9 +72,7 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
             if (AssemblerSlots.isInput(slot.index) && menu.isShort(slot.index)) {
                 graphics.fill(x, y, x + 16, y + 16, SHORT);
             }
-            if (slot.getItem().isEmpty()) {
-                ghost(graphics, slot, held, x, y);
-            }
+            ghost(graphics, x, y);
         }
         int x = leftPos + BAR_X;
         int y = topPos + AssemblerMenu.INPUT_Y;
@@ -93,27 +88,21 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
         graphics.text(font, stored, energyX + (ENERGY_WIDTH - font.width(stored)) / 2, energyY + 2, 0xFFFFFFFF, true);
     }
 
+    /**
+     * The ghost under the mouse, or empty over a real stack, an empty slot with nothing to ghost, and the
+     * rest of the panel: what the slots and the head show, and what EMI's and JEI's shortcuts ask of it.
+     */
+    public Optional<AssemblerGhosts.Ghost> ghostAt(double mouseX, double mouseY) {
+        return AssemblerGhosts.at(menu, leftPos, topPos, (int) Math.floor(mouseX), (int) Math.floor(mouseY), Util.getMillis());
+    }
+
     /** What an empty slot would take under the Held recipe: the ingredient there, or the product. */
-    private void ghost(GuiGraphicsExtractor graphics, Slot slot, Optional<AssemblerMenu.Held> held, int x, int y) {
-        if (held.isEmpty()) {
+    private void ghost(GuiGraphicsExtractor graphics, int x, int y) {
+        Optional<AssemblerGhosts.Ghost> shown = ghostAt(x, y);
+        if (shown.isEmpty()) {
             return;
         }
-        ItemStack ghost = ItemStack.EMPTY;
-        if (AssemblerSlots.isInput(slot.index)) {
-            Optional<SizedIngredient> sized = AssemblerSlots.ingredientFor(slot.index, held.get().ingredients());
-            if (sized.isPresent()) {
-                List<Holder<Item>> members = sized.get().ingredient().items().toList();
-                if (!members.isEmpty()) {
-                    int member = (int) (Util.getMillis() / CYCLE_MILLIS % members.size());
-                    ghost = new ItemStack(members.get(member), sized.get().count());
-                }
-            }
-        } else if (slot.index == AssemblerSlots.PRODUCT) {
-            ghost = held.get().result().create();
-        }
-        if (ghost.isEmpty()) {
-            return;
-        }
+        ItemStack ghost = shown.get().stack();
         graphics.item(ghost, x, y);
         graphics.fill(x, y, x + 16, y + 16, GHOST_VEIL);
         if (ghost.getCount() > 1) {

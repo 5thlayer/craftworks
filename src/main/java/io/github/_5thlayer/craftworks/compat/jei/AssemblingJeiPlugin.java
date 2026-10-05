@@ -4,18 +4,25 @@
 package io.github._5thlayer.craftworks.compat.jei;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.github._5thlayer.craftworks.Craftworks;
+import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
+import mezz.jei.api.gui.builder.IClickableIngredientFactory;
+import mezz.jei.api.gui.handlers.IGuiContainerHandler;
 import mezz.jei.api.recipe.types.IRecipeHolderType;
+import mezz.jei.api.runtime.IClickableIngredient;
 import mezz.jei.api.registration.IAdvancedRegistration;
+import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.IRecipeTransferRegistration;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeMap;
 import net.neoforged.neoforge.client.event.RecipesReceivedEvent;
@@ -65,6 +72,29 @@ public final class AssemblingJeiPlugin implements IModPlugin {
     @Override
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
         registration.addRecipeTransferHandler(new AssemblerTransferHandler(), ASSEMBLING);
+    }
+
+    /** The Assembler screen's ghosts answer Recipe and Uses as a real stack does (see {@link #ghostAt}). */
+    @Override
+    public void registerGuiHandlers(IGuiHandlerRegistration registration) {
+        registration.addGuiContainerHandler(AssemblerScreen.class, new IGuiContainerHandler<AssemblerScreen>() {
+            @Override
+            public Optional<? extends IClickableIngredient<?>> getClickableIngredientUnderMouse(
+                    IClickableIngredientFactory factory, AssemblerScreen screen, double mouseX, double mouseY) {
+                return ghostAt(factory, screen, mouseX, mouseY);
+            }
+        });
+    }
+
+    /**
+     * The ghost under the mouse as JEI's hovered ingredient, or none where there isn't one, so JEI's own
+     * slot lookup answers for a real stack. One item, whatever count the ghost is drawn with: Recipe and
+     * Uses ask about the item.
+     */
+    private static Optional<IClickableIngredient<ItemStack>> ghostAt(
+            IClickableIngredientFactory factory, AssemblerScreen screen, double mouseX, double mouseY) {
+        return screen.ghostAt(mouseX, mouseY)
+                .flatMap(ghost -> factory.createBuilder(ghost.stack().copyWithCount(1)).buildWithArea(ghost.x(), ghost.y(), 16, 16));
     }
 
     private static List<RecipeHolder<AssemblingRecipe>> assemblingRecipes() {

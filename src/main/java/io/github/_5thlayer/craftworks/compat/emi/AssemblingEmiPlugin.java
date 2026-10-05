@@ -8,6 +8,7 @@ import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.stack.EmiStack;
+import dev.emi.emi.api.stack.EmiStackInteraction;
 import dev.emi.emi.screen.EmiScreenManager;
 import dev.emi.emi.search.EmiSearch;
 import io.github._5thlayer.craftworks.Craftworks;
@@ -15,6 +16,7 @@ import io.github._5thlayer.craftworks.assembler.AssemblingRecipeIds;
 import io.github._5thlayer.craftworks.assembler.ReadyRecipeIds;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.Assemblers;
+import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
@@ -33,6 +35,8 @@ import net.minecraft.world.item.Items;
  * <p>Fill Recipe reaches the Assembler through a handler on the player's inventory, which EMI keys under a
  * null menu type since {@code InventoryMenu} has none. So Fill Recipe queues from the inventory screen and
  * nowhere else.
+ *
+ * <p>The Assembler screen's ghosts answer Recipe and Uses as a real stack does (see {@link #ghostAt}).
  */
 @EmiEntrypoint
 public final class AssemblingEmiPlugin implements EmiPlugin {
@@ -58,6 +62,17 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
         if (!EmiScreenManager.isDisabled() && Minecraft.getInstance().player != null) EmiScreenManager.forceRecalculate();
     }
 
+    /**
+     * The ghost under the mouse on an Assembler's screen, as EMI's hovered stack, or none where there isn't
+     * one, so EMI's own slot lookup answers for a real stack. One item, whatever count the ghost is drawn
+     * with: Recipe and Uses ask about the item.
+     */
+    private static EmiStackInteraction ghostAt(AssemblerScreen screen, int mouseX, int mouseY) {
+        return screen.ghostAt(mouseX, mouseY)
+                .map(ghost -> new EmiStackInteraction(EmiStack.of(ghost.stack().copyWithCount(1))))
+                .orElse(EmiStackInteraction.EMPTY);
+    }
+
     @Override
     public void register(EmiRegistry registry) {
         registry.addCategory(ASSEMBLING);
@@ -66,6 +81,7 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
                 .forEach(holder -> registry.addRecipe(new AssemblingEmiRecipe(ASSEMBLING, holder)));
         registry.addRecipeHandler(null, new PersonalAssemblerEmiHandler());
         registry.addRecipeHandler(Assemblers.MENU.get(), new AssemblerEmiHandler());
+        registry.addStackProvider(AssemblerScreen.class, AssemblingEmiPlugin::ghostAt);
         for (AssemblerTier tier : AssemblerTier.values()) {
             registry.addWorkstation(ASSEMBLING, EmiStack.of(Assemblers.item(tier).get()));
         }
