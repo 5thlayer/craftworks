@@ -47,5 +47,6 @@
   "craftworks.jade.state.missing_ingredients": "Missing ingredients",
   "craftworks.jade.state.output_full": "Output full",
   "craftworks.jade.state.cant_run": "Can't run",
-  "craftworks.jade.infinite_energy": "Infinite FE"
+  "craftworks.jade.infinite_energy": "Infinite FE",
+  "config.jade.plugin_craftworks.assembler": "Assembler"
 }
