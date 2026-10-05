@@ -77,6 +77,9 @@ public final class RuntimeAssemblingRecipes {
     /** The recipe as the Resolver sees it, or null with the reason added to {@code refused}. */
     private static io.github._5thlayer.craftworks.planner.AssemblingRecipe read(
             String id, AssemblingRecipe recipe, HolderLookup.Provider registries, List<String> refused) {
+        // The Crafting Plan plans one product per recipe: any other number of item results is never
+        // Hand-craftable, and the set holds nothing else, so it is left out rather than refused.
+        if (recipe.results().size() != 1) return null;
         List<Ingredient> ingredients = new ArrayList<>();
         for (SizedIngredient sized : recipe.ingredients()) {
             List<String> items = new ArrayList<>();
@@ -108,7 +111,8 @@ public final class RuntimeAssemblingRecipes {
             }
             ingredients.add(new Ingredient(items, sized.count(), remainders));
         }
-        String result = ItemKeys.of(recipe.result().create(), registries);
+        ItemStackTemplate product = recipe.results().getFirst();
+        String result = ItemKeys.of(product.create(), registries);
         if (result == null) {
             refused.add(id + " (a result with a component nothing can name)");
             return null;
@@ -121,7 +125,7 @@ public final class RuntimeAssemblingRecipes {
         boolean handCraftable = recipe.handCraftable()
                 && recipe.fluidIngredients().isEmpty() && recipe.fluidResults().isEmpty();
         return new io.github._5thlayer.craftworks.planner.AssemblingRecipe(
-                id, ingredients, new ItemAmount(result, recipe.result().count()), recipe.time(),
+                id, ingredients, new ItemAmount(result, product.count()), recipe.time(),
                 recipe.priority(), handCraftable);
     }
 

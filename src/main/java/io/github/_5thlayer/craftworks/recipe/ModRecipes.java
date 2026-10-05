@@ -81,7 +81,7 @@ public final class ModRecipes {
             // With the vanilla pack off, vanilla's ids stay at the table: that flag answers for them, not this one.
             boolean vanillaKept = !settings.vanillaPack() && id.getNamespace().equals(VANILLA);
             AssemblingRecipe assembling = vanillaKept || settings.excludes(id) ? null : toAssembling(holder.value());
-            if (assembling != null && (ItemStackTemplate.CODEC.encodeStart(ops, assembling.result()).isError()
+            if (assembling != null && (assembling.results().stream().anyMatch(result -> ItemStackTemplate.CODEC.encodeStart(ops, result).isError())
                     || assembling.ingredients().stream()
                             .anyMatch(sized -> SizedIngredient.NESTED_CODEC.encodeStart(ops, sized).isError()))) {
                 skipped.add(id.toString());
@@ -125,8 +125,8 @@ public final class ModRecipes {
         for (Ingredient slot : slots) bag.merge(slot, 1, Integer::sum);
         List<SizedIngredient> ingredients = new ArrayList<>();
         bag.forEach((ingredient, count) -> ingredients.add(new SizedIngredient(ingredient, count)));
-        return new AssemblingRecipe(ingredients, result, AssemblingRecipe.DEFAULT_TIME, AssemblingRecipe.DEFAULT_PRIORITY,
-                List.of(), List.of(), true);
+        return new AssemblingRecipe(ingredients, List.of(result), AssemblingRecipe.DEFAULT_TIME,
+                AssemblingRecipe.DEFAULT_PRIORITY, List.of(), List.of(), true, AssemblingRecipe.CRAFTING);
     }
 
     private static boolean assemblesItsOwn(Recipe<?> recipe) {

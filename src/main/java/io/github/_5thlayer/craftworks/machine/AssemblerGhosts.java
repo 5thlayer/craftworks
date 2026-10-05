@@ -48,7 +48,8 @@ public final class AssemblerGhosts {
             return Optional.empty();
         }
         if (covers(left + HEAD_X, top + HEAD_Y, mouseX, mouseY)) {
-            return Optional.of(new Ghost(held.get().result().create(), left + HEAD_X, top + HEAD_Y));
+            return Optional.of(held.get().product()).filter(stack -> !stack.isEmpty())
+                    .map(stack -> new Ghost(stack, left + HEAD_X, top + HEAD_Y));
         }
         for (Slot slot : menu.slots) {
             if (slot.index >= AssemblerSlots.SIZE) {
@@ -77,7 +78,7 @@ public final class AssemblerGhosts {
                 }
             }
         } else if (slot.index == AssemblerSlots.PRODUCT) {
-            ghost = held.get().result().create();
+            ghost = held.get().product();
         }
         return ghost.isEmpty() ? Optional.empty() : Optional.of(ghost);
     }

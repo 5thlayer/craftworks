@@ -1,9 +1,13 @@
 {
 	"keys": [
 		{
-			"name": "result",
+			"name": "results",
 			"role": "output",
-			"type": "item_stack"
+			"type": {
+				"type": "list",
+				"component": "item_stack",
+				"allow_empty": true
+			}
 		},
 		{
 			"name": "ingredients",
@@ -51,7 +55,14 @@
 			"type": "boolean",
 			"optional": true,
 			"excluded": true
+		},
+		{
+			"name": "category",
+			"role": "other",
+			"type": "string",
+			"optional": "crafting",
+			"excluded": true
 		}
 	],
-	"unique": ["result"]
+	"unique": ["results"]
 }

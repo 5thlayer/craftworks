@@ -39,7 +39,7 @@ public final class CraftworksConfig {
 
     /** One tier's Assembler figures, in the config's section for that tier. */
     public record AssemblerSettings(ModConfigSpec.DoubleValue speed, ModConfigSpec.DoubleValue power,
-            ModConfigSpec.IntValue buffer) {
+            ModConfigSpec.IntValue buffer, ModConfigSpec.ConfigValue<List<? extends String>> categories) {
     }
 
     private static final Map<AssemblerTier, AssemblerSettings> ASSEMBLERS = new EnumMap<>(AssemblerTier.class);
@@ -82,8 +82,14 @@ public final class CraftworksConfig {
             ModConfigSpec.IntValue buffer = builder
                     .comment("FE the energy buffer holds.")
                     .defineInRange("buffer", tier.defaultBuffer(), 1, Integer.MAX_VALUE);
+            var categories = builder
+                    .comment("The categories of Assembling recipe this tier can hold, by Factorio's names: crafting,",
+                            "advanced-crafting, crafting-with-fluid, chemistry, oil-processing. Fill Recipe refuses a",
+                            "recipe whose category is not listed.")
+                    .defineListAllowEmpty("categories", tier.defaultCategories(), () -> "crafting",
+                            value -> value instanceof String name && !name.isBlank());
             builder.pop();
-            ASSEMBLERS.put(tier, new AssemblerSettings(speed, power, buffer));
+            ASSEMBLERS.put(tier, new AssemblerSettings(speed, power, buffer, categories));
         }
         SPEC = builder.build();
     }
@@ -119,6 +125,11 @@ public final class CraftworksConfig {
     /** The tier's energy buffer in FE; its default until a world's config is loaded. */
     public static int assemblerBuffer(AssemblerTier tier) {
         return SPEC.isLoaded() ? ASSEMBLERS.get(tier).buffer().get() : tier.defaultBuffer();
+    }
+
+    /** The recipe categories the tier holds; its defaults until a world's config is loaded. */
+    public static List<? extends String> assemblerCategories(AssemblerTier tier) {
+        return SPEC.isLoaded() ? ASSEMBLERS.get(tier).categories().get() : tier.defaultCategories();
     }
 
     /** The configured sources, each once; none until a world's config is loaded. */

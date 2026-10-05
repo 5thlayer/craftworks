@@ -80,7 +80,7 @@ final class AssemblerMachineTests {
     private static final String LOCKED = "craftworks.gametest.assembler_locked";
 
     /** The origin stands at the middle of the platform's floor, so the 3x2x3 footprint fits whichever way it faces. */
-    private static final BlockPos ORIGIN = new BlockPos(4, 1, 4);
+    static final BlockPos ORIGIN = new BlockPos(4, 1, 4);
 
     private AssemblerMachineTests() {
     }
@@ -436,7 +436,7 @@ final class AssemblerMachineTests {
         helper.succeed();
     }
 
-    private static void swap(GameTestHelper helper, Placed assembler, AssemblerTier to, BlockPos aimed) {
+    static void swap(GameTestHelper helper, Placed assembler, AssemblerTier to, BlockPos aimed) {
         FakeBuilder player = assembler.player();
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Assemblers.item(to).get()));
         BlockPos at = helper.absolutePos(aimed);
@@ -474,14 +474,14 @@ final class AssemblerMachineTests {
         Placed assembler = place(helper, AssemblerTier.ONE);
         hold(assembler, SAPLING);
         var recipe = HeldRecipes.find(helper.getLevel(), SAPLING).orElseThrow().value();
-        AssemblerMenu.Held sent = new AssemblerMenu.Held(SAPLING, recipe.ingredients(), recipe.result());
+        AssemblerMenu.Held sent = new AssemblerMenu.Held(SAPLING, recipe.ingredients(), recipe.results());
         RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
         AssemblerHeldPacket.STREAM_CODEC.encode(buffer, new AssemblerHeldPacket(7, Optional.of(sent)));
         AssemblerHeldPacket read = AssemblerHeldPacket.STREAM_CODEC.decode(buffer);
         AssemblerMenu.Held held = read.held().orElseThrow();
         helper.assertTrue(read.containerId() == 7 && held.id().equals(SAPLING), "the packet read back as " + read);
         helper.assertTrue(held.ingredients().size() == 1 && held.ingredients().get(0).count() == 2, "the ingredients read back as " + held.ingredients());
-        helper.assertTrue(held.result().create().is(recipe.result().create().getItem()), "the product read back as " + held.result());
+        helper.assertTrue(held.product().is(recipe.product().getItem()), "the product read back as " + held.results());
 
         AssemblerMenu menu = (AssemblerMenu) assembler.machine().createMenu(1, assembler.player().getInventory(), assembler.player());
         assembler.player().containerMenu = menu;
@@ -544,7 +544,7 @@ final class AssemblerMachineTests {
     // -- fixtures -------------------------------------------------------------------------------
 
     /** A server player of its own that keeps the translation key of every message it is sent. */
-    private static final class FakeBuilder extends FakePlayer {
+    static final class FakeBuilder extends FakePlayer {
 
         final List<String> heard = new ArrayList<>();
 
@@ -623,7 +623,7 @@ final class AssemblerMachineTests {
     }
 
     /** Opens the Assembler's screen for its player and presses Fill Recipe, as the recipe viewer's button does. */
-    private static HoldVerdict request(Placed assembler, Identifier recipe) {
+    static HoldVerdict request(Placed assembler, Identifier recipe) {
         FakeBuilder player = assembler.player();
         // Not openMenu: a fake player's opens nothing, so the menu the block entity makes is set by hand.
         AssemblerMenu menu = (AssemblerMenu) assembler.machine().createMenu(1, player.getInventory(), player);
@@ -646,7 +646,7 @@ final class AssemblerMachineTests {
         return inserted;
     }
 
-    private static int count(Placed assembler, int slot) {
+    static int count(Placed assembler, int slot) {
         return assembler.machine().inventory().getAmountAsInt(slot);
     }
 
@@ -654,12 +654,12 @@ final class AssemblerMachineTests {
         return stacks.stream().filter(stack -> stack.is(item)).mapToInt(ItemStack::getCount).sum();
     }
 
-    private static SimpleEnergyHandler supply() {
+    static SimpleEnergyHandler supply() {
         return new SimpleEnergyHandler(1_000_000, 1_000_000, 1_000_000, 1_000_000);
     }
 
     /** Moves energy from a plain handler into the Assembler's face; how much went in. */
-    private static int feed(Placed assembler, SimpleEnergyHandler supply, int amount) {
+    static int feed(Placed assembler, SimpleEnergyHandler supply, int amount) {
         return EnergyHandlerUtil.move(supply, assembler.energy(Direction.UP), amount, null);
     }
 }

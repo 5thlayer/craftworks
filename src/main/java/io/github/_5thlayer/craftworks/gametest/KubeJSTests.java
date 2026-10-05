@@ -32,6 +32,7 @@ final class KubeJSTests {
     private static final String DIAMOND = "craftworks:kubejs_sample/diamond";
     private static final String EMERALD = "craftworks:kubejs_gametest/emerald";
     private static final String FLUID = "craftworks:kubejs_gametest/fluid";
+    private static final String TWO_RESULTS = "craftworks:kubejs_gametest/two_results";
     private static final String STICK = "minecraft:stick";
     private static final String LOCKED_TAG = "craftworks.kubejs_locked";
     private static final String REASON = "Sample: untag yourself to craft this";
@@ -44,6 +45,7 @@ final class KubeJSTests {
         tests.test("a_kubejs_script_edits_an_assembling_recipe", 20, KubeJSTests::edited);
         tests.test("a_kubejs_crafting_recipe_converts", 20, KubeJSTests::converted);
         tests.test("a_kubejs_script_writes_fluids_and_hand_craftable", 20, KubeJSTests::fluid);
+        tests.test("a_kubejs_script_writes_results_and_a_category", 20, KubeJSTests::results);
         tests.test("a_kubejs_lock_event_locks_with_its_reason", 20, KubeJSTests::locked);
     }
 
@@ -78,6 +80,20 @@ final class KubeJSTests {
         helper.assertFalse(recipe.handCraftable(), "the script set hand_craftable false");
         helper.assertTrue(RuntimeAssemblingRecipes.recipes(helper.getLevel()).byId(FLUID) == null,
                 "the planner's set holds " + FLUID);
+        helper.succeed();
+    }
+
+    private static void results(GameTestHelper helper) {
+        var recipe = helper.getLevel().getServer().getRecipeManager().recipeMap()
+                .byType(CraftworksRecipes.ASSEMBLING_TYPE.get()).stream()
+                .filter(holder -> holder.id().identifier().toString().equals(TWO_RESULTS))
+                .findFirst().map(RecipeHolder::value).orElse(null);
+        helper.assertTrue(recipe != null, "the game tests' script's " + TWO_RESULTS + " is not an Assembling recipe");
+        helper.assertTrue(recipe.results().size() == 2 && recipe.results().getFirst().count() == 3
+                && recipe.results().get(1).count() == 1, "it makes " + recipe.results() + ", not 3 gold nuggets then a stick");
+        helper.assertTrue(recipe.category().equals("advanced-crafting"), "its category is " + recipe.category());
+        helper.assertTrue(RuntimeAssemblingRecipes.recipes(helper.getLevel()).byId(TWO_RESULTS) == null,
+                "the planner's set holds " + TWO_RESULTS);
         helper.succeed();
     }
 

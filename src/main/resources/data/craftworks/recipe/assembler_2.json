@@ -14,9 +14,11 @@
       "count": 10
     }
   ],
-  "result": {
-    "id": "craftworks:assembler_2",
-    "count": 1
-  },
+  "results": [
+    {
+      "id": "craftworks:assembler_2",
+      "count": 1
+    }
+  ],
   "time": 400
 }

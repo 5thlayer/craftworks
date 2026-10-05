@@ -49,7 +49,7 @@ final class AssemblerGhostTests {
         AssemblerMenu menu = (AssemblerMenu) assembler.machine().createMenu(1, player.getInventory(), player);
         player.containerMenu = menu;
         var held = HeldRecipes.find(assembler.helper().getLevel(), recipe).orElseThrow().value();
-        menu.show(Optional.of(new AssemblerMenu.Held(recipe, held.ingredients(), held.result())));
+        menu.show(Optional.of(new AssemblerMenu.Held(recipe, held.ingredients(), held.results())));
         return menu;
     }
 

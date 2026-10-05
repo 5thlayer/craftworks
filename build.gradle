@@ -159,7 +159,7 @@ def generateVanillaPack = tasks.register('generateVanillaPack') {
                     def sized = bag.computeIfAbsent(key) { [ingredient: slot, count: 0] }
                     sized.count++
                 }
-                def assembling = [type: 'craftworks:assembling', ingredients: bag.values() as List, result: recipe.result]
+                def assembling = [type: 'craftworks:assembling', ingredients: bag.values() as List, results: [recipe.result]]
                 def file = new File(recipes, entry.name.substring('data/minecraft/recipe/'.length()))
                 file.parentFile.mkdirs()
                 file.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(assembling)) + '\n'

@@ -4,5 +4,5 @@
     { "ingredient": "minecraft:milk_bucket", "count": 1 },
     { "ingredient": "minecraft:honey_bottle", "count": 1 }
   ],
-  "result": "minecraft:cake"
+  "results": [ "minecraft:cake" ]
 }

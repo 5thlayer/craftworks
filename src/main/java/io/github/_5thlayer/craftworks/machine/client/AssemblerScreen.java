@@ -56,8 +56,8 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
         graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, PANEL);
         Optional<AssemblerMenu.Held> held = menu.held();
-        held.ifPresent(recipe -> {
-            ItemStack product = recipe.result().create();
+        held.filter(recipe -> !recipe.product().isEmpty()).ifPresent(recipe -> {
+            ItemStack product = recipe.product();
             graphics.item(product, leftPos + AssemblerGhosts.HEAD_X, topPos + AssemblerGhosts.HEAD_Y);
             graphics.text(font, product.getHoverName(), leftPos + 28, topPos + 20, TEXT, false);
         });

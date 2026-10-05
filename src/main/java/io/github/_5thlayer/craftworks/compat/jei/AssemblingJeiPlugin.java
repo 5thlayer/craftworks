@@ -60,7 +60,10 @@ public final class AssemblingJeiPlugin implements IModPlugin {
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
         int maxInputs = assemblingRecipes().stream().mapToInt(holder -> holder.value().ingredients().size()).max().orElse(1);
-        registration.addRecipeCategories(new AssemblingJeiCategory(registration.getJeiHelpers().getGuiHelper(), maxInputs));
+        int maxOutputs = assemblingRecipes().stream()
+                .mapToInt(holder -> holder.value().results().size() + holder.value().fluidResults().size()).max().orElse(1);
+        registration.addRecipeCategories(
+                new AssemblingJeiCategory(registration.getJeiHelpers().getGuiHelper(), maxInputs, Math.max(maxOutputs, 1)));
     }
 
     @Override

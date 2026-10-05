@@ -6,6 +6,7 @@ package io.github._5thlayer.craftworks.recipe;
 import java.util.List;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -36,20 +37,32 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
  * true, so a recipe written before they existed reads unchanged. Fluids are NeoForge's own types so that
  * Craftworks names no fluid Library (5thlayer/factoryworks#578).
  *
- * <p>The result is a template, not a stack: {@code ItemStack.CODEC} refuses an item whose components
+ * <p>{@code category} names the recipe's kind, in Factorio's words, and decides which Assemblers may hold
+ * it; omitted, it is {@code crafting}. {@code results} is a list of item stacks, empty only when
+ * {@code fluid_results} is not. The first goes to an Assembler's product slot and the rest to its remainder
+ * slot; the Personal Assembler plans only a recipe with exactly one (CONTEXT.md, Hand-craftable).
+ *
+ * <p>A result is a template, not a stack: {@code ItemStack.CODEC} refuses an item whose components
  * are not bound yet, which they are not during the datapack load that reads recipes.
  *
  * <p>{@link #matches} is false: nothing looks one up by its inputs. The Assembler plans over it by id.
  */
 public record AssemblingRecipe(
-        List<SizedIngredient> ingredients, ItemStackTemplate result, int time, int priority,
-        List<SizedFluidIngredient> fluidIngredients, List<FluidStackTemplate> fluidResults, boolean handCraftable)
-        implements Recipe<RecipeInput> {
+        List<SizedIngredient> ingredients, List<ItemStackTemplate> results, int time, int priority,
+        List<SizedFluidIngredient> fluidIngredients, List<FluidStackTemplate> fluidResults, boolean handCraftable,
+        String category) implements Recipe<RecipeInput> {
+
+    public static final String CRAFTING = "crafting";
+    public static final String ADVANCED_CRAFTING = "advanced-crafting";
+    public static final String CRAFTING_WITH_FLUID = "crafting-with-fluid";
+    public static final String CHEMISTRY = "chemistry";
+    public static final String OIL_PROCESSING = "oil-processing";
 
     public static final int DEFAULT_TIME = 10;
     public static final int DEFAULT_PRIORITY = 0;
 
     public AssemblingRecipe {
+        results = List.copyOf(results);
         fluidIngredients = List.copyOf(fluidIngredients);
         fluidResults = List.copyOf(fluidResults);
     }
@@ -61,7 +74,12 @@ public record AssemblingRecipe(
 
     @Override
     public ItemStack assemble(RecipeInput input) {
-        return result.create();
+        return product();
+    }
+
+    /** What an Assembler's product slot gets: the first result, or nothing for a recipe that makes only fluids. */
+    public ItemStack product() {
+        return results.isEmpty() ? ItemStack.EMPTY : results.getFirst().create();
     }
 
     /**
@@ -104,26 +122,36 @@ public record AssemblingRecipe(
         return new RecipeSerializer<>(CODEC, STREAM_CODEC);
     }
 
-    private static final MapCodec<AssemblingRecipe> CODEC = RecordCodecBuilder.mapCodec(
+    /** A recipe that makes nothing, no item and no fluid, is not a recipe. */
+    private static DataResult<AssemblingRecipe> makesSomething(AssemblingRecipe recipe) {
+        return recipe.results().isEmpty() && recipe.fluidResults().isEmpty()
+                ? DataResult.error(() -> "an Assembling recipe needs a result or a fluid result")
+                : DataResult.success(recipe);
+    }
+
+    private static final MapCodec<AssemblingRecipe> CODEC = RecordCodecBuilder.<AssemblingRecipe>mapCodec(
             instance -> instance.group(
                     SizedIngredient.NESTED_CODEC.listOf().fieldOf("ingredients").forGetter(AssemblingRecipe::ingredients),
-                    ItemStackTemplate.CODEC.fieldOf("result").forGetter(AssemblingRecipe::result),
+                    ItemStackTemplate.CODEC.listOf().fieldOf("results").forGetter(AssemblingRecipe::results),
                     Codec.INT.optionalFieldOf("time", DEFAULT_TIME).forGetter(AssemblingRecipe::time),
                     Codec.INT.optionalFieldOf("priority", DEFAULT_PRIORITY).forGetter(AssemblingRecipe::priority),
                     SizedFluidIngredient.CODEC.listOf().optionalFieldOf("fluid_ingredients", List.of())
                             .forGetter(AssemblingRecipe::fluidIngredients),
                     FluidStackTemplate.CODEC.listOf().optionalFieldOf("fluid_results", List.of())
                             .forGetter(AssemblingRecipe::fluidResults),
-                    Codec.BOOL.optionalFieldOf("hand_craftable", true).forGetter(AssemblingRecipe::handCraftable))
-                    .apply(instance, AssemblingRecipe::new));
+                    Codec.BOOL.optionalFieldOf("hand_craftable", true).forGetter(AssemblingRecipe::handCraftable),
+                    Codec.STRING.optionalFieldOf("category", CRAFTING).forGetter(AssemblingRecipe::category))
+                    .apply(instance, AssemblingRecipe::new))
+            .flatXmap(AssemblingRecipe::makesSomething, AssemblingRecipe::makesSomething);
 
     private static final StreamCodec<RegistryFriendlyByteBuf, AssemblingRecipe> STREAM_CODEC = StreamCodec.composite(
             SizedIngredient.STREAM_CODEC.apply(ByteBufCodecs.list()), AssemblingRecipe::ingredients,
-            ItemStackTemplate.STREAM_CODEC, AssemblingRecipe::result,
+            ItemStackTemplate.STREAM_CODEC.apply(ByteBufCodecs.list()), AssemblingRecipe::results,
             ByteBufCodecs.VAR_INT, AssemblingRecipe::time,
             ByteBufCodecs.VAR_INT, AssemblingRecipe::priority,
             SizedFluidIngredient.STREAM_CODEC.apply(ByteBufCodecs.list()), AssemblingRecipe::fluidIngredients,
             FluidStackTemplate.STREAM_CODEC.apply(ByteBufCodecs.list()), AssemblingRecipe::fluidResults,
             ByteBufCodecs.BOOL, AssemblingRecipe::handCraftable,
+            ByteBufCodecs.STRING_UTF8, AssemblingRecipe::category,
             AssemblingRecipe::new);
 }

@@ -3,5 +3,5 @@
   "ingredients": [
     { "ingredient": "#minecraft:oak_logs", "count": 2 }
   ],
-  "result": "minecraft:oak_sapling"
+  "results": [ "minecraft:oak_sapling" ]
 }

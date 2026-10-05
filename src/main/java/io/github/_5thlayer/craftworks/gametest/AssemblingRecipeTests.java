@@ -120,7 +120,7 @@ final class AssemblingRecipeTests {
                     + sapling.priority() + "; 10 and 0 are the defaults");
             return;
         }
-        if (slime.time() != 40 || slime.priority() != 3 || slime.result().count() != 4) {
+        if (slime.time() != 40 || slime.priority() != 3 || slime.results().getFirst().count() != 4) {
             helper.fail(SLIME_BALL + " reads as " + slime + "; its file says 40 ticks, priority 3, four slime balls");
             return;
         }

@@ -194,7 +194,8 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             checked = found;
             checkedRuns = HeldRecipes.canRun(found);
         });
-        return recipe.filter(found -> checkedRuns);
+        // The category is asked every time, not cached with the rest: a Fast Replace or a config edit moves it.
+        return recipe.filter(found -> checkedRuns && HeldRecipes.takesCategory(tier(), found));
     }
 
     /**
@@ -335,8 +336,8 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
 
     /**
      * Takes one craft's inputs, the {@code n}th ingredient from the {@code n}th slot, and places its
-     * product and the ingredients' remainders. Returns null if it all went, and otherwise what stopped it:
-     * {@link AssemblerState#MISSING_INGREDIENTS} or {@link AssemblerState#OUTPUT_FULL}. Never part of a
+     * first result in the product slot and, in the remainder slot, the ingredients' remainders and its
+     * further results. Returns null if it all went, and otherwise what stopped it: {@link AssemblerState#MISSING_INGREDIENTS} or {@link AssemblerState#OUTPUT_FULL}. Never part of a
      * craft: the caller aborts the transaction on a stop.
      */
     private @Nullable AssemblerState finish(AssemblingRecipe recipe, TransactionContext tx) {
@@ -355,8 +356,16 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
                 }
             }
         }
-        ItemStackTemplate result = recipe.result();
-        return inventory.insert(AssemblerSlots.PRODUCT, ItemResource.of(result), result.count(), tx) == result.count()
+        for (ItemStackTemplate extra : recipe.results().stream().skip(1).toList()) {
+            if (inventory.insert(AssemblerSlots.REMAINDERS, ItemResource.of(extra), extra.count(), tx) != extra.count()) {
+                return AssemblerState.OUTPUT_FULL;
+            }
+        }
+        if (recipe.results().isEmpty()) {
+            return null;
+        }
+        ItemStackTemplate product = recipe.results().getFirst();
+        return inventory.insert(AssemblerSlots.PRODUCT, ItemResource.of(product), product.count(), tx) == product.count()
                 ? null : AssemblerState.OUTPUT_FULL;
     }
 

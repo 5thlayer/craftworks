@@ -1,0 +1,206 @@
+// SPDX-FileCopyrightText: 2026 5thlayer
+// SPDX-License-Identifier: MIT
+
+package io.github._5thlayer.craftworks.gametest;
+
+import java.util.List;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.JsonOps;
+import io.github._5thlayer.craftworks.Craftworks;
+import io.github._5thlayer.craftworks.CraftworksConfig;
+import io.github._5thlayer.craftworks.gametest.AssemblerMachineTests.Placed;
+import io.github._5thlayer.craftworks.machine.AssemblerSlots;
+import io.github._5thlayer.craftworks.machine.AssemblerState;
+import io.github._5thlayer.craftworks.machine.AssemblerTier;
+import io.github._5thlayer.craftworks.machine.HoldVerdict;
+import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
+import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
+import io.github._5thlayer.craftworks.recipe.RuntimeAssemblingRecipes;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
+
+/**
+ * An Assembling recipe's category and its results list (#24): the codec, the tier's categories at Fill
+ * Recipe and under Fast Replace, what a craft with several results puts in the two outputs, and that
+ * only a recipe with exactly one item result is Hand-craftable. The recipes are the game tests' own.
+ */
+final class AssemblingCategoryTests {
+
+    private static final Identifier CATEGORY_FLUID = id("gametest/category_fluid");
+    private static final Identifier FLUID_ONLY = id("gametest/fluid_only");
+    private static final Identifier TWO_RESULTS = id("gametest/two_results");
+    private static final Identifier CLASH = id("gametest/results_and_remainders_clash");
+    private static final Identifier JOIN = id("gametest/results_and_remainders_join");
+
+    private AssemblingCategoryTests() {
+    }
+
+    private static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, path);
+    }
+
+    static void register(CraftworksGameTests.Registrar tests) {
+        tests.test("the_codec_reads_category_and_results_and_refuses_an_empty_results_with_no_fluid", 20, AssemblingCategoryTests::codec);
+        tests.test("each_tiers_categories_default_to_factorios", 20, AssemblingCategoryTests::configDefaults);
+        tests.test("tier_1_refuses_a_crafting_with_fluid_recipe_at_fill_recipe", 20, AssemblingCategoryTests::tier1Refuses);
+        tests.test("tier_2_takes_a_crafting_with_fluid_recipe_at_fill_recipe", 20, AssemblingCategoryTests::tier2Takes);
+        tests.test("a_fluid_only_recipe_is_refused_by_category_at_tier_1", 20, AssemblingCategoryTests::fluidOnly);
+        tests.test("a_fast_replace_to_a_tier_without_the_category_leaves_the_recipe_held_and_idle", 20, AssemblingCategoryTests::fastReplace);
+        tests.test("a_craft_with_two_item_results_fills_the_product_and_remainder_slots", 20, AssemblingCategoryTests::twoResults);
+        tests.test("an_extra_result_joins_the_remainders_and_a_different_one_is_refused", 20, AssemblingCategoryTests::extraResultsAndRemainders);
+        tests.test("a_recipe_with_two_item_results_is_not_hand_craftable", 20, AssemblingCategoryTests::notHandCraftable);
+    }
+
+    // -- the codec ------------------------------------------------------------------------------
+
+    private static DataResult<AssemblingRecipe> read(GameTestHelper helper, String json) {
+        JsonElement element = JsonParser.parseString(json);
+        var ops = helper.getLevel().registryAccess().createSerializationContext(JsonOps.INSTANCE);
+        return CraftworksRecipes.ASSEMBLING_SERIALIZER.get().codec().codec().parse(ops, element);
+    }
+
+    private static void codec(GameTestHelper helper) {
+        String ingredients = "\"ingredients\": [{ \"ingredient\": \"minecraft:iron_ingot\", \"count\": 1 }]";
+        AssemblingRecipe two = read(helper, "{" + ingredients + ", \"category\": \"advanced-crafting\", \"results\": ["
+                + "{ \"id\": \"minecraft:gold_nugget\", \"count\": 3 }, \"minecraft:stick\"] }").getOrThrow();
+        helper.assertTrue(two.category().equals("advanced-crafting"), "the category read as " + two.category());
+        helper.assertTrue(two.results().size() == 2 && two.results().getFirst().count() == 3 && two.results().get(1).count() == 1,
+                "the results read as " + two.results());
+
+        AssemblingRecipe plain = read(helper, "{" + ingredients + ", \"results\": [\"minecraft:stick\"] }").getOrThrow();
+        helper.assertTrue(plain.category().equals("crafting"), "an omitted category read as " + plain.category());
+
+        AssemblingRecipe fluid = read(helper, "{" + ingredients + ", \"results\": [], \"fluid_results\": ["
+                + "{ \"id\": \"minecraft:lava\", \"amount\": 50 }] }").getOrThrow();
+        helper.assertTrue(fluid.results().isEmpty() && fluid.fluidResults().size() == 1, "an empty results with a fluid result read as " + fluid);
+
+        helper.assertTrue(read(helper, "{" + ingredients + ", \"results\": [] }").isError(), "an empty results with no fluid result was read");
+        helper.assertTrue(read(helper, "{" + ingredients + ", \"results\": [], \"fluid_results\": [] }").isError(),
+                "an empty results with an empty fluid_results was read");
+        helper.assertTrue(read(helper, "{" + ingredients + ", \"result\": \"minecraft:stick\" }").isError(),
+                "the removed result was still read");
+        helper.succeed();
+    }
+
+    // -- categories -----------------------------------------------------------------------------
+
+    private static void configDefaults(GameTestHelper helper) {
+        List<String> tier1 = List.of("crafting", "advanced-crafting");
+        List<String> more = List.of("crafting", "advanced-crafting", "crafting-with-fluid");
+        helper.assertTrue(List.copyOf(CraftworksConfig.assemblerCategories(AssemblerTier.ONE)).equals(tier1),
+                "tier 1 takes " + CraftworksConfig.assemblerCategories(AssemblerTier.ONE));
+        helper.assertTrue(List.copyOf(CraftworksConfig.assemblerCategories(AssemblerTier.TWO)).equals(more),
+                "tier 2 takes " + CraftworksConfig.assemblerCategories(AssemblerTier.TWO));
+        helper.assertTrue(List.copyOf(CraftworksConfig.assemblerCategories(AssemblerTier.THREE)).equals(more),
+                "tier 3 takes " + CraftworksConfig.assemblerCategories(AssemblerTier.THREE));
+        helper.succeed();
+    }
+
+    private static void tier1Refuses(GameTestHelper helper) {
+        Placed one = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
+        HoldVerdict refused = AssemblerMachineTests.request(one, CATEGORY_FLUID);
+        helper.assertTrue(refused == HoldVerdict.WRONG_CATEGORY, "tier 1 answered a crafting-with-fluid recipe with " + refused);
+        helper.assertTrue(one.machine().heldRecipe().isEmpty(), "a refused recipe was held");
+        helper.assertTrue(one.player().heard.contains("craftworks.assembler.refused.wrong_category"),
+                "the player was told " + one.player().heard);
+
+        helper.succeed();
+    }
+
+    /** Tier 2 takes the category; a fluid in the recipe is a separate refusal (#25). */
+    private static void tier2Takes(GameTestHelper helper) {
+        Placed two = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
+        HoldVerdict taken = AssemblerMachineTests.request(two, CATEGORY_FLUID);
+        helper.assertTrue(taken == HoldVerdict.HELD, "tier 2 answered a crafting-with-fluid recipe with " + taken);
+        helper.succeed();
+    }
+
+    private static void fluidOnly(GameTestHelper helper) {
+        Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
+        HoldVerdict verdict = AssemblerMachineTests.request(assembler, FLUID_ONLY);
+        helper.assertTrue(verdict == HoldVerdict.WRONG_CATEGORY, "tier 1 answered a chemistry recipe with no item result with " + verdict);
+        helper.succeed();
+    }
+
+    private static void fastReplace(GameTestHelper helper) {
+        Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
+        helper.assertTrue(AssemblerMachineTests.request(assembler, CATEGORY_FLUID) == HoldVerdict.HELD, "tier 2 refused a crafting-with-fluid recipe");
+        AssemblerMachineTests.insert(assembler, 0, Items.IRON_INGOT, 1);
+        helper.assertTrue(assembler.machine().state() != AssemblerState.CANT_RUN, "tier 2 could not run it");
+
+        AssemblerMachineTests.swap(helper, assembler, AssemblerTier.ONE, AssemblerMachineTests.ORIGIN);
+        helper.assertTrue(assembler.machine().heldRecipe().equals(java.util.Optional.of(CATEGORY_FLUID)), "the swap lost the Held recipe");
+        helper.assertTrue(assembler.machine().state() == AssemblerState.CANT_RUN, "tier 1 state was " + assembler.machine().state());
+        SimpleEnergyHandler supply = AssemblerMachineTests.supply();
+        for (int tick = 0; tick < 60; tick++) {
+            AssemblerMachineTests.feed(assembler, supply, 1000);
+            assembler.machine().serverTick(helper.getLevel());
+        }
+        helper.assertTrue(AssemblerMachineTests.count(assembler, AssemblerSlots.PRODUCT) == 0, "tier 1 crafted a recipe outside its categories");
+        helper.assertTrue(AssemblerMachineTests.count(assembler, 0) == 1, "tier 1 spent the input");
+        helper.succeed();
+    }
+
+    // -- results --------------------------------------------------------------------------------
+
+    private static void twoResults(GameTestHelper helper) {
+        Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.THREE);
+        AssemblerMachineTests.hold(assembler, TWO_RESULTS);
+        AssemblerMachineTests.insert(assembler, 0, Items.IRON_INGOT, 1);
+        run(helper, assembler, 20);
+        helper.assertTrue(stack(assembler, AssemblerSlots.PRODUCT, Items.GOLD_NUGGET, 3), "the product slot holds " + describe(assembler, AssemblerSlots.PRODUCT));
+        helper.assertTrue(stack(assembler, AssemblerSlots.REMAINDERS, Items.STICK, 2), "the remainder slot holds " + describe(assembler, AssemblerSlots.REMAINDERS));
+        helper.succeed();
+    }
+
+    private static void extraResultsAndRemainders(GameTestHelper helper) {
+        Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.THREE);
+        HoldVerdict clash = AssemblerMachineTests.request(assembler, CLASH);
+        helper.assertTrue(clash == HoldVerdict.REMAINDERS_DONT_FIT, "a stick and a bucket left behind was " + clash);
+        helper.assertTrue(assembler.player().heard.contains("craftworks.assembler.refused.remainders_dont_fit"),
+                "the player was told " + assembler.player().heard);
+
+        AssemblerMachineTests.hold(assembler, JOIN);
+        AssemblerMachineTests.insert(assembler, 0, Items.MILK_BUCKET, 1);
+        run(helper, assembler, 20);
+        helper.assertTrue(stack(assembler, AssemblerSlots.PRODUCT, Items.SLIME_BALL, 2), "the product slot holds " + describe(assembler, AssemblerSlots.PRODUCT));
+        helper.assertTrue(stack(assembler, AssemblerSlots.REMAINDERS, Items.BUCKET, 2),
+                "the extra bucket and the milk's own did not share the remainder slot: " + describe(assembler, AssemblerSlots.REMAINDERS));
+        helper.succeed();
+    }
+
+    private static void notHandCraftable(GameTestHelper helper) {
+        helper.assertTrue(helper.getLevel().getServer().getRecipeManager().recipeMap()
+                .byKey(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, TWO_RESULTS)) != null,
+                "the recipe with two item results did not load");
+        var recipes = RuntimeAssemblingRecipes.recipes(helper.getLevel());
+        helper.assertTrue(recipes.byId(TWO_RESULTS.toString()) == null, "a recipe with two item results is in the Crafting Plan's set");
+        helper.assertTrue(recipes.byId(FLUID_ONLY.toString()) == null, "a recipe with no item result is in the Crafting Plan's set");
+        helper.assertTrue(recipes.byId(AssemblerTests.OAK_SAPLING.toString()) != null, "a recipe with one item result is not");
+        helper.succeed();
+    }
+
+    // -- helpers --------------------------------------------------------------------------------
+
+    private static void run(GameTestHelper helper, Placed assembler, int ticks) {
+        SimpleEnergyHandler supply = AssemblerMachineTests.supply();
+        for (int tick = 0; tick < ticks; tick++) {
+            AssemblerMachineTests.feed(assembler, supply, 1000);
+            assembler.machine().serverTick(helper.getLevel());
+        }
+    }
+
+    private static boolean stack(Placed assembler, int slot, Item item, int count) {
+        return assembler.machine().inventory().getResource(slot).getItem() == item && AssemblerMachineTests.count(assembler, slot) == count;
+    }
+
+    private static String describe(Placed assembler, int slot) {
+        return AssemblerMachineTests.count(assembler, slot) + " of " + assembler.machine().inventory().getResource(slot).getItem();
+    }
+}

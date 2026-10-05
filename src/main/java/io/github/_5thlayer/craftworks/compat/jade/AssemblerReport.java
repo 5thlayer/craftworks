@@ -68,7 +68,7 @@ class AssemblerReport implements StreamServerDataProvider<BlockAccessor, Assembl
         AssemblerBlockEntity machine = accessor.typedBlockEntity();
         Optional<Identifier> held = machine.heldRecipe();
         ItemStack product = held.flatMap(id -> HeldRecipes.find(server, id))
-                .map(recipe -> recipe.value().result().create())
+                .map(recipe -> recipe.value().product())
                 .orElse(ItemStack.EMPTY);
         int duration = machine.craftDuration();
         float progress = duration == 0 ? 0 : Math.min(1, (float) machine.craftProgress() / duration);

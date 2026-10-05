@@ -1,8 +1,8 @@
 {
   "type": "craftworks:assembling",
+  "category": "crafting-with-fluid",
   "ingredients": [
     { "ingredient": "minecraft:iron_ingot", "count": 1 }
   ],
-  "results": [ { "id": "minecraft:iron_nugget", "count": 9 } ],
-  "hand_craftable": false
+  "results": [ { "id": "minecraft:iron_nugget", "count": 9 } ]
 }

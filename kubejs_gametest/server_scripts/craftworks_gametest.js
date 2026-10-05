@@ -13,4 +13,9 @@ ServerEvents.recipes(event => {
     .fluidResults([Fluid.of('minecraft:lava', 50)])
     .handCraftable(false)
     .id('craftworks:kubejs_gametest/fluid')
+
+  // Several results and a category: the first result is the product, the rest join the remainders.
+  event.recipes.craftworks.assembling(['3x minecraft:gold_nugget', 'minecraft:stick'], ['minecraft:iron_ingot'])
+    .category('advanced-crafting')
+    .id('craftworks:kubejs_gametest/two_results')
 })

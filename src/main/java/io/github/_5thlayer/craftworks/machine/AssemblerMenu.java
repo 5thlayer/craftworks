@@ -44,14 +44,19 @@ import org.jspecify.annotations.Nullable;
  */
 public final class AssemblerMenu extends AbstractContainerMenu {
 
-    /** What the screen draws of the Held recipe: its id, what each input slot takes, and its product. */
-    public record Held(Identifier id, List<SizedIngredient> ingredients, ItemStackTemplate result) {
+    /** What the screen draws of the Held recipe: its id, what each input slot takes, and its results, the first being its product. */
+    public record Held(Identifier id, List<SizedIngredient> ingredients, List<ItemStackTemplate> results) {
 
         public static final StreamCodec<RegistryFriendlyByteBuf, Held> STREAM_CODEC = StreamCodec.composite(
                 Identifier.STREAM_CODEC, Held::id,
                 SizedIngredient.STREAM_CODEC.apply(ByteBufCodecs.list()), Held::ingredients,
-                ItemStackTemplate.STREAM_CODEC, Held::result,
+                ItemStackTemplate.STREAM_CODEC.apply(ByteBufCodecs.list()), Held::results,
                 Held::new);
+
+        /** The first result, the one the product slot gets; empty for a recipe that makes only fluids. */
+        public ItemStack product() {
+            return results.isEmpty() ? ItemStack.EMPTY : results.getFirst().create();
+        }
     }
 
     private static final int DATA_PROGRESS = 0;
@@ -177,7 +182,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
             if (!Objects.equals(sent, now)) {
                 sent = now;
                 Optional<Held> view = now.flatMap(id -> HeldRecipes.find(level, id)
-                        .map(holder -> new Held(id, holder.value().ingredients(), holder.value().result())));
+                        .map(holder -> new Held(id, holder.value().ingredients(), holder.value().results())));
                 PacketDistributor.sendToPlayer(server, new AssemblerHeldPacket(containerId, view));
             }
         }
@@ -192,7 +197,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
         if (machine == null) {
             return HoldVerdict.NOT_ASSEMBLING;
         }
-        HoldVerdict verdict = HeldRecipes.verdict(player, id);
+        HoldVerdict verdict = HeldRecipes.verdict(player, machine.tier(), id);
         if (verdict.held()) {
             machine.setHeldRecipe(id, player);
         } else {

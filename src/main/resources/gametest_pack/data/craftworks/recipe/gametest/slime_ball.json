@@ -4,7 +4,7 @@
     { "ingredient": "minecraft:milk_bucket", "count": 1 },
     { "ingredient": "minecraft:lime_dye", "count": 1 }
   ],
-  "result": { "id": "minecraft:slime_ball", "count": 4 },
+  "results": [ { "id": "minecraft:slime_ball", "count": 4 } ],
   "time": 40,
   "priority": 3
 }

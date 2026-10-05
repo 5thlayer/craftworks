@@ -46,17 +46,19 @@ craftables list shows.
 _Avoid_: craftable (a recipe viewer's own sense: its direct inputs are held)
 
 **Assembling recipe**:
-A recipe of the mod's own assembling type, the only kind the Personal Assembler plans with: item ingredients, one
-item result, a craft time and a **Route priority**, and optionally fluid ingredients and fluid results. The
+A recipe of the mod's own assembling type, the only kind the Personal Assembler plans with: item ingredients, a
+list of item results (empty only when it has a fluid result), a **Category**, a craft time and a **Route priority**,
+and optionally fluid ingredients and fluid results. The
 Personal Assembler plans only through one that is **Hand-craftable**; any other is still listed by the Recipe viewer,
 for an **Assembler** to make. An ingredient's own remainder (an empty bucket) returns to the inventory when its
 step completes; a plan never counts on it.
 _Avoid_: hand recipe, admitted recipe
 
 **Hand-craftable**:
-An Assembling recipe whose `hand_craftable` flag is true (the default) and that names no fluid in or out.
-A recipe with a fluid is never Hand-craftable, whatever its flag says: the player has no hands for a
-fluid. A pack sets the flag false for an item-only recipe it keeps for an Assembler. Only a Hand-craftable
+An Assembling recipe whose `hand_craftable` flag is true (the default), that names no fluid in or out, and
+that has exactly one item result. A recipe with a fluid is never Hand-craftable, whatever its flag says: the
+player has no hands for a fluid. Nor is one with no item result or several: a Crafting Plan plans one product
+per recipe. A pack sets the flag false for an item-only recipe it keeps for an Assembler. Only a Hand-craftable
 recipe appears in a Crafting Plan.
 _Avoid_: plannable, machine-only
 
@@ -64,6 +66,13 @@ _Avoid_: plannable, machine-only
 A placed machine, in tiers 1 to 3, that makes its **Held recipe** over and over from the items and power
 it is given. Never the **Personal Assembler**, which always takes its full name.
 _Avoid_: assembling machine, crafter, auto crafter, machine (alone)
+
+**Category**:
+The kind an Assembling recipe is, a string in Factorio's names: `crafting` (the default), `advanced-crafting`,
+`crafting-with-fluid`, `chemistry`, `oil-processing`. Each tier of Assembler holds the categories its server
+config lists, and Fill Recipe refuses a recipe outside them. The Personal Assembler ignores it: it is no
+machine, and plans through any Hand-craftable recipe whatever its category.
+_Avoid_: type (the recipe's `type` is its Minecraft recipe type), tag
 
 **Held recipe**:
 The one Assembling recipe an Assembler is set to make, chosen by a player through the Recipe viewer's

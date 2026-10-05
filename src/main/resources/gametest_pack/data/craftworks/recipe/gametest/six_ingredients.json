@@ -8,5 +8,5 @@
     { "ingredient": "minecraft:coal", "count": 1 },
     { "ingredient": "minecraft:clay_ball", "count": 1 }
   ],
-  "result": "minecraft:arrow"
+  "results": [ "minecraft:arrow" ]
 }

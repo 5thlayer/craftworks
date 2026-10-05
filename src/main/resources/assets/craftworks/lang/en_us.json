@@ -1,8 +1,10 @@
 {
   "emi.category.craftworks.assembling": "Assembling",
   "emi.craftworks.assembling.seconds": "%ss",
+  "emi.craftworks.assembling.category": "Category: %s",
   "jei.category.craftworks.assembling": "Assembling",
   "jei.craftworks.assembling.seconds": "%ss",
+  "jei.craftworks.assembling.category": "Category: %s",
   "craftworks.fill_recipe": "Assemble",
   "craftworks.fill_recipe.left": "Left-click: queue 1",
   "craftworks.fill_recipe.right": "Right-click: queue 5",
@@ -37,6 +39,7 @@
   "craftworks.assembler.energy": "%s / %s FE",
   "craftworks.assembler.fill_recipe": "Set as this Assembler's recipe",
   "craftworks.assembler.refused.not_assembling": "%s is not an Assembling recipe the Assembler can hold.",
+  "craftworks.assembler.refused.wrong_category": "%s is in a recipe category this Assembler's tier can't make.",
   "craftworks.assembler.refused.has_fluid": "%s needs a fluid, which this Assembler can't take.",
   "craftworks.assembler.refused.remainders_dont_fit": "%s leaves more behind than the Assembler's one remainder slot holds.",
   "craftworks.assembler.refused.too_many_ingredients": "%s has more than 5 different ingredients, and the Assembler has 5 input slots.",

@@ -16,6 +16,8 @@ public enum HoldVerdict {
     HELD(null),
     /** The id names no Assembling recipe the server has loaded. */
     NOT_ASSEMBLING("craftworks.assembler.refused.not_assembling"),
+    /** The recipe's category is not one this tier holds, by the server config. */
+    WRONG_CATEGORY("craftworks.assembler.refused.wrong_category"),
     /** The recipe names a fluid, which tiers 2 and 3 take in 5thlayer/factoryworks#580. */
     HAS_FLUID("craftworks.assembler.refused.has_fluid"),
     /** The recipe names more distinct ingredients than the Assembler has input slots. */
@@ -31,10 +33,13 @@ public enum HoldVerdict {
         this.messageKey = messageKey;
     }
 
-    public static HoldVerdict of(boolean resolves, boolean namesFluid, boolean fitsSlots, boolean remaindersFit,
+    public static HoldVerdict of(boolean resolves, boolean categoryHeld, boolean namesFluid, boolean fitsSlots, boolean remaindersFit,
             boolean locked) {
         if (!resolves) {
             return NOT_ASSEMBLING;
+        }
+        if (!categoryHeld) {
+            return WRONG_CATEGORY;
         }
         if (namesFluid) {
             return HAS_FLUID;

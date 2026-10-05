@@ -6,7 +6,7 @@
   "fluid_ingredients": [
     { "ingredient": "minecraft:water", "amount": 250 }
   ],
-  "result": { "id": "minecraft:gold_nugget", "count": 9 },
+  "results": [ { "id": "minecraft:gold_nugget", "count": 9 } ],
   "fluid_results": [
     { "id": "minecraft:lava", "amount": 50 }
   ]
