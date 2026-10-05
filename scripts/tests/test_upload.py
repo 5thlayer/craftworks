@@ -21,7 +21,7 @@ SCRIPT = Path(__file__).resolve().parents[1] / "upload.py"
 SECRETS = {"MODRINTH_TOKEN": "mrp_standin-secret-token", "CURSEFORGE_TOKEN": "cf-upload-secret-token"}
 MODRINTH_PROJECT = "craftworks-standin"
 CF_PROJECT = "123456"
-NOTES = "- The Crafting Plan names a lock's reason.\n- Fill Recipe queues."
+NOTES = "- A Consumer can read the thing.\n- The other thing is faster."
 
 CHANGELOG = """# Changelog
 
@@ -31,8 +31,8 @@ CHANGELOG = """# Changelog
 
 ## 0.3.9
 
-- The Crafting Plan names a lock's reason.
-- Fill Recipe queues.
+- A Consumer can read the thing.
+- The other thing is faster.
 
 ## 0.3.8
 
@@ -44,6 +44,10 @@ mod_version = 0.3.9
 maven_group = io.github.5thlayer
 archives_name = craftworks
 minecraft_version = 26.1.2
+modrinth_project_id = craftworks-properties
+curseforge_project_id = 654321
+modrinth_dependencies = fRiHVvU7, P7dR8mSH
+curseforge_dependencies = emi,fabric-api
 upload_release_type =
 """
 
@@ -102,45 +106,6 @@ class Upload(unittest.TestCase):
         self.assertEqual(len(posts), 1)
         return posts[0]
 
-    def release_type(self, kind):
-        (self.root / "gradle.properties").write_text(
-            PROPERTIES.replace("upload_release_type =", f"upload_release_type = {kind}"))
-
-    def test_a_gradle_properties_without_upload_release_type_keeps_the_default(self):
-        (self.root / "gradle.properties").write_text(PROPERTIES.replace("upload_release_type =\n", ""))
-        self.publish("0.3.9")
-        self.assertEqual(self.upload("0.3.9").returncode, 0)
-        self.assertEqual(json.loads(self.modrinth_post().parts()["data"][0])["version_type"], "beta")
-        self.assertEqual(json.loads(self.curseforge_post().parts()["metadata"][0])["releaseType"], "beta")
-
-    def test_upload_release_type_sets_the_type_on_both_sites(self):
-        (self.root / "CHANGELOG.md").write_text(CHANGELOG + "\n## 1.0.0\n\n- Stable.\n")
-        self.publish("0.3.9")
-        self.publish("1.0.0")
-        for kind in ["release", "beta", "alpha"]:
-            for version in ["0.3.9", "1.0.0"]:
-                with self.subTest(kind, version=version):
-                    self.site.requests.clear()
-                    self.site.modrinth.clear()
-                    self.site.curseforge.clear()
-                    self.release_type(kind)
-                    self.assertEqual(self.upload(version).returncode, 0)
-                    self.assertEqual(json.loads(self.modrinth_post().parts()["data"][0])["version_type"], kind)
-                    self.assertEqual(json.loads(self.curseforge_post().parts()["metadata"][0])["releaseType"], kind)
-
-    def test_a_dry_run_shows_the_upload_release_type(self):
-        self.release_type("release")
-        self.publish("0.3.9")
-        result = self.upload("--dry-run", "0.3.9")
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn('"version_type": "release"', result.stdout)
-        self.assertIn('"releaseType": "release"', result.stdout)
-
-    def test_refuses_an_unknown_upload_release_type(self):
-        self.release_type("stable")
-        self.publish("0.3.9")
-        self.assertRefusedBeforeAnyRequest(self.upload("0.3.9"), "upload_release_type")
-
     def assertRefusedBeforeAnyRequest(self, result, message):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(message, result.stderr)
@@ -182,7 +147,7 @@ class Upload(unittest.TestCase):
         # file with a token, as `op run --env-file=<file> -- <command>` does, and runs the command.
         bin = self.root / "bin"
         bin.mkdir()
-        (bin / "op").write_text("""#!/bin/sh
+        (bin / "op").write_text(r"""#!/bin/sh
 [ "$1" = run ] || exit 9
 file="${2#--env-file=}"; shift 3
 while IFS='=' read -r name value; do
@@ -193,7 +158,7 @@ exec "$@"
 """)
         (bin / "op").chmod(0o755)
         (self.root / "publish").mkdir()
-        (self.root / "publish/upload.env").write_text("# references\nMODRINTH_TOKEN=op://Private/Craftworks Modrinth/modrinth-credential\n")
+        (self.root / "publish/upload.env").write_text("# references\nMODRINTH_TOKEN=op://Private/Beltworks Modrinth/modrinth-credential\n")
         self.publish("0.3.9")
         result = self.upload("--site", "modrinth", "0.3.9", MODRINTH_TOKEN=None,
                              PATH=f"{bin}{os.pathsep}{os.environ['PATH']}")
@@ -213,12 +178,47 @@ exec "$@"
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("MODRINTH_TOKEN", result.stderr)
 
-    def test_the_project_ids_default_to_craftworks_own(self):
+    def properties(self, **values):
+        """gradle.properties with the given settings replaced."""
+        text = PROPERTIES
+        for name, value in values.items():
+            text = "".join(f"{name} = {value}\n" if line.startswith(f"{name} ") else line + "\n"
+                           for line in text.splitlines())
+        (self.root / "gradle.properties").write_text(text)
+
+    def test_the_projects_come_from_gradle_properties(self):
         self.publish("0.3.9")
         result = self.upload("--dry-run", "0.3.9", MODRINTH_PROJECT_ID=None, CURSEFORGE_PROJECT_ID=None)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("/modrinth/project/v6CdwRwB/version", result.stdout)
-        self.assertIn("/cf-upload/api/projects/1715876/upload-file", result.stdout)
+        self.assertIn("/modrinth/project/craftworks-properties/version", result.stdout)
+        self.assertIn("/cf-upload/api/projects/654321/upload-file", result.stdout)
+
+    def test_refuses_when_no_project_is_set(self):
+        self.properties(modrinth_project_id="", curseforge_project_id="")
+        self.publish("0.3.9")
+        result = self.upload("0.3.9", MODRINTH_PROJECT_ID=None, CURSEFORGE_PROJECT_ID=None)
+        self.assertRefusedBeforeAnyRequest(result, "modrinth_project_id")
+
+    def test_uploads_only_to_the_site_with_a_project(self):
+        self.properties(curseforge_project_id="")
+        self.publish("0.3.9")
+        result = self.upload("0.3.9", CURSEFORGE_PROJECT_ID=None)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.modrinth_post()
+        self.assertEqual({r.path.split("/")[1] for r in self.site.requests}, {"modrinth"})
+
+    def test_refuses_a_site_without_a_project(self):
+        self.properties(curseforge_project_id="")
+        self.publish("0.3.9")
+        result = self.upload("--site", "curseforge", "0.3.9", CURSEFORGE_PROJECT_ID=None)
+        self.assertRefusedBeforeAnyRequest(result, "curseforge_project_id")
+
+    def test_no_dependencies_sends_none(self):
+        self.properties(modrinth_dependencies="", curseforge_dependencies="")
+        self.publish("0.3.9")
+        self.assertEqual(self.upload("0.3.9").returncode, 0)
+        self.assertEqual(json.loads(self.modrinth_post().parts()["data"][0])["dependencies"], [])
+        self.assertNotIn("relations", json.loads(self.curseforge_post().parts()["metadata"][0]))
 
     def test_a_missing_token_fails_clearly_and_leaves_the_other_site(self):
         self.publish("0.3.9")
@@ -296,7 +296,7 @@ exec "$@"
         self.assertEqual(data["loaders"], ["neoforge"])
         self.assertEqual(data["version_type"], "beta")
         self.assertEqual(data["dependencies"], [{"project_id": "fRiHVvU7", "dependency_type": "required"},
-                                                {"project_id": "AJ3Q7hSr", "dependency_type": "required"}])
+                                                {"project_id": "P7dR8mSH", "dependency_type": "required"}])
         self.assertEqual(data["file_parts"], ["file"])
 
     def test_a_release_from_1_0_is_a_release_on_both_sites(self):
@@ -305,6 +305,41 @@ exec "$@"
         self.assertEqual(self.upload("1.0.0").returncode, 0)
         self.assertEqual(json.loads(self.modrinth_post().parts()["data"][0])["version_type"], "release")
         self.assertEqual(json.loads(self.curseforge_post().parts()["metadata"][0])["releaseType"], "release")
+
+    def test_a_gradle_properties_without_upload_release_type_keeps_the_default(self):
+        (self.root / "gradle.properties").write_text(PROPERTIES.replace("upload_release_type =\n", ""))
+        self.publish("0.3.9")
+        self.assertEqual(self.upload("0.3.9").returncode, 0)
+        self.assertEqual(json.loads(self.modrinth_post().parts()["data"][0])["version_type"], "beta")
+        self.assertEqual(json.loads(self.curseforge_post().parts()["metadata"][0])["releaseType"], "beta")
+
+    def test_upload_release_type_sets_the_type_on_both_sites(self):
+        (self.root / "CHANGELOG.md").write_text(CHANGELOG + "\n## 1.0.0\n\n- Stable.\n")
+        self.publish("0.3.9")
+        self.publish("1.0.0")
+        for kind in ["release", "beta", "alpha"]:
+            for version in ["0.3.9", "1.0.0"]:
+                with self.subTest(kind, version=version):
+                    self.site.requests.clear()
+                    self.site.modrinth.clear()
+                    self.site.curseforge.clear()
+                    self.properties(upload_release_type=kind)
+                    self.assertEqual(self.upload(version).returncode, 0)
+                    self.assertEqual(json.loads(self.modrinth_post().parts()["data"][0])["version_type"], kind)
+                    self.assertEqual(json.loads(self.curseforge_post().parts()["metadata"][0])["releaseType"], kind)
+
+    def test_a_dry_run_shows_the_upload_release_type(self):
+        self.properties(upload_release_type="release")
+        self.publish("0.3.9")
+        result = self.upload("--dry-run", "0.3.9")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('"version_type": "release"', result.stdout)
+        self.assertIn('"releaseType": "release"', result.stdout)
+
+    def test_refuses_an_unknown_upload_release_type(self):
+        self.properties(upload_release_type="stable")
+        self.publish("0.3.9")
+        self.assertRefusedBeforeAnyRequest(self.upload("0.3.9"), "upload_release_type")
 
     def test_refuses_a_version_modrinth_already_has(self):
         self.publish("0.3.9")
@@ -343,7 +378,7 @@ exec "$@"
         self.assertEqual(sorted(metadata["gameVersions"]), [101, 301, 401, 402])
         self.assertEqual(metadata["releaseType"], "beta")
         self.assertEqual(metadata["relations"], {"projects": [{"slug": "emi", "type": "requiredDependency"},
-                                                             {"slug": "groundworks", "type": "requiredDependency"}]})
+                                                              {"slug": "fabric-api", "type": "requiredDependency"}]})
 
     def test_refuses_a_version_curseforge_already_has(self):
         self.publish("0.3.9")

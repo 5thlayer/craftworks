@@ -10,10 +10,12 @@
 # Each site is uploaded on its own: a failure on one leaves the other, and --site retries just one.
 # Each site's token comes from the environment, and is never printed. When one is missing, the script
 # runs itself again through `op run --env-file=publish/upload.env`, which fills in the tokens that
-# file names in 1Password, for that run only. The
-# projects default to Craftworks' own, which the environment can override:
-#   Modrinth    $MODRINTH_TOKEN, $MODRINTH_PROJECT_ID
-#   CurseForge  $CURSEFORGE_TOKEN (an upload API token), $CURSEFORGE_PROJECT_ID
+# file names in 1Password, for that run only. The projects and the required dependencies come
+# from gradle.properties, and the environment can override the projects:
+#   Modrinth    $MODRINTH_TOKEN, modrinth_project_id ($MODRINTH_PROJECT_ID), modrinth_dependencies
+#   CurseForge  $CURSEFORGE_TOKEN (an upload API token), curseforge_project_id
+#               ($CURSEFORGE_PROJECT_ID), curseforge_dependencies
+# Only a site with a project is uploaded to; with none, the script refuses before contacting either.
 # upload_release_type in gradle.properties sends every version as release, beta or alpha; left empty,
 # a version below 1.0 is a beta and one from 1.0 a release.
 # $MAVEN_REPO_LOCAL reads somewhere other than ~/.m2/repository, and $MODRINTH_API_URL,
@@ -35,19 +37,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MODRINTH_API = "https://api.modrinth.com/v2"
-MODRINTH_PROJECT = "v6CdwRwB"
-CURSEFORGE_PROJECT = "1715876"
 CURSEFORGE_UPLOAD = "https://minecraft.curseforge.com"
 # The upload API can't list a project's files, so the website's own listing, which needs no key, does.
 CURSEFORGE_API = "https://www.curseforge.com"
 # What checkJarLicensing in build.gradle requires of the jar.
 LICENSING = ["LICENSE", "LICENSES/MIT.txt"]
-# EMI, which a client needs: the Assembler takes its requests through EMI's Fill Recipe.
-MODRINTH_EMI = "fRiHVvU7"
-CURSEFORGE_EMI = "emi"
-# Groundworks, which the Assemblers stand on (#21): a required mod, never jar-in-jar (FactoryWorks ADR-0115).
-MODRINTH_GROUNDWORKS = "AJ3Q7hSr"
-CURSEFORGE_GROUNDWORKS = "groundworks"
 SECRET_HEADERS = {"Authorization", "X-Api-Token"}
 # What upload_release_type may name; both sites call the three types alike.
 RELEASE_TYPES = ["release", "beta", "alpha"]
@@ -67,7 +61,17 @@ def fail(message):
 
 def properties():
     text = (ROOT / "gradle.properties").read_text()
-    return dict(re.findall(r"^(\w+) *= *(.*?)\s*$", text, re.MULTILINE))
+    return dict(re.findall(r"^(\w+)[ \t]*=[ \t]*(.*?)[ \t]*$", text, re.MULTILINE))
+
+
+def project_of(site, props):
+    """The site's project: the environment's, else gradle.properties', else empty."""
+    return os.environ.get(f"{site.upper()}_PROJECT_ID") or props.get(f"{site}_project_id", "")
+
+
+def dependencies(site, props):
+    """The required dependencies gradle.properties names for the site, comma separated."""
+    return [d.strip() for d in props.get(f"{site}_dependencies", "").split(",") if d.strip()]
 
 
 def release_type(version, props):
@@ -153,7 +157,7 @@ def through_op(args, sites):
 class Release:
     def __init__(self, version, dry_run):
         self.version, self.dry_run = version, dry_run
-        props = properties()
+        self.props = props = properties()
         self.name = f"{props['mod_name']} {version}"
         self.minecraft = props["minecraft_version"]
         self.release_type = release_type(version, props)
@@ -177,14 +181,14 @@ class Release:
 
     def modrinth(self):
         secret = token("MODRINTH_TOKEN")
-        project = os.environ.get("MODRINTH_PROJECT_ID") or MODRINTH_PROJECT
+        project = project_of("modrinth", self.props)
         api = os.environ.get("MODRINTH_API_URL", MODRINTH_API).rstrip("/")
         metadata = {
             "name": self.name,
             "version_number": self.version,
             "changelog": self.notes,
-            "dependencies": [{"project_id": MODRINTH_EMI, "dependency_type": "required"},
-                             {"project_id": MODRINTH_GROUNDWORKS, "dependency_type": "required"}],
+            "dependencies": [{"project_id": d, "dependency_type": "required"}
+                             for d in dependencies("modrinth", self.props)],
             "game_versions": [self.minecraft],
             "version_type": self.release_type,
             "loaders": ["neoforge"],
@@ -209,7 +213,7 @@ class Release:
 
     def curseforge(self):
         secret = token("CURSEFORGE_TOKEN")
-        project = os.environ.get("CURSEFORGE_PROJECT_ID") or CURSEFORGE_PROJECT
+        project = project_of("curseforge", self.props)
         upload = os.environ.get("CURSEFORGE_UPLOAD_URL", CURSEFORGE_UPLOAD).rstrip("/")
         api = os.environ.get("CURSEFORGE_API_URL", CURSEFORGE_API).rstrip("/")
         upload_headers = {"X-Api-Token": secret, "User-Agent": self.agent}
@@ -220,9 +224,10 @@ class Release:
             "changelogType": "markdown",
             "displayName": self.name,
             "releaseType": self.release_type,
-            "relations": {"projects": [{"slug": CURSEFORGE_EMI, "type": "requiredDependency"},
-                                       {"slug": CURSEFORGE_GROUNDWORKS, "type": "requiredDependency"}]},
         }
+        required = dependencies("curseforge", self.props)
+        if required:
+            metadata["relations"] = {"projects": [{"slug": d, "type": "requiredDependency"} for d in required]}
         if self.dry_run:
             show("GET", files, api_headers)
             show("GET", f"{upload}/api/game/version-types", upload_headers)
@@ -280,13 +285,19 @@ def main(args):
     usage = "usage: scripts/upload.py [--dry-run] [--site modrinth|curseforge] <major.minor.patch>"
     dry_run = "--dry-run" in args
     args = [a for a in args if a != "--dry-run"]
-    sites = list(SITES)
+    props = properties()
+    sites = [site for site in SITES if project_of(site, props)]
     if args[:1] == ["--site"]:
         if len(args) < 2 or args[1] not in SITES:
             fail(usage)
+        if not project_of(args[1], props):
+            fail(f"gradle.properties sets no {args[1]}_project_id, so there is no {SITES[args[1]][0]} project to upload to.")
         sites, args = [args[1]], args[2:]
     if len(args) != 1 or not re.fullmatch(r"\d+\.\d+\.\d+", args[0]):
         fail(usage)
+    if not sites:
+        fail("gradle.properties sets neither modrinth_project_id nor curseforge_project_id, "
+             "so this Library goes to neither site.")
 
     release = Release(args[0], dry_run)
     through_op(sys.argv[1:], sites)
