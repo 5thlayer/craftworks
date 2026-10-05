@@ -14,7 +14,9 @@ import com.mojang.serialization.DataResult;
  * An Assembling recipe's category (CONTEXT.md): the kinds of recipe Factorio's machines are split by, which
  * decide the Assemblers that may hold it. Written in recipes and in the server config by its {@link #id}.
  *
- * <p>Pure: no Minecraft types, so a tier's defaults are unit-tested.
+ * <p>No Minecraft game types, only DFU's codec, so a tier's defaults are unit-tested. The constants' order
+ * is sent over the network, by {@link AssemblingRecipe}'s stream codec: new ones go at the end, and none are
+ * reordered.
  */
 public enum AssemblingCategory {
     CRAFTING("crafting"),
@@ -41,6 +43,11 @@ public enum AssemblingCategory {
 
     public static Optional<AssemblingCategory> byId(String id) {
         return Arrays.stream(values()).filter(category -> category.id.equals(id)).findFirst();
+    }
+
+    /** Whether a config entry names one of the five: what the tiers' {@code categories} accepts. */
+    public static boolean isId(Object value) {
+        return value instanceof String id && byId(id).isPresent();
     }
 
     /** The five ids, as the config's comment and an error name them. */

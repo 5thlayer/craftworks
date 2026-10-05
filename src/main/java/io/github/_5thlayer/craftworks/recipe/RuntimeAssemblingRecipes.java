@@ -111,7 +111,7 @@ public final class RuntimeAssemblingRecipes {
             }
             ingredients.add(new Ingredient(items, sized.count(), remainders));
         }
-        ItemStackTemplate product = recipe.results().getFirst();
+        ItemStackTemplate product = recipe.productTemplate().orElseThrow();
         String result = ItemKeys.of(product.create(), registries);
         if (result == null) {
             refused.add(id + " (a result with a component nothing can name)");

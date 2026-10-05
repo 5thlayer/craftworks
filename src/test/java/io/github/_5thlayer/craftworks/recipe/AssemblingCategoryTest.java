@@ -4,6 +4,7 @@
 package io.github._5thlayer.craftworks.recipe;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -26,6 +27,14 @@ class AssemblingCategoryTest {
         assertTrue(typo.isError());
         assertTrue(typo.error().orElseThrow().message().contains("advanced_crafting"));
         assertTrue(AssemblingCategory.byId("Crafting").isEmpty());
+    }
+
+    @Test
+    void theConfigTakesOnlyTheFiveNames() {
+        assertTrue(AssemblingCategory.isId("chemistry"));
+        assertFalse(AssemblingCategory.isId("advanced_crafting"));
+        assertFalse(AssemblingCategory.isId(""));
+        assertFalse(AssemblingCategory.isId(3));
     }
 
     @Test

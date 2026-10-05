@@ -26,6 +26,7 @@ public class AssemblingEmiRecipe extends BasicEmiRecipe {
     private static final int SLOT = 18;
 
     private final int time;
+    /** Not {@code category}: that is {@code BasicEmiRecipe}'s own, the EMI category the recipe is listed under. */
     private final AssemblingCategory assemblingCategory;
 
     public AssemblingEmiRecipe(EmiRecipeCategory category, RecipeHolder<AssemblingRecipe> holder) {
@@ -50,7 +51,8 @@ public class AssemblingEmiRecipe extends BasicEmiRecipe {
         widgets.addFillingArrow(x + 3, 5, Math.max(time, 1) * 50);
         widgets.addText(Component.translatable("emi.craftworks.assembling.seconds",
                 String.format("%.1f", time / 20F)), x + 3, 24, 0xFF808080, false);
-        widgets.addText(Component.translatable("emi.craftworks.assembling.category", assemblingCategory.id()), 0, 35, 0xFF808080, false);
+        widgets.addText(Component.translatable("emi.craftworks.assembling.category", assemblingCategory.id()),
+                0, 35, 0xFF808080, false);
         x += 30;
         for (EmiStack output : outputs) {
             widgets.addSlot(output, x, 4).recipeContext(this);

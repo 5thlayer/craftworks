@@ -4,11 +4,14 @@
 package io.github._5thlayer.craftworks.recipe;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.DecoderException;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -37,8 +40,8 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
  * true, so a recipe written before they existed reads unchanged. Fluids are NeoForge's own types so that
  * Craftworks names no fluid Library (5thlayer/factoryworks#578).
  *
- * <p>{@code category} names the recipe's kind, one of {@link AssemblingCategory}'s five, and decides which Assemblers may hold
- * it; omitted, it is {@code crafting}. {@code results} is a list of item stacks, empty only when
+ * <p>{@code category} names the recipe's kind, one of {@link AssemblingCategory}'s five, and decides which
+ * Assemblers may hold it; omitted, it is {@code crafting}. {@code results} is a list of item stacks, empty only when
  * {@code fluid_results} is not. The first goes to an Assembler's product slot and the rest to its remainder
  * slot; the Personal Assembler plans only a recipe with exactly one (CONTEXT.md, Hand-craftable).
  *
@@ -76,9 +79,18 @@ public record AssemblingRecipe(
         return productOf(results);
     }
 
-    /** The first of {@code results} as a stack, or nothing: one rule for the recipe and for what the client is sent of it. */
+    /** The first result, empty for a recipe that makes only fluids. */
+    public Optional<ItemStackTemplate> productTemplate() {
+        return firstOf(results);
+    }
+
+    /** The first of {@code results} as a stack, or nothing: the one rule, for the recipe and for the client's copy. */
     public static ItemStack productOf(List<ItemStackTemplate> results) {
-        return results.isEmpty() ? ItemStack.EMPTY : results.getFirst().create();
+        return firstOf(results).map(ItemStackTemplate::create).orElse(ItemStack.EMPTY);
+    }
+
+    private static Optional<ItemStackTemplate> firstOf(List<ItemStackTemplate> results) {
+        return results.stream().findFirst();
     }
 
     /** The results after the first, which an Assembler puts in its remainder slot. */
@@ -144,9 +156,20 @@ public record AssemblingRecipe(
                     FluidStackTemplate.CODEC.listOf().optionalFieldOf("fluid_results", List.of())
                             .forGetter(AssemblingRecipe::fluidResults),
                     Codec.BOOL.optionalFieldOf("hand_craftable", true).forGetter(AssemblingRecipe::handCraftable),
-                    AssemblingCategory.CODEC.optionalFieldOf("category", AssemblingCategory.CRAFTING).forGetter(AssemblingRecipe::category))
+                    AssemblingCategory.CODEC.optionalFieldOf("category", AssemblingCategory.CRAFTING)
+                            .forGetter(AssemblingRecipe::category))
                     .apply(instance, AssemblingRecipe::new))
             .flatXmap(AssemblingRecipe::makesSomething, AssemblingRecipe::makesSomething);
+
+    /** The category's ordinal; one that names no constant is a decode error, not an array index. */
+    private static final StreamCodec<ByteBuf, AssemblingCategory> CATEGORY_STREAM_CODEC = ByteBufCodecs.VAR_INT.map(
+            ordinal -> {
+                if (ordinal < 0 || ordinal >= AssemblingCategory.values().length) {
+                    throw new DecoderException("Unknown category " + ordinal);
+                }
+                return AssemblingCategory.values()[ordinal];
+            },
+            AssemblingCategory::ordinal);
 
     private static final StreamCodec<RegistryFriendlyByteBuf, AssemblingRecipe> STREAM_CODEC = StreamCodec.composite(
             SizedIngredient.STREAM_CODEC.apply(ByteBufCodecs.list()), AssemblingRecipe::ingredients,
@@ -156,7 +179,6 @@ public record AssemblingRecipe(
             SizedFluidIngredient.STREAM_CODEC.apply(ByteBufCodecs.list()), AssemblingRecipe::fluidIngredients,
             FluidStackTemplate.STREAM_CODEC.apply(ByteBufCodecs.list()), AssemblingRecipe::fluidResults,
             ByteBufCodecs.BOOL, AssemblingRecipe::handCraftable,
-            ByteBufCodecs.idMapper(ordinal -> AssemblingCategory.values()[ordinal], AssemblingCategory::ordinal),
-            AssemblingRecipe::category,
+            CATEGORY_STREAM_CODEC, AssemblingRecipe::category,
             AssemblingRecipe::new);
 }

@@ -15,9 +15,9 @@ import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
  * The Assembler's three tiers, each a block of its own, with the figures the server config starts from.
  *
  * <p>Speed divides a recipe's time into the ticks a craft takes; power is FE a tick while crafting, at
- * 1 FE = 100 J: 75, 150 and 375 kW. The categories are the recipe kinds a tier
- * may hold, Factorio's: tier 1 takes {@code crafting} and {@code advanced-crafting}, and tiers 2 and 3 add
- * {@code crafting-with-fluid}. Pure: no Minecraft types, so the rates are unit-tested.
+ * 1 FE = 100 J: 75, 150 and 375 kW. The categories are the recipe kinds a tier may hold, Factorio's: tier 1
+ * takes {@code crafting} and {@code advanced-crafting}, and tiers 2 and 3 add {@code crafting-with-fluid}.
+ * Pure: no Minecraft types, so the rates are unit-tested.
  */
 public enum AssemblerTier {
     ONE("assembler_1", 0.5, 37.5, 50_000, List.of(CRAFTING, ADVANCED_CRAFTING)),

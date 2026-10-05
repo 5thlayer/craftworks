@@ -90,7 +90,7 @@ public final class CraftworksConfig {
                     .defineListAllowEmpty("categories",
                             tier.defaultCategories().stream().map(AssemblingCategory::id).toList(),
                             () -> AssemblingCategory.CRAFTING.id(),
-                            value -> value instanceof String name && AssemblingCategory.byId(name).isPresent());
+                            AssemblingCategory::isId);
             builder.pop();
             ASSEMBLERS.put(tier, new AssemblerSettings(speed, power, buffer, categories));
         }

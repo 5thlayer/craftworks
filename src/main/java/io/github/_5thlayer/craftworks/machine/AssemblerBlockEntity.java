@@ -362,12 +362,10 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
                 return AssemblerState.OUTPUT_FULL;
             }
         }
-        if (recipe.results().isEmpty()) {
-            return null;
-        }
-        ItemStackTemplate product = recipe.results().getFirst();
-        return inventory.insert(AssemblerSlots.PRODUCT, ItemResource.of(product), product.count(), tx) == product.count()
-                ? null : AssemblerState.OUTPUT_FULL;
+        return recipe.productTemplate()
+                .filter(product -> inventory.insert(AssemblerSlots.PRODUCT, ItemResource.of(product), product.count(), tx)
+                        != product.count())
+                .map(product -> AssemblerState.OUTPUT_FULL).orElse(null);
     }
 
     /** Ticks into the craft under way, for the screen's progress bar. */
