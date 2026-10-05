@@ -37,6 +37,37 @@ final class AssemblingRecipeTests {
         tests.test("assembling_recipe_fields_default", 20, AssemblingRecipeTests::fieldsDefault);
         tests.test("an_ingredient_carries_its_remainder", 20, AssemblingRecipeTests::remainder);
         tests.test("machine_only_and_fluid_recipes_are_never_planned", 20, AssemblingRecipeTests::machineOnly);
+        tests.test("assembling_recipes_load_placeable_and_unlockable", 20, AssemblingRecipeTests::placeable);
+    }
+
+    /**
+     * Vanilla logs "can't be placed due to empty ingredients" at every load for a recipe that is neither
+     * placeable nor special. Special would silence it too, but a special recipe is never unlocked, and the
+     * {@code recipeBook} Lock source needs it unlocked. Only a recipe with no item ingredient may warn.
+     */
+    private static void placeable(GameTestHelper helper) {
+        var byType = helper.getLevel().getServer().getRecipeManager().recipeMap()
+                .byType(CraftworksRecipes.ASSEMBLING_TYPE.get());
+        if (byType.isEmpty()) {
+            helper.fail("no Assembling recipe is loaded, so this proves nothing");
+            return;
+        }
+        for (var holder : byType) {
+            var recipe = holder.value();
+            if (recipe.isSpecial()) {
+                helper.fail(holder.id().identifier() + " is special, so the recipe book never unlocks it");
+                return;
+            }
+            if (!recipe.ingredients().isEmpty() && recipe.placementInfo().isImpossibleToPlace()) {
+                helper.fail(holder.id().identifier() + " has item ingredients and can't be placed, so vanilla warns at load");
+                return;
+            }
+            if (!recipe.display().isEmpty()) {
+                helper.fail(holder.id().identifier() + " has a recipe book display, so the crafting table's book shows it");
+                return;
+            }
+        }
+        helper.succeed();
     }
 
     private static void readOffTheirType(GameTestHelper helper) {

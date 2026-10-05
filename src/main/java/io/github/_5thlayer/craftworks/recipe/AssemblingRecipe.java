@@ -64,10 +64,15 @@ public record AssemblingRecipe(
         return result.create();
     }
 
-    /** Not a grid recipe: nothing places ingredients for it. */
+    /**
+     * Its item ingredients, one each. Nothing places them, since no recipe book shows an Assembling recipe
+     * ({@code display()} is empty), but vanilla warns at every load of a recipe that is neither placeable
+     * nor special, and a special one is never unlocked, which the {@code recipeBook} Lock source needs.
+     * A recipe with no item ingredient still can't be placed, and still draws the warning.
+     */
     @Override
     public PlacementInfo placementInfo() {
-        return PlacementInfo.NOT_PLACEABLE;
+        return PlacementInfo.create(ingredients.stream().map(SizedIngredient::ingredient).toList());
     }
 
     @Override
