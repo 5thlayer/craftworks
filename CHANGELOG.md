@@ -5,7 +5,7 @@ Written for players and pack authors: what the Personal Assembler does, and what
 ## Unreleased
 
 - The Creative Energy Source (`craftworks:creative_energy_source`), a creative-only block for powering an Assembler where no energy mod is installed, such as the dev client: every tick it offers unlimited FE to the energy capability of each block touching it, on all six faces, and its own capability gives FE without limit and accepts none. It has no recipe, so EMI and JEI show none, and it drops itself when broken. Find it in the Functional Blocks creative tab, with stand-in art for now. (#23)
-- Accepts Groundworks below 0.6 only, from `groundworks_version` up to the next minor, since a new minor may break Craftworks.
+- Accepts Groundworks from 0.5.4 up to, but not including, 0.6, since a new minor may break Craftworks.
 
 ## 0.3.0
 
