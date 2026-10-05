@@ -134,8 +134,8 @@ public final class AssemblerMenu extends AbstractContainerMenu {
                     case DATA_DURATION -> machine.craftDuration();
                     case DATA_ENERGY -> machine.energy();
                     case DATA_CAPACITY -> machine.energyCapacity();
-                    case DATA_FLUID -> BuiltInRegistries.FLUID.getId(machine.fluidBox().getResource(0).getFluid());
-                    case DATA_FLUID_AMOUNT -> machine.fluidBox().getAmountAsInt(0);
+                    case DATA_FLUID -> BuiltInRegistries.FLUID.getId(machine.fluidBox().contents().getFluid());
+                    case DATA_FLUID_AMOUNT -> machine.fluidBox().contents().getAmount();
                     default -> 0;
                 };
             }

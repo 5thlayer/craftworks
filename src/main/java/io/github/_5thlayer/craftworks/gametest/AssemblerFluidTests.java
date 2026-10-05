@@ -25,8 +25,8 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ProblemReporter;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
@@ -36,6 +36,7 @@ import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
 import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
@@ -58,6 +59,8 @@ final class AssemblerFluidTests {
     private static final Identifier TWO_FLUIDS = id("gametest/two_fluids");
     private static final Identifier BIG_FLUID = id("gametest/big_fluid");
     private static final Identifier FULL_BOX = id("gametest/full_box");
+    /** One fluid ingredient that water and lava both match. */
+    private static final Identifier WATER_OR_LAVA = id("gametest/water_or_lava");
     private static final Identifier FLUID_RESULT = id("gametest/fluid_recipe");
     private static final Identifier SAPLING = AssemblerTests.OAK_SAPLING;
 
@@ -73,6 +76,8 @@ final class AssemblerFluidTests {
     static void register(CraftworksGameTests.Registrar tests) {
         tests.test("a_tier_2_assembler_beside_a_tank_pulls_water_and_crafts_a_recipe_that_needs_it", 20, AssemblerFluidTests::pullsAndCrafts);
         tests.test("it_pulls_only_the_held_recipes_fluid", 20, AssemblerFluidTests::onlyTheHeldFluid);
+        tests.test("an_ingredient_that_several_fluids_match_takes_the_first_and_refuses_another_while_the_box_holds_one", 20,
+                AssemblerFluidTests::multiFluidIngredient);
         tests.test("it_stops_at_1000_mb", 20, AssemblerFluidTests::stopsAtABoxFull);
         tests.test("changing_the_held_recipe_voids_the_box", 20, AssemblerFluidTests::voidsOnChange);
         tests.test("the_fluid_box_survives_a_save_and_reload", 20, AssemblerFluidTests::survivesReload);
@@ -113,7 +118,7 @@ final class AssemblerFluidTests {
     }
 
     private static int inBox(Placed assembler) {
-        return assembler.machine().fluidBox().getAmountAsInt(0);
+        return assembler.machine().fluidBox().contents().getAmount();
     }
 
     private static void tick(GameTestHelper helper, Placed assembler, int ticks) {
@@ -167,6 +172,39 @@ final class AssemblerFluidTests {
         helper.succeed();
     }
 
+    /** Nothing mixes: the first fluid in fills the box, and the other member waits until the box empties. */
+    private static void multiFluidIngredient(GameTestHelper helper) {
+        Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
+        Direction facing = assembler.facing();
+        // The connection on the facing side is asked first.
+        TestTank.Entity water = tank(helper, beyond(facing), Fluids.WATER, 400);
+        TestTank.Entity lava = tank(helper, beyond(facing.getOpposite()), Fluids.LAVA, 5000);
+        AssemblerMachineTests.hold(assembler, WATER_OR_LAVA);
+        AssemblerMachineTests.insert(assembler, 0, Items.DIRT, 1);
+        tick(helper, assembler, 1);
+        helper.assertTrue(assembler.machine().fluidBox().contents().getFluid() == Fluids.WATER && inBox(assembler) == 400,
+                "the box holds " + assembler.machine().fluidBox().contents() + ", not the 400 mB of water first in");
+        helper.assertTrue(inTank(lava) == 5000, "lava went into a box holding water: the tank lost " + (5000 - inTank(lava)));
+        helper.assertTrue(inTank(water) == 0, "the water tank still holds " + inTank(water));
+
+        // The recipe takes the water it holds, and the craft runs.
+        SimpleEnergyHandler supply = AssemblerMachineTests.supply();
+        for (int ran = 0; ran < 20 && AssemblerMachineTests.count(assembler, AssemblerSlots.PRODUCT) == 0; ran++) {
+            AssemblerMachineTests.feed(assembler, supply, 1000);
+            assembler.machine().serverTick(helper.getLevel());
+        }
+        helper.assertTrue(AssemblerMachineTests.count(assembler, AssemblerSlots.PRODUCT) == 1, "the craft did not run");
+        helper.assertTrue(inBox(assembler) == 150, "the box holds " + inBox(assembler) + " mB, not the 400 less the 250 spent");
+        helper.assertTrue(inTank(lava) == 5000, "lava was pulled while the box held water");
+
+        // Emptied, the box takes whichever member comes next.
+        assembler.machine().fluidBox().set(FluidStack.EMPTY);
+        tick(helper, assembler, 1);
+        helper.assertTrue(assembler.machine().fluidBox().contents().getFluid() == Fluids.LAVA && inBox(assembler) == 1000,
+                "the emptied box holds " + assembler.machine().fluidBox().contents() + ", not a box of lava");
+        helper.succeed();
+    }
+
     private static void stopsAtABoxFull(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         TestTank.Entity water = tank(helper, beyond(assembler.facing()), Fluids.WATER, 5000);
@@ -183,7 +221,7 @@ final class AssemblerFluidTests {
     private static void voidsOnChange(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         AssemblerMachineTests.hold(assembler, WATER_CRAFT);
-        assembler.machine().fluidBox().set(0, FluidResource.of(Fluids.WATER), 600);
+        assembler.machine().fluidBox().set(new FluidStack(Fluids.WATER, 600));
 
         // The recipe it already holds moves nothing.
         AssemblerMachineTests.hold(assembler, WATER_CRAFT);
@@ -191,7 +229,7 @@ final class AssemblerFluidTests {
         // Another with a fluid, and one with none: the box goes either way.
         AssemblerMachineTests.hold(assembler, LAVA_CRAFT);
         helper.assertTrue(inBox(assembler) == 0, "the box held " + inBox(assembler) + " mB after the recipe changed to lava");
-        assembler.machine().fluidBox().set(0, FluidResource.of(Fluids.LAVA), 600);
+        assembler.machine().fluidBox().set(new FluidStack(Fluids.LAVA, 600));
         AssemblerMachineTests.hold(assembler, SAPLING);
         helper.assertTrue(inBox(assembler) == 0, "the box held " + inBox(assembler) + " mB after the recipe changed to one with no fluid");
         helper.succeed();
@@ -200,7 +238,7 @@ final class AssemblerFluidTests {
     private static void survivesReload(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.THREE);
         AssemblerMachineTests.hold(assembler, WATER_CRAFT);
-        assembler.machine().fluidBox().set(0, FluidResource.of(Fluids.WATER), 750);
+        assembler.machine().fluidBox().set(new FluidStack(Fluids.WATER, 750));
         TagValueOutput saved = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
         assembler.machine().saveCustomOnly(saved);
 
@@ -208,14 +246,17 @@ final class AssemblerFluidTests {
                 helper.getBlockState(AssemblerMachineTests.ORIGIN));
         loaded.setLevel(helper.getLevel());
         loaded.loadCustomOnly(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), saved.buildResult()));
-        helper.assertTrue(loaded.fluidBox().getResource(0).getFluid() == Fluids.WATER && loaded.fluidBox().getAmountAsInt(0) == 750,
-                "the box read back as " + loaded.fluidBox().getResource(0) + " x " + loaded.fluidBox().getAmountAsInt(0));
+        helper.assertTrue(loaded.fluidBox().contents().getFluid() == Fluids.WATER && loaded.fluidBox().contents().getAmount() == 750,
+                "the box read back as " + loaded.fluidBox().contents());
         helper.succeed();
     }
 
     // -- where the connections are --------------------------------------------------------------
 
-    /** Every block of the footprint on every side, as "offset from the origin, side", where a fluid capability answers. */
+    /**
+     * Every block of the footprint on every side, as "offset from the origin, side", where a fluid capability
+     * answers.
+     */
     private static Set<String> exposed(GameTestHelper helper, Placed assembler) {
         Set<String> found = new TreeSet<>();
         BlockPos origin = helper.absolutePos(AssemblerMachineTests.ORIGIN);
@@ -230,7 +271,10 @@ final class AssemblerFluidTests {
         return found;
     }
 
-    /** The two faces that are connections for a facing, as {@link #exposed} spells them: the bottom layer's edge centres. */
+    /**
+     * The two faces that are connections for a facing, as {@link #exposed} spells them: the bottom layer's
+     * edge centres.
+     */
     private static Set<String> connectionFaces(Direction facing) {
         Set<String> faces = new TreeSet<>();
         for (Direction side : List.of(facing, facing.getOpposite())) {
@@ -259,7 +303,7 @@ final class AssemblerFluidTests {
             tick(helper, assembler, 1);
             helper.assertTrue(inBox(assembler) == 1000 && inTank(water) == 4000,
                     "the connection at " + side + " alone left " + inBox(assembler) + " mB in the box and " + inTank(water) + " in the tank");
-            assembler.machine().fluidBox().set(0, FluidResource.EMPTY, 0);
+            assembler.machine().fluidBox().set(FluidStack.EMPTY);
             helper.setBlock(beyond(side), Blocks.AIR);
         }
         helper.succeed();
@@ -383,16 +427,15 @@ final class AssemblerFluidTests {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         AssemblerBlockEntity machine = assembler.machine();
         AssemblerMachineTests.hold(assembler, WATER_CRAFT);
-        machine.fluidBox().set(0, FluidResource.of(Fluids.WATER), 400);
+        machine.fluidBox().set(new FluidStack(Fluids.WATER, 400));
 
         AssemblerMachineTests.swap(helper, assembler, AssemblerTier.THREE, AssemblerMachineTests.ORIGIN.above().north().east());
         helper.assertTrue(helper.getBlockEntity(AssemblerMachineTests.ORIGIN, AssemblerBlockEntity.class) == machine, "the swap replaced the block entity");
         helper.assertTrue(machine.tier() == AssemblerTier.THREE, "the block entity did not follow to tier 3");
-        helper.assertTrue(inBox(assembler) == 400 && machine.fluidBox().getResource(0).getFluid() == Fluids.WATER,
+        helper.assertTrue(inBox(assembler) == 400 && machine.fluidBox().contents().getFluid() == Fluids.WATER,
                 "a swap from tier 2 to 3 left " + inBox(assembler) + " mB in the box");
-        // The connections follow the swap: the new origin block is drawn bare until the machine's next tick.
-        machine.serverTick(helper.getLevel());
-        helper.assertTrue(connectionsShown(helper), "tier 3 did not show its connections after the swap");
+        // The ring and the capability change together: no tick between the swap and the ring.
+        helper.assertTrue(connectionsShown(helper), "tier 3 did not show its connections the moment of the swap");
         helper.assertTrue(exposed(helper, new Placed(helper, assembler.player(), AssemblerTier.THREE, assembler.facing())).size() == 2,
                 "tier 3 did not keep its connections after the swap");
 
@@ -400,8 +443,7 @@ final class AssemblerFluidTests {
         helper.assertTrue(machine.tier() == AssemblerTier.ONE, "the block entity did not follow to tier 1");
         helper.assertTrue(inBox(assembler) == 0, "a swap to tier 1 left " + inBox(assembler) + " mB in the box");
         helper.assertTrue(machine.heldRecipe().equals(Optional.of(WATER_CRAFT)), "the swap to tier 1 lost the Held recipe");
-        machine.serverTick(helper.getLevel());
-        helper.assertTrue(!connectionsShown(helper), "tier 1 shows connections");
+        helper.assertTrue(!connectionsShown(helper), "tier 1 shows connections the moment of the swap");
 
         // And back up: nothing comes back with the tier.
         AssemblerMachineTests.swap(helper, assembler, AssemblerTier.TWO, AssemblerMachineTests.ORIGIN);
@@ -412,7 +454,7 @@ final class AssemblerFluidTests {
     private static void breaking(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         AssemblerMachineTests.hold(assembler, WATER_CRAFT);
-        assembler.machine().fluidBox().set(0, FluidResource.of(Fluids.WATER), 400);
+        assembler.machine().fluidBox().set(new FluidStack(Fluids.WATER, 400));
         assembler.player().gameMode.destroyBlock(helper.absolutePos(AssemblerMachineTests.ORIGIN.above().north().east()));
         List<ItemStack> drops = helper.getEntities(EntityType.ITEM).stream().map(ItemEntity::getItem).toList();
         ItemStack item = drops.stream().filter(stack -> stack.is(Assemblers.item(AssemblerTier.TWO).get())).findFirst().orElse(ItemStack.EMPTY);
@@ -432,7 +474,7 @@ final class AssemblerFluidTests {
 
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         AssemblerMachineTests.hold(assembler, WATER_CRAFT);
-        assembler.machine().fluidBox().set(0, FluidResource.of(Fluids.WATER), 400);
+        assembler.machine().fluidBox().set(new FluidStack(Fluids.WATER, 400));
         AssemblerMenu menu = menuOf(assembler);
         helper.assertTrue(menu.hasFluidBox(), "tier 2's menu has no fluid box");
         helper.assertTrue(menu.fluid().getFluid() == Fluids.WATER && menu.fluid().getAmount() == 400,

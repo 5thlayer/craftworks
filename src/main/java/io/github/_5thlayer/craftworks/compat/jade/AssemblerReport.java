@@ -79,11 +79,8 @@ class AssemblerReport implements StreamServerDataProvider<BlockAccessor, Assembl
                 .orElse(ItemStack.EMPTY);
         int duration = machine.craftDuration();
         float progress = duration == 0 ? 0 : Math.min(1, (float) machine.craftProgress() / duration);
-        return new Data(held, product, machine.state(), progress, machine.tier().hasFluidBox(), fluidIn(machine));
-    }
-
-    private static FluidStack fluidIn(AssemblerBlockEntity machine) {
-        return machine.fluidBox().getResource(0).toStack(machine.fluidBox().getAmountAsInt(0));
+        return new Data(held, product, machine.state(), progress, machine.tier().hasFluidBox(),
+                machine.fluidBox().contents());
     }
 
     @Override
@@ -134,7 +131,7 @@ class AssemblerReport implements StreamServerDataProvider<BlockAccessor, Assembl
         /** The fluid and its amount, or that the box is empty. */
         private static Component fluidText(FluidStack fluid) {
             return fluid.isEmpty()
-                    ? Component.translatable("craftworks.jade.fluid_empty").withStyle(ChatFormatting.GRAY)
+                    ? Component.translatable("craftworks.assembler.fluid_empty").withStyle(ChatFormatting.GRAY)
                     : Component.translatable("craftworks.jade.fluid", fluid.getHoverName(),
                             NumberFormat.getIntegerInstance().format(fluid.getAmount()));
         }

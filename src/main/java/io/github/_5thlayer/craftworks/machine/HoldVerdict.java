@@ -37,30 +37,85 @@ public enum HoldVerdict {
         this.messageKey = messageKey;
     }
 
-    public static HoldVerdict of(boolean resolves, boolean categoryHeld, boolean takesFluids, boolean oneFluid, boolean fluidFits,
-            boolean fitsSlots, boolean remaindersFit, boolean locked) {
-        if (!resolves) {
+    /**
+     * What the world answered about a recipe, one flag for each refusal: every one true is a recipe that
+     * passes, and {@link #locked} is the Lock source's answer. Read with a name, never by position:
+     * {@code Checks.passing().fitsSlots(false)} is a recipe that fails only that.
+     */
+    public record Checks(boolean resolves, boolean categoryHeld, boolean takesFluids, boolean oneFluid,
+            boolean fluidFits, boolean fitsSlots, boolean remaindersFit, boolean locked) {
+
+        /** A recipe that resolves, is in a category the tier holds, takes its fluids and fits, and is not Locked. */
+        public static Checks passing() {
+            return new Checks(true, true, true, true, true, true, true, false);
+        }
+
+        public Checks resolves(boolean resolves) {
+            return new Checks(resolves, categoryHeld, takesFluids, oneFluid, fluidFits, fitsSlots,
+                    remaindersFit, locked);
+        }
+
+        public Checks categoryHeld(boolean categoryHeld) {
+            return new Checks(resolves, categoryHeld, takesFluids, oneFluid, fluidFits, fitsSlots,
+                    remaindersFit, locked);
+        }
+
+        /** Whether the tier takes the recipe's fluids at all: no fluid result, and one only with a fluid box. */
+        public Checks takesFluids(boolean takesFluids) {
+            return new Checks(resolves, categoryHeld, takesFluids, oneFluid, fluidFits, fitsSlots,
+                    remaindersFit, locked);
+        }
+
+        public Checks oneFluid(boolean oneFluid) {
+            return new Checks(resolves, categoryHeld, takesFluids, oneFluid, fluidFits, fitsSlots,
+                    remaindersFit, locked);
+        }
+
+        public Checks fluidFits(boolean fluidFits) {
+            return new Checks(resolves, categoryHeld, takesFluids, oneFluid, fluidFits, fitsSlots,
+                    remaindersFit, locked);
+        }
+
+        public Checks fitsSlots(boolean fitsSlots) {
+            return new Checks(resolves, categoryHeld, takesFluids, oneFluid, fluidFits, fitsSlots,
+                    remaindersFit, locked);
+        }
+
+        public Checks remaindersFit(boolean remaindersFit) {
+            return new Checks(resolves, categoryHeld, takesFluids, oneFluid, fluidFits, fitsSlots,
+                    remaindersFit, locked);
+        }
+
+        public Checks locked(boolean locked) {
+            return new Checks(resolves, categoryHeld, takesFluids, oneFluid, fluidFits, fitsSlots,
+                    remaindersFit, locked);
+        }
+    }
+
+    /** The first refusal that applies, in the order of this enum, or {@link #HELD}. */
+    public static HoldVerdict of(Checks checks) {
+        if (!checks.resolves()) {
             return NOT_ASSEMBLING;
         }
-        if (!categoryHeld) {
+        if (!checks.categoryHeld()) {
             return WRONG_CATEGORY;
         }
-        if (!takesFluids) {
+        if (!checks.takesFluids()) {
             return HAS_FLUID;
         }
-        if (!oneFluid) {
+        if (!checks.oneFluid()) {
             return TOO_MANY_FLUIDS;
         }
-        if (!fluidFits) {
+        if (!checks.fluidFits()) {
             return FLUID_TOO_LARGE;
         }
-        if (!fitsSlots) {
+        if (!checks.fitsSlots()) {
             return TOO_MANY_INGREDIENTS;
         }
-        if (!remaindersFit) {
+        if (!checks.remaindersFit()) {
             return REMAINDERS_DONT_FIT;
         }
-        return locked ? LOCKED : HELD;
+        return checks.locked() ? LOCKED : HELD;
     }
 
     public boolean held() {

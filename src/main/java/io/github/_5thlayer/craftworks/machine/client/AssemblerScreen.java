@@ -109,7 +109,10 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
         }
     }
 
-    /** The gauge's fluid: its still texture, tinted as the fluid is in the world, tiled over the part of the box that is full. */
+    /**
+     * The gauge's fluid: its still texture, tinted as the fluid is in the world, tiled over the part of the
+     * gauge the box fills.
+     */
     private static void fluid(GuiGraphicsExtractor graphics, FluidStack fluid, int x, int y) {
         if (fluid.isEmpty()) {
             return;

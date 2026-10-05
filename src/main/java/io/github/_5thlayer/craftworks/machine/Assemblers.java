@@ -189,20 +189,24 @@ public final class Assemblers {
         event.registerBlockEntity(Capabilities.Item.BLOCK, BLOCK_ENTITY.get(), (machine, side) -> machine.itemFace());
         event.registerBlockEntity(Capabilities.Energy.BLOCK, BLOCK_ENTITY.get(), (machine, side) -> machine.energyFace());
         event.registerBlockEntity(Capabilities.Energy.BLOCK, CREATIVE_ENERGY_SOURCE_ENTITY.get(), (source, side) -> source.energyFace());
-        // Fluid is not forwarded whole as those are: only the two connection blocks answer, on their one outward face,
-        // and a part's lookup sees no more than its position. The origin has none, so Groundworks' forward finds nothing
-        // there and falls through to this one.
+        // Fluid is not forwarded whole as those are: only the two connection blocks answer, on their one outward
+        // face, and a part's lookup sees no more than its position. The origin has none, so Groundworks' forward
+        // finds nothing there and falls through to this one.
         event.registerBlock(Capabilities.Fluid.BLOCK, (level, pos, state, entity, side) -> fluidConnection(level, pos, state, side),
                 PART_BY_TIER.values().stream().map(Supplier::get).toArray(Block[]::new));
     }
 
-    /** What a part block answers to a fluid lookup: its machine's box if it is a Fluid Connection and the face is its own. */
+    /**
+     * What a part block answers to a fluid lookup: its machine's Fluid Connection if the block is one and the
+     * face is its own.
+     */
     private static @Nullable ResourceHandler<FluidResource> fluidConnection(Level level, BlockPos pos, BlockState state,
             @Nullable Direction side) {
         if (side == null || !(state.getBlock() instanceof FootprintPartBlock part)) {
             return null;
         }
         BlockPos origin = part.footprint().standingOrigin(level, pos, state);
-        return origin != null && level.getBlockEntity(origin) instanceof AssemblerBlockEntity machine ? machine.fluidFace(pos, side) : null;
+        return origin != null && level.getBlockEntity(origin) instanceof AssemblerBlockEntity machine
+                ? machine.fluidConnection(pos, side) : null;
     }
 }

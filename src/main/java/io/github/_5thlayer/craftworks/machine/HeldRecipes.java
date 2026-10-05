@@ -48,7 +48,10 @@ public final class HeldRecipes {
         return Optional.of(assembling);
     }
 
-    /** Whether this tier takes the recipe's fluids: no fluid result on any, and a fluid ingredient only with a fluid box. */
+    /**
+     * Whether this tier takes the recipe's fluids: no fluid result on any tier, and a fluid ingredient only
+     * with a fluid box.
+     */
     public static boolean takesFluids(AssemblerTier tier, AssemblingRecipe recipe) {
         return recipe.fluidResults().isEmpty() && (recipe.fluidIngredients().isEmpty() || tier.hasFluidBox());
     }
@@ -108,25 +111,28 @@ public final class HeldRecipes {
     }
 
     /**
-     * Whether an Assembler of any tier can run this recipe: no fluid result, at most one fluid ingredient and
-     * one the box holds, it fits the input slots, and its remainders fit. What a tier adds, its categories
-     * and whether it takes a fluid ingredient at all, is asked of the tier ({@link #takesCategory}, {@link
+     * Whether an Assembler of any tier can run this recipe: at most one fluid ingredient and one the box
+     * holds, it fits the input slots, and its remainders fit. What a tier adds, its categories and its
+     * fluids (a fluid result is no tier's), is asked of the tier ({@link #takesCategory}, {@link
      * #takesFluids}).
      */
     public static boolean canRun(AssemblingRecipe recipe) {
-        return recipe.fluidResults().isEmpty() && oneFluid(recipe) && fluidFits(recipe) && fitsSlots(recipe)
-                && remaindersFit(recipe);
+        return oneFluid(recipe) && fluidFits(recipe) && fitsSlots(recipe) && remaindersFit(recipe);
     }
 
 
     /** What Fill Recipe on an open Assembler of this tier would answer for this player: the Lock source is asked here, and only here. */
     public static HoldVerdict verdict(ServerPlayer player, AssemblerTier tier, Identifier id) {
         Optional<AssemblingRecipe> recipe = find(player.level(), id).map(RecipeHolder::value);
-        return HoldVerdict.of(recipe.isPresent(), recipe.map(found -> takesCategory(tier, found)).orElse(false),
-                recipe.map(found -> takesFluids(tier, found)).orElse(false), recipe.map(HeldRecipes::oneFluid).orElse(false),
-                recipe.map(HeldRecipes::fluidFits).orElse(false), recipe.map(HeldRecipes::fitsSlots).orElse(false),
-                recipe.map(HeldRecipes::remaindersFit).orElse(false),
-                recipe.isPresent() && RuntimePlanSource.lockedFor(player).test(id.toString()));
+        return HoldVerdict.of(recipe.map(found -> HoldVerdict.Checks.passing()
+                .categoryHeld(takesCategory(tier, found))
+                .takesFluids(takesFluids(tier, found))
+                .oneFluid(oneFluid(found))
+                .fluidFits(fluidFits(found))
+                .fitsSlots(fitsSlots(found))
+                .remaindersFit(remaindersFit(found))
+                .locked(RuntimePlanSource.lockedFor(player).test(id.toString())))
+                .orElse(HoldVerdict.Checks.passing().resolves(false)));
     }
 
     /** The recipe's name for a message: its product's, or else its id. */

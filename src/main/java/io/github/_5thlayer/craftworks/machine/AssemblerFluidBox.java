@@ -24,6 +24,16 @@ public final class AssemblerFluidBox extends FluidStacksResourceHandler {
         this.machine = machine;
     }
 
+    /** What the box holds, empty when it is empty: its one tank, so no caller needs to know the index. */
+    public FluidStack contents() {
+        return getResource(0).toStack(getAmountAsInt(0));
+    }
+
+    /** Sets what the box holds; for the game tests, which put fluid in directly. */
+    public void set(FluidStack contents) {
+        set(0, FluidResource.of(contents), contents.getAmount());
+    }
+
     @Override
     public boolean isValid(int index, FluidResource resource) {
         return machine.takesFluid(resource);
@@ -36,8 +46,8 @@ public final class AssemblerFluidBox extends FluidStacksResourceHandler {
 
     /** Empties the box: the Held recipe changed, or the tier has none. */
     void empty() {
-        if (getAmountAsInt(0) > 0) {
-            set(0, FluidResource.EMPTY, 0);
+        if (!contents().isEmpty()) {
+            set(FluidStack.EMPTY);
         }
     }
 }

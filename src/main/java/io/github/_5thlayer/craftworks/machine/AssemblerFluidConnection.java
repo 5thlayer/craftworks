@@ -8,14 +8,15 @@ import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /**
- * The Assembler's fluid capability, on its Fluid Connections: the box, filled by anything that pushes and
- * never drained from outside, since an Assembler makes no fluid results and pushes none.
+ * What an Assembler's Fluid Connections expose to NeoForge's fluid capability: an insert-only view of its
+ * fluid box. Anything that pushes may fill the box, through the box's own filter, and nothing is ever taken
+ * out from outside, since an Assembler makes no fluid results and pushes none.
  */
-final class AssemblerFluidFace implements ResourceHandler<FluidResource> {
+final class AssemblerFluidConnection implements ResourceHandler<FluidResource> {
 
     private final ResourceHandler<FluidResource> box;
 
-    AssemblerFluidFace(ResourceHandler<FluidResource> box) {
+    AssemblerFluidConnection(ResourceHandler<FluidResource> box) {
         this.box = box;
     }
 

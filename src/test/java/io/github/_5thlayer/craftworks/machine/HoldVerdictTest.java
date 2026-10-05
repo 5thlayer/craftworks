@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github._5thlayer.craftworks.machine.HoldVerdict.Checks;
 import org.junit.jupiter.api.Test;
 
 /** Whether Fill Recipe on an open Assembler is taken (#21), and which refusal comes first. */
@@ -14,23 +15,35 @@ class HoldVerdictTest {
 
     @Test
     void aRecipeItCanRunAndIsNotLockedIsHeld() {
-        HoldVerdict verdict = HoldVerdict.of(true, true, true, true, true, true, true, false);
+        HoldVerdict verdict = HoldVerdict.of(Checks.passing());
         assertTrue(verdict.held());
         assertNull(verdict.messageKey());
     }
 
     @Test
     void aRecipeNothingNamesIsRefusedFirst() {
-        assertEquals(HoldVerdict.NOT_ASSEMBLING, HoldVerdict.of(false, false, false, false, false, false, false, true));
+        Checks everythingWrong = new Checks(false, false, false, false, false, false, false, true);
+        assertEquals(HoldVerdict.NOT_ASSEMBLING, HoldVerdict.of(everythingWrong));
     }
 
     @Test
     void aRecipeItCouldNeverRunIsRefusedBeforeItsLockIsAsked() {
-        assertEquals(HoldVerdict.HAS_FLUID, HoldVerdict.of(true, true, false, false, false, false, false, true));
-        assertEquals(HoldVerdict.TOO_MANY_FLUIDS, HoldVerdict.of(true, true, true, false, false, false, false, true));
-        assertEquals(HoldVerdict.FLUID_TOO_LARGE, HoldVerdict.of(true, true, true, true, false, false, false, true));
-        assertEquals(HoldVerdict.TOO_MANY_INGREDIENTS, HoldVerdict.of(true, true, true, true, true, false, false, true));
-        assertEquals(HoldVerdict.REMAINDERS_DONT_FIT, HoldVerdict.of(true, true, true, true, true, true, false, true));
+        Checks locked = Checks.passing().locked(true);
+        assertEquals(HoldVerdict.HAS_FLUID, HoldVerdict.of(locked.takesFluids(false)));
+        assertEquals(HoldVerdict.TOO_MANY_FLUIDS, HoldVerdict.of(locked.oneFluid(false)));
+        assertEquals(HoldVerdict.FLUID_TOO_LARGE, HoldVerdict.of(locked.fluidFits(false)));
+        assertEquals(HoldVerdict.TOO_MANY_INGREDIENTS, HoldVerdict.of(locked.fitsSlots(false)));
+        assertEquals(HoldVerdict.REMAINDERS_DONT_FIT, HoldVerdict.of(locked.remaindersFit(false)));
+    }
+
+    @Test
+    void theFluidRefusalsComeInOrderAfterTheCategoryAndBeforeTheSlots() {
+        Checks failing = Checks.passing().fitsSlots(false).fluidFits(false);
+        assertEquals(HoldVerdict.FLUID_TOO_LARGE, HoldVerdict.of(failing));
+        assertEquals(HoldVerdict.TOO_MANY_FLUIDS, HoldVerdict.of(failing.oneFluid(false)));
+        assertEquals(HoldVerdict.HAS_FLUID, HoldVerdict.of(failing.oneFluid(false).takesFluids(false)));
+        assertEquals(HoldVerdict.WRONG_CATEGORY,
+                HoldVerdict.of(failing.takesFluids(false).categoryHeld(false)));
     }
 
     @Test
@@ -41,14 +54,15 @@ class HoldVerdictTest {
 
     @Test
     void aCategoryTheTierDoesNotHoldIsRefusedBeforeAnythingElseAboutTheRecipe() {
-        HoldVerdict verdict = HoldVerdict.of(true, false, false, false, false, false, false, true);
+        Checks wrongInEveryWay = Checks.passing().categoryHeld(false).takesFluids(false).fitsSlots(false).locked(true);
+        HoldVerdict verdict = HoldVerdict.of(wrongInEveryWay);
         assertEquals(HoldVerdict.WRONG_CATEGORY, verdict);
         assertEquals("craftworks.assembler.refused.wrong_category", verdict.messageKey());
     }
 
     @Test
     void aLockedRecipeIsRefusedWithAMessage() {
-        HoldVerdict verdict = HoldVerdict.of(true, true, true, true, true, true, true, true);
+        HoldVerdict verdict = HoldVerdict.of(Checks.passing().locked(true));
         assertEquals(HoldVerdict.LOCKED, verdict);
         assertEquals("craftworks.assembler.refused.locked", verdict.messageKey());
     }

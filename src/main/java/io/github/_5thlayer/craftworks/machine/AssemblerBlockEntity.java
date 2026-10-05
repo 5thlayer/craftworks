@@ -4,6 +4,7 @@
 package io.github._5thlayer.craftworks.machine;
 
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import com.mojang.logging.LogUtils;
 import io.github._5thlayer.craftworks.CraftworksConfig;
@@ -107,7 +108,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     private final Buffer buffer = new Buffer();
     private final AssemblerItemFace items = new AssemblerItemFace(this, inventory);
     private final AssemblerFluidBox fluidBox = new AssemblerFluidBox(this);
-    private final AssemblerFluidFace fluidConnection = new AssemblerFluidFace(fluidBox);
+    private final AssemblerFluidConnection fluidConnection = new AssemblerFluidConnection(fluidBox);
 
     /** What the capability shows: any source fills the buffer, and nothing drains it from outside. */
     private final EnergyHandler energyFace = new EnergyHandler() {
@@ -197,7 +198,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
      * block is a Fluid Connection and the face is the one pointing away from the machine, while the
      * connections exist, and otherwise nothing. Asked by the part blocks' lookups, which see only a position.
      */
-    @Nullable ResourceHandler<FluidResource> fluidFace(BlockPos at, Direction side) {
+    @Nullable ResourceHandler<FluidResource> fluidConnection(BlockPos at, Direction side) {
         if (!hasFluidConnections()) {
             return null;
         }
@@ -236,14 +237,25 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             checked = found;
             checkedRuns = HeldRecipes.canRun(found);
         });
-        // The category and the fluids are asked every time, not cached with the rest: a Fast Replace or a config edit moves them.
+        // The category and the fluids are asked every time, not cached with the rest: a Fast Replace or a config
+        // edit moves them.
         return recipe.filter(found -> checkedRuns && HeldRecipes.takesCategory(tier(), found)
                 && HeldRecipes.takesFluids(tier(), found));
     }
 
     /** The fluid the Held recipe consumes, if it can run here and has one: tier 1 never has. */
     private Optional<SizedFluidIngredient> fluidIngredient(ServerLevel server) {
-        return runnable(server).flatMap(recipe -> recipe.fluidIngredients().stream().findFirst());
+        return runnable(server).flatMap(AssemblerBlockEntity::fluidOf);
+    }
+
+    /** The one fluid ingredient a recipe an Assembler can run has, if any. */
+    private static Optional<SizedFluidIngredient> fluidOf(AssemblingRecipe recipe) {
+        return recipe.fluidIngredients().stream().findFirst();
+    }
+
+    /** What the box takes in for this recipe fluid: any fluid the ingredient matches. */
+    private static Predicate<FluidResource> consumedBy(SizedFluidIngredient wanted) {
+        return fluid -> wanted.ingredient().test(fluid.toStack(1));
     }
 
     /** Whether the Fluid Connections exist: the Held recipe runs here and has a fluid ingredient. Server only. */
@@ -254,7 +266,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     /** Whether the box takes {@code resource}: it is what the Held recipe consumes. False off the server. */
     boolean takesFluid(FluidResource resource) {
         return !resource.isEmpty() && level instanceof ServerLevel server
-                && fluidIngredient(server).filter(fluid -> fluid.ingredient().test(resource.toStack(1))).isPresent();
+                && fluidIngredient(server).filter(wanted -> consumedBy(wanted).test(resource)).isPresent();
     }
 
     /**
@@ -293,7 +305,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
                 continue;
             }
             try (Transaction tx = Transaction.openRoot()) {
-                if (ResourceHandlerUtil.move(neighbour, fluidBox, fluid -> wanted.ingredient().test(fluid.toStack(1)), room, tx) > 0) {
+                if (ResourceHandlerUtil.move(neighbour, fluidBox, consumedBy(wanted), room, tx) > 0) {
                     tx.commit();
                 }
             }
@@ -382,7 +394,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             return;
         }
         AssemblingRecipe recipe = resolved.get();
-        recipe.fluidIngredients().stream().findFirst().ifPresent(wanted -> pull(server, wanted));
+        fluidOf(recipe).ifPresent(wanted -> pull(server, wanted));
         try (Transaction probe = Transaction.openRoot()) {
             if (finish(recipe, probe) != null) {
                 return;
