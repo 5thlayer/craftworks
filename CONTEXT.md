@@ -68,11 +68,12 @@ it is given. Never the **Personal Assembler**, which always takes its full name.
 _Avoid_: assembling machine, crafter, auto crafter, machine (alone)
 
 **Fluid Connection**:
-A face of a machine where fluid enters or leaves, either way, by what the **Held recipe** needs; it has no
-direction of its own. An **Assembler** of tier 2 or 3 has two, at the centres of two opposite bottom-layer
-edges of its 3x3, turning with it, and only while its Held recipe has a fluid ingredient: each pulls that
-fluid from the block it faces into the one 1,000 mB fluid box, and none pushes, since an Assembler makes no
-fluid. Tier 1 has none. Pipes stay passive: a pipe never pushes into one.
+A face of a machine where fluid reaches it, with no direction of its own: its role comes from the **Held
+recipe**, not from a fixed input or output. An **Assembler** of tier 2 or 3 has two, at the centres of two
+opposite bottom-layer edges of its 3x3, turning with it, and only while its Held recipe has a fluid
+ingredient. Each pulls that fluid, and only that, from the block it faces into the one 1,000 mB fluid box,
+and never pushes: an Assembler makes no fluid. Pipeworks' pipes are passive (Pipeworks ADR-0110), so they
+never push into one, but another mod that does push can fill the box through the connection. Tier 1 has none.
 _Avoid_: port, fluid port (Pipeworks' `FluidPort` type), input, output
 
 **Category**:
