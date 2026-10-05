@@ -32,6 +32,7 @@
   "block.craftworks.assembler_1": "Assembler 1",
   "block.craftworks.assembler_2": "Assembler 2",
   "block.craftworks.assembler_3": "Assembler 3",
+  "itemGroup.craftworks": "Craftworks",
   "block.craftworks.creative_energy_source": "Creative Energy Source",
   "craftworks.assembler.energy": "%s / %s FE",
   "craftworks.assembler.fill_recipe": "Set as this Assembler's recipe",

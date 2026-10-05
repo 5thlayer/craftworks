@@ -91,6 +91,7 @@ public final class CraftworksGameTests {
         AssemblerTests.register(tests);
         AssemblerMachineTests.register(tests);
         CreativeEnergySourceTests.register(tests);
+        CreativeTabTests.register(tests);
         InventoryScreenTests.register(tests);
         LockTests.register(tests);
         ReadyTests.register(tests);

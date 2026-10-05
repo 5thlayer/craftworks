@@ -21,7 +21,9 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -31,7 +33,6 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -57,6 +58,9 @@ public final class Assemblers {
     private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, Craftworks.MOD_ID);
     private static final DeferredRegister<DataComponentType<?>> COMPONENTS =
             DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, Craftworks.MOD_ID);
+
+    private static final DeferredRegister<CreativeModeTab> CREATIVE_TABS =
+            DeferredRegister.create(Registries.CREATIVE_MODE_TAB, Craftworks.MOD_ID);
 
     private static final Map<AssemblerTier, Footprint> FOOTPRINTS = new EnumMap<>(AssemblerTier.class);
     private static final Map<AssemblerTier, DeferredBlock<AssemblerBlock>> BLOCK_BY_TIER = new EnumMap<>(AssemblerTier.class);
@@ -105,6 +109,20 @@ public final class Assemblers {
             BLOCK_ENTITIES.register("creative_energy_source", () -> new BlockEntityType<>(CreativeEnergySourceBlockEntity::new,
                     CREATIVE_ENERGY_SOURCE.get()));
 
+    /**
+     * Craftworks' own creative tab, with the Assembler 1 as its icon. Every Craftworks item sits in it and in
+     * no other tab; a new item gets its place with one line in the list.
+     */
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> CREATIVE_TAB =
+            CREATIVE_TABS.register("craftworks", () -> CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)
+                    .title(Component.translatable("itemGroup." + Craftworks.MOD_ID))
+                    .icon(() -> new ItemStack(item(AssemblerTier.ONE).get()))
+                    .displayItems((parameters, output) -> {
+                        ITEM_BY_TIER.values().forEach(output::accept);
+                        output.accept(CREATIVE_ENERGY_SOURCE_ITEM.get());
+                    })
+                    .build());
+
     private Assemblers() {
     }
 
@@ -137,8 +155,8 @@ public final class Assemblers {
         BLOCK_ENTITIES.register(modBus);
         MENUS.register(modBus);
         COMPONENTS.register(modBus);
+        CREATIVE_TABS.register(modBus);
         modBus.addListener(Assemblers::registerCapabilities);
-        modBus.addListener(Assemblers::buildCreativeTabs);
         // On both sides: the preview plans on the client and the click on the server (Groundworks' ADR 0008).
         FastReplace.group(Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "assembler"),
                 block -> block instanceof AssemblerBlock
@@ -164,12 +182,5 @@ public final class Assemblers {
         event.registerBlockEntity(Capabilities.Item.BLOCK, BLOCK_ENTITY.get(), (machine, side) -> machine.itemFace());
         event.registerBlockEntity(Capabilities.Energy.BLOCK, BLOCK_ENTITY.get(), (machine, side) -> machine.energyFace());
         event.registerBlockEntity(Capabilities.Energy.BLOCK, CREATIVE_ENERGY_SOURCE_ENTITY.get(), (source, side) -> source.energyFace());
-    }
-
-    private static void buildCreativeTabs(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
-            ITEM_BY_TIER.values().forEach(event::accept);
-            event.accept(CREATIVE_ENERGY_SOURCE_ITEM);
-        }
     }
 }
