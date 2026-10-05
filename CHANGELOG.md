@@ -4,6 +4,9 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- Assembler 2 and 3 craft recipes with a fluid ingredient. Fluid comes in through two Fluid Connections, at the centres of two opposite bottom edges of the machine, which turn with it and show as a grey ring on the casing; each pulls the fluid the Held recipe needs from whatever tank or pipe touches it (anything with NeoForge's fluid capability) into the Assembler's one 1,000 mB fluid box, and never pushes. They exist only while the Held recipe has a fluid ingredient. The box takes only that fluid, is kept over a reload and a swap between tiers 2 and 3, and is emptied when the Held recipe changes, on a swap to Assembler 1 and when the machine is broken. Fill Recipe is refused, with a message, for a recipe with two fluid ingredients or one needing more than 1,000 mB a craft, and still for any recipe with a fluid result; Assembler 1 still takes no fluid recipe. (#25)
+- The screen of Assembler 2 and 3 shows the fluid box as a gauge beside the energy bar, with the fluid and its amount out of 1,000 mB on hover, and Jade, if installed, adds a line with the fluid and its amount. Assembler 1's screen and tooltip are unchanged. (#25)
+
 ## 0.4.0
 
 - An Assembling recipe's `results` replaces `result`, which no longer reads, so this breaks a pack's own recipes: it is a list of item stacks, and `"result": {"id": "minecraft:stick"}` becomes `"results": [{"id": "minecraft:stick"}]`. It is required, and written `[]` for a recipe that makes only fluids; an empty `results` with no `fluid_results` fails to load. In KubeJS `assembling(result, ingredients)` takes one stack or a list, so scripts read as before. EMI and JEI show every item and fluid result. (#24)

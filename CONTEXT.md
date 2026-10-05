@@ -67,6 +67,14 @@ A placed machine, in tiers 1 to 3, that makes its **Held recipe** over and over 
 it is given. Never the **Personal Assembler**, which always takes its full name.
 _Avoid_: assembling machine, crafter, auto crafter, machine (alone)
 
+**Fluid Connection**:
+A face of a machine where fluid enters or leaves, either way, by what the **Held recipe** needs; it has no
+direction of its own. An **Assembler** of tier 2 or 3 has two, at the centres of two opposite bottom-layer
+edges of its 3x3, turning with it, and only while its Held recipe has a fluid ingredient: each pulls that
+fluid from the block it faces into the one 1,000 mB fluid box, and none pushes, since an Assembler makes no
+fluid. Tier 1 has none. Pipes stay passive: a pipe never pushes into one.
+_Avoid_: port, fluid port (Pipeworks' `FluidPort` type), input, output
+
 **Category**:
 The kind an Assembling recipe is, one of Factorio's five names and no other: `crafting` (the default),
 `advanced-crafting`, `crafting-with-fluid`, `chemistry`, `oil-processing`. Each tier of Assembler holds the
