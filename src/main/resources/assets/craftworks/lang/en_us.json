@@ -40,5 +40,12 @@
   "craftworks.assembler.refused.has_fluid": "%s needs a fluid, which this Assembler can't take.",
   "craftworks.assembler.refused.remainders_dont_fit": "%s leaves more behind than the Assembler's one remainder slot holds.",
   "craftworks.assembler.refused.too_many_ingredients": "%s has more than 5 different ingredients, and the Assembler has 5 input slots.",
-  "craftworks.assembler.refused.locked": "%s is Locked for you."
+  "craftworks.assembler.refused.locked": "%s is Locked for you.",
+  "craftworks.jade.no_held_recipe": "No Held recipe",
+  "craftworks.jade.state.crafting": "Crafting",
+  "craftworks.jade.state.needs_power": "Needs power",
+  "craftworks.jade.state.missing_ingredients": "Missing ingredients",
+  "craftworks.jade.state.output_full": "Output full",
+  "craftworks.jade.state.cant_run": "Can't run",
+  "craftworks.jade.infinite_energy": "Infinite FE"
 }

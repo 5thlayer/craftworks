@@ -56,6 +56,16 @@ versionRange = "[29.20.0.53,)"
 ordering = "NONE"
 side = "CLIENT"
 
+# Shows an Assembler's Held recipe, state and energy, and the Creative Energy Source's Infinite FE, in its
+# tooltip (#28). Not required: its plugin is only loaded by Jade. The range is the Jade the plugin is compiled
+# against.
+[[dependencies.${mod_id}]]
+modId = "jade"
+type = "optional"
+versionRange = "[26.1.11,)"
+ordering = "NONE"
+side = "BOTH"
+
 # Removes the inventory's 2x2 crafting grid, keeping its slots (ADR-0007).
 [[mixins]]
 config = "craftworks.mixins.json"

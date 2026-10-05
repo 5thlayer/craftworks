@@ -274,22 +274,19 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         }
         AssemblingRecipe recipe = resolved.get();
         try (Transaction probe = Transaction.openRoot()) {
-            if (!finish(recipe, probe)) {
+            if (finish(recipe, probe) != null) {
                 return;
             }
         }
-        AssemblerTier tier = tier();
-        double speed = CraftworksConfig.assemblerSpeed(tier);
-        int duration = AssemblerRates.durationTicks(speed, recipe.time());
-        int price = AssemblerRates.fePerCraft(CraftworksConfig.assemblerPower(tier), speed, recipe.time());
-        int fe = AssemblerRates.feForTick(Math.min(progress, duration - 1), duration, price);
+        int duration = AssemblerRates.durationTicks(CraftworksConfig.assemblerSpeed(tier()), recipe.time());
+        int fe = feThisTick(recipe, duration);
         try (Transaction tx = Transaction.openRoot()) {
             if (buffer.extract(fe, tx) != fe) {
                 return;
             }
             int next = progress + 1;
             if (next >= duration) {
-                if (!finish(recipe, tx)) {
+                if (finish(recipe, tx) != null) {
                     LOGGER.warn("Assembler at {} passed its checks and could not finish {}", worldPosition.toShortString(), held);
                     return;
                 }
@@ -301,29 +298,66 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         setChanged();
     }
 
+    /** The FE this tick of a craft of {@code duration} ticks costs: its share of the tier's price for the craft. */
+    private int feThisTick(AssemblingRecipe recipe, int duration) {
+        AssemblerTier tier = tier();
+        double speed = CraftworksConfig.assemblerSpeed(tier);
+        int price = AssemblerRates.fePerCraft(CraftworksConfig.assemblerPower(tier), speed, recipe.time());
+        return AssemblerRates.feForTick(Math.min(progress, duration - 1), duration, price);
+    }
+
+    /**
+     * What this Assembler is doing, asked the way {@link #serverTick} asks and changing nothing: the first
+     * check it would fail, or {@link AssemblerState#CRAFTING}. Server only, which alone resolves the Held
+     * recipe; anywhere else it reads as {@link AssemblerState#NO_RECIPE}. For Jade (#28).
+     */
+    public AssemblerState state() {
+        if (held == null || !(level instanceof ServerLevel server)) {
+            return AssemblerState.NO_RECIPE;
+        }
+        Optional<AssemblingRecipe> resolved = runnable(server);
+        if (resolved.isEmpty()) {
+            return AssemblerState.CANT_RUN;
+        }
+        AssemblingRecipe recipe = resolved.get();
+        try (Transaction probe = Transaction.openRoot()) {
+            AssemblerState stalled = finish(recipe, probe);
+            if (stalled != null) {
+                return stalled;
+            }
+        }
+        int duration = AssemblerRates.durationTicks(CraftworksConfig.assemblerSpeed(tier()), recipe.time());
+        int fe = feThisTick(recipe, duration);
+        try (Transaction probe = Transaction.openRoot()) {
+            return buffer.extract(fe, probe) == fe ? AssemblerState.CRAFTING : AssemblerState.NEEDS_POWER;
+        }
+    }
+
     /**
      * Takes one craft's inputs, the {@code n}th ingredient from the {@code n}th slot, and places its
-     * product and the ingredients' remainders, or reports that it cannot. Never part of a craft: the
-     * caller aborts the transaction on false.
+     * product and the ingredients' remainders. Returns null if it all went, and otherwise what stopped it:
+     * {@link AssemblerState#MISSING_INGREDIENTS} or {@link AssemblerState#OUTPUT_FULL}. Never part of a
+     * craft: the caller aborts the transaction on a stop.
      */
-    private boolean finish(AssemblingRecipe recipe, TransactionContext tx) {
+    private @Nullable AssemblerState finish(AssemblingRecipe recipe, TransactionContext tx) {
         for (int slot = 0; slot < recipe.ingredients().size(); slot++) {
             SizedIngredient sized = recipe.ingredients().get(slot);
             ItemResource resource = inventory.getResource(slot);
             if (resource.isEmpty() || !sized.ingredient().test(resource.toStack(1))
                     || inventory.extract(slot, resource, sized.count(), tx) != sized.count()) {
-                return false;
+                return AssemblerState.MISSING_INGREDIENTS;
             }
             ItemStackTemplate remainder = resource.getItem().getCraftingRemainder(resource.toStack(1));
             if (remainder != null) {
                 int owed = remainder.count() * sized.count();
                 if (inventory.insert(AssemblerSlots.REMAINDERS, ItemResource.of(remainder), owed, tx) != owed) {
-                    return false;
+                    return AssemblerState.OUTPUT_FULL;
                 }
             }
         }
         ItemStackTemplate result = recipe.result();
-        return inventory.insert(AssemblerSlots.PRODUCT, ItemResource.of(result), result.count(), tx) == result.count();
+        return inventory.insert(AssemblerSlots.PRODUCT, ItemResource.of(result), result.count(), tx) == result.count()
+                ? null : AssemblerState.OUTPUT_FULL;
     }
 
     /** Ticks into the craft under way, for the screen's progress bar. */

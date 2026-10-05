@@ -45,10 +45,18 @@ repositories {
         url = 'https://maven.blamejared.com'
         content { includeGroup 'mezz.jei' }
     }
+    // Jade.
+    maven {
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
 }
 
 // JEI for 26.1.2. 29.20.0.53 is the last that runs on NeoForge 26.1.2.77; later ones ask for .81 and up.
 def jei = '29.20.0.53'
+
+// Jade for 26.1.2. Built on NeoForge 26.1.2.76, so it runs on our .77.
+def jade = 'maven.modrinth:jade:26.1.11+neoforge'
 
 // KubeJS for 26.1. Compiled against for its plugin (compat/kubejs), which only KubeJS ever loads.
 // 8.0.3 is the last that runs on NeoForge 26.1.2.77; later ones ask for .84. Rhino is the one it names.
@@ -198,6 +206,11 @@ dependencies {
     // so the planner's codecs round-trip on a plain JVM. Minecraft stays off the test classpath, which
     // keeps the planner core free of it. The version is the one Minecraft 26.1.2 ships.
     testImplementation 'com.mojang:datafixerupper:9.0.19'
+
+    // Jade is optional to players too (#28), and on every dev run so what it shows can be looked at. Its API,
+    // which only its plugin (compat/jade) names.
+    compileOnly jade
+    localRuntime jade
 
     // KubeJS is optional to players (#11). Its jar and Rhino, which the plugin's event types extend.
     compileOnly(kubejs) { transitive = false }

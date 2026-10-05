@@ -4,8 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- Jade, if installed, shows an Assembler's tooltip from any block of its footprint: the Held recipe's product, or "No Held recipe"; its state, one of Crafting (with a progress bar, the screen's), Needs power, Missing ingredients, Output full or Can't run; and its energy. The Creative Energy Source shows Infinite FE. Jade is optional, and without it nothing changes. (#28)
 - Craftworks has a creative tab of its own, Craftworks (`craftworks:craftworks`), with the Assembler 1 as its icon, holding the Assembler in tiers 1 to 3 and the Creative Energy Source in that order. They no longer sit in the Functional Blocks tab, and creative search still finds them. (#29)
-
 - The Creative Energy Source (`craftworks:creative_energy_source`), a creative-only block for powering an Assembler where no energy mod is installed, such as the dev client: every tick it offers unlimited FE to the energy capability of each block touching it, on all six faces, and its own capability gives FE without limit and accepts none. It has no recipe, so EMI and JEI show none, and it drops itself when broken. Find it in the Craftworks creative tab, with stand-in art for now. (#23)
 - The Assembler's screen draws the slots of your inventory and hotbar, which were missing, so only their items showed.
 - Accepts Groundworks from 0.5.4 up to, but not including, 0.6, since a new minor may break Craftworks.
