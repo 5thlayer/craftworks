@@ -9,6 +9,7 @@ import com.mojang.logging.LogUtils;
 import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.network.chat.Component;
@@ -23,14 +24,19 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
+import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.ResourceHandlerUtil;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
@@ -40,7 +46,7 @@ import org.slf4j.Logger;
 
 /**
  * An Assembler's block entity, one type for all three tiers: the Held recipe, seven item slots, an energy
- * buffer and the craft under way.
+ * buffer, a fluid box on tiers 2 and 3, and the craft under way.
  *
  * <p>The Held recipe is an id, resolved when asked and never on load, when the recipes may not be there.
  * It is never matched from the items put in; Fill Recipe on the open screen sets it ({@link
@@ -51,6 +57,12 @@ import org.slf4j.Logger;
  * Everything that would stall it is asked first, in a probe that aborts, so a blocked Assembler draws
  * nothing, starts nothing and voids nothing. Progress is held across a stall: the inputs are only taken
  * on the last tick, and the energy already paid is the craft's. Changing the Held recipe resets it.
+ *
+ * <p>Tiers 2 and 3 take a fluid ingredient through the Fluid Connections ({@link FluidConnections}), which
+ * exist only while the Held recipe has one: each tick every connection pulls the Held recipe's fluid from
+ * the block it faces into the one fluid box, up to the box's room, and the craft takes its amount from the
+ * box with the items. The box is kept over a reload and a Fast Replace between the two tiers, and voided by
+ * a change of the Held recipe and by a tier with no box. An Assembler never pushes fluid.
  */
 public final class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -60,6 +72,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     private static final String PROGRESS_KEY = "progress";
     private static final String ITEMS_KEY = "items";
     private static final String ENERGY_KEY = "energy";
+    private static final String FLUID_KEY = "fluid";
 
     private @Nullable Identifier held;
     /** The recipe instance {@link #runnable} last checked, and whether an Assembler can run it. Never saved. */
@@ -93,6 +106,8 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
 
     private final Buffer buffer = new Buffer();
     private final AssemblerItemFace items = new AssemblerItemFace(this, inventory);
+    private final AssemblerFluidBox fluidBox = new AssemblerFluidBox(this);
+    private final AssemblerFluidFace fluidConnection = new AssemblerFluidFace(fluidBox);
 
     /** What the capability shows: any source fills the buffer, and nothing drains it from outside. */
     private final EnergyHandler energyFace = new EnergyHandler() {
@@ -146,11 +161,17 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         return tierOf(getBlockState());
     }
 
-    /** Swapped for another tier by Fast Replace, which keeps this block entity: the buffer follows the new tier. */
+    /**
+     * Swapped for another tier by Fast Replace, which keeps this block entity: the buffer follows the new tier,
+     * and a tier with no fluid box voids what the box held.
+     */
     @Override
     public void setBlockState(BlockState state) {
         super.setBlockState(state);
         buffer.resize(CraftworksConfig.assemblerBuffer(tierOf(state)));
+        if (!tierOf(state).hasFluidBox()) {
+            fluidBox.empty();
+        }
     }
 
     /** The seven slots, inputs then the product then the remainders, for the menu and the game tests. */
@@ -164,6 +185,27 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
 
     EnergyHandler energyFace() {
         return energyFace;
+    }
+
+    /** The fluid box, for the menu and the game tests. Nothing is in it on tier 1. */
+    public AssemblerFluidBox fluidBox() {
+        return fluidBox;
+    }
+
+    /**
+     * The fluid capability of the footprint block at {@code at}, seen from {@code side}: the box where that
+     * block is a Fluid Connection and the face is the one pointing away from the machine, while the
+     * connections exist, and otherwise nothing. Asked by the part blocks' lookups, which see only a position.
+     */
+    @Nullable ResourceHandler<FluidResource> fluidFace(BlockPos at, Direction side) {
+        if (!hasFluidConnections()) {
+            return null;
+        }
+        return FluidConnections.sideAt(worldPosition, facing(), at).filter(side::equals).isPresent() ? fluidConnection : null;
+    }
+
+    private Direction facing() {
+        return getBlockState().getValue(AssemblerBlock.FACING);
     }
 
     /** The energy in the buffer, in FE. */
@@ -194,15 +236,76 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             checked = found;
             checkedRuns = HeldRecipes.canRun(found);
         });
-        // The category is asked every time, not cached with the rest: a Fast Replace or a config edit moves it.
-        return recipe.filter(found -> checkedRuns && HeldRecipes.takesCategory(tier(), found));
+        // The category and the fluids are asked every time, not cached with the rest: a Fast Replace or a config edit moves them.
+        return recipe.filter(found -> checkedRuns && HeldRecipes.takesCategory(tier(), found)
+                && HeldRecipes.takesFluids(tier(), found));
+    }
+
+    /** The fluid the Held recipe consumes, if it can run here and has one: tier 1 never has. */
+    private Optional<SizedFluidIngredient> fluidIngredient(ServerLevel server) {
+        return runnable(server).flatMap(recipe -> recipe.fluidIngredients().stream().findFirst());
+    }
+
+    /** Whether the Fluid Connections exist: the Held recipe runs here and has a fluid ingredient. Server only. */
+    public boolean hasFluidConnections() {
+        return level instanceof ServerLevel server && fluidIngredient(server).isPresent();
+    }
+
+    /** Whether the box takes {@code resource}: it is what the Held recipe consumes. False off the server. */
+    boolean takesFluid(FluidResource resource) {
+        return !resource.isEmpty() && level instanceof ServerLevel server
+                && fluidIngredient(server).filter(fluid -> fluid.ingredient().test(resource.toStack(1))).isPresent();
+    }
+
+    /**
+     * Makes the connections what the Held recipe says: the origin's block state, which the model draws the
+     * rings from, and the capability of the two connection blocks, which every pipe that asked is told changed.
+     * A box holding what the recipe no longer takes is voided. Asked when the recipe is set and every tick,
+     * which also catches a Fast Replace, a load and a reload of the recipes.
+     */
+    private void syncConnections(ServerLevel server) {
+        boolean connected = fluidIngredient(server).isPresent();
+        if (!connected || !takesFluid(fluidBox.getResource(0))) {
+            fluidBox.empty();
+        }
+        BlockState state = getBlockState();
+        if (state.getBlock() instanceof AssemblerBlock && state.getValue(AssemblerBlock.FLUID_CONNECTIONS) != connected) {
+            server.setBlock(worldPosition, state.setValue(AssemblerBlock.FLUID_CONNECTIONS, connected), Block.UPDATE_CLIENTS);
+            for (Direction side : FluidConnections.sides(facing())) {
+                server.invalidateCapabilities(FluidConnections.at(worldPosition, side));
+            }
+        }
+    }
+
+    /**
+     * Each connection pulls what the Held recipe consumes from the block it faces, up to the box's room. One
+     * transaction a connection, simulated within and committed: a neighbour holding another fluid gives none.
+     */
+    private void pull(ServerLevel server, SizedFluidIngredient wanted) {
+        for (Direction side : FluidConnections.sides(facing())) {
+            int room = AssemblerFluidBox.CAPACITY - fluidBox.getAmountAsInt(0);
+            if (room <= 0) {
+                return;
+            }
+            ResourceHandler<FluidResource> neighbour = server.getCapability(Capabilities.Fluid.BLOCK,
+                    FluidConnections.neighbour(worldPosition, side), side.getOpposite());
+            if (neighbour == null) {
+                continue;
+            }
+            try (Transaction tx = Transaction.openRoot()) {
+                if (ResourceHandlerUtil.move(neighbour, fluidBox, fluid -> wanted.ingredient().test(fluid.toStack(1)), room, tx) > 0) {
+                    tx.commit();
+                }
+            }
+        }
     }
 
     /**
      * Holds {@code next}. A change hands every ingredient already in the input slots back to {@code player},
      * what does not fit dropping at their feet, and starts the craft over; the outputs stay. Setting the
      * recipe already held moves nothing. The Lock is not asked here: {@link AssemblerMenu#request} asked
-     * it once, of the player who pressed (ADR-0013).
+     * it once, of the player who pressed (ADR-0013). The fluid box is voided, and the Fluid Connections are
+     * made what the new recipe says.
      */
     public void setHeldRecipe(Identifier next, Player player) {
         if (next.equals(held)) {
@@ -218,6 +321,10 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         }
         held = next;
         progress = 0;
+        fluidBox.empty();
+        if (level instanceof ServerLevel server) {
+            syncConnections(server);
+        }
         setChanged();
     }
 
@@ -269,11 +376,13 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
 
     public void serverTick(ServerLevel server) {
         buffer.resize(CraftworksConfig.assemblerBuffer(tier()));
+        syncConnections(server);
         Optional<AssemblingRecipe> resolved = runnable(server);
         if (resolved.isEmpty()) {
             return;
         }
         AssemblingRecipe recipe = resolved.get();
+        recipe.fluidIngredients().stream().findFirst().ifPresent(wanted -> pull(server, wanted));
         try (Transaction probe = Transaction.openRoot()) {
             if (finish(recipe, probe) != null) {
                 return;
@@ -335,13 +444,21 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     }
 
     /**
-     * Takes one craft's inputs, the {@code n}th ingredient from the {@code n}th slot, and places its
+     * Takes one craft's inputs, the {@code n}th ingredient from the {@code n}th slot and its fluid from the
+     * box, and places its
      * first result in the product slot and, in the remainder slot, the ingredients' remainders and its
      * further results. Returns null if it all went, and otherwise what stopped it:
      * {@link AssemblerState#MISSING_INGREDIENTS} or {@link AssemblerState#OUTPUT_FULL}. Never part of a
      * craft: the caller aborts the transaction on a stop.
      */
     private @Nullable AssemblerState finish(AssemblingRecipe recipe, TransactionContext tx) {
+        for (SizedFluidIngredient fluid : recipe.fluidIngredients()) {
+            FluidResource resource = fluidBox.getResource(0);
+            if (resource.isEmpty() || !fluid.test(resource.toStack(fluidBox.getAmountAsInt(0)))
+                    || fluidBox.extract(0, resource, fluid.amount(), tx) != fluid.amount()) {
+                return AssemblerState.MISSING_INGREDIENTS;
+            }
+        }
         for (int slot = 0; slot < recipe.ingredients().size(); slot++) {
             SizedIngredient sized = recipe.ingredients().get(slot);
             ItemResource resource = inventory.getResource(slot);
@@ -396,6 +513,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         output.putInt(PROGRESS_KEY, progress);
         inventory.serialize(output.child(ITEMS_KEY));
         buffer.serialize(output.child(ENERGY_KEY));
+        fluidBox.serialize(output.child(FLUID_KEY));
     }
 
     /** The id only. It is resolved when asked, never here, where the recipes may not be loaded. */
@@ -406,11 +524,12 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         progress = input.getIntOr(PROGRESS_KEY, 0);
         inventory.deserialize(input.childOrEmpty(ITEMS_KEY));
         buffer.deserialize(input.childOrEmpty(ENERGY_KEY));
+        fluidBox.deserialize(input.childOrEmpty(FLUID_KEY));
     }
 
     /**
-     * Going, by a break or a command, drops the contents; the energy is lost. Not asked when Fast Replace
-     * swaps the tier, which keeps this block entity and everything in it.
+     * Going, by a break or a command, drops the items; the energy and the fluid are lost. Not asked when Fast
+     * Replace swaps the tier, which keeps this block entity and everything in it.
      */
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {

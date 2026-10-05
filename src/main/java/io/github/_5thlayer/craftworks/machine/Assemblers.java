@@ -16,6 +16,8 @@ import io.github._5thlayer.groundworks.FootprintItem;
 import io.github._5thlayer.groundworks.FootprintPartBlock;
 import io.github._5thlayer.groundworks.FootprintShape;
 import io.github._5thlayer.groundworks.FootprintShape.Local;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -24,10 +26,12 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -37,6 +41,9 @@ import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The Assemblers' registrations: a block and an item for each tier, each standing on a Groundworks
@@ -182,5 +189,20 @@ public final class Assemblers {
         event.registerBlockEntity(Capabilities.Item.BLOCK, BLOCK_ENTITY.get(), (machine, side) -> machine.itemFace());
         event.registerBlockEntity(Capabilities.Energy.BLOCK, BLOCK_ENTITY.get(), (machine, side) -> machine.energyFace());
         event.registerBlockEntity(Capabilities.Energy.BLOCK, CREATIVE_ENERGY_SOURCE_ENTITY.get(), (source, side) -> source.energyFace());
+        // Fluid is not forwarded whole as those are: only the two connection blocks answer, on their one outward face,
+        // and a part's lookup sees no more than its position. The origin has none, so Groundworks' forward finds nothing
+        // there and falls through to this one.
+        event.registerBlock(Capabilities.Fluid.BLOCK, (level, pos, state, entity, side) -> fluidConnection(level, pos, state, side),
+                PART_BY_TIER.values().stream().map(Supplier::get).toArray(Block[]::new));
+    }
+
+    /** What a part block answers to a fluid lookup: its machine's box if it is a Fluid Connection and the face is its own. */
+    private static @Nullable ResourceHandler<FluidResource> fluidConnection(Level level, BlockPos pos, BlockState state,
+            @Nullable Direction side) {
+        if (side == null || !(state.getBlock() instanceof FootprintPartBlock part)) {
+            return null;
+        }
+        BlockPos origin = part.footprint().standingOrigin(level, pos, state);
+        return origin != null && level.getBlockEntity(origin) instanceof AssemblerBlockEntity machine ? machine.fluidFace(pos, side) : null;
     }
 }

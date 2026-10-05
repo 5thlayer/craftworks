@@ -3,6 +3,7 @@
 
 package io.github._5thlayer.craftworks.compat.jade;
 
+import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -19,6 +20,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 import org.jspecify.annotations.Nullable;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
@@ -50,14 +52,19 @@ class AssemblerReport implements StreamServerDataProvider<BlockAccessor, Assembl
             ItemStack.OPTIONAL_STREAM_CODEC, Data::product,
             STATE_CODEC, Data::state,
             ByteBufCodecs.FLOAT, Data::progress,
+            ByteBufCodecs.BOOL, Data::hasFluidBox,
+            FluidStack.OPTIONAL_STREAM_CODEC, Data::fluid,
             Data::new);
 
     /**
      * @param held     the Held recipe's id, if there is one
      * @param product  what it makes, empty when the recipe is gone after a reload
      * @param progress how far the craft under way is, 0 to 1: the screen's bar
+     * @param hasFluidBox whether the tier has a fluid box, so the tooltip has its line; tier 1's does not
+     * @param fluid    what the fluid box holds, empty when it is empty
      */
-    record Data(Optional<Identifier> held, ItemStack product, AssemblerState state, float progress) {
+    record Data(Optional<Identifier> held, ItemStack product, AssemblerState state, float progress, boolean hasFluidBox,
+            FluidStack fluid) {
     }
 
     @Override
@@ -72,7 +79,11 @@ class AssemblerReport implements StreamServerDataProvider<BlockAccessor, Assembl
                 .orElse(ItemStack.EMPTY);
         int duration = machine.craftDuration();
         float progress = duration == 0 ? 0 : Math.min(1, (float) machine.craftProgress() / duration);
-        return new Data(held, product, machine.state(), progress);
+        return new Data(held, product, machine.state(), progress, machine.tier().hasFluidBox(), fluidIn(machine));
+    }
+
+    private static FluidStack fluidIn(AssemblerBlockEntity machine) {
+        return machine.fluidBox().getResource(0).toStack(machine.fluidBox().getAmountAsInt(0));
     }
 
     @Override
@@ -85,7 +96,10 @@ class AssemblerReport implements StreamServerDataProvider<BlockAccessor, Assembl
         return UID;
     }
 
-    /** Draws the report: the Held recipe's product, then its state, with a progress bar while it crafts. */
+    /**
+     * Draws the report: the Held recipe's product, then its state, with a progress bar while it crafts, and on
+     * tiers 2 and 3 a line for the fluid box.
+     */
     static final class Client extends AssemblerReport implements IBlockComponentProvider {
 
         static final Client INSTANCE = new Client();
@@ -111,7 +125,18 @@ class AssemblerReport implements StreamServerDataProvider<BlockAccessor, Assembl
                             BoxStyle.nestedBox())));
                     default -> tooltip.add(stateText(report.state()).copy().withStyle(ChatFormatting.RED));
                 }
+                if (report.hasFluidBox()) {
+                    tooltip.add(fluidText(report.fluid()));
+                }
             });
+        }
+
+        /** The fluid and its amount, or that the box is empty. */
+        private static Component fluidText(FluidStack fluid) {
+            return fluid.isEmpty()
+                    ? Component.translatable("craftworks.jade.fluid_empty").withStyle(ChatFormatting.GRAY)
+                    : Component.translatable("craftworks.jade.fluid", fluid.getHoverName(),
+                            NumberFormat.getIntegerInstance().format(fluid.getAmount()));
         }
 
         private static Component stateText(AssemblerState state) {

@@ -18,14 +18,22 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.Nullable;
 
 /**
  * An Assembler tier's Origin block: the footprint's block that holds the block entity and the facing
  * (Groundworks' ADR 0009). Its other 26 positions are {@link io.github._5thlayer.groundworks.FootprintPartBlock}s.
+ *
+ * <p>The origin draws the whole machine, so it carries what the model needs to draw: {@link
+ * #FLUID_CONNECTIONS}, which the block entity keeps true while the Held recipe has a fluid ingredient, and
+ * the model puts a ring on the casing at each connection.
  */
 public final class AssemblerBlock extends HorizontalDirectionalBlock implements EntityBlock {
+
+    /** Whether the Fluid Connections exist, so the casing wears its rings there. Never set on tier 1. */
+    public static final BooleanProperty FLUID_CONNECTIONS = BooleanProperty.create("fluid_connections");
 
     private final AssemblerTier tier;
     private final MapCodec<AssemblerBlock> codec;
@@ -34,7 +42,7 @@ public final class AssemblerBlock extends HorizontalDirectionalBlock implements 
         super(properties);
         this.tier = tier;
         this.codec = simpleCodec(props -> new AssemblerBlock(props, tier));
-        registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH));
+        registerDefaultState(getStateDefinition().any().setValue(FACING, Direction.NORTH).setValue(FLUID_CONNECTIONS, false));
     }
 
     public AssemblerTier tier() {
@@ -48,7 +56,7 @@ public final class AssemblerBlock extends HorizontalDirectionalBlock implements 
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, FLUID_CONNECTIONS);
     }
 
     @Override

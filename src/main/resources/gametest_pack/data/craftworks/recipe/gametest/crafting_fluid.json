@@ -1,0 +1,10 @@
+{
+  "type": "craftworks:assembling",
+  "ingredients": [
+    { "ingredient": "minecraft:dirt", "count": 1 }
+  ],
+  "fluid_ingredients": [
+    { "ingredient": "minecraft:water", "amount": 250 }
+  ],
+  "results": [ { "id": "minecraft:clay_ball", "count": 1 } ]
+}

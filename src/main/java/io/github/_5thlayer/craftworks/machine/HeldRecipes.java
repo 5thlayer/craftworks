@@ -25,10 +25,11 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
  * What an Assembler may hold, read off the server's recipe manager when asked: a Held recipe is an id,
  * resolved lazily because a block entity loads before the recipes do.
  *
- * <p>Every Assembling recipe is one, Hand-craftable or not, except four kinds this tier cannot run: one
- * whose category the tier's server config does not list, one naming a fluid (tiers 2 and 3 take them in
- * 5thlayer/factoryworks#580), one with more distinct ingredients than the five input slots, and one whose
- * remainders don't fit the one remainder slot.
+ * <p>Every Assembling recipe is one, Hand-craftable or not, except the kinds this tier cannot run: one
+ * whose category the tier's server config does not list, one with a fluid result (no Assembler makes
+ * fluid), one with a fluid ingredient on tier 1 (which has no fluid box), one with two fluid ingredients or
+ * with more of its fluid a craft than the box holds, one with more distinct ingredients than the five input
+ * slots, and one whose remainders don't fit the one remainder slot.
  */
 public final class HeldRecipes {
 
@@ -47,8 +48,19 @@ public final class HeldRecipes {
         return Optional.of(assembling);
     }
 
-    public static boolean namesFluid(AssemblingRecipe recipe) {
-        return !recipe.fluidIngredients().isEmpty() || !recipe.fluidResults().isEmpty();
+    /** Whether this tier takes the recipe's fluids: no fluid result on any, and a fluid ingredient only with a fluid box. */
+    public static boolean takesFluids(AssemblerTier tier, AssemblingRecipe recipe) {
+        return recipe.fluidResults().isEmpty() && (recipe.fluidIngredients().isEmpty() || tier.hasFluidBox());
+    }
+
+    /** Whether the recipe needs at most one fluid, the one the box holds. */
+    public static boolean oneFluid(AssemblingRecipe recipe) {
+        return recipe.fluidIngredients().size() <= 1;
+    }
+
+    /** Whether one craft's fluid fits the box: at most its capacity. */
+    public static boolean fluidFits(AssemblingRecipe recipe) {
+        return recipe.fluidIngredients().stream().allMatch(fluid -> fluid.amount() <= AssemblerFluidBox.CAPACITY);
     }
 
     /** Whether the tier's config lists the recipe's category. */
@@ -95,9 +107,15 @@ public final class HeldRecipes {
         return kind == null || owed <= kind.create().getMaxStackSize();
     }
 
-    /** Whether an Assembler can run this recipe: no fluid, fits the input slots, and its remainders fit. */
+    /**
+     * Whether an Assembler of any tier can run this recipe: no fluid result, at most one fluid ingredient and
+     * one the box holds, it fits the input slots, and its remainders fit. What a tier adds, its categories
+     * and whether it takes a fluid ingredient at all, is asked of the tier ({@link #takesCategory}, {@link
+     * #takesFluids}).
+     */
     public static boolean canRun(AssemblingRecipe recipe) {
-        return !namesFluid(recipe) && fitsSlots(recipe) && remaindersFit(recipe);
+        return recipe.fluidResults().isEmpty() && oneFluid(recipe) && fluidFits(recipe) && fitsSlots(recipe)
+                && remaindersFit(recipe);
     }
 
 
@@ -105,8 +123,9 @@ public final class HeldRecipes {
     public static HoldVerdict verdict(ServerPlayer player, AssemblerTier tier, Identifier id) {
         Optional<AssemblingRecipe> recipe = find(player.level(), id).map(RecipeHolder::value);
         return HoldVerdict.of(recipe.isPresent(), recipe.map(found -> takesCategory(tier, found)).orElse(false),
-                recipe.map(HeldRecipes::namesFluid).orElse(false),
-                recipe.map(HeldRecipes::fitsSlots).orElse(false), recipe.map(HeldRecipes::remaindersFit).orElse(false),
+                recipe.map(found -> takesFluids(tier, found)).orElse(false), recipe.map(HeldRecipes::oneFluid).orElse(false),
+                recipe.map(HeldRecipes::fluidFits).orElse(false), recipe.map(HeldRecipes::fitsSlots).orElse(false),
+                recipe.map(HeldRecipes::remaindersFit).orElse(false),
                 recipe.isPresent() && RuntimePlanSource.lockedFor(player).test(id.toString()));
     }
 

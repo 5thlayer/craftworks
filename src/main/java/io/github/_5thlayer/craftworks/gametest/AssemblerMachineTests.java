@@ -271,7 +271,7 @@ final class AssemblerMachineTests {
         helper.assertTrue(SAPLING.equals(item.get(Assemblers.HELD_RECIPE.get())), "the dropped item holds " + item.get(Assemblers.HELD_RECIPE.get()) + ", not the Held recipe");
 
         // Placed again, the item brings its Held recipe back, and the energy was lost.
-        Placed again = placeItem(helper, AssemblerTier.TWO, item);
+        Placed again = placeItem(helper, AssemblerTier.TWO, item, Direction.WEST);
         helper.assertTrue(again.machine().heldRecipe().equals(Optional.of(SAPLING)), "the item placed again held " + again.machine().heldRecipe());
         helper.assertTrue(again.machine().energy() == 0, "the energy survived the break");
         helper.succeed();
@@ -593,17 +593,23 @@ final class AssemblerMachineTests {
     }
 
     static Placed place(GameTestHelper helper, AssemblerTier tier) {
-        return placeItem(helper, tier, new ItemStack(Assemblers.item(tier).get()));
+        return place(helper, tier, Direction.WEST);
+    }
+
+    /** Placed facing this way: a footprint faces opposite the player who lays it. */
+    static Placed place(GameTestHelper helper, AssemblerTier tier, Direction facing) {
+        return placeItem(helper, tier, new ItemStack(Assemblers.item(tier).get()), facing);
     }
 
     /** Places the stack by a click on the floor under {@link #ORIGIN}, failing unless the whole footprint stands. */
-    private static Placed placeItem(GameTestHelper helper, AssemblerTier tier, ItemStack stack) {
+    static Placed placeItem(GameTestHelper helper, AssemblerTier tier, ItemStack stack, Direction facing) {
         FakeBuilder player = new FakeBuilder(helper);
+        player.setYRot(facing.getOpposite().toYRot());
+        player.setYHeadRot(facing.getOpposite().toYRot());
         player.setItemInHand(InteractionHand.MAIN_HAND, stack);
         BlockPos floor = helper.absolutePos(ORIGIN.below());
         player.gameMode.useItemOn(player, helper.getLevel(), stack, InteractionHand.MAIN_HAND,
                 new BlockHitResult(Vec3.atCenterOf(floor).relative(Direction.UP, 0.5), Direction.UP, floor, false));
-        Direction facing = Direction.WEST;
         expectStanding(helper, tier, facing);
         return new Placed(helper, player, tier, facing);
     }

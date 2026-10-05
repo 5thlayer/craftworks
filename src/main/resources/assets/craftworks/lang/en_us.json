@@ -40,7 +40,11 @@
   "craftworks.assembler.fill_recipe": "Set as this Assembler's recipe",
   "craftworks.assembler.refused.not_assembling": "%s is not an Assembling recipe the Assembler can hold.",
   "craftworks.assembler.refused.wrong_category": "%s is in a recipe category this Assembler's tier can't make.",
-  "craftworks.assembler.refused.has_fluid": "%s needs a fluid, which this Assembler can't take.",
+  "craftworks.assembler.fluid": "%s / %s mB",
+  "craftworks.assembler.fluid_empty": "No fluid",
+  "craftworks.assembler.refused.has_fluid": "%s names a fluid this Assembler can't take: no Assembler makes fluid, and tier 1 takes none.",
+  "craftworks.assembler.refused.too_many_fluids": "%s needs more than one fluid, and the Assembler's fluid box holds one.",
+  "craftworks.assembler.refused.fluid_too_large": "%s needs more than 1,000 mB of its fluid a craft, which is all the Assembler's fluid box holds.",
   "craftworks.assembler.refused.remainders_dont_fit": "%s leaves more behind than the Assembler's one remainder slot holds.",
   "craftworks.assembler.refused.too_many_ingredients": "%s has more than 5 different ingredients, and the Assembler has 5 input slots.",
   "craftworks.assembler.refused.locked": "%s is Locked for you.",
@@ -50,6 +54,8 @@
   "craftworks.jade.state.missing_ingredients": "Missing ingredients",
   "craftworks.jade.state.output_full": "Output full",
   "craftworks.jade.state.cant_run": "Can't run",
+  "craftworks.jade.fluid": "%s: %s mB",
+  "craftworks.jade.fluid_empty": "No fluid",
   "craftworks.jade.infinite_energy": "Infinite FE",
   "config.jade.plugin_craftworks.assembler": "Assembler"
 }

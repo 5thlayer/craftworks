@@ -3,22 +3,31 @@
 
 package io.github._5thlayer.craftworks.machine.client;
 
+import java.text.NumberFormat;
+import java.util.List;
 import java.util.Optional;
 
+import io.github._5thlayer.craftworks.machine.AssemblerFluidBox;
 import io.github._5thlayer.craftworks.machine.AssemblerGhosts;
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import io.github._5thlayer.craftworks.machine.AssemblerSlots;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.block.FluidModel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 /**
  * The Assembler's screen: the Held recipe, its five inputs, the product and the remainders, how far the
- * craft is and the energy in the buffer. A stand-in drawn from fills (real art is 5thlayer/craftworks#22).
+ * craft is and the energy in the buffer; tiers 2 and 3 add the fluid box as a gauge beside the energy bar. A
+ * stand-in drawn from fills (real art is 5thlayer/craftworks#22).
  *
  * <p>No recipe is picked here and none cleared; the recipe viewer's Fill Recipe is the only picker. The
  * Held recipe heads the screen as its product's icon and name, and is ghosted in the slots: each
@@ -44,6 +53,11 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
     private static final int ENERGY_Y = 60;
     private static final int ENERGY_WIDTH = 160;
     private static final int ENERGY_HEIGHT = 12;
+    // With a fluid box the energy bar gives up its right end to the gauge, the same height.
+    private static final int ENERGY_WIDTH_WITH_FLUID = 104;
+    private static final int FLUID_X = 8 + ENERGY_WIDTH_WITH_FLUID + 4;
+    private static final int FLUID_WIDTH = 8 + ENERGY_WIDTH - FLUID_X;
+    private static final int FLUID_TILE = 16;
 
     public AssemblerScreen(AssemblerMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title, 176, 166);
@@ -81,11 +95,50 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
 
         int energyX = leftPos + 8;
         int energyY = topPos + ENERGY_Y;
-        recess(graphics, energyX, energyY, ENERGY_WIDTH, ENERGY_HEIGHT);
+        int energyWidth = menu.hasFluidBox() ? ENERGY_WIDTH_WITH_FLUID : ENERGY_WIDTH;
+        recess(graphics, energyX, energyY, energyWidth, ENERGY_HEIGHT);
         float charge = menu.capacity() <= 0 ? 0f : Math.min(1f, (float) menu.energy() / menu.capacity());
-        graphics.fill(energyX, energyY, energyX + Math.round(ENERGY_WIDTH * charge), energyY + ENERGY_HEIGHT, ENERGY);
+        graphics.fill(energyX, energyY, energyX + Math.round(energyWidth * charge), energyY + ENERGY_HEIGHT, ENERGY);
         Component stored = Component.translatable("craftworks.assembler.energy", menu.energy(), menu.capacity());
-        graphics.text(font, stored, energyX + (ENERGY_WIDTH - font.width(stored)) / 2, energyY + 2, 0xFFFFFFFF, true);
+        graphics.text(font, stored, energyX + (energyWidth - font.width(stored)) / 2, energyY + 2, 0xFFFFFFFF, true);
+
+        if (menu.hasFluidBox()) {
+            int fluidX = leftPos + FLUID_X;
+            recess(graphics, fluidX, energyY, FLUID_WIDTH, ENERGY_HEIGHT);
+            fluid(graphics, menu.fluid(), fluidX, energyY);
+        }
+    }
+
+    /** The gauge's fluid: its still texture, tinted as the fluid is in the world, tiled over the part of the box that is full. */
+    private static void fluid(GuiGraphicsExtractor graphics, FluidStack fluid, int x, int y) {
+        if (fluid.isEmpty()) {
+            return;
+        }
+        FluidModel model = Minecraft.getInstance().getModelManager().getFluidStateModelSet().get(fluid.getFluid().defaultFluidState());
+        int tint = model.fluidTintSource() == null ? 0xFFFFFFFF : 0xFF000000 | model.fluidTintSource().color(fluid.getFluid().defaultFluidState());
+        int filled = Math.min(FLUID_WIDTH, Math.round(FLUID_WIDTH * (float) fluid.getAmount() / AssemblerFluidBox.CAPACITY));
+        graphics.enableScissor(x, y, x + filled, y + ENERGY_HEIGHT);
+        for (int tileX = x; tileX < x + filled; tileX += FLUID_TILE) {
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, model.stillMaterial().sprite(), tileX, y, FLUID_TILE, FLUID_TILE, tint);
+        }
+        graphics.disableScissor();
+    }
+
+    /** Over the gauge, the fluid's name and how much of the box it fills. */
+    @Override
+    protected void extractTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        super.extractTooltip(graphics, mouseX, mouseY);
+        int x = leftPos + FLUID_X;
+        int y = topPos + ENERGY_Y;
+        if (!menu.hasFluidBox() || mouseX < x || mouseX >= x + FLUID_WIDTH || mouseY < y || mouseY >= y + ENERGY_HEIGHT) {
+            return;
+        }
+        FluidStack fluid = menu.fluid();
+        NumberFormat number = NumberFormat.getIntegerInstance();
+        graphics.setComponentTooltipForNextFrame(font, List.of(
+                fluid.isEmpty() ? Component.translatable("craftworks.assembler.fluid_empty").withStyle(ChatFormatting.GRAY) : fluid.getHoverName(),
+                Component.translatable("craftworks.assembler.fluid", number.format(fluid.getAmount()), number.format(AssemblerFluidBox.CAPACITY))
+                        .withStyle(ChatFormatting.GRAY)), mouseX, mouseY);
     }
 
     /**

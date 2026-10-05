@@ -1,0 +1,11 @@
+{
+  "type": "craftworks:assembling",
+  "category": "crafting-with-fluid",
+  "ingredients": [
+    { "ingredient": "minecraft:dirt", "count": 1 }
+  ],
+  "fluid_ingredients": [
+    { "ingredient": "minecraft:lava", "amount": 250 }
+  ],
+  "results": [ { "id": "minecraft:obsidian", "count": 1 } ]
+}

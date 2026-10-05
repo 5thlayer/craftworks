@@ -1,16 +1,28 @@
 {
-  "variants": {
-    "facing=north": {
-      "model": "craftworks:block/assembler_3"
+  "multipart": [
+    {
+      "apply": {
+        "model": "craftworks:block/assembler_3"
+      }
     },
-    "facing=east": {
-      "model": "craftworks:block/assembler_3"
+    {
+      "when": {
+        "facing": "north|south",
+        "fluid_connections": "true"
+      },
+      "apply": {
+        "model": "craftworks:block/fluid_connection"
+      }
     },
-    "facing=south": {
-      "model": "craftworks:block/assembler_3"
-    },
-    "facing=west": {
-      "model": "craftworks:block/assembler_3"
+    {
+      "when": {
+        "facing": "east|west",
+        "fluid_connections": "true"
+      },
+      "apply": {
+        "model": "craftworks:block/fluid_connection",
+        "y": 90
+      }
     }
-  }
+  ]
 }

@@ -10,6 +10,7 @@ import java.util.Optional;
 import io.github._5thlayer.craftworks.network.AssemblerHeldPacket;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -25,7 +26,10 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.IndexModifier;
@@ -40,8 +44,9 @@ import org.jspecify.annotations.Nullable;
  * #request}, and an Assembler's recipe is replaced, never removed.
  *
  * <p>The Held recipe crosses to the client as {@link AssemblerHeldPacket} when it changes, since the
- * client has no recipe manager to read the ingredients each slot is ghosted with. Progress, duration and
- * energy ride in data slots.
+ * client has no recipe manager to read the ingredients each slot is ghosted with. Progress, duration,
+ * energy and the fluid box (which fluid, by its registry id, and how much) ride in data slots; the fluid
+ * box is drawn only by tiers 2 and 3, which {@link #hasFluidBox} tells the screen.
  */
 public final class AssemblerMenu extends AbstractContainerMenu {
 
@@ -64,7 +69,9 @@ public final class AssemblerMenu extends AbstractContainerMenu {
     private static final int DATA_DURATION = 1;
     private static final int DATA_ENERGY = 2;
     private static final int DATA_CAPACITY = 3;
-    private static final int DATA_COUNT = 4;
+    private static final int DATA_FLUID = 4;
+    private static final int DATA_FLUID_AMOUNT = 5;
+    private static final int DATA_COUNT = 6;
 
     public static final int INPUT_X = 8;
     public static final int INPUT_Y = 36;
@@ -76,6 +83,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
     private final BlockPos pos;
     private final ContainerData data;
     private final Player player;
+    private final AssemblerTier tier;
 
     /** What the screen shows of the Held recipe; the server sends it, and it is empty until then. */
     private Optional<Held> held = Optional.empty();
@@ -96,6 +104,9 @@ public final class AssemblerMenu extends AbstractContainerMenu {
         this.pos = pos;
         this.data = data;
         this.player = playerInventory.player;
+        // The client has no machine to ask, but the block it opened is there.
+        this.tier = machine != null ? machine.tier()
+                : player.level().getBlockState(pos).getBlock() instanceof AssemblerBlock block ? block.tier() : AssemblerTier.ONE;
         IndexModifier<ItemResource> modifier = inventory::set;
         for (int slot = 0; slot < AssemblerSlots.INPUTS; slot++) {
             addSlot(new InputSlot(inventory, modifier, slot, INPUT_X + slot * 18, INPUT_Y));
@@ -123,6 +134,8 @@ public final class AssemblerMenu extends AbstractContainerMenu {
                     case DATA_DURATION -> machine.craftDuration();
                     case DATA_ENERGY -> machine.energy();
                     case DATA_CAPACITY -> machine.energyCapacity();
+                    case DATA_FLUID -> BuiltInRegistries.FLUID.getId(machine.fluidBox().getResource(0).getFluid());
+                    case DATA_FLUID_AMOUNT -> machine.fluidBox().getAmountAsInt(0);
                     default -> 0;
                 };
             }
@@ -166,6 +179,18 @@ public final class AssemblerMenu extends AbstractContainerMenu {
 
     public int capacity() {
         return data.get(DATA_CAPACITY);
+    }
+
+    /** Whether this Assembler's tier has a fluid box, and so the screen a gauge for it. */
+    public boolean hasFluidBox() {
+        return tier.hasFluidBox();
+    }
+
+    /** What is in the fluid box, or empty: the fluid and how much, as the server last told it. */
+    public FluidStack fluid() {
+        int amount = data.get(DATA_FLUID_AMOUNT);
+        Fluid fluid = BuiltInRegistries.FLUID.byId(data.get(DATA_FLUID));
+        return amount <= 0 || fluid == Fluids.EMPTY ? FluidStack.EMPTY : new FluidStack(fluid, amount);
     }
 
     /** Whether input {@code slot} holds less than one craft of the Held recipe needs, so the screen draws it red. */

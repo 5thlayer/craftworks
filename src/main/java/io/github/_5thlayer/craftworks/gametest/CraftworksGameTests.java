@@ -56,7 +56,11 @@ public final class CraftworksGameTests {
         TEST_TYPES.register(modBus);
         // Posted only when game tests are enabled, so a production server never registers the tests.
         modBus.addListener(CraftworksGameTests::registerTests);
-        if (Boolean.getBoolean(GAMETEST_PACK)) modBus.addListener(CraftworksGameTests::addGameTestPack);
+        if (Boolean.getBoolean(GAMETEST_PACK)) {
+            modBus.addListener(CraftworksGameTests::addGameTestPack);
+            // The tests' own fluid-handler block, which a player's world never has.
+            TestTank.register(modBus);
+        }
         registerDevLockReason();
     }
 
@@ -91,6 +95,7 @@ public final class CraftworksGameTests {
         AssemblerTests.register(tests);
         AssemblerMachineTests.register(tests);
         AssemblingCategoryTests.register(tests);
+        AssemblerFluidTests.register(tests);
         CreativeEnergySourceTests.register(tests);
         CreativeTabTests.register(tests);
         AssemblerStateTests.register(tests);
