@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.github._5thlayer.craftworks.network.AssemblerHeldPacket;
+import io.github._5thlayer.craftworks.network.CraftworksNetwork;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -30,7 +31,6 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.IndexModifier;
 import net.neoforged.neoforge.transfer.item.ItemResource;
@@ -209,7 +209,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
                 sent = now;
                 Optional<Held> view = now.flatMap(id -> HeldRecipes.find(level, id)
                         .map(holder -> new Held(id, holder.value().ingredients(), holder.value().results())));
-                PacketDistributor.sendToPlayer(server, new AssemblerHeldPacket(containerId, view));
+                CraftworksNetwork.sendToPlayer(server, new AssemblerHeldPacket(containerId, view));
             }
         }
     }

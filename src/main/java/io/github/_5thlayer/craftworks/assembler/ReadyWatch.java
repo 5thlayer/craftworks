@@ -11,12 +11,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import io.github._5thlayer.craftworks.network.CraftworksNetwork;
 import io.github._5thlayer.craftworks.network.ReadyRecipesPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,7 +109,7 @@ public final class ReadyWatch {
             published = done.ready();
             List<String> ids = new ArrayList<>(published);
             Collections.sort(ids);
-            PacketDistributor.sendToPlayer(player, new ReadyRecipesPacket(ids));
+            CraftworksNetwork.sendToPlayer(player, new ReadyRecipesPacket(ids));
         }
     }
 }
