@@ -29,6 +29,7 @@ public class AssemblingEmiRecipe extends BasicEmiRecipe {
     private final int time;
     private final Component secondsLine;
     private final Component categoryLine;
+    private boolean measured;
 
     public AssemblingEmiRecipe(EmiRecipeCategory category, RecipeHolder<AssemblingRecipe> holder) {
         super(category, holder.id().identifier(), 0, 44);
@@ -40,9 +41,22 @@ public class AssemblingEmiRecipe extends BasicEmiRecipe {
         recipe.fluidIngredients().forEach(fluid -> inputs.add(NeoForgeEmiIngredient.of(fluid)));
         recipe.results().forEach(result -> outputs.add(EmiStack.of(result.create())));
         recipe.fluidResults().forEach(result -> outputs.add(NeoForgeEmiStack.of(result.create())));
-        // As wide as its widest line of text, so a narrow recipe's category stays off the buttons beside it (#33).
-        var font = Minecraft.getInstance().font;
-        this.width = RecipeRow.width(inputs.size(), outputs.size(), font.width(secondsLine), font.width(categoryLine));
+        this.width = RecipeRow.width(inputs.size(), outputs.size(), 0, 0);
+    }
+
+    /**
+     * As wide as its widest line of text too, so a narrow recipe's category stays off the buttons beside it
+     * (#33). Measured here, on the render thread, and not when EMI builds the recipe on its loading thread:
+     * measuring a glyph the font hasn't baked yet uploads it, which only the render thread may do.
+     */
+    @Override
+    public int getDisplayWidth() {
+        if (!measured) {
+            var font = Minecraft.getInstance().font;
+            width = RecipeRow.width(inputs.size(), outputs.size(), font.width(secondsLine), font.width(categoryLine));
+            measured = true;
+        }
+        return width;
     }
 
     @Override

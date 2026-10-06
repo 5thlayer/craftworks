@@ -4,7 +4,9 @@
 package io.github._5thlayer.craftworks.compat.jei;
 
 import java.util.Collection;
+import java.util.function.Supplier;
 
+import com.google.common.base.Suppliers;
 import io.github._5thlayer.craftworks.compat.RecipeRow;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
@@ -33,7 +35,8 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
  * because an ingredient count is what a grid cannot say.
  *
  * <p>A JEI category has one width for all its recipes, so it is as wide as the widest recipe's row or
- * line of text (see {@link RecipeRow}), measured when the recipes are registered.
+ * line of text (see {@link RecipeRow}), measured the first time JEI asks for it: when it draws, on the
+ * render thread, and not while plugins register, since measuring a glyph the font hasn't baked uploads it.
  */
 final class AssemblingJeiCategory implements IRecipeCategory<RecipeHolder<AssemblingRecipe>> {
 
@@ -41,10 +44,10 @@ final class AssemblingJeiCategory implements IRecipeCategory<RecipeHolder<Assemb
     private static final int ARROW = RecipeRow.ARROW;
 
     private final IDrawable icon;
-    private final int width;
+    private final Supplier<Integer> width;
 
-    AssemblingJeiCategory(IGuiHelper guiHelper, int width) {
-        this.width = width;
+    AssemblingJeiCategory(IGuiHelper guiHelper, Supplier<Integer> width) {
+        this.width = Suppliers.memoize(width::get);
         this.icon = guiHelper.createDrawableItemLike(Items.CRAFTER);
     }
 
@@ -60,7 +63,7 @@ final class AssemblingJeiCategory implements IRecipeCategory<RecipeHolder<Assemb
 
     @Override
     public int getWidth() {
-        return width;
+        return width.get();
     }
 
     /** The width that holds every one of these recipes: at least one row of one ingredient and one result. */

@@ -60,7 +60,7 @@ public final class AssemblingJeiPlugin implements IModPlugin {
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
         registration.addRecipeCategories(new AssemblingJeiCategory(registration.getJeiHelpers().getGuiHelper(),
-                AssemblingJeiCategory.widthOf(assemblingRecipes())));
+                () -> AssemblingJeiCategory.widthOf(assemblingRecipes())));
     }
 
     @Override
