@@ -40,11 +40,11 @@ public class AssemblingEmiRecipe extends BasicEmiRecipe {
 
     /**
      * @param tab the machine whose tab this is
-     * @param inOtherTab the recipe is also in the Assembler's tab, which keeps its own id as EMI's: EMI keys a
-     *     recipe by id, so this copy's is {@code craftworks:chemical_plant/<namespace>/<path>}
+     * @param sharedWithAssembler the recipe is also in the Assembler's tab, which keeps its own id as EMI's: EMI
+     *     keys a recipe by id, so this copy's is {@code craftworks:chemical_plant/<namespace>/<path>}
      */
-    public AssemblingEmiRecipe(EmiRecipeCategory category, MachineKind tab, RecipeHolder<AssemblingRecipe> holder, boolean inOtherTab) {
-        super(category, inOtherTab ? tabbedId(tab, holder.id().identifier()) : holder.id().identifier(), 0, 44);
+    public AssemblingEmiRecipe(EmiRecipeCategory category, MachineKind tab, RecipeHolder<AssemblingRecipe> holder, boolean sharedWithAssembler) {
+        super(category, sharedWithAssembler ? copyId(tab, holder.id().identifier()) : holder.id().identifier(), 0, 44);
         this.recipeId = holder.id().identifier();
         AssemblingRecipe recipe = holder.value();
         this.time = recipe.time();
@@ -57,7 +57,8 @@ public class AssemblingEmiRecipe extends BasicEmiRecipe {
         this.width = RecipeRow.width(inputs.size(), outputs.size(), 0, 0);
     }
 
-    private static Identifier tabbedId(MachineKind tab, Identifier recipe) {
+    /** EMI's id for the copy of {@code recipe} in {@code tab}'s, when the Assembler's tab has it under its own. */
+    private static Identifier copyId(MachineKind tab, Identifier recipe) {
         return Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, tab.tabName() + "/" + recipe.getNamespace() + "/" + recipe.getPath());
     }
 

@@ -19,7 +19,6 @@ import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.assembler.AssemblingRecipeIds;
 import io.github._5thlayer.craftworks.assembler.ReadyRecipeIds;
 import io.github._5thlayer.craftworks.compat.ConfiguredTabs;
-import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.ChemicalPlants;
 import io.github._5thlayer.craftworks.machine.MachineKind;
@@ -57,8 +56,7 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
     /** The Assembler's tab, {@code craftworks:assembler}, icon Assembler 1; built at registration, when the items exist. */
     private static EmiRecipeCategory category(MachineKind machine) {
         return new EmiRecipeCategory(Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, machine.tabName()),
-                EmiStack.of(machine == MachineKind.ASSEMBLER
-                        ? Assemblers.item(AssemblerTier.ONE).get() : ChemicalPlants.ITEM.get()));
+                EmiStack.of(ConfiguredTabs.icon(machine)));
     }
 
     /**
@@ -96,15 +94,14 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
             tabs.put(machine, category(machine));
             registry.addCategory(tabs.get(machine));
         }
-        var sorted = ConfiguredTabs.sort("EMI", registry.getRecipeMap().byType(CraftworksRecipes.ASSEMBLING_TYPE.get()),
-                holder -> holder.value().category());
+        var sorted = ConfiguredTabs.sortLogged("EMI", registry.getRecipeMap().byType(CraftworksRecipes.ASSEMBLING_TYPE.get()));
         var inAssembler = new HashSet<>(sorted.in(MachineKind.ASSEMBLER));
         for (MachineKind machine : MachineKind.values()) {
             for (var holder : sorted.in(machine)) {
                 // A recipe in both tabs keeps its own id in the Assembler's and gets a derived one in the plant's,
                 // since EMI keys a recipe by id (see AssemblingEmiRecipe).
-                boolean inAssemblerToo = machine == MachineKind.CHEMICAL_PLANT && inAssembler.contains(holder);
-                registry.addRecipe(new AssemblingEmiRecipe(tabs.get(machine), machine, holder, inAssemblerToo));
+                boolean sharedWithAssembler = machine == MachineKind.CHEMICAL_PLANT && inAssembler.contains(holder);
+                registry.addRecipe(new AssemblingEmiRecipe(tabs.get(machine), machine, holder, sharedWithAssembler));
             }
         }
         registry.addRecipeHandler(null, new PersonalAssemblerEmiHandler());
@@ -112,10 +109,9 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
         registry.addRecipeHandler(ChemicalPlants.MENU.get(), new HeldMachineEmiHandler<>(MachineKind.CHEMICAL_PLANT));
         registry.addStackProvider(AssemblerScreen.class, AssemblingEmiPlugin::ghostAt);
         registry.addStackProvider(ChemicalPlantScreen.class, AssemblingEmiPlugin::ghostAt);
-        for (AssemblerTier tier : AssemblerTier.values()) {
-            registry.addWorkstation(tabs.get(MachineKind.ASSEMBLER), EmiStack.of(Assemblers.item(tier).get()));
+        for (MachineKind machine : MachineKind.values()) {
+            ConfiguredTabs.workstations(machine).forEach(item -> registry.addWorkstation(tabs.get(machine), EmiStack.of(item)));
         }
-        registry.addWorkstation(tabs.get(MachineKind.CHEMICAL_PLANT), EmiStack.of(ChemicalPlants.ITEM.get()));
         AssemblingRecipeIds.onSync(AssemblingEmiPlugin::searchAgain);
         ReadyRecipeIds.onChange(AssemblingEmiPlugin::craftablesAgain);
     }

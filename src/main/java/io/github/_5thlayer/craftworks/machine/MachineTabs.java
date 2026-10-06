@@ -27,8 +27,12 @@ public final class MachineTabs {
     private final Map<MachineKind, Set<AssemblingCategory>> held = new EnumMap<>(MachineKind.class);
 
     private MachineTabs(Set<AssemblingCategory> assembler, Set<AssemblingCategory> chemicalPlant) {
-        held.put(MachineKind.ASSEMBLER, assembler);
-        held.put(MachineKind.CHEMICAL_PLANT, chemicalPlant);
+        for (MachineKind machine : MachineKind.values()) {
+            held.put(machine, switch (machine) {
+                case ASSEMBLER -> assembler;
+                case CHEMICAL_PLANT -> chemicalPlant;
+            });
+        }
     }
 
     /**

@@ -39,4 +39,4 @@ its own id.
 **Consequences.** An EMI favourite or recipe-tree entry saved under `craftworks:assembling` is lost once. A
 recipe that moves between tabs on a config edit changes EMI id in the same way, once.
 
-The Pack's ADR-0096 gives each of its machines a tab of its own too.
+FactoryWorks ADR-0096 gives each of its machines a tab of its own too.

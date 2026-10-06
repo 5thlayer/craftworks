@@ -4,9 +4,9 @@
 package io.github._5thlayer.craftworks.machine;
 
 /**
- * Which machine that makes a Held recipe a message is about: an Assembler of any tier, or the Chemical Plant.
- * Each has its own lang keys under its name, such as {@code craftworks.chemical_plant.refused.locked}. Pure: no
- * Minecraft types.
+ * Which machine that makes a Held recipe: an Assembler of any tier, or the Chemical Plant. It names the
+ * machine's lang keys, such as {@code craftworks.chemical_plant.refused.locked}, and its Recipe viewer tab
+ * ({@link MachineTabs}). Pure: no Minecraft types.
  */
 public enum MachineKind {
     ASSEMBLER("assembler"),
@@ -18,7 +18,7 @@ public enum MachineKind {
         this.langName = langName;
     }
 
-    /** The machine's recipe viewer tab, {@code craftworks:} this: {@code assembler} or {@code chemical_plant}. */
+    /** The machine's Recipe viewer tab, {@code craftworks:} this: {@code assembler} or {@code chemical_plant}. */
     public String tabName() {
         return langName;
     }

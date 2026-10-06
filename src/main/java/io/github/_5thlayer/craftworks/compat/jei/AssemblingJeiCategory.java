@@ -8,9 +8,7 @@ import java.util.function.Supplier;
 
 import com.google.common.base.Suppliers;
 import io.github._5thlayer.craftworks.compat.RecipeRow;
-import io.github._5thlayer.craftworks.machine.AssemblerTier;
-import io.github._5thlayer.craftworks.machine.Assemblers;
-import io.github._5thlayer.craftworks.machine.ChemicalPlants;
+import io.github._5thlayer.craftworks.compat.ConfiguredTabs;
 import io.github._5thlayer.craftworks.machine.MachineKind;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
@@ -56,8 +54,7 @@ final class AssemblingJeiCategory implements IRecipeCategory<RecipeHolder<Assemb
     AssemblingJeiCategory(IGuiHelper guiHelper, MachineKind machine, Supplier<Integer> width) {
         this.machine = machine;
         this.width = Suppliers.memoize(width::get);
-        this.icon = guiHelper.createDrawableItemLike(machine == MachineKind.ASSEMBLER
-                ? Assemblers.item(AssemblerTier.ONE).get() : ChemicalPlants.ITEM.get());
+        this.icon = guiHelper.createDrawableItemLike(ConfiguredTabs.icon(machine));
     }
 
     @Override

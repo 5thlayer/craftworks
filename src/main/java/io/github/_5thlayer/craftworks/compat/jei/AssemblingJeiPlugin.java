@@ -10,7 +10,6 @@ import java.util.Optional;
 
 import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.compat.ConfiguredTabs;
-import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.MachineGhosts;
 import io.github._5thlayer.craftworks.machine.MachineKind;
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
@@ -91,23 +90,22 @@ public final class AssemblingJeiPlugin implements IModPlugin {
     public void registerCategories(IRecipeCategoryRegistration registration) {
         for (MachineKind machine : MachineKind.values()) {
             registration.addRecipeCategories(new AssemblingJeiCategory(registration.getJeiHelpers().getGuiHelper(), machine,
-                    () -> AssemblingJeiCategory.widthOf(ConfiguredTabs.current().sort(assemblingRecipes(), holder -> holder.value().category()).in(machine))));
+                    () -> AssemblingJeiCategory.widthOf(ConfiguredTabs.sort(assemblingRecipes()).in(machine))));
         }
     }
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
-        var sorted = ConfiguredTabs.sort("JEI", assemblingRecipes(), holder -> holder.value().category());
+        var sorted = ConfiguredTabs.sortLogged("JEI", assemblingRecipes());
         for (MachineKind machine : MachineKind.values()) registration.addRecipes(tab(machine), sorted.in(machine));
     }
 
     /** Each machine is a workstation of its own tab only, all three Assembler tiers of the Assembler's. */
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
-        for (AssemblerTier tier : AssemblerTier.values()) {
-            registration.addCraftingStation(tab(MachineKind.ASSEMBLER), new ItemStack(Assemblers.item(tier).get()));
+        for (MachineKind machine : MachineKind.values()) {
+            ConfiguredTabs.workstations(machine).forEach(item -> registration.addCraftingStation(tab(machine), new ItemStack(item)));
         }
-        registration.addCraftingStation(tab(MachineKind.CHEMICAL_PLANT), new ItemStack(ChemicalPlants.ITEM.get()));
     }
 
     /** With an Assembler or a Chemical Plant open, the recipe's {@code +} sets its Held recipe (see {@link HeldMachineTransferHandler}). */

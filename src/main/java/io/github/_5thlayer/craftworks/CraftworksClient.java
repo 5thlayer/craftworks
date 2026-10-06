@@ -27,7 +27,7 @@ public final class CraftworksClient {
             "Craftworks needs a recipe viewer: install EMI or JEI. The Personal Assembler has no item list"
                     + " of its own, and asks for items through the viewer's Fill Recipe.";
 
-    /** The index tab Craftworks ships: everything the Assembler makes, under the Assembling category's icon (#15). */
+    /** The index tab Craftworks ships: everything the Assembler makes, under the crafter's icon (#15). */
     private static final IndexTab ASSEMBLING_TAB = new IndexTab(
             Craftworks.MOD_ID + ":assembling", "minecraft:crafter", "craftworks.tab.assembling", "@" + Craftworks.MOD_ID, 0);
 

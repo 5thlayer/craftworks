@@ -10,6 +10,7 @@ import static io.github._5thlayer.craftworks.recipe.AssemblingCategory.CRAFTING_
 import static io.github._5thlayer.craftworks.recipe.AssemblingCategory.OIL_PROCESSING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -58,7 +59,7 @@ class MachineTabsTest {
 
     @Test
     void sortingFillsEachTabInOrderAndCountsTheRecipesLeftOut() {
-        Map<String, AssemblingCategory> recipes = new java.util.LinkedHashMap<>();
+        Map<String, AssemblingCategory> recipes = new LinkedHashMap<>();
         recipes.put("plank", CRAFTING);
         recipes.put("acid", CHEMISTRY);
         recipes.put("crude", OIL_PROCESSING);
