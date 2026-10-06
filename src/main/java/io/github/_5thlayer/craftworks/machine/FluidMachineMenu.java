@@ -53,7 +53,7 @@ public final class FluidMachineMenu extends HeldMachineMenu<FluidMachineBlockEnt
 
     /** Server side, over the machine's own inventory. */
     static FluidMachineMenu open(MenuType<?> menuType, int containerId, Inventory playerInventory, FluidMachineBlockEntity machine) {
-        FluidMachine description = machine.machine();
+        FluidMachine description = machine.description();
         int capacities = dataCapacities(description);
         ContainerData data = data(machine, dataCount(description), index -> {
             if (index < capacities) {

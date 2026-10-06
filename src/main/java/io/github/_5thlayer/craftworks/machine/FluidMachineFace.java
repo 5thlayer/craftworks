@@ -15,11 +15,11 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
  */
 final class FluidMachineFace implements ResourceHandler<FluidResource> {
 
-    private final FluidMachine machine;
+    private final FluidMachine description;
     private final ResourceHandler<FluidResource> boxes;
 
-    FluidMachineFace(FluidMachine machine, ResourceHandler<FluidResource> boxes) {
-        this.machine = machine;
+    FluidMachineFace(FluidMachine description, ResourceHandler<FluidResource> boxes) {
+        this.description = description;
         this.boxes = boxes;
     }
 
@@ -45,16 +45,16 @@ final class FluidMachineFace implements ResourceHandler<FluidResource> {
 
     @Override
     public boolean isValid(int index, FluidResource resource) {
-        return machine.isInput(index) && boxes.isValid(index, resource);
+        return description.isInput(index) && boxes.isValid(index, resource);
     }
 
     @Override
     public int insert(int index, FluidResource resource, int amount, TransactionContext transaction) {
-        return machine.isInput(index) ? boxes.insert(index, resource, amount, transaction) : 0;
+        return description.isInput(index) ? boxes.insert(index, resource, amount, transaction) : 0;
     }
 
     @Override
     public int extract(int index, FluidResource resource, int amount, TransactionContext transaction) {
-        return machine.isInput(index) ? 0 : boxes.extract(index, resource, amount, transaction);
+        return description.isInput(index) ? 0 : boxes.extract(index, resource, amount, transaction);
     }
 }

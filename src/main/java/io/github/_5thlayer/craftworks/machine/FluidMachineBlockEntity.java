@@ -22,6 +22,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.fluids.FluidStackTemplate;
@@ -47,7 +48,7 @@ public final class FluidMachineBlockEntity extends HeldMachineBlockEntity {
 
     private static final String FLUID_KEY = "fluids";
 
-    private final FluidMachine machine;
+    private final FluidMachine description;
     /** The menu type this machine opens, registered with it. */
     private final Supplier<? extends MenuType<?>> menuType;
     private final FluidMachineFluids fluids;
@@ -55,12 +56,12 @@ public final class FluidMachineBlockEntity extends HeldMachineBlockEntity {
     /** The output boxes alone, which a connection pushes from. */
     private final ResourceHandler<FluidResource> outputs;
 
-    public FluidMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, FluidMachine machine,
+    public FluidMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, FluidMachine description,
             Supplier<? extends MenuType<?>> menuType) {
-        super(type, pos, state, machine.slots(), machine.defaults());
-        this.machine = machine;
+        super(type, pos, state, description.slots(), blockState -> description.defaults());
+        this.description = description;
         this.menuType = menuType;
-        fluids = new FluidMachineFluids(machine, new FluidMachineFluids.Owner() {
+        fluids = new FluidMachineFluids(description, new FluidMachineFluids.Owner() {
             @Override
             public boolean takesInput(int n, FluidResource resource) {
                 return !resource.isEmpty() && level instanceof ServerLevel server
@@ -78,12 +79,7 @@ public final class FluidMachineBlockEntity extends HeldMachineBlockEntity {
             /** 4 crafts' worth of the ingredient bound to input box {@code n}, or a full box. */
             @Override
             public int inputCapacity(int n) {
-                if (!(level instanceof ServerLevel server)) {
-                    return FluidBoxes.INPUT_VOLUME;
-                }
-                return runnable(server).filter(recipe -> n < recipe.fluidIngredients().size())
-                        .map(recipe -> FluidBoxes.inputLimit(recipe.fluidIngredients().get(n).amount()))
-                        .orElse(FluidBoxes.INPUT_VOLUME);
+                return inputBoxCapacity(n);
             }
 
             /** What the Held recipe sizes output box {@code n} at, or the box's own 100 mB. */
@@ -93,7 +89,7 @@ public final class FluidMachineBlockEntity extends HeldMachineBlockEntity {
                     return FluidBoxes.OUTPUT_BOX;
                 }
                 return runnable(server).filter(recipe -> n < recipe.fluidResults().size())
-                        .map(recipe -> FluidBoxes.outputVolumes(machine.fluidOutputs(),
+                        .map(recipe -> FluidBoxes.outputVolumes(description.fluidOutputs(),
                                 recipe.fluidResults().stream().map(FluidStackTemplate::amount).toList(), recipe.pinnedFluidResults()).get(n))
                         .orElse(FluidBoxes.OUTPUT_BOX);
             }
@@ -103,13 +99,13 @@ public final class FluidMachineBlockEntity extends HeldMachineBlockEntity {
                 setChanged();
             }
         });
-        fluidFace = new FluidMachineFace(machine, fluids);
-        outputs = RangedResourceHandler.of(fluids, machine.fluidInputs(), machine.boxes());
+        fluidFace = new FluidMachineFace(description, fluids);
+        outputs = RangedResourceHandler.of(fluids, description.fluidInputs(), description.boxes());
     }
 
     /** The machine this describes. */
-    public FluidMachine machine() {
-        return machine;
+    public FluidMachine description() {
+        return description;
     }
 
     /** The fluid boxes, for the menu and the game tests. */
@@ -122,7 +118,7 @@ public final class FluidMachineBlockEntity extends HeldMachineBlockEntity {
     }
 
     private List<Connection> connections() {
-        return machine.connections(worldPosition, facing());
+        return description.connections(worldPosition, facing());
     }
 
     /**
@@ -132,11 +128,11 @@ public final class FluidMachineBlockEntity extends HeldMachineBlockEntity {
     public List<Integer> boxesInUse() {
         Optional<AssemblingRecipe> recipe = level instanceof ServerLevel server ? runnable(server) : Optional.empty();
         List<Integer> shown = new ArrayList<>();
-        for (int box = 0; box < machine.boxes(); box++) {
-            int bound = machine.isInput(box)
+        for (int box = 0; box < description.boxes(); box++) {
+            int bound = description.isInput(box)
                     ? recipe.map(found -> found.fluidIngredients().size()).orElse(0)
                     : recipe.map(found -> found.fluidResults().size()).orElse(0);
-            if (machine.binding(box) < bound || fluids.getAmountAsInt(box) > 0) {
+            if (description.binding(box) < bound || fluids.getAmountAsInt(box) > 0) {
                 shown.add(box);
             }
         }
@@ -151,8 +147,8 @@ public final class FluidMachineBlockEntity extends HeldMachineBlockEntity {
      */
     @Override
     protected Optional<AssemblingRecipe> runnable(ServerLevel server) {
-        return held.runnable(server, recipe -> FluidMachineRecipes.canRun(machine, recipe),
-                recipe -> FluidMachineRecipes.takesCategory(machine, recipe));
+        return held.runnable(server, recipe -> FluidMachineRecipes.canRun(description, recipe),
+                recipe -> FluidMachineRecipes.takesCategory(description, recipe));
     }
 
     /** Whether the Fluid Connections exist: the Held recipe runs here and names a fluid, in or out. Server only. */
@@ -167,7 +163,7 @@ public final class FluidMachineBlockEntity extends HeldMachineBlockEntity {
      * connections exist, and otherwise nothing. Asked by the part blocks' lookups, which see only a position.
      */
     @Nullable ResourceHandler<FluidResource> fluidConnection(BlockPos at, Direction side) {
-        return hasFluidConnections() && machine.isConnection(worldPosition, facing(), at, side) ? fluidFace : null;
+        return hasFluidConnections() && description.isConnection(worldPosition, facing(), at, side) ? fluidFace : null;
     }
 
     /**
@@ -179,14 +175,15 @@ public final class FluidMachineBlockEntity extends HeldMachineBlockEntity {
     @Override
     protected void syncConnections(ServerLevel server) {
         boolean connected = hasFluidConnections();
-        for (int box = 0; box < machine.boxes(); box++) {
+        for (int box = 0; box < description.boxes(); box++) {
             if (!connected || !fluids.isValid(box, fluids.getResource(box))) {
                 fluids.empty(box);
             }
         }
         BlockState state = getBlockState();
-        if (state.hasProperty(AssemblerBlock.FLUID_CONNECTIONS) && state.getValue(AssemblerBlock.FLUID_CONNECTIONS) != connected) {
-            server.setBlock(worldPosition, state.setValue(AssemblerBlock.FLUID_CONNECTIONS, connected), Block.UPDATE_CLIENTS);
+        if (state.getBlock() instanceof FluidMachineBlock block && state.getValue(block.connectionsProperty()) != connected) {
+            BooleanProperty rings = block.connectionsProperty();
+            server.setBlock(worldPosition, state.setValue(rings, connected), Block.UPDATE_CLIENTS);
             for (Connection connection : connections()) {
                 server.invalidateCapabilities(connection.block());
             }
@@ -239,7 +236,7 @@ public final class FluidMachineBlockEntity extends HeldMachineBlockEntity {
     }
 
     private boolean anyOutput() {
-        for (int box = machine.fluidInputs(); box < machine.boxes(); box++) {
+        for (int box = description.fluidInputs(); box < description.boxes(); box++) {
             if (fluids.getAmountAsInt(box) > 0) {
                 return true;
             }
@@ -269,13 +266,13 @@ public final class FluidMachineBlockEntity extends HeldMachineBlockEntity {
             return stopped;
         }
         ItemStackTemplate product = recipe.productTemplate().orElse(null);
-        if (product != null
-                && inventory.insert(machine.productSlot(), ItemResource.of(product), product.count(), tx) != product.count()) {
+        if (product != null && (!description.product()
+                || inventory.insert(description.productSlot(), ItemResource.of(product), product.count(), tx) != product.count())) {
             return MachineState.OUTPUT_FULL;
         }
         for (int n = 0; n < recipe.fluidResults().size(); n++) {
             var made = recipe.fluidResults().get(n);
-            if (fluids.insert(machine.outputBox(n), FluidResource.of(made), made.amount(), tx) != made.amount()) {
+            if (fluids.insert(description.outputBox(n), FluidResource.of(made), made.amount(), tx) != made.amount()) {
                 return MachineState.OUTPUT_FULL;
             }
         }

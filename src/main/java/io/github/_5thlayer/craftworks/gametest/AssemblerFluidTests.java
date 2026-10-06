@@ -59,9 +59,9 @@ final class AssemblerFluidTests {
     private static final Identifier TWO_FLUIDS = id("gametest/two_fluids");
     private static final Identifier BIG_FLUID = id("gametest/big_fluid");
     private static final Identifier FULL_BOX = id("gametest/full_box");
-    /** One fluid ingredient that water and lava both match. */
     /** One dirt and 10 mB of water make a clay ball. */
     private static final Identifier WATER_SMALL = id("gametest/water_small");
+    /** One fluid ingredient that water and lava both match. */
     private static final Identifier WATER_OR_LAVA = id("gametest/water_or_lava");
     private static final Identifier FLUID_RESULT = id("gametest/fluid_recipe");
     private static final Identifier SAPLING = AssemblerTests.OAK_SAPLING;

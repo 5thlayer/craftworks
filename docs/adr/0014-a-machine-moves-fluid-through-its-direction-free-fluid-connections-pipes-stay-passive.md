@@ -37,3 +37,5 @@ changed. Changing the Held recipe voids the box, and so does a Fast Replace to t
 Assembler; a Fast Replace between tiers 2 and 3 keeps it. A recipe needing two fluids, or more than 1,000 mB
 of one a craft, is refused at Fill Recipe, and so is any recipe with a fluid result. A pack that wants
 Assemblers to make fluid, or to hold two fluids at once, needs a new decision.
+
+The fluid box's size is superseded by ADR-0017.

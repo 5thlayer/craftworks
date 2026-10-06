@@ -37,12 +37,12 @@ public final class FluidMachineFluids extends FluidStacksResourceHandler {
         void changed();
     }
 
-    private final FluidMachine machine;
+    private final FluidMachine description;
     private final Owner owner;
 
-    FluidMachineFluids(FluidMachine machine, Owner owner) {
-        super(machine.boxes(), FluidBoxes.INPUT_VOLUME);
-        this.machine = machine;
+    FluidMachineFluids(FluidMachine description, Owner owner) {
+        super(description.boxes(), FluidBoxes.INPUT_VOLUME);
+        this.description = description;
         this.owner = owner;
     }
 
@@ -58,7 +58,7 @@ public final class FluidMachineFluids extends FluidStacksResourceHandler {
 
     /** What box {@code box} holds at most, in mB, as the Held recipe sizes it. */
     public int capacity(int box) {
-        return machine.isInput(box) ? owner.inputCapacity(machine.binding(box)) : owner.outputCapacity(machine.binding(box));
+        return description.isInput(box) ? owner.inputCapacity(description.binding(box)) : owner.outputCapacity(description.binding(box));
     }
 
     @Override
@@ -68,7 +68,7 @@ public final class FluidMachineFluids extends FluidStacksResourceHandler {
 
     @Override
     public boolean isValid(int index, FluidResource resource) {
-        return machine.isInput(index) ? owner.takesInput(index, resource) : owner.makesOutput(machine.binding(index), resource);
+        return description.isInput(index) ? owner.takesInput(index, resource) : owner.makesOutput(description.binding(index), resource);
     }
 
     @Override
@@ -85,7 +85,7 @@ public final class FluidMachineFluids extends FluidStacksResourceHandler {
 
     /** Empties every box: the Held recipe changed, or the machine cannot run it. */
     void emptyAll() {
-        for (int box = 0; box < machine.boxes(); box++) {
+        for (int box = 0; box < description.boxes(); box++) {
             empty(box);
         }
     }

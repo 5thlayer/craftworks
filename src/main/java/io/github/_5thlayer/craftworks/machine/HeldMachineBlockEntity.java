@@ -3,8 +3,8 @@
 
 package io.github._5thlayer.craftworks.machine;
 
-import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 import com.mojang.logging.LogUtils;
 import io.github._5thlayer.craftworks.CraftworksConfig;
@@ -65,13 +65,13 @@ public abstract class HeldMachineBlockEntity extends BlockEntity implements Menu
     private final EnergyBuffer buffer = new EnergyBuffer();
     private final MachineItemFace items;
 
-    private final @Nullable MachineDefaults fixedDefaults;
+    private final Function<BlockState, MachineDefaults> defaultsOf;
 
-    /** A machine whose figures are fixed gives them here; one that reads them from its block state, as an Assembler does, gives none and overrides {@link #defaults}. */
+    /** {@code defaultsOf} reads the machine's figures from its block state: an Assembler's follow its tier, the others' are fixed. */
     protected HeldMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, MachineSlots slots,
-            @Nullable MachineDefaults fixedDefaults) {
+            Function<BlockState, MachineDefaults> defaultsOf) {
         super(type, pos, state);
-        this.fixedDefaults = fixedDefaults;
+        this.defaultsOf = defaultsOf;
         inventory = new MachineInventory(slots, new MachineInventory.Owner() {
             @Override
             public Optional<SizedIngredient> ingredientAt(int slot) {
@@ -89,7 +89,7 @@ public abstract class HeldMachineBlockEntity extends BlockEntity implements Menu
 
     /** The figures this machine starts from before the server config says otherwise. Read from the block state alone. */
     protected MachineDefaults defaults() {
-        return Objects.requireNonNull(fixedDefaults, "a machine with no fixed figures overrides defaults()");
+        return defaultsOf.apply(getBlockState());
     }
 
     /**
@@ -229,6 +229,19 @@ public abstract class HeldMachineBlockEntity extends BlockEntity implements Menu
                         .map(ingredient -> OverloadLimit.room(ingredient.count(), overloadCrafts(recipe),
                                 inventory.getAmountAsInt(slot))))
                 .orElse(0);
+    }
+
+    /**
+     * What input fluid box {@code n} holds at most, in mB: 4 crafts' worth of the Held recipe's {@code n}th fluid
+     * ingredient, or a full box with none bound to it. A full box off the server, which alone resolves the Held recipe.
+     */
+    protected int inputBoxCapacity(int n) {
+        if (!(level instanceof ServerLevel server)) {
+            return FluidBoxes.INPUT_VOLUME;
+        }
+        return runnable(server).filter(recipe -> n < recipe.fluidIngredients().size())
+                .map(recipe -> FluidBoxes.inputLimit(recipe.fluidIngredients().get(n).amount()))
+                .orElse(FluidBoxes.INPUT_VOLUME);
     }
 
     /** How many crafts of {@code recipe} the Overload Limit lets this machine hold. */

@@ -16,9 +16,16 @@ import java.util.function.ToIntFunction;
  *
  * @param size    the machine's slots, before the player's in its menu
  * @param inputs  the input slots; a Held recipe names at most this many distinct ingredients
- * @param product the product's slot
+ * @param product the product's slot, or {@link #NONE} if the machine has none
  */
 public record MachineSlots(int size, int inputs, int product) {
+
+    /** The product's slot of a machine that has no product slot. */
+    public static final int NONE = -1;
+
+    public boolean hasProduct() {
+        return product != NONE;
+    }
 
     public boolean isInput(int slot) {
         return slot >= 0 && slot < inputs;

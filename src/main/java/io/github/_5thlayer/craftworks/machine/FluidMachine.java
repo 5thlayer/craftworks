@@ -26,8 +26,8 @@ import net.minecraft.core.Direction;
  * @param fluidOutputs its output fluid boxes
  * @param connections where its Fluid Connections stand
  */
-public record FluidMachine(MachineKind kind, MachineDefaults defaults, int itemInputs, boolean product, int fluidInputs,
-        int fluidOutputs, List<Site> connections) {
+public record FluidMachine(MachineKind kind, MachineDefaults defaults, int itemInputs,
+        boolean product, int fluidInputs, int fluidOutputs, List<Site> connections) {
 
     /** The way a face points, from the machine's own facing: the way it faces, away from it, to its right or to its left. */
     public enum Face {
@@ -77,16 +77,16 @@ public record FluidMachine(MachineKind kind, MachineDefaults defaults, int itemI
      * connections, at either end of the two opposite bottom-layer edges of its 3x3, two on the side it faces and
      * two on the other.
      */
-    public static final FluidMachine CHEMICAL_PLANT = new FluidMachine(MachineKind.CHEMICAL_PLANT, ChemicalPlantDefaults.INSTANCE, 2,
-            true, 2, 2, List.of(
+    public static final FluidMachine CHEMICAL_PLANT = new FluidMachine(MachineKind.CHEMICAL_PLANT, ChemicalPlantDefaults.INSTANCE,
+            2, true, 2, 2, List.of(
                     new Site(1, 1, Face.AHEAD), new Site(1, -1, Face.AHEAD),
                     new Site(-1, 1, Face.BEHIND), new Site(-1, -1, Face.BEHIND)));
 
     // -- the item slots -------------------------------------------------------------------------
 
-    /** The slot of the product, after the inputs; there is none if the machine {@link #product has none}. */
+    /** The slot of the product, after the inputs, or {@link MachineSlots#NONE} if the machine has no product slot. */
     public int productSlot() {
-        return itemInputs;
+        return product ? itemInputs : MachineSlots.NONE;
     }
 
     public MachineSlots slots() {

@@ -85,7 +85,7 @@ public abstract class HeldMachineMenu<M extends HeldMachineBlockEntity> extends 
         for (int slot = 0; slot < layout.inputs(); slot++) {
             addSlot(new InputSlot(inventory, modifier, slot, INPUT_X + slot * 18, INPUT_Y));
         }
-        for (int slot = layout.product(); slot < layout.size(); slot++) {
+        for (int slot = layout.hasProduct() ? layout.product() : layout.size(); slot < layout.size(); slot++) {
             addSlot(new OutputSlot(inventory, modifier, slot, PRODUCT_X + (slot - layout.product()) * 18, INPUT_Y));
         }
         for (int row = 0; row < 3; row++) {

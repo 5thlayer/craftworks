@@ -30,10 +30,15 @@ import org.jspecify.annotations.Nullable;
  * which the block entity keeps true while the Held recipe names a fluid, and the model puts a grey ring on the
  * casing at each of the four connections. The Assemblers' property, since a ring means the same on both.
  */
-public final class ChemicalPlantBlock extends HorizontalDirectionalBlock implements EntityBlock {
+public final class ChemicalPlantBlock extends HorizontalDirectionalBlock implements EntityBlock, FluidMachineBlock {
 
     /** Whether the Fluid Connections exist, so the casing wears its rings there. */
     public static final BooleanProperty FLUID_CONNECTIONS = AssemblerBlock.FLUID_CONNECTIONS;
+
+    @Override
+    public BooleanProperty connectionsProperty() {
+        return FLUID_CONNECTIONS;
+    }
 
     private static final MapCodec<ChemicalPlantBlock> CODEC = simpleCodec(ChemicalPlantBlock::new);
 

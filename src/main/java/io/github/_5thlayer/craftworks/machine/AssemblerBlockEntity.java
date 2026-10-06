@@ -42,7 +42,7 @@ public final class AssemblerBlockEntity extends HeldMachineBlockEntity {
     private final AssemblerFluidConnection fluidConnection = new AssemblerFluidConnection(fluidBox);
 
     public AssemblerBlockEntity(BlockPos pos, BlockState state) {
-        super(Assemblers.BLOCK_ENTITY.get(), pos, state, AssemblerSlots.LAYOUT, null);
+        super(Assemblers.BLOCK_ENTITY.get(), pos, state, AssemblerSlots.LAYOUT, AssemblerBlockEntity::tierOf);
     }
 
     private static AssemblerTier tierOf(BlockState state) {
@@ -52,11 +52,6 @@ public final class AssemblerBlockEntity extends HeldMachineBlockEntity {
     /** The tier is the block's: one block entity type serves all three. */
     public AssemblerTier tier() {
         return tierOf(getBlockState());
-    }
-
-    @Override
-    protected MachineDefaults defaults() {
-        return tier();
     }
 
     /**
@@ -128,10 +123,7 @@ public final class AssemblerBlockEntity extends HeldMachineBlockEntity {
 
     /** What the box holds at most, in mB: 4 crafts' worth of the Held recipe's fluid, or a full box with none to size it by. */
     int fluidCapacity() {
-        if (!(level instanceof ServerLevel server)) {
-            return FluidBoxes.INPUT_VOLUME;
-        }
-        return fluidIngredient(server).map(wanted -> FluidBoxes.inputLimit(wanted.amount())).orElse(FluidBoxes.INPUT_VOLUME);
+        return inputBoxCapacity(0);
     }
 
     /**
