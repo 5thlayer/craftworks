@@ -23,7 +23,7 @@ import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.ChemicalPlants;
 import io.github._5thlayer.craftworks.machine.MachineKind;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
-import io.github._5thlayer.craftworks.machine.client.ChemicalPlantScreen;
+import io.github._5thlayer.craftworks.machine.client.FluidMachineScreen;
 import io.github._5thlayer.craftworks.machine.client.HeldMachineScreen;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
 
@@ -108,7 +108,7 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
         registry.addRecipeHandler(Assemblers.MENU.get(), new HeldMachineEmiHandler<>(MachineKind.ASSEMBLER));
         registry.addRecipeHandler(ChemicalPlants.MENU.get(), new HeldMachineEmiHandler<>(MachineKind.CHEMICAL_PLANT));
         registry.addStackProvider(AssemblerScreen.class, AssemblingEmiPlugin::ghostAt);
-        registry.addStackProvider(ChemicalPlantScreen.class, AssemblingEmiPlugin::ghostAt);
+        registry.addStackProvider(FluidMachineScreen.class, AssemblingEmiPlugin::ghostAt);
         for (MachineKind machine : MachineKind.values()) {
             ConfiguredTabs.workstations(machine).forEach(item -> registry.addWorkstation(tabs.get(machine), EmiStack.of(item)));
         }

@@ -17,7 +17,7 @@ import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.FluidMachineMenu;
 import io.github._5thlayer.craftworks.machine.ChemicalPlants;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
-import io.github._5thlayer.craftworks.machine.client.ChemicalPlantScreen;
+import io.github._5thlayer.craftworks.machine.client.FluidMachineScreen;
 import io.github._5thlayer.craftworks.machine.client.HeldMachineScreen;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
@@ -123,7 +123,7 @@ public final class AssemblingJeiPlugin implements IModPlugin {
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         registration.addGuiContainerHandler(AssemblerScreen.class, ghosts());
-        registration.addGuiContainerHandler(ChemicalPlantScreen.class, ghosts());
+        registration.addGuiContainerHandler(FluidMachineScreen.class, ghosts());
     }
 
     private static <S extends HeldMachineScreen<?>> IGuiContainerHandler<S> ghosts() {
