@@ -5,6 +5,7 @@ package io.github._5thlayer.craftworks.network;
 
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
 import io.github._5thlayer.craftworks.recipe.RuntimeAssemblingRecipes;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
@@ -12,7 +13,10 @@ import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
-/** The Mod's payloads, and when the server sends them. */
+/**
+ * The Mod's payloads, and when the server sends them. Every payload to a client goes through
+ * {@link #sendToPlayer}, never {@code PacketDistributor} directly, so none reaches a connection without its channel.
+ */
 public final class CraftworksNetwork {
 
     /** Bumped when a payload's shape changes; clients on the old shape are refused, not confused. */
@@ -58,6 +62,20 @@ public final class CraftworksNetwork {
     }
 
     private static void sendRecipeSet(ServerPlayer player) {
-        PacketDistributor.sendToPlayer(player, AssemblingRecipeSetPacket.of(RuntimeAssemblingRecipes.recipes(player.level())));
+        sendToPlayer(player, AssemblingRecipeSetPacket.of(RuntimeAssemblingRecipes.recipes(player.level())));
+    }
+
+    /**
+     * Sends the payload if the player's connection opened its channel, and drops it if not.
+     *
+     * <p>NeoForge throws on a payload down a channel the client never opened, and these are sent from
+     * event listeners, where a throw takes down whatever fired the event: a game test's mock player
+     * negotiates no channels and logs in all the same. A player without the channel has no Craftworks
+     * to show the payload in, so it is dropped rather than sent.
+     */
+    public static void sendToPlayer(ServerPlayer player, CustomPacketPayload payload) {
+        if (player.connection.hasChannel(payload)) {
+            PacketDistributor.sendToPlayer(player, payload);
+        }
     }
 }

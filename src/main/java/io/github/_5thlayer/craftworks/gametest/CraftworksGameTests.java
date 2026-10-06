@@ -101,6 +101,7 @@ public final class CraftworksGameTests {
         CraftingPlanTests.register(tests);
         VanillaPackTests.register(tests);
         ModRecipesTests.register(tests);
+        NoChannelTests.register(tests);
         if (Boolean.getBoolean(KUBEJS_TESTS)) KubeJSTests.register(tests);
         // Its own environment, so its own batch: it reloads the server's recipes, which no test running
         // beside it could stand.
