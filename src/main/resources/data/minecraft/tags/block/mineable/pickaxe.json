@@ -7,6 +7,8 @@
     "craftworks:assembler_3",
     "craftworks:assembler_3_part",
     "craftworks:creative_energy_source",
-    "craftworks:creative_fluid_source"
+    "craftworks:creative_fluid_source",
+    "craftworks:chemical_plant",
+    "craftworks:chemical_plant_part"
   ]
 }

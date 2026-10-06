@@ -56,7 +56,8 @@ import org.jspecify.annotations.Nullable;
  */
 public final class Assemblers {
 
-    private static final FootprintShape SHAPE = square(2);
+    /** The Assemblers' footprint, which the Chemical Plant stands on too. */
+    static final FootprintShape SHAPE = square(2);
 
     private static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(Craftworks.MOD_ID);
     private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Craftworks.MOD_ID);
@@ -138,6 +139,7 @@ public final class Assemblers {
                     .icon(() -> new ItemStack(item(AssemblerTier.ONE).get()))
                     .displayItems((parameters, output) -> {
                         ITEM_BY_TIER.values().forEach(output::accept);
+                        output.accept(ChemicalPlants.ITEM.get());
                         output.accept(CREATIVE_ENERGY_SOURCE_ITEM.get());
                         output.accept(CREATIVE_FLUID_SOURCE_ITEM.get());
                     })
@@ -165,7 +167,7 @@ public final class Assemblers {
      * The origin draws the whole machine from its own position, and a face of its model off the origin's own
      * cube is lit by the light there: an occluding origin holds none, and the machine renders dark.
      */
-    private static BlockBehaviour.Properties machine(BlockBehaviour.Properties properties) {
+    static BlockBehaviour.Properties machine(BlockBehaviour.Properties properties) {
         return properties.strength(3.0f, 6.0f).sound(SoundType.METAL).pushReaction(PushReaction.BLOCK).noOcclusion();
     }
 

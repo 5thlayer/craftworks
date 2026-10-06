@@ -4,7 +4,7 @@
 package io.github._5thlayer.craftworks.network;
 
 import io.github._5thlayer.craftworks.Craftworks;
-import io.github._5thlayer.craftworks.machine.AssemblerMenu;
+import io.github._5thlayer.craftworks.machine.HeldRecipeMenu;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -13,7 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * A recipe viewer's Fill Recipe was pressed with an Assembler open: set it as the Held recipe, or be told
+ * A recipe viewer's Fill Recipe was pressed with an Assembler or a Chemical Plant open: set it as the Held recipe, or be told
  * why not. It carries the recipe and nothing else; whether this player may set it is the server's call.
  */
 public record HoldRecipePacket(Identifier recipe) implements CustomPacketPayload {
@@ -31,8 +31,8 @@ public record HoldRecipePacket(Identifier recipe) implements CustomPacketPayload
     }
 
     static void handle(HoldRecipePacket packet, IPayloadContext context) {
-        if (context.player() instanceof ServerPlayer player) {
-            AssemblerMenu.fill(player, packet.recipe());
+        if (context.player() instanceof ServerPlayer player && player.containerMenu instanceof HeldRecipeMenu menu) {
+            menu.request(player, packet.recipe());
         }
     }
 }

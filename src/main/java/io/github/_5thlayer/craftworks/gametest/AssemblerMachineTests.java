@@ -42,6 +42,8 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
@@ -680,16 +682,21 @@ final class AssemblerMachineTests {
      * its connection drops what it is sent.
      */
     private static AssemblerMenu openOnTheClient(Placed assembler, CustomPacketPayload.Type<?>... channels) {
-        GameTestHelper helper = assembler.helper();
+        return openOnTheClient(assembler.helper(), Assemblers.MENU.get(), channels);
+    }
+
+    /** The same for any machine standing at {@link #ORIGIN}: the menu of {@code type} the client builds. */
+    @SuppressWarnings("unchecked")
+    static <M extends AbstractContainerMenu> M openOnTheClient(GameTestHelper helper, MenuType<M> type, CustomPacketPayload.Type<?>... channels) {
         ServerPlayer player = TestConnection.player(helper, channels);
         BlockPos at = helper.absolutePos(ORIGIN);
         helper.getBlockState(ORIGIN).useWithoutItem(helper.getLevel(), player, new BlockHitResult(Vec3.atCenterOf(at), Direction.UP, at, false));
 
-        AssemblerMenu client = null;
+        M client = null;
         for (Packet<?> packet : TestConnection.sentTo(player)) {
             if (packet instanceof ClientboundCustomPayloadPacket(AdvancedOpenScreenPayload open)) {
-                helper.assertTrue(open.menuType() == Assemblers.MENU.get(), "the screen opened is " + open.menuType());
-                client = (AssemblerMenu) open.menuType().create(open.windowId(), player.getInventory(),
+                helper.assertTrue(open.menuType() == type, "the screen opened is " + open.menuType());
+                client = (M) open.menuType().create(open.windowId(), player.getInventory(),
                         new RegistryFriendlyByteBuf(Unpooled.wrappedBuffer(open.additionalData()), helper.getLevel().registryAccess()));
             } else if (packet instanceof ClientboundCustomPayloadPacket(AdvancedContainerSetDataPayload data)) {
                 // NeoForge's client hands its payload on as vanilla's packet, in memory and never written.
@@ -698,12 +705,12 @@ final class AssemblerMachineTests {
                 setData(helper, client, crossed(helper, ClientboundContainerSetDataPacket.STREAM_CODEC, data));
             }
         }
-        helper.assertTrue(client != null, "opening the Assembler sent the client no screen: " + TestConnection.sentTo(player));
+        helper.assertTrue(client != null, "opening the machine sent the client no screen: " + TestConnection.sentTo(player));
         return client;
     }
 
     /** What the client does with a data packet: sets the slot of the menu it names, which must be the one open. */
-    private static void setData(GameTestHelper helper, @Nullable AssemblerMenu client, ClientboundContainerSetDataPacket packet) {
+    private static void setData(GameTestHelper helper, @Nullable AbstractContainerMenu client, ClientboundContainerSetDataPacket packet) {
         helper.assertTrue(client != null && packet.getContainerId() == client.containerId,
                 "a data packet for container " + packet.getContainerId() + " came with no such screen open");
         client.setData(packet.getId(), packet.getValue());

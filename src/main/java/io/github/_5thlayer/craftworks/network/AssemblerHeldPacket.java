@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
+import io.github._5thlayer.craftworks.machine.HeldRecipeMenu;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -15,7 +16,7 @@ import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * An open Assembler's Held recipe, for the screen to name and ghost its slots from.
+ * An open Assembler's or Chemical Plant's Held recipe, for the screen to name and ghost its slots from.
  *
  * <p>Sent when the menu opens and again whenever the recipe changes while it is up. {@code containerId}
  * is there so one for a menu the player has since closed lands on nothing.
@@ -36,7 +37,8 @@ public record AssemblerHeldPacket(int containerId, Optional<AssemblerMenu.Held> 
     }
 
     static void handle(AssemblerHeldPacket packet, IPayloadContext context) {
-        if (context.player().containerMenu instanceof AssemblerMenu menu && menu.containerId == packet.containerId()) {
+        if (context.player().containerMenu instanceof HeldRecipeMenu menu
+                && context.player().containerMenu.containerId == packet.containerId()) {
             menu.show(packet.held());
         }
     }

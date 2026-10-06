@@ -1,0 +1,16 @@
+{
+  "type": "craftworks:assembling",
+  "category": "chemistry",
+  "ingredients": [
+    { "ingredient": "minecraft:iron_ingot", "count": 1 }
+  ],
+  "fluid_ingredients": [
+    { "ingredient": "minecraft:water", "amount": 200 },
+    { "ingredient": "minecraft:lava", "amount": 100 }
+  ],
+  "results": [ { "id": "minecraft:gold_ingot", "count": 1 } ],
+  "fluid_results": [
+    { "id": "minecraft:water", "amount": 600 }
+  ],
+  "time": 20
+}

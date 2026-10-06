@@ -23,7 +23,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -61,7 +60,7 @@ import org.slf4j.Logger;
  * box with the items. The box is kept over a reload and a Fast Replace between the two tiers, and voided by
  * a change of the Held recipe and by a tier with no box. An Assembler never pushes fluid.
  */
-public final class AssemblerBlockEntity extends BlockEntity implements MenuProvider {
+public final class AssemblerBlockEntity extends BlockEntity implements MenuProvider, HeldMachine {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 

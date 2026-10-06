@@ -58,5 +58,14 @@
   "craftworks.jade.infinite_energy": "Infinite FE",
   "craftworks.jade.infinite_fluid": "%s, infinite",
   "craftworks.jade.no_fluid": "No fluid",
-  "config.jade.plugin_craftworks.assembler": "Assembler"
+  "config.jade.plugin_craftworks.assembler": "Assembler",
+  "block.craftworks.chemical_plant": "Chemical Plant",
+  "craftworks.chemical_plant.fill_recipe": "Set as this Chemical Plant's recipe",
+  "craftworks.chemical_plant.refused.not_assembling": "%s is not an Assembling recipe the Chemical Plant can hold.",
+  "craftworks.chemical_plant.refused.wrong_category": "%s is in a recipe category the Chemical Plant can't make.",
+  "craftworks.chemical_plant.refused.too_many_fluids": "%s needs more fluids in or out than the Chemical Plant's two input and two output boxes hold.",
+  "craftworks.chemical_plant.refused.fluid_too_large": "%s needs more than 1,000 mB of a fluid a craft, which is all a Chemical Plant input box holds.",
+  "craftworks.chemical_plant.refused.too_many_ingredients": "%s has more than 2 different ingredients, and the Chemical Plant has 2 input slots.",
+  "craftworks.chemical_plant.refused.remainders_dont_fit": "%s leaves items behind or makes more than one item, and the Chemical Plant has one product slot and no remainder slot.",
+  "craftworks.chemical_plant.refused.locked": "%s is Locked for you."
 }

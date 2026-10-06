@@ -7,6 +7,7 @@ import java.util.List;
 
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.Assemblers;
+import io.github._5thlayer.craftworks.machine.ChemicalPlants;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.CreativeModeTab;
@@ -15,7 +16,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Craftworks' creative tab (#29): once built, it lists the five Craftworks items in order, and vanilla's
+ * Craftworks' creative tab (#29): once built, it lists the six Craftworks items in order, and vanilla's
  * Functional Blocks holds none of them, so each shows in exactly one tab.
  */
 final class CreativeTabTests {
@@ -24,7 +25,7 @@ final class CreativeTabTests {
     }
 
     static void register(CraftworksGameTests.Registrar tests) {
-        tests.test("the_craftworks_tab_lists_the_five_items_in_order_and_functional_blocks_none", 20,
+        tests.test("the_craftworks_tab_lists_its_items_in_order_and_functional_blocks_none", 20,
                 CreativeTabTests::listsTheItems);
     }
 
@@ -40,6 +41,7 @@ final class CreativeTabTests {
                 Assemblers.item(AssemblerTier.ONE).get(),
                 Assemblers.item(AssemblerTier.TWO).get(),
                 Assemblers.item(AssemblerTier.THREE).get(),
+                ChemicalPlants.ITEM.get(),
                 Assemblers.CREATIVE_ENERGY_SOURCE_ITEM.get(),
                 Assemblers.CREATIVE_FLUID_SOURCE_ITEM.get());
         List<Item> listed = craftworks.getDisplayItems().stream().map(ItemStack::getItem).toList();
