@@ -6,6 +6,7 @@ package io.github._5thlayer.craftworks.compat.jade;
 import io.github._5thlayer.craftworks.machine.AssemblerBlock;
 import io.github._5thlayer.craftworks.machine.AssemblerBlockEntity;
 import io.github._5thlayer.craftworks.machine.CreativeEnergySourceBlockEntity;
+import io.github._5thlayer.craftworks.machine.CreativeFluidSourceBlockEntity;
 import snownee.jade.api.IWailaClientRegistration;
 import snownee.jade.api.IWailaCommonRegistration;
 import snownee.jade.api.IWailaPlugin;
@@ -13,7 +14,7 @@ import snownee.jade.api.WailaPlugin;
 
 /**
  * Shows an Assembler's Held recipe, state and energy in Jade's tooltip, and the Creative Energy Source's
- * energy as Infinite FE (#28).
+ * energy as Infinite FE (#28) and the Creative Fluid Source's fluid as, say, "Water, infinite" (#32).
  *
  * <p>Jade finds this by its annotation and loads it only when Jade is installed; nothing else in the Mod
  * names a Jade type, so the Mod loads without it.
@@ -29,11 +30,13 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
     public void register(IWailaCommonRegistration registration) {
         registration.registerBlockDataProvider(AssemblerReport.INSTANCE, AssemblerBlockEntity.class);
         registration.registerEnergyStorage(InfiniteEnergy.INSTANCE, CreativeEnergySourceBlockEntity.class);
+        registration.registerFluidStorage(InfiniteFluid.INSTANCE, CreativeFluidSourceBlockEntity.class);
     }
 
     @Override
     public void registerClient(IWailaClientRegistration registration) {
         registration.registerBlockComponent(AssemblerReport.Client.INSTANCE, AssemblerBlock.class);
         registration.registerEnergyStorageClient(InfiniteEnergy.INSTANCE);
+        registration.registerFluidStorageClient(InfiniteFluid.INSTANCE);
     }
 }

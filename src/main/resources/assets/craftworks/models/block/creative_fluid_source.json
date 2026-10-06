@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "craftworks:block/creative_fluid_source"
+  }
+}

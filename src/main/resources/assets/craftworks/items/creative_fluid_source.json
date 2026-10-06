@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "craftworks:item/creative_fluid_source"
+  }
+}

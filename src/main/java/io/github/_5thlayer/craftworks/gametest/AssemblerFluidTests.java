@@ -52,7 +52,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
 final class AssemblerFluidTests {
 
     /** Dirt and 250 mB of water make a clay ball; in {@code crafting-with-fluid}. */
-    private static final Identifier WATER_CRAFT = id("gametest/water_craft");
+    static final Identifier WATER_CRAFT = id("gametest/water_craft");
     private static final Identifier LAVA_CRAFT = id("gametest/lava_craft");
     /** The same, in the default category, which tier 1 holds. */
     private static final Identifier CRAFTING_FLUID = id("gametest/crafting_fluid");
@@ -102,7 +102,7 @@ final class AssemblerFluidTests {
     // -- pulling --------------------------------------------------------------------------------
 
     /** The block a connection faces, in test coordinates: two from the origin, the way it points. */
-    private static BlockPos beyond(Direction side) {
+    static BlockPos beyond(Direction side) {
         return AssemblerMachineTests.ORIGIN.relative(side, 2);
     }
 
@@ -121,7 +121,7 @@ final class AssemblerFluidTests {
         return assembler.machine().fluidBox().contents().getAmount();
     }
 
-    private static void tick(GameTestHelper helper, Placed assembler, int ticks) {
+    static void tick(GameTestHelper helper, Placed assembler, int ticks) {
         SimpleEnergyHandler supply = AssemblerMachineTests.supply();
         for (int tick = 0; tick < ticks; tick++) {
             AssemblerMachineTests.feed(assembler, supply, 1000);

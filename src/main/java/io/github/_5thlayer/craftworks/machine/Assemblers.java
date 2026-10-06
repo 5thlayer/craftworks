@@ -116,6 +116,18 @@ public final class Assemblers {
             BLOCK_ENTITIES.register("creative_energy_source", () -> new BlockEntityType<>(CreativeEnergySourceBlockEntity::new,
                     CREATIVE_ENERGY_SOURCE.get()));
 
+    /** Creative-only like the energy one: the fluid twin, set with a bucket (#32). */
+    public static final DeferredBlock<CreativeFluidSourceBlock> CREATIVE_FLUID_SOURCE =
+            BLOCKS.registerBlock("creative_fluid_source", CreativeFluidSourceBlock::new,
+                    properties -> properties.strength(3.0f, 6.0f).sound(SoundType.METAL));
+
+    public static final DeferredItem<BlockItem> CREATIVE_FLUID_SOURCE_ITEM =
+            ITEMS.registerSimpleBlockItem(CREATIVE_FLUID_SOURCE);
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<CreativeFluidSourceBlockEntity>> CREATIVE_FLUID_SOURCE_ENTITY =
+            BLOCK_ENTITIES.register("creative_fluid_source", () -> new BlockEntityType<>(CreativeFluidSourceBlockEntity::new,
+                    CREATIVE_FLUID_SOURCE.get()));
+
     /**
      * Craftworks' own creative tab, with the Assembler 1 as its icon. Every Craftworks item sits in it and in
      * no other tab; a new item gets its place with one line in the list.
@@ -127,6 +139,7 @@ public final class Assemblers {
                     .displayItems((parameters, output) -> {
                         ITEM_BY_TIER.values().forEach(output::accept);
                         output.accept(CREATIVE_ENERGY_SOURCE_ITEM.get());
+                        output.accept(CREATIVE_FLUID_SOURCE_ITEM.get());
                     })
                     .build());
 
@@ -194,6 +207,7 @@ public final class Assemblers {
         // finds nothing there and falls through to this one.
         event.registerBlock(Capabilities.Fluid.BLOCK, (level, pos, state, entity, side) -> fluidConnection(level, pos, state, side),
                 PART_BY_TIER.values().stream().map(Supplier::get).toArray(Block[]::new));
+        event.registerBlockEntity(Capabilities.Fluid.BLOCK, CREATIVE_FLUID_SOURCE_ENTITY.get(), (source, side) -> source.fluidFace());
     }
 
     /**

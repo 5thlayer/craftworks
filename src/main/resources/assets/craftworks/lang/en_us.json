@@ -36,6 +36,7 @@
   "block.craftworks.assembler_3": "Assembler 3",
   "itemGroup.craftworks": "Craftworks",
   "block.craftworks.creative_energy_source": "Creative Energy Source",
+  "block.craftworks.creative_fluid_source": "Creative Fluid Source",
   "craftworks.assembler.energy": "%s / %s FE",
   "craftworks.assembler.fill_recipe": "Set as this Assembler's recipe",
   "craftworks.assembler.refused.not_assembling": "%s is not an Assembling recipe the Assembler can hold.",
@@ -56,5 +57,7 @@
   "craftworks.jade.state.cant_run": "Can't run",
   "craftworks.jade.fluid": "%s: %s mB",
   "craftworks.jade.infinite_energy": "Infinite FE",
+  "craftworks.jade.infinite_fluid": "%s, infinite",
+  "craftworks.jade.no_fluid": "No fluid",
   "config.jade.plugin_craftworks.assembler": "Assembler"
 }
