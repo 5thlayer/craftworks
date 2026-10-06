@@ -14,7 +14,8 @@
 			"role": "input",
 			"type": {
 				"type": "list",
-				"component": "sized_ingredient"
+				"component": "sized_ingredient",
+				"allow_empty": true
 			}
 		},
 		{

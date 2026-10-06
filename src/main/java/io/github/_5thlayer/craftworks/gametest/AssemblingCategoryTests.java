@@ -56,6 +56,8 @@ final class AssemblingCategoryTests {
         tests.test("a_craft_with_two_item_results_fills_the_product_and_remainder_slots", 20, AssemblingCategoryTests::twoResults);
         tests.test("an_extra_result_joins_the_remainders_and_a_different_one_is_refused", 20, AssemblingCategoryTests::extraResultsAndRemainders);
         tests.test("a_recipe_with_two_item_results_is_not_hand_craftable", 20, AssemblingCategoryTests::notHandCraftable);
+        tests.test("a_fluid_only_recipe_may_leave_out_its_empty_item_lists", 20, AssemblingCategoryTests::noItemLists);
+        tests.test("every_dev_pack_recipe_parses", 20, AssemblingCategoryTests::devPack);
     }
 
     // -- the codec ------------------------------------------------------------------------------
@@ -64,6 +66,58 @@ final class AssemblingCategoryTests {
         JsonElement element = JsonParser.parseString(json);
         var ops = helper.getLevel().registryAccess().createSerializationContext(JsonOps.INSTANCE);
         return CraftworksRecipes.ASSEMBLING_SERIALIZER.get().codec().codec().parse(ops, element);
+    }
+
+    /** An Oil Refinery's recipe uses and makes only fluids: it names neither {@code ingredients} nor {@code results}. */
+    private static void noItemLists(GameTestHelper helper) {
+        AssemblingRecipe recipe = read(helper, "{ \"category\": \"oil-processing\", \"fluid_ingredients\": ["
+                + "{ \"ingredient\": \"minecraft:water\", \"amount\": 100 }], \"fluid_results\": ["
+                + "{ \"id\": \"minecraft:lava\", \"amount\": 30 }] }").getOrThrow();
+        helper.assertTrue(recipe.ingredients().isEmpty() && recipe.results().isEmpty(),
+                "left out, ingredients and results read as " + recipe.ingredients() + " and " + recipe.results());
+        helper.assertTrue(read(helper, "{ \"fluid_ingredients\": [{ \"ingredient\": \"minecraft:water\", \"amount\": 100 }] }")
+                .isError(), "a recipe that makes nothing, no item and no fluid, read as a recipe");
+        helper.succeed();
+    }
+
+    /**
+     * The dev client's own recipes ({@code dev_pack/}), which no other run loads: each parses, so one that the codec
+     * refuses fails the build and not only the dev client's log.
+     */
+    private static void devPack(GameTestHelper helper) {
+        // Read off the mod's own content roots: the module's class loader hides a folder that holds no class.
+        var roots = net.neoforged.fml.ModList.get().getModFileById(Craftworks.MOD_ID).getFile().getContents().getContentRoots();
+        List<java.nio.file.Path> files = new java.util.ArrayList<>();
+        for (var contentRoot : roots) {
+            java.nio.file.Path recipes = contentRoot.resolve("dev_pack/data/craftworks/recipe");
+            if (!java.nio.file.Files.isDirectory(recipes)) {
+                continue;
+            }
+            try (var walk = java.nio.file.Files.walk(recipes)) {
+                walk.filter(path -> path.toString().endsWith(".json")).sorted().forEach(files::add);
+            } catch (java.io.IOException e) {
+                helper.fail("could not list dev_pack's recipes under " + recipes + ": " + e);
+                return;
+            }
+        }
+        if (files.isEmpty()) {
+            helper.fail("no dev_pack recipes in any of the mod's content roots " + roots);
+            return;
+        }
+        for (var file : files) {
+            DataResult<AssemblingRecipe> result;
+            try {
+                result = read(helper, java.nio.file.Files.readString(file));
+            } catch (java.io.IOException e) {
+                helper.fail("could not read " + file + ": " + e);
+                return;
+            }
+            if (result.isError()) {
+                helper.fail(file.getFileName() + " does not parse: " + result.error().orElseThrow().message());
+                return;
+            }
+        }
+        helper.succeed();
     }
 
     private static void codec(GameTestHelper helper) {

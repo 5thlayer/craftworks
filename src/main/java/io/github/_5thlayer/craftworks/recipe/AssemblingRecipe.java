@@ -36,8 +36,9 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
  * <p>{@code time} is ticks per craft and defaults to 10; {@code priority} is the recipe's Route priority
  * and defaults to 0. A pack changes either by overriding the recipe.
  *
- * <p>{@code fluid_ingredients} and {@code fluid_results} default to empty and {@code hand_craftable} to
- * true, so a recipe written before they existed reads unchanged. Fluids are NeoForge's own types so that
+ * <p>{@code ingredients}, {@code results}, {@code fluid_ingredients} and {@code fluid_results} default to empty,
+ * so a recipe that uses or makes only fluids, such as an Oil Refinery's, need not name its empty item lists, and
+ * {@code hand_craftable} defaults to true, so a recipe written before it existed reads unchanged. Fluids are NeoForge's own types so that
  * Craftworks names no fluid Library (5thlayer/factoryworks#578).
  *
  * <p>{@code category} names the recipe's kind, one of {@link AssemblingCategory}'s five, and decides which
@@ -151,8 +152,9 @@ public record AssemblingRecipe(
 
     private static final MapCodec<AssemblingRecipe> CODEC = RecordCodecBuilder.<AssemblingRecipe>mapCodec(
             instance -> instance.group(
-                    SizedIngredient.NESTED_CODEC.listOf().fieldOf("ingredients").forGetter(AssemblingRecipe::ingredients),
-                    ItemStackTemplate.CODEC.listOf().fieldOf("results").forGetter(AssemblingRecipe::results),
+                    SizedIngredient.NESTED_CODEC.listOf().optionalFieldOf("ingredients", List.of())
+                            .forGetter(AssemblingRecipe::ingredients),
+                    ItemStackTemplate.CODEC.listOf().optionalFieldOf("results", List.of()).forGetter(AssemblingRecipe::results),
                     Codec.INT.optionalFieldOf("time", DEFAULT_TIME).forGetter(AssemblingRecipe::time),
                     Codec.INT.optionalFieldOf("priority", DEFAULT_PRIORITY).forGetter(AssemblingRecipe::priority),
                     SizedFluidIngredient.CODEC.listOf().optionalFieldOf("fluid_ingredients", List.of())
