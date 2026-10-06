@@ -10,7 +10,9 @@ import io.github._5thlayer.craftworks.assembler.PlanQueueView;
 import io.github._5thlayer.craftworks.assembler.PersonalAssembler;
 import io.github._5thlayer.craftworks.assembler.ReadyRecipeIds;
 import io.github._5thlayer.craftworks.machine.Assemblers;
+import io.github._5thlayer.craftworks.machine.ChemicalPlants;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
+import io.github._5thlayer.craftworks.machine.client.ChemicalPlantScreen;
 import io.github._5thlayer.craftworks.network.QueueSyncPacket;
 import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
@@ -58,6 +60,7 @@ public final class AssemblerClient {
     private static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(PersonalAssembler.CRAFTING_PLAN.get(), CraftingPlanScreen::new);
         event.register(Assemblers.MENU.get(), AssemblerScreen::new);
+        event.register(ChemicalPlants.MENU.get(), ChemicalPlantScreen::new);
     }
 
     /** Above the hotbar in draw order, so the queue is not painted under it. */

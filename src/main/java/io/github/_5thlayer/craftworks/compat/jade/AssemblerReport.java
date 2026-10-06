@@ -7,8 +7,8 @@ import java.util.Locale;
 import java.util.Optional;
 
 import io.github._5thlayer.craftworks.Craftworks;
-import io.github._5thlayer.craftworks.machine.AssemblerBlockEntity;
 import io.github._5thlayer.craftworks.machine.AssemblerState;
+import io.github._5thlayer.craftworks.machine.HeldMachine;
 import io.github._5thlayer.craftworks.machine.HeldRecipes;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.ChatFormatting;
@@ -30,8 +30,8 @@ import snownee.jade.api.ui.JadeUI;
 import snownee.jade.api.view.ProgressView;
 
 /**
- * What the server tells Jade about an Assembler: its Held recipe, its {@link AssemblerState} and how far its
- * craft is. The state is the block entity's own ({@link AssemblerBlockEntity#state}), worked out on the
+ * What the server tells Jade about an Assembler or a Chemical Plant: its Held recipe, its {@link AssemblerState}
+ * and how far its craft is. The state is the block entity's own ({@link HeldMachine#state}), worked out on the
  * server where the checks are and never repeated here.
  *
  * <p>The {@link Client} draws it. They are apart so that a dedicated server never loads Jade's drawing.
@@ -65,7 +65,7 @@ class AssemblerReport implements StreamServerDataProvider<BlockAccessor, Assembl
         if (!(accessor.getLevel() instanceof ServerLevel server)) {
             return null;
         }
-        AssemblerBlockEntity machine = accessor.typedBlockEntity();
+        HeldMachine machine = accessor.typedBlockEntity();
         Optional<Identifier> held = machine.heldRecipe();
         ItemStack product = held.flatMap(id -> HeldRecipes.find(server, id))
                 .map(recipe -> recipe.value().product())
@@ -87,7 +87,7 @@ class AssemblerReport implements StreamServerDataProvider<BlockAccessor, Assembl
 
     /**
      * Draws the report: the Held recipe's product, then its state, with a progress bar while it crafts. The
-     * fluid box is Jade's own bar, from {@link AssemblerFluid}.
+     * fluid boxes are Jade's own bars, from {@link AssemblerFluid} and {@link ChemicalPlantFluidView}.
      */
     static final class Client extends AssemblerReport implements IBlockComponentProvider {
 

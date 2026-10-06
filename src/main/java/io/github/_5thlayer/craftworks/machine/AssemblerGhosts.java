@@ -17,7 +17,7 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
  * ingredient in the input slot that takes it, the product in its slot) and the product at the head of the
  * screen. The screen draws from this and the recipe viewers ask it what is under the mouse, so the member
  * a tag ingredient shows at a moment and where each ghost stands are worked out once. No client type, so
- * a game test reads it.
+ * a game test reads it. A Chemical Plant's screen is ghosted the same, over its own slots ({@link Layout}).
  */
 public final class AssemblerGhosts {
 
@@ -29,6 +29,18 @@ public final class AssemblerGhosts {
     public static final long CYCLE_MILLIS = 1000;
 
     private static final int SIZE = 16;
+
+    /** Where a machine's slots are in its menu: how many machine slots there are before the player's, which take inputs, and which is the product's. */
+    public record Layout(int slots, int inputs, int product) {
+
+        public static final Layout ASSEMBLER = new Layout(AssemblerSlots.SIZE, AssemblerSlots.INPUTS, AssemblerSlots.PRODUCT);
+
+        public static final Layout CHEMICAL_PLANT = new Layout(ChemicalPlantSlots.SIZE, ChemicalPlantSlots.INPUTS, ChemicalPlantSlots.PRODUCT);
+
+        boolean isInput(int slot) {
+            return slot >= 0 && slot < inputs;
+        }
+    }
 
     private AssemblerGhosts() {
     }
@@ -43,7 +55,12 @@ public final class AssemblerGhosts {
      * rest of the panel. {@code millis} is the time that picks a tag ingredient's member.
      */
     public static Optional<Ghost> at(AssemblerMenu menu, int left, int top, int mouseX, int mouseY, long millis) {
-        Optional<AssemblerMenu.Held> held = menu.held();
+        return at(menu.held(), menu.slots, Layout.ASSEMBLER, left, top, mouseX, mouseY, millis);
+    }
+
+    /** The same over any machine's menu: its Held recipe, its slots and where its own are. */
+    public static Optional<Ghost> at(Optional<AssemblerMenu.Held> held, List<Slot> slots, Layout layout, int left, int top,
+            int mouseX, int mouseY, long millis) {
         if (held.isEmpty()) {
             return Optional.empty();
         }
@@ -51,25 +68,25 @@ public final class AssemblerGhosts {
             return Optional.of(held.get().product()).filter(stack -> !stack.isEmpty())
                     .map(stack -> new Ghost(stack, left + HEAD_X, top + HEAD_Y));
         }
-        for (Slot slot : menu.slots) {
-            if (slot.index >= AssemblerSlots.SIZE) {
+        for (Slot slot : slots) {
+            if (slot.index >= layout.slots()) {
                 break;
             }
             if (covers(left + slot.x, top + slot.y, mouseX, mouseY)) {
-                return in(slot, held, millis).map(stack -> new Ghost(stack, left + slot.x, top + slot.y));
+                return in(slot, held.get(), layout, millis).map(stack -> new Ghost(stack, left + slot.x, top + slot.y));
             }
         }
         return Optional.empty();
     }
 
     /** What {@code slot} would take under the Held recipe, or empty when it holds something or takes nothing. */
-    private static Optional<ItemStack> in(Slot slot, Optional<AssemblerMenu.Held> held, long millis) {
+    private static Optional<ItemStack> in(Slot slot, AssemblerMenu.Held held, Layout layout, long millis) {
         if (!slot.getItem().isEmpty()) {
             return Optional.empty();
         }
         ItemStack ghost = ItemStack.EMPTY;
-        if (AssemblerSlots.isInput(slot.index)) {
-            Optional<SizedIngredient> sized = AssemblerSlots.ingredientFor(slot.index, held.get().ingredients());
+        if (layout.isInput(slot.index)) {
+            Optional<SizedIngredient> sized = AssemblerSlots.ingredientFor(slot.index, held.ingredients());
             if (sized.isPresent()) {
                 List<Holder<Item>> members = sized.get().ingredient().items().toList();
                 if (!members.isEmpty()) {
@@ -77,8 +94,8 @@ public final class AssemblerGhosts {
                     ghost = new ItemStack(members.get(member), sized.get().count());
                 }
             }
-        } else if (slot.index == AssemblerSlots.PRODUCT) {
-            ghost = held.get().product();
+        } else if (slot.index == layout.product()) {
+            ghost = held.product();
         }
         return ghost.isEmpty() ? Optional.empty() : Optional.of(ghost);
     }

@@ -16,8 +16,13 @@ import io.github._5thlayer.craftworks.assembler.AssemblingRecipeIds;
 import io.github._5thlayer.craftworks.assembler.ReadyRecipeIds;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.Assemblers;
+import io.github._5thlayer.craftworks.machine.AssemblerGhosts;
+import io.github._5thlayer.craftworks.machine.ChemicalPlants;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
+import io.github._5thlayer.craftworks.machine.client.ChemicalPlantScreen;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
+import java.util.Optional;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Items;
@@ -29,14 +34,14 @@ import net.minecraft.world.item.Items;
  * <p>EMI finds this by its annotation and loads it only when EMI is installed; nothing else in the Mod
  * names an EMI type, so the Mod loads without it.
  *
- * <p>The Personal Assembler is the inventory screen rather than a block, so the Assemblers are the
- * category's workstations; the crafter is only its icon, until the category has one of its own.
+ * <p>The Personal Assembler is the inventory screen rather than a block, so the Assemblers and the Chemical Plant
+ * are the category's workstations; the crafter is only its icon, until the category has one of its own.
  *
  * <p>Fill Recipe reaches the Assembler through a handler on the player's inventory, which EMI keys under a
  * null menu type since {@code InventoryMenu} has none. So Fill Recipe queues from the inventory screen and
  * nowhere else.
  *
- * <p>The Assembler screen's ghosts answer Recipe and Uses as a real stack does (see {@link #ghostAt}).
+ * <p>The Assembler and Chemical Plant screens' ghosts answer Recipe and Uses as a real stack does (see {@link #ghostAt}).
  */
 @EmiEntrypoint
 public final class AssemblingEmiPlugin implements EmiPlugin {
@@ -68,8 +73,17 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
      * with: Recipe and Uses ask about the item.
      */
     private static EmiStackInteraction ghostAt(AssemblerScreen screen, int mouseX, int mouseY) {
-        return screen.ghostAt(mouseX, mouseY)
-                .map(ghost -> new EmiStackInteraction(EmiStack.of(ghost.stack().copyWithCount(1))))
+        return interaction(screen.ghostAt(mouseX, mouseY));
+    }
+
+    /** The same on a Chemical Plant's screen. */
+    private static EmiStackInteraction ghostAt(ChemicalPlantScreen screen, int mouseX, int mouseY) {
+        return interaction(screen.ghostAt(mouseX, mouseY));
+    }
+
+    private static EmiStackInteraction interaction(Optional<AssemblerGhosts.Ghost> ghost) {
+        return ghost
+                .map(shown -> new EmiStackInteraction(EmiStack.of(shown.stack().copyWithCount(1))))
                 .orElse(EmiStackInteraction.EMPTY);
     }
 
@@ -80,11 +94,14 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
                 .byType(CraftworksRecipes.ASSEMBLING_TYPE.get())
                 .forEach(holder -> registry.addRecipe(new AssemblingEmiRecipe(ASSEMBLING, holder)));
         registry.addRecipeHandler(null, new PersonalAssemblerEmiHandler());
-        registry.addRecipeHandler(Assemblers.MENU.get(), new AssemblerEmiHandler());
+        registry.addRecipeHandler(Assemblers.MENU.get(), new AssemblerEmiHandler<>("craftworks.assembler.fill_recipe"));
+        registry.addRecipeHandler(ChemicalPlants.MENU.get(), new AssemblerEmiHandler<>("craftworks.chemical_plant.fill_recipe"));
         registry.addStackProvider(AssemblerScreen.class, AssemblingEmiPlugin::ghostAt);
+        registry.addStackProvider(ChemicalPlantScreen.class, AssemblingEmiPlugin::ghostAt);
         for (AssemblerTier tier : AssemblerTier.values()) {
             registry.addWorkstation(ASSEMBLING, EmiStack.of(Assemblers.item(tier).get()));
         }
+        registry.addWorkstation(ASSEMBLING, EmiStack.of(ChemicalPlants.ITEM.get()));
         AssemblingRecipeIds.onSync(AssemblingEmiPlugin::searchAgain);
         ReadyRecipeIds.onChange(AssemblingEmiPlugin::craftablesAgain);
     }

@@ -9,29 +9,37 @@ import dev.emi.emi.api.recipe.EmiPlayerInventory;
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.recipe.handler.EmiCraftContext;
 import dev.emi.emi.api.recipe.handler.EmiRecipeHandler;
-import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import io.github._5thlayer.craftworks.network.HoldRecipePacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 /**
- * EMI's {@code + Fill Recipe}, pointed at an open Assembler: it sets the Held recipe and moves no items.
+ * EMI's {@code + Fill Recipe}, pointed at an open Assembler or Chemical Plant: it sets the Held recipe and moves
+ * no items. One handler for either menu, told which it is by the text it shows.
  *
  * <p>{@link EmiRecipeHandler} directly, as {@link PersonalAssemblerEmiHandler} is: holding a recipe takes
  * no items, so the button stays lit with an empty inventory. Every Assembling recipe gets it, Hand-craftable
  * or not and Locked or not; whether this Assembler takes it, and for this player, is server truth, and the
  * server refuses with a message rather than the button hiding the reason.
  */
-public final class AssemblerEmiHandler implements EmiRecipeHandler<AssemblerMenu> {
+public final class AssemblerEmiHandler<M extends AbstractContainerMenu> implements EmiRecipeHandler<M> {
+
+    private final String tooltipKey;
+
+    /** @param tooltipKey the lang key of what the button's tooltip says: which machine the recipe is set on */
+    public AssemblerEmiHandler(String tooltipKey) {
+        this.tooltipKey = tooltipKey;
+    }
 
     /** Built here, not asked for: {@code EmiPlayerInventory.of} dispatches back to this method. */
     @Override
-    public EmiPlayerInventory getInventory(AbstractContainerScreen<AssemblerMenu> screen) {
+    public EmiPlayerInventory getInventory(AbstractContainerScreen<M> screen) {
         Player player = Minecraft.getInstance().player;
         return player == null ? new EmiPlayerInventory(List.of()) : new EmiPlayerInventory(player);
     }
@@ -42,19 +50,19 @@ public final class AssemblerEmiHandler implements EmiRecipeHandler<AssemblerMenu
     }
 
     @Override
-    public boolean canCraft(EmiRecipe recipe, EmiCraftContext<AssemblerMenu> context) {
+    public boolean canCraft(EmiRecipe recipe, EmiCraftContext<M> context) {
         return true;
     }
 
     @Override
-    public List<ClientTooltipComponent> getTooltip(EmiRecipe recipe, EmiCraftContext<AssemblerMenu> context) {
+    public List<ClientTooltipComponent> getTooltip(EmiRecipe recipe, EmiCraftContext<M> context) {
         return List.of(ClientTooltipComponent.create(
-                Component.translatable("craftworks.assembler.fill_recipe").getVisualOrderText()));
+                Component.translatable(tooltipKey).getVisualOrderText()));
     }
 
     /** Sends the recipe and hands the screen back to the Assembler, where the Held recipe is shown. */
     @Override
-    public boolean craft(EmiRecipe recipe, EmiCraftContext<AssemblerMenu> context) {
+    public boolean craft(EmiRecipe recipe, EmiCraftContext<M> context) {
         Identifier id = recipe.getId();
         if (id == null) return false;
         ClientPacketDistributor.sendToServer(new HoldRecipePacket(id));

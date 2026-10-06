@@ -3,26 +3,19 @@
 
 package io.github._5thlayer.craftworks.machine.client;
 
-import java.text.NumberFormat;
-import java.util.List;
 import java.util.Optional;
 
 import io.github._5thlayer.craftworks.machine.AssemblerFluidBox;
 import io.github._5thlayer.craftworks.machine.AssemblerGhosts;
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import io.github._5thlayer.craftworks.machine.AssemblerSlots;
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.block.FluidModel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.fluids.FluidStack;
 
 /**
  * The Assembler's screen: the Held recipe, its five inputs, the product and the remainders, how far the
@@ -37,27 +30,15 @@ import net.neoforged.neoforge.fluids.FluidStack;
  */
 public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu> {
 
-    private static final int PANEL = 0xFFC6C6C6;
-    private static final int SLOT = 0xFF8B8B8B;
-    private static final int SLOT_DARK = 0xFF373737;
-    private static final int SLOT_LIGHT = 0xFFFFFFFF;
-    private static final int BAR = 0xFF5DA05D;
-    private static final int ENERGY = 0xFFB8392B;
-    private static final int TEXT = 0xFF404040;
-    private static final int SHORT = 0xFFB84C4C;
-    // Half the slot's own colour over a ghost, so it reads as a placeholder rather than an item.
-    private static final int GHOST_VEIL = 0x808B8B8B;
-
     private static final int BAR_X = AssemblerMenu.INPUT_X + AssemblerSlots.INPUTS * 18 + 4;
     private static final int BAR_WIDTH = AssemblerMenu.PRODUCT_X - 6 - BAR_X;
     private static final int ENERGY_Y = 60;
     private static final int ENERGY_WIDTH = 160;
-    private static final int ENERGY_HEIGHT = 12;
+    private static final int ENERGY_HEIGHT = MachineScreens.ENERGY_HEIGHT;
     // With a fluid box the energy bar gives up its right end to the gauge, the same height.
     private static final int ENERGY_WIDTH_WITH_FLUID = 104;
     private static final int FLUID_X = 8 + ENERGY_WIDTH_WITH_FLUID + 4;
     private static final int FLUID_WIDTH = 8 + ENERGY_WIDTH - FLUID_X;
-    private static final int FLUID_TILE = 16;
 
     public AssemblerScreen(AssemblerMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title, 176, 166);
@@ -68,80 +49,48 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         // The world dims behind the panel as it does behind the inventory.
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-        graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, PANEL);
+        graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, MachineScreens.PANEL);
         Optional<AssemblerMenu.Held> held = menu.held();
         held.filter(recipe -> !recipe.product().isEmpty()).ifPresent(recipe -> {
             ItemStack product = recipe.product();
             graphics.item(product, leftPos + AssemblerGhosts.HEAD_X, topPos + AssemblerGhosts.HEAD_Y);
-            graphics.text(font, product.getHoverName(), leftPos + 28, topPos + 20, TEXT, false);
+            graphics.text(font, product.getHoverName(), leftPos + 28, topPos + 20, MachineScreens.TEXT, false);
         });
         for (Slot slot : menu.slots) {
             int x = leftPos + slot.x;
             int y = topPos + slot.y;
-            recess(graphics, x, y, 16, 16);
+            MachineScreens.recess(graphics, x, y, 16, 16);
             // The player's inventory follows the machine's slots, and takes only its recess.
             if (slot.index >= AssemblerSlots.SIZE) {
                 continue;
             }
             if (AssemblerSlots.isInput(slot.index) && menu.isShort(slot.index)) {
-                graphics.fill(x, y, x + 16, y + 16, SHORT);
+                graphics.fill(x, y, x + 16, y + 16, MachineScreens.SHORT);
             }
             ghost(graphics, x, y);
         }
         int x = leftPos + BAR_X;
         int y = topPos + AssemblerMenu.INPUT_Y;
-        recess(graphics, x, y, BAR_WIDTH, 16);
-        graphics.fill(x, y, x + Math.round(BAR_WIDTH * menu.progress()), y + 16, BAR);
+        MachineScreens.recess(graphics, x, y, BAR_WIDTH, 16);
+        graphics.fill(x, y, x + Math.round(BAR_WIDTH * menu.progress()), y + 16, MachineScreens.BAR);
 
         int energyX = leftPos + 8;
         int energyY = topPos + ENERGY_Y;
         int energyWidth = menu.hasFluidBox() ? ENERGY_WIDTH_WITH_FLUID : ENERGY_WIDTH;
-        recess(graphics, energyX, energyY, energyWidth, ENERGY_HEIGHT);
-        float charge = menu.capacity() <= 0 ? 0f : Math.min(1f, (float) menu.energy() / menu.capacity());
-        graphics.fill(energyX, energyY, energyX + Math.round(energyWidth * charge), energyY + ENERGY_HEIGHT, ENERGY);
-        Component stored = Component.translatable("craftworks.assembler.energy", menu.energy(), menu.capacity());
-        graphics.text(font, stored, energyX + (energyWidth - font.width(stored)) / 2, energyY + 2, 0xFFFFFFFF, true);
+        MachineScreens.energyBar(graphics, font, energyX, energyY, energyWidth, menu.energy(), menu.capacity());
 
         if (menu.hasFluidBox()) {
-            int fluidX = leftPos + FLUID_X;
-            recess(graphics, fluidX, energyY, FLUID_WIDTH, ENERGY_HEIGHT);
-            fluid(graphics, menu.fluid(), fluidX, energyY);
+            MachineScreens.fluidGauge(graphics, menu.fluid(), leftPos + FLUID_X, energyY, FLUID_WIDTH, AssemblerFluidBox.CAPACITY);
         }
-    }
-
-    /**
-     * The gauge's fluid: its still texture, tinted as the fluid is in the world, tiled over the part of the
-     * gauge the box fills.
-     */
-    private static void fluid(GuiGraphicsExtractor graphics, FluidStack fluid, int x, int y) {
-        if (fluid.isEmpty()) {
-            return;
-        }
-        FluidModel model = Minecraft.getInstance().getModelManager().getFluidStateModelSet().get(fluid.getFluid().defaultFluidState());
-        int tint = model.fluidTintSource() == null ? 0xFFFFFFFF : 0xFF000000 | model.fluidTintSource().color(fluid.getFluid().defaultFluidState());
-        int filled = Math.min(FLUID_WIDTH, Math.round(FLUID_WIDTH * (float) fluid.getAmount() / AssemblerFluidBox.CAPACITY));
-        graphics.enableScissor(x, y, x + filled, y + ENERGY_HEIGHT);
-        for (int tileX = x; tileX < x + filled; tileX += FLUID_TILE) {
-            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, model.stillMaterial().sprite(), tileX, y, FLUID_TILE, FLUID_TILE, tint);
-        }
-        graphics.disableScissor();
     }
 
     /** Over the gauge, the fluid's name and how much of the box it fills. */
     @Override
     protected void extractTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         super.extractTooltip(graphics, mouseX, mouseY);
-        int x = leftPos + FLUID_X;
-        int y = topPos + ENERGY_Y;
-        if (!menu.hasFluidBox() || mouseX < x || mouseX >= x + FLUID_WIDTH || mouseY < y || mouseY >= y + ENERGY_HEIGHT) {
-            return;
+        if (menu.hasFluidBox() && MachineScreens.overGauge(leftPos + FLUID_X, topPos + ENERGY_Y, FLUID_WIDTH, mouseX, mouseY)) {
+            MachineScreens.fluidTooltip(graphics, font, menu.fluid(), AssemblerFluidBox.CAPACITY, mouseX, mouseY);
         }
-        FluidStack fluid = menu.fluid();
-        NumberFormat number = NumberFormat.getIntegerInstance();
-        graphics.setComponentTooltipForNextFrame(font, List.of(
-                fluid.isEmpty() ? Component.translatable("craftworks.assembler.fluid_empty").withStyle(ChatFormatting.GRAY) : fluid.getHoverName(),
-                Component.translatable("craftworks.assembler.fluid", number.format(fluid.getAmount()), number.format(AssemblerFluidBox.CAPACITY))
-                        .withStyle(ChatFormatting.GRAY)), mouseX, mouseY);
     }
 
     /**
@@ -154,25 +103,6 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
 
     /** What an empty slot would take under the Held recipe: the ingredient there, or the product. */
     private void ghost(GuiGraphicsExtractor graphics, int x, int y) {
-        Optional<AssemblerGhosts.Ghost> shown = ghostAt(x, y);
-        if (shown.isEmpty()) {
-            return;
-        }
-        ItemStack ghost = shown.get().stack();
-        graphics.item(ghost, x, y);
-        graphics.fill(x, y, x + 16, y + 16, GHOST_VEIL);
-        if (ghost.getCount() > 1) {
-            String count = Integer.toString(ghost.getCount());
-            graphics.text(font, count, x + 17 - font.width(count), y + 9, 0xFFFFFFFF, true);
-        }
-    }
-
-    /** A slot's bevel: dark above and left, light below and right, grey inside. */
-    private static void recess(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
-        graphics.fill(x - 1, y - 1, x + width, y, SLOT_DARK);
-        graphics.fill(x - 1, y, x, y + height, SLOT_DARK);
-        graphics.fill(x, y + height, x + width + 1, y + height + 1, SLOT_LIGHT);
-        graphics.fill(x + width, y, x + width + 1, y + height, SLOT_LIGHT);
-        graphics.fill(x, y, x + width, y + height, SLOT);
+        ghostAt(x, y).ifPresent(shown -> MachineScreens.ghost(graphics, font, shown.stack(), x, y));
     }
 }
