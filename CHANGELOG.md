@@ -10,7 +10,7 @@ Written for players and pack authors: what the Personal Assembler does, and what
 - Assembler 2 and 3 craft recipes with a fluid ingredient, taking the fluid through two Fluid Connections at the centres of two opposite bottom edges of the machine. They turn with it and show as a grey ring on the casing, and exist only while the Held recipe has a fluid ingredient. Each pulls the fluid the Held recipe needs, and only that, from whatever tank or pipe touches it (anything with NeoForge's fluid capability) into the Assembler's one 1,000 mB fluid box; an Assembler never pushes fluid, though a mod that pushes can fill the box through a connection. (#25)
 - Fill Recipe on Assembler 2 and 3 is refused, with a message, for a recipe with two fluid ingredients or one needing more than 1,000 mB of its fluid a craft, and still for any recipe with a fluid result. Assembler 1 still takes no fluid recipe. (#25)
 - The fluid box takes only the Held recipe's fluid and is kept over a reload and a swap between Assembler 2 and 3. It is emptied when the Held recipe changes, on a swap to Assembler 1 and when the machine is broken. (#25)
-- The screen of Assembler 2 and 3 shows the fluid box as a gauge beside the energy bar, with the fluid and its amount out of 1,000 mB on hover, and Jade, if installed, adds a line with the fluid and its amount. Assembler 1's screen and tooltip are unchanged. (#25)
+- The screen of Assembler 2 and 3 shows the fluid box as a gauge beside the energy bar, with the fluid and its amount out of 1,000 mB on hover, and Jade, if installed, shows it as its own fluid bar, out of 1,000 mB. Assembler 1's screen and tooltip are unchanged. (#25)
 
 ## 0.4.0
 

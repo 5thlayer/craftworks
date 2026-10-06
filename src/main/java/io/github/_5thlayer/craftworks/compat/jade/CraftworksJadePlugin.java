@@ -13,8 +13,9 @@ import snownee.jade.api.IWailaPlugin;
 import snownee.jade.api.WailaPlugin;
 
 /**
- * Shows an Assembler's Held recipe, state and energy in Jade's tooltip, and the Creative Energy Source's
- * energy as Infinite FE (#28) and the Creative Fluid Source's fluid as, say, "Water, infinite" (#32).
+ * Shows an Assembler's Held recipe, state and energy in Jade's tooltip, with the fluid box of tiers 2 and 3
+ * as Jade's own fluid bar (#25); the Creative Energy Source's energy as Infinite FE (#28); and the Creative
+ * Fluid Source's fluid as, say, "Water, infinite" (#32).
  *
  * <p>Jade finds this by its annotation and loads it only when Jade is installed; nothing else in the Mod
  * names a Jade type, so the Mod loads without it.
@@ -31,6 +32,7 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
         registration.registerBlockDataProvider(AssemblerReport.INSTANCE, AssemblerBlockEntity.class);
         registration.registerEnergyStorage(InfiniteEnergy.INSTANCE, CreativeEnergySourceBlockEntity.class);
         registration.registerFluidStorage(InfiniteFluid.INSTANCE, CreativeFluidSourceBlockEntity.class);
+        registration.registerFluidStorage(AssemblerFluid.INSTANCE, AssemblerBlockEntity.class);
     }
 
     @Override
@@ -38,5 +40,6 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
         registration.registerBlockComponent(AssemblerReport.Client.INSTANCE, AssemblerBlock.class);
         registration.registerEnergyStorageClient(InfiniteEnergy.INSTANCE);
         registration.registerFluidStorageClient(InfiniteFluid.INSTANCE);
+        registration.registerFluidStorageClient(AssemblerFluid.INSTANCE);
     }
 }
