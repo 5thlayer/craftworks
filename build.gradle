@@ -30,8 +30,8 @@ def emi = 'curse.maven:emi-unofficial-port-1544558:8630349'
 repositories {
     // EMI for 26.1 is an unofficial port, published on CurseForge only.
     maven { url = 'https://cursemaven.com' }
-    // Groundworks, from the local maven only, where its release publishes it the moment it is cut,
-    // with no site's review to wait on. CI builds its tag there first.
+    // Groundworks and Pipeworks, from the local maven only, where their releases publish them the moment
+    // they are cut, with no site's review to wait on. CI builds their tags there first.
     mavenLocal {
         content {
             includeModule 'io.github.5thlayer', 'groundworks'

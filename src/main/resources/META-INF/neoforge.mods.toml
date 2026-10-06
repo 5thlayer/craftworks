@@ -68,11 +68,12 @@ side = "BOTH"
 
 # Its pipes fill and drain the Fluid Connections and draw an arm toward one while it exists (Pipeworks
 # #11). Not required: the Mod names no Pipeworks type, and a connection reaches any tank or pipe through the
-# fluid capability. The range runs from the Pipeworks that draws the arm up to its next minor, 0.3.
+# fluid capability. The range runs from the Pipeworks that draws the arm, with no upper bound: the Mod
+# compiles against none of it, so a later Pipeworks can't break it.
 [[dependencies.${mod_id}]]
 modId = "pipeworks"
 type = "optional"
-versionRange = "[${pipeworks_version},0.3)"
+versionRange = "[${pipeworks_version},)"
 ordering = "NONE"
 side = "BOTH"
 
