@@ -125,5 +125,7 @@ _Avoid_: research, unlock provider
 
 **Recipe viewer**:
 The item list and recipe screen through which the player asks the Personal Assembler for items: EMI or JEI. A
-player cannot use Craftworks without one.
+player cannot use Craftworks without one. It shows Assembling recipes in one tab per machine, the Assembler's
+and the Chemical Plant's, each holding the recipes whose **Category** that machine holds; a category no machine
+holds is in no tab (ADR-0016).
 _Avoid_: item interface, recipe browser, JEI (for both)
