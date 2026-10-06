@@ -38,3 +38,5 @@ handler when the Held recipe changes to one with a fluid, which tells the level 
 the Held recipe voids all four boxes. A recipe with more than two fluid ingredients or results, more than 1,000 mB
 of an ingredient a craft, more than two item ingredients, more than one item result or an ingredient that leaves a
 remainder is refused at Fill Recipe, since the plant has two input slots, one product slot and no remainder slot.
+
+The output box sizing above is superseded by ADR-0017.
