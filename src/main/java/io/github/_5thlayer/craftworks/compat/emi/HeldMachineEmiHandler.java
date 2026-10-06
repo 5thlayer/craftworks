@@ -26,7 +26,7 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  *
  * <p>{@link EmiRecipeHandler} directly, as {@link PersonalAssemblerEmiHandler} is: holding a recipe takes
  * no items, so the button stays lit with an empty inventory. Every Assembling recipe gets it, Hand-craftable
- * or not and Locked or not; whether this Assembler takes it, and for this player, is server truth, and the
+ * or not and Locked or not; whether the open machine takes it, and for this player, is server truth, and the
  * server refuses with a message rather than the button hiding the reason.
  */
 public final class HeldMachineEmiHandler<M extends AbstractContainerMenu> implements EmiRecipeHandler<M> {
@@ -61,7 +61,7 @@ public final class HeldMachineEmiHandler<M extends AbstractContainerMenu> implem
                 Component.translatable(machine.langKey("fill_recipe")).getVisualOrderText()));
     }
 
-    /** Sends the recipe and hands the screen back to the Assembler, where the Held recipe is shown. */
+    /** Sends the recipe and hands the screen back to the Assembler or Chemical Plant, where the Held recipe is shown. */
     @Override
     public boolean craft(EmiRecipe recipe, EmiCraftContext<M> context) {
         Identifier id = recipe.getId();

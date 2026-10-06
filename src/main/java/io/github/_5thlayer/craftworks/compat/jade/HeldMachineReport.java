@@ -40,6 +40,7 @@ class HeldMachineReport implements StreamServerDataProvider<BlockAccessor, HeldM
 
     static final HeldMachineReport INSTANCE = new HeldMachineReport();
 
+    // Still "assembler", the Chemical Plant's too: Jade keys a player's on/off setting for this tooltip by it.
     private static final Identifier UID = Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "assembler");
 
     private static final StreamCodec<ByteBuf, MachineState> STATE_CODEC =

@@ -20,7 +20,7 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 /**
  * JEI's {@code +} on an Assembling recipe with an Assembler or a Chemical Plant open (one handler for either menu): it sets the Held recipe and moves no
  * items, as EMI's Fill Recipe does there. Always offered, whatever the inventory holds, and whether the
- * Assembler takes the recipe for this player is the server's call, which answers in chat.
+ * open machine takes the recipe for this player is the server's call, which answers in chat.
  */
 final class HeldMachineTransferHandler<M extends AbstractContainerMenu> implements IRecipeTransferHandler<M, RecipeHolder<AssemblingRecipe>> {
 

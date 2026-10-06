@@ -4,15 +4,12 @@
 package io.github._5thlayer.craftworks.machine;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
 import org.jspecify.annotations.Nullable;
@@ -48,8 +45,7 @@ public final class ChemicalPlantMenu extends HeldMachineMenu<ChemicalPlantBlockE
     static ChemicalPlantMenu open(int containerId, Inventory playerInventory, ChemicalPlantBlockEntity machine) {
         ContainerData data = data(machine, DATA_COUNT, index -> {
             if (index < DATA_OUTPUT_CAPACITY) {
-                FluidStack contents = machine.fluids().contents((index - DATA_BOXES) / 2);
-                return (index - DATA_BOXES) % 2 == 0 ? BuiltInRegistries.FLUID.getId(contents.getFluid()) : contents.getAmount();
+                return fluidData(machine.fluids().contents((index - DATA_BOXES) / 2), (index - DATA_BOXES) % 2);
             }
             return machine.fluids().capacity(ChemicalPlantFluids.outputBox(index - DATA_OUTPUT_CAPACITY));
         });
@@ -68,9 +64,7 @@ public final class ChemicalPlantMenu extends HeldMachineMenu<ChemicalPlantBlockE
 
     /** What is in box {@code box} (the two inputs, then the two outputs), or empty: the fluid and how much, as the server last told it. */
     public FluidStack fluid(int box) {
-        int amount = data.get(DATA_BOXES + 2 * box + 1);
-        Fluid fluid = BuiltInRegistries.FLUID.byId(data.get(DATA_BOXES + 2 * box));
-        return amount <= 0 || fluid == Fluids.EMPTY ? FluidStack.EMPTY : new FluidStack(fluid, amount);
+        return fluidAt(DATA_BOXES + 2 * box);
     }
 
     /** What box {@code box} holds at most, in mB: a bucket for an input, and what the Held recipe sizes an output at. */

@@ -10,6 +10,7 @@ import java.util.function.IntUnaryOperator;
 import io.github._5thlayer.craftworks.network.CraftworksNetwork;
 import io.github._5thlayer.craftworks.network.HeldRecipeSyncPacket;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -21,7 +22,10 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.transfer.IndexModifier;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
@@ -32,7 +36,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * The menu of a machine that makes its Held recipe, an Assembler's or the Chemical Plant's: its inputs in a row,
  * then its outputs, then the player's inventory; the Held recipe and how far its craft is. No recipe is picked
- * here and none cleared: the recipe viewer's Fill Recipe lands on {@link #request}, and a machine's recipe is
+ * here and none cleared: the recipe viewer's Fill Recipe lands on {@link #request}, and the Held recipe is
  * replaced, never removed.
  *
  * <p>The Held recipe crosses to the client as {@link HeldRecipeSyncPacket} when it changes, since the client
@@ -121,6 +125,18 @@ public abstract class HeldMachineMenu<M extends HeldMachineBlockEntity> extends 
                 return count;
             }
         };
+    }
+
+    /** The two data slots of a fluid box holding {@code contents}: {@code half} 0 is the fluid's registry id, 1 its amount. */
+    protected static int fluidData(FluidStack contents, int half) {
+        return half == 0 ? BuiltInRegistries.FLUID.getId(contents.getFluid()) : contents.getAmount();
+    }
+
+    /** The fluid box whose data slots start at {@code index}, as the server last told it, or empty. */
+    protected FluidStack fluidAt(int index) {
+        int amount = data.get(index + 1);
+        Fluid fluid = BuiltInRegistries.FLUID.byId(data.get(index));
+        return amount <= 0 || fluid == Fluids.EMPTY ? FluidStack.EMPTY : new FluidStack(fluid, amount);
     }
 
     /** Which machine this is, for the messages it sends. */

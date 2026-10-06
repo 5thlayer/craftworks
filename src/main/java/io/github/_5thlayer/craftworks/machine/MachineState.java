@@ -9,13 +9,16 @@ package io.github._5thlayer.craftworks.machine;
  */
 public enum MachineState {
 
-    /** No Held recipe: the Assembler idles and draws nothing. */
+    /** No Held recipe: the machine idles and draws nothing. */
     NO_RECIPE,
-    /** The Held recipe cannot run here: it names a fluid, has too many ingredients, or is gone after a reload. */
+    /**
+     * The Held recipe cannot run here: it names a fluid this machine can't take, is outside its categories, has
+     * too many ingredients, or is gone after a reload.
+     */
     CANT_RUN,
     /** An input slot holds less than one craft of its ingredient. */
     MISSING_INGREDIENTS,
-    /** The product or the remainder slot cannot take a craft's result. */
+    /** An output cannot take a craft's result: the product slot, an Assembler's remainder slot or a Chemical Plant's output box. */
     OUTPUT_FULL,
     /** The buffer cannot pay this tick's FE. */
     NEEDS_POWER,

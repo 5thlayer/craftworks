@@ -4,15 +4,12 @@
 package io.github._5thlayer.craftworks.machine;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
 import org.jspecify.annotations.Nullable;
@@ -24,8 +21,8 @@ import org.jspecify.annotations.Nullable;
  */
 public final class AssemblerMenu extends HeldMachineMenu<AssemblerBlockEntity> {
 
+    /** The fluid box takes two: the fluid's registry id, then its amount. */
     private static final int DATA_FLUID = DATA_SHARED;
-    private static final int DATA_FLUID_AMOUNT = DATA_SHARED + 1;
     private static final int DATA_COUNT = DATA_SHARED + 2;
 
     public static final int REMAINDERS_X = PRODUCT_X + 18;
@@ -49,9 +46,7 @@ public final class AssemblerMenu extends HeldMachineMenu<AssemblerBlockEntity> {
 
     /** Server side, over the machine's own inventory. */
     static AssemblerMenu open(int containerId, Inventory playerInventory, AssemblerBlockEntity machine) {
-        ContainerData data = data(machine, DATA_COUNT, index -> index == DATA_FLUID
-                ? BuiltInRegistries.FLUID.getId(machine.fluidBox().contents().getFluid())
-                : machine.fluidBox().contents().getAmount());
+        ContainerData data = data(machine, DATA_COUNT, index -> fluidData(machine.fluidBox().contents(), index - DATA_FLUID));
         return new AssemblerMenu(containerId, playerInventory, machine, machine.getBlockPos(), machine.inventory(), data);
     }
 
@@ -72,8 +67,6 @@ public final class AssemblerMenu extends HeldMachineMenu<AssemblerBlockEntity> {
 
     /** What is in the fluid box, or empty: the fluid and how much, as the server last told it. */
     public FluidStack fluid() {
-        int amount = data.get(DATA_FLUID_AMOUNT);
-        Fluid fluid = BuiltInRegistries.FLUID.byId(data.get(DATA_FLUID));
-        return amount <= 0 || fluid == Fluids.EMPTY ? FluidStack.EMPTY : new FluidStack(fluid, amount);
+        return fluidAt(DATA_FLUID);
     }
 }
