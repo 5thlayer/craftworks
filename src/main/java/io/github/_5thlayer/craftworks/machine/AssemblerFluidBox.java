@@ -36,6 +36,14 @@ public final class AssemblerFluidBox extends FluidStacksResourceHandler {
         return machine.fluidCapacity();
     }
 
+    /**
+     * What the box reports as its volume for display, in mB: its capacity, or what it holds if that is more, as a
+     * box saved under older rules can. Only a display reads this; an overfull box takes nothing more in.
+     */
+    public int displayCapacity() {
+        return Math.max(capacity(), getAmountAsInt(0));
+    }
+
     @Override
     protected int getCapacity(int index, FluidResource resource) {
         return capacity();

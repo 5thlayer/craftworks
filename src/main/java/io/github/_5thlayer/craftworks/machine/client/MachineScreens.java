@@ -70,7 +70,7 @@ final class MachineScreens {
         }
         FluidModel model = Minecraft.getInstance().getModelManager().getFluidStateModelSet().get(fluid.getFluid().defaultFluidState());
         int tint = model.fluidTintSource() == null ? 0xFFFFFFFF : 0xFF000000 | model.fluidTintSource().color(fluid.getFluid().defaultFluidState());
-        int filled = Math.min(width, Math.round(width * (float) fluid.getAmount() / capacity));
+        int filled = Math.min(width, Math.round(width * (float) fluid.getAmount() / Math.max(1, capacity)));
         graphics.enableScissor(x, y, x + filled, y + ENERGY_HEIGHT);
         for (int tileX = x; tileX < x + filled; tileX += FLUID_TILE) {
             graphics.blitSprite(RenderPipelines.GUI_TEXTURED, model.stillMaterial().sprite(), tileX, y, FLUID_TILE, FLUID_TILE, tint);

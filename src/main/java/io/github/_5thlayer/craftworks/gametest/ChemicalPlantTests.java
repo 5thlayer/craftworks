@@ -112,6 +112,7 @@ final class ChemicalPlantTests {
         tests.test("an_input_box_holds_4_crafts_of_its_ingredient_and_an_output_box_the_larger_of_100_mb_and_3_crafts_of_its_result", 20, ChemicalPlantTests::boxSizes);
         tests.test("a_chemical_plants_input_box_stops_pulling_at_4_crafts_worth_and_a_pipe_that_pushes_is_held_to_it", 20, ChemicalPlantTests::inputBoxStopsAtFourCrafts);
         tests.test("a_chemical_plants_output_box_holds_3_crafts_worth_and_the_craft_stalls_past_it", 20, ChemicalPlantTests::outputBoxHoldsCraftsAndStalls);
+        tests.test("a_chemical_plant_box_holding_more_than_its_capacity_keeps_its_fluid_displays_at_least_that_and_takes_no_more", 20, ChemicalPlantTests::overfullBoxIsKept);
         tests.test("a_recipe_with_one_fluid_result_on_a_two_output_plant_gets_the_merged_box_and_pinned_it_does_not", 20, ChemicalPlantTests::mergedAndPinnedBoxes);
         tests.test("changing_the_held_recipe_voids_the_four_boxes", 20, ChemicalPlantTests::voidsOnChange);
         tests.test("fill_recipe_refuses_what_the_boxes_and_slots_of_a_chemical_plant_cannot_hold", 20, ChemicalPlantTests::refusals);
@@ -718,6 +719,25 @@ final class ChemicalPlantTests {
     }
 
     /** A recipe with one fluid result on a two-output plant gets the unused box's volume too; Pinned, it doesn't. */
+    /** A box saved under 0.4.2's 1,000 mB rules and loaded under these keeps its fluid, reports at least that as its volume, and takes no more. */
+    private static void overfullBoxIsKept(GameTestHelper helper) {
+        Placed plant = place(helper);
+        hold(plant, ONE_RESULT);
+        FluidMachineFluids boxes = plant.machine().fluids();
+        boxes.set(0, new FluidStack(Fluids.WATER, 300));
+        boxes.set(2, new FluidStack(Fluids.LAVA, 250));
+        helper.assertTrue(boxes.capacity(2) == 200 && boxes.capacity(0) == 40, "the boxes hold " + boxes.capacity(0) + " and " + boxes.capacity(2));
+        for (int box : new int[] {0, 2}) {
+            helper.assertTrue(boxes.displayCapacity(box) >= amount(plant, box), "box " + box + " displays " + boxes.displayCapacity(box) + " for " + amount(plant, box));
+        }
+        helper.assertTrue(boxes.displayCapacity(1) == boxes.capacity(1) && boxes.displayCapacity(3) == 100, "an empty box's display moved");
+        helper.assertTrue(amount(plant, 0) == 300 && amount(plant, 2) == 250, "an overfull box lost fluid");
+        ResourceHandler<FluidResource> face = plant.fluid(plant.connections().get(1));
+        helper.assertTrue(insertFluid(face, Fluids.WATER, 100) == 0, "an overfull input box took more");
+        helper.assertTrue(extractFluid(face, Fluids.LAVA, 50) == 50 && amount(plant, 2) == 200, "an overfull output box did not drain");
+        helper.succeed();
+    }
+
     private static void mergedAndPinnedBoxes(GameTestHelper helper) {
         Placed plant = place(helper);
         FluidMachineFluids boxes = plant.machine().fluids();

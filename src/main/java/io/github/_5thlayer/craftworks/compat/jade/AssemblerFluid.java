@@ -38,7 +38,7 @@ final class AssemblerFluid implements IServerExtensionProvider<FluidView.Data>, 
         JadeFluidObject fluid = contents.isEmpty()
                 ? JadeFluidObject.empty()
                 : JadeFluidObject.of(contents.getFluid(), contents.getAmount(), contents.getComponentsPatch());
-        return List.of(new ViewGroup<>(List.of(new FluidView.Data(fluid, machine.fluidBox().capacity()))));
+        return List.of(new ViewGroup<>(List.of(new FluidView.Data(fluid, machine.fluidBox().displayCapacity()))));
     }
 
     @Override

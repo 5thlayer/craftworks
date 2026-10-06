@@ -81,6 +81,7 @@ final class AssemblerFluidTests {
         tests.test("an_ingredient_that_several_fluids_match_takes_the_first_and_refuses_another_while_the_box_holds_one", 20,
                 AssemblerFluidTests::multiFluidIngredient);
         tests.test("it_stops_at_1000_mb", 20, AssemblerFluidTests::stopsAtABoxFull);
+        tests.test("an_assembler_box_holding_more_than_its_capacity_keeps_its_fluid_displays_at_least_that_and_takes_no_more", 20, AssemblerFluidTests::overfullBoxIsKept);
         tests.test("a_tier_2_or_3_assembler_stops_pulling_at_4_crafts_worth_and_a_pipe_that_pushes_is_held_to_it", 20, AssemblerFluidTests::stopsAtFourCrafts);
         tests.test("changing_the_held_recipe_voids_the_box", 20, AssemblerFluidTests::voidsOnChange);
         tests.test("the_fluid_box_survives_a_save_and_reload", 20, AssemblerFluidTests::survivesReload);
@@ -241,6 +242,20 @@ final class AssemblerFluidTests {
             helper.setBlock(beyond(assembler.facing()), Blocks.AIR);
             helper.destroyBlock(AssemblerMachineTests.ORIGIN);
         }
+        helper.succeed();
+    }
+
+    /** A box saved under 0.4.2's 1,000 mB rule keeps its fluid under a 40 mB one, displays at least that, and takes no more. */
+    private static void overfullBoxIsKept(GameTestHelper helper) {
+        Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
+        AssemblerMachineTests.hold(assembler, WATER_SMALL);
+        assembler.machine().fluidBox().set(new FluidStack(Fluids.WATER, 1000));
+        helper.assertTrue(assembler.machine().fluidBox().capacity() == 40, "the box holds " + assembler.machine().fluidBox().capacity());
+        helper.assertTrue(assembler.machine().fluidBox().displayCapacity() >= 1000, "the box displays " + assembler.machine().fluidBox().displayCapacity() + " for 1000 mB");
+        helper.assertTrue(inBox(assembler) == 1000, "an overfull box lost fluid");
+        ResourceHandler<FluidResource> face = helper.getLevel().getCapability(Capabilities.Fluid.BLOCK,
+                helper.absolutePos(beyond(assembler.facing()).relative(assembler.facing().getOpposite())), assembler.facing());
+        helper.assertTrue(face != null && insert(face, Fluids.WATER, 100) == 0, "an overfull box took more");
         helper.succeed();
     }
 

@@ -61,6 +61,14 @@ public final class FluidMachineFluids extends FluidStacksResourceHandler {
         return description.isInput(box) ? owner.inputCapacity(description.binding(box)) : owner.outputCapacity(description.binding(box));
     }
 
+    /**
+     * What box {@code box} reports as its volume for display, in mB: its capacity, or what it holds if that is
+     * more, as a box saved under older rules can. Only a display reads this; an overfull box takes nothing more in.
+     */
+    public int displayCapacity(int box) {
+        return Math.max(capacity(box), getAmountAsInt(box));
+    }
+
     @Override
     protected int getCapacity(int index, FluidResource resource) {
         return capacity(index);

@@ -47,7 +47,7 @@ public final class AssemblerMenu extends HeldMachineMenu<AssemblerBlockEntity> {
 
     /** Server side, over the machine's own inventory. */
     static AssemblerMenu open(int containerId, Inventory playerInventory, AssemblerBlockEntity machine) {
-        ContainerData data = data(machine, DATA_COUNT, index -> index == DATA_CAPACITY ? machine.fluidBox().capacity()
+        ContainerData data = data(machine, DATA_COUNT, index -> index == DATA_CAPACITY ? machine.fluidBox().displayCapacity()
                 : fluidData(machine.fluidBox().contents(), index - DATA_FLUID));
         return new AssemblerMenu(containerId, playerInventory, machine, machine.getBlockPos(), machine.inventory(), data);
     }

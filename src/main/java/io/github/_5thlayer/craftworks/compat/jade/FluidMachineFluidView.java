@@ -41,7 +41,7 @@ final class FluidMachineFluidView implements IServerExtensionProvider<FluidView.
             JadeFluidObject fluid = contents.isEmpty()
                     ? JadeFluidObject.empty()
                     : JadeFluidObject.of(contents.getFluid(), contents.getAmount(), contents.getComponentsPatch());
-            bars.add(new FluidView.Data(fluid, machine.fluids().capacity(box)));
+            bars.add(new FluidView.Data(fluid, machine.fluids().displayCapacity(box)));
         }
         return bars.isEmpty() ? List.of() : List.of(new ViewGroup<>(bars));
     }

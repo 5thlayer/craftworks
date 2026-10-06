@@ -59,7 +59,7 @@ public final class FluidMachineMenu extends HeldMachineMenu<FluidMachineBlockEnt
             if (index < capacities) {
                 return fluidData(machine.fluids().contents((index - DATA_BOXES) / 2), (index - DATA_BOXES) % 2);
             }
-            return machine.fluids().capacity(index - capacities);
+            return machine.fluids().displayCapacity(index - capacities);
         });
         return new FluidMachineMenu(menuType, containerId, playerInventory, machine, machine.getBlockPos(), description,
                 machine.inventory(), data);
