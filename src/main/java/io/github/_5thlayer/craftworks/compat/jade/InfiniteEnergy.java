@@ -9,6 +9,7 @@ import io.github._5thlayer.craftworks.Craftworks;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import snownee.jade.api.Accessor;
+import snownee.jade.api.theme.IThemeHelper;
 import snownee.jade.api.view.ClientViewGroup;
 import snownee.jade.api.view.EnergyView;
 import snownee.jade.api.view.IClientExtensionProvider;
@@ -34,7 +35,8 @@ final class InfiniteEnergy implements IServerExtensionProvider<EnergyView.Data>,
     public List<ClientViewGroup<EnergyView>> getClientGroups(Accessor<?> accessor, List<ViewGroup<EnergyView.Data>> groups) {
         EnergyView view = new EnergyView("", "");
         view.ratio = 1;
-        view.overrideText = Component.translatable("craftworks.jade.infinite_energy");
+        // In the theme's info colour, as Jade draws its own energy text; an override is drawn as given.
+        view.overrideText = IThemeHelper.get().info(Component.translatable("craftworks.jade.infinite_energy"));
         return List.of(new ClientViewGroup<>(List.of(view)));
     }
 

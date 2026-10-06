@@ -11,6 +11,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import snownee.jade.api.Accessor;
 import snownee.jade.api.fluid.JadeFluidObject;
+import snownee.jade.api.theme.IThemeHelper;
+import snownee.jade.api.ui.IDisplayHelper;
 import snownee.jade.api.view.ClientViewGroup;
 import snownee.jade.api.view.FluidView;
 import snownee.jade.api.view.IClientExtensionProvider;
@@ -41,9 +43,10 @@ final class InfiniteFluid implements IServerExtensionProvider<FluidView.Data>, I
         FluidView view = FluidView.readDefault(data);
         JadeFluidObject fluid = data.fluids().getFirst();
         view.ratio = fluid.isEmpty() ? 0 : 1;
-        view.overrideText = fluid.isEmpty()
+        // In the theme's info colour, as Jade draws its own fluid text; an override is drawn as given.
+        view.overrideText = IThemeHelper.get().info(fluid.isEmpty()
                 ? Component.translatable("craftworks.jade.no_fluid")
-                : Component.translatable("craftworks.jade.infinite_fluid", fluid.getDisplayName());
+                : Component.translatable("craftworks.jade.infinite_fluid", IDisplayHelper.get().stripColor(fluid.getDisplayName())));
         return List.of(new ClientViewGroup<>(List.of(view)));
     }
 
