@@ -123,7 +123,7 @@ final class AssemblerMachineTests {
         tests.test("inserts_are_filtered_to_the_held_recipe_and_capped_by_the_overload_limit", 20, AssemblerMachineTests::filteredAndCapped);
         tests.test("a_higher_tier_placed_over_an_assembler_swaps_it_whole_and_a_lower_one_swaps_it_back", 20, AssemblerMachineTests::fastReplace);
         tests.test("the_held_recipe_and_contents_survive_a_save_and_reload", 20, AssemblerMachineTests::survivesReload);
-        tests.test("the_open_assemblers_held_recipe_crosses_to_the_client", 20, AssemblerMachineTests::heldCrossesTheWire);
+        tests.test("the_open_assemblers_held_recipe_crosses_to_the_client", 20, AssemblerMachineTests::heldReachesTheClient);
         tests.test("the_assemblers_energy_above_a_short_crosses_to_the_client_whole", 20, AssemblerMachineTests::energyReachesTheClient);
         tests.test("each_tier_starts_from_its_default_speed_power_and_buffer", 20, AssemblerMachineTests::configDefaults);
         tests.test("craftworks_names_no_wireworks_pipeworks_or_factoryworks_type", 20, AssemblerMachineTests::namesNoSiblingType);
@@ -480,7 +480,7 @@ final class AssemblerMachineTests {
     }
 
     /** The screen is ghosted from a packet, so its codec round-trips and the menu sends it from its own tick. */
-    private static void heldCrossesTheWire(GameTestHelper helper) {
+    private static void heldReachesTheClient(GameTestHelper helper) {
         Placed assembler = place(helper, AssemblerTier.ONE);
         hold(assembler, SAPLING);
         var recipe = HeldRecipes.find(helper.getLevel(), SAPLING).orElseThrow().value();
