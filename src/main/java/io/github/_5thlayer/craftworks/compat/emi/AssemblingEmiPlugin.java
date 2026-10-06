@@ -20,8 +20,7 @@ import io.github._5thlayer.craftworks.assembler.AssemblingRecipeIds;
 import io.github._5thlayer.craftworks.assembler.ReadyRecipeIds;
 import io.github._5thlayer.craftworks.compat.ConfiguredTabs;
 import io.github._5thlayer.craftworks.machine.Assemblers;
-import io.github._5thlayer.craftworks.machine.ChemicalPlants;
-import io.github._5thlayer.craftworks.machine.OilRefineries;
+import io.github._5thlayer.craftworks.machine.FluidMachines;
 import io.github._5thlayer.craftworks.machine.MachineKind;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
 import io.github._5thlayer.craftworks.machine.client.FluidMachineScreen;
@@ -107,8 +106,9 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
         }
         registry.addRecipeHandler(null, new PersonalAssemblerEmiHandler());
         registry.addRecipeHandler(Assemblers.MENU.get(), new HeldMachineEmiHandler<>(MachineKind.ASSEMBLER));
-        registry.addRecipeHandler(ChemicalPlants.MENU.get(), new HeldMachineEmiHandler<>(MachineKind.CHEMICAL_PLANT));
-        registry.addRecipeHandler(OilRefineries.MENU.get(), new HeldMachineEmiHandler<>(MachineKind.OIL_REFINERY));
+        for (var machine : FluidMachines.all()) {
+            registry.addRecipeHandler(machine.menu().get(), new HeldMachineEmiHandler<>(machine.machine().kind()));
+        }
         registry.addStackProvider(AssemblerScreen.class, AssemblingEmiPlugin::ghostAt);
         registry.addStackProvider(FluidMachineScreen.class, AssemblingEmiPlugin::ghostAt);
         for (MachineKind machine : MachineKind.values()) {

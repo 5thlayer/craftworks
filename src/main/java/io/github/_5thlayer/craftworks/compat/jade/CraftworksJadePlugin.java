@@ -5,8 +5,7 @@ package io.github._5thlayer.craftworks.compat.jade;
 
 import io.github._5thlayer.craftworks.machine.AssemblerBlock;
 import io.github._5thlayer.craftworks.machine.AssemblerBlockEntity;
-import io.github._5thlayer.craftworks.machine.ChemicalPlantBlock;
-import io.github._5thlayer.craftworks.machine.OilRefineryBlock;
+import io.github._5thlayer.craftworks.machine.FluidMachineBlock;
 import io.github._5thlayer.craftworks.machine.FluidMachineBlockEntity;
 import io.github._5thlayer.craftworks.machine.CreativeEnergySourceBlockEntity;
 import io.github._5thlayer.craftworks.machine.CreativeFluidSourceBlockEntity;
@@ -43,8 +42,7 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
     @Override
     public void registerClient(IWailaClientRegistration registration) {
         registration.registerBlockComponent(HeldMachineReport.Client.INSTANCE, AssemblerBlock.class);
-        registration.registerBlockComponent(HeldMachineReport.Client.INSTANCE, ChemicalPlantBlock.class);
-        registration.registerBlockComponent(HeldMachineReport.Client.INSTANCE, OilRefineryBlock.class);
+        registration.registerBlockComponent(HeldMachineReport.Client.INSTANCE, FluidMachineBlock.class);
         registration.registerEnergyStorageClient(InfiniteEnergy.INSTANCE);
         registration.registerFluidStorageClient(InfiniteFluid.INSTANCE);
         registration.registerFluidStorageClient(AssemblerFluid.INSTANCE);

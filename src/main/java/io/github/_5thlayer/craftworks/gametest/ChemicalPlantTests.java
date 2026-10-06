@@ -14,13 +14,13 @@ import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.gametest.AssemblerMachineTests.FakeBuilder;
 import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.MachineState;
-import io.github._5thlayer.craftworks.machine.ChemicalPlantBlock;
+import io.github._5thlayer.craftworks.machine.FluidMachineBlock;
 import io.github._5thlayer.craftworks.machine.FluidMachine;
 import io.github._5thlayer.craftworks.machine.FluidMachineBlockEntity;
 import io.github._5thlayer.craftworks.machine.FluidMachineFluids;
 import io.github._5thlayer.craftworks.machine.FluidMachineMenu;
 import io.github._5thlayer.craftworks.machine.ChemicalPlantDefaults;
-import io.github._5thlayer.craftworks.machine.ChemicalPlants;
+import io.github._5thlayer.craftworks.machine.FluidMachines;
 import io.github._5thlayer.craftworks.machine.HoldVerdict;
 import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
 import net.minecraft.core.BlockPos;
@@ -178,7 +178,7 @@ final class ChemicalPlantTests {
     }
 
     private static List<BlockPos> footprint(GameTestHelper helper, Direction facing) {
-        return ChemicalPlants.footprint().positions(helper.absolutePos(ORIGIN), facing);
+        return FluidMachines.CHEMICAL_PLANT.footprint().positions(helper.absolutePos(ORIGIN), facing);
     }
 
     static Placed place(GameTestHelper helper) {
@@ -187,7 +187,7 @@ final class ChemicalPlantTests {
 
     /** Placed facing this way: a footprint faces opposite the player who lays it. */
     static Placed place(GameTestHelper helper, Direction facing) {
-        return placeItem(helper, new ItemStack(ChemicalPlants.ITEM.get()), facing);
+        return placeItem(helper, new ItemStack(FluidMachines.CHEMICAL_PLANT.item().get()), facing);
     }
 
     /** Places the stack by a click on the floor under the origin, failing unless the whole footprint stands. */
@@ -199,7 +199,7 @@ final class ChemicalPlantTests {
         BlockPos floor = helper.absolutePos(ORIGIN.below());
         player.gameMode.useItemOn(player, helper.getLevel(), stack, InteractionHand.MAIN_HAND,
                 new BlockHitResult(Vec3.atCenterOf(floor).relative(Direction.UP, 0.5), Direction.UP, floor, false));
-        var footprint = ChemicalPlants.footprint();
+        var footprint = FluidMachines.CHEMICAL_PLANT.footprint();
         List<BlockPos> positions = footprint(helper, facing);
         helper.assertTrue(positions.size() == 18, "a 3x2x3 footprint has " + positions.size() + " blocks");
         for (int i = 0; i < positions.size(); i++) {
@@ -451,15 +451,15 @@ final class ChemicalPlantTests {
 
     private static void standsWholeAndBreaksAsOne(GameTestHelper helper, Direction facing) {
         Placed plant = place(helper, facing);
-        helper.assertTrue(helper.getBlockState(ORIGIN).getBlock() == ChemicalPlants.BLOCK.get(), "the origin is " + helper.getBlockState(ORIGIN));
-        helper.assertTrue(helper.getBlockState(ORIGIN).getValue(ChemicalPlantBlock.FACING) == facing, "the origin faces " + helper.getBlockState(ORIGIN));
+        helper.assertTrue(helper.getBlockState(ORIGIN).getBlock() == FluidMachines.CHEMICAL_PLANT.block().get(), "the origin is " + helper.getBlockState(ORIGIN));
+        helper.assertTrue(helper.getBlockState(ORIGIN).getValue(FluidMachineBlock.FACING) == facing, "the origin faces " + helper.getBlockState(ORIGIN));
         // A part, not the origin: the whole footprint goes with it.
         plant.player().gameMode.destroyBlock(helper.absolutePos(ORIGIN.above().relative(facing).relative(facing.getClockWise())));
         for (BlockPos pos : footprint(helper, facing)) {
             helper.assertTrue(helper.getLevel().getBlockState(pos).isAir(), "the break left " + helper.getLevel().getBlockState(pos) + " at " + pos);
         }
         List<ItemStack> drops = helper.getEntities(EntityType.ITEM).stream().map(ItemEntity::getItem).toList();
-        helper.assertTrue(drops.stream().filter(stack -> stack.is(ChemicalPlants.ITEM.get())).mapToInt(ItemStack::getCount).sum() == 1,
+        helper.assertTrue(drops.stream().filter(stack -> stack.is(FluidMachines.CHEMICAL_PLANT.item().get())).mapToInt(ItemStack::getCount).sum() == 1,
                 "the break dropped " + drops + ", not one Chemical Plant");
         helper.succeed();
     }
@@ -469,7 +469,7 @@ final class ChemicalPlantTests {
         hold(plant, FULL);
         plant.player().gameMode.destroyBlock(helper.absolutePos(ORIGIN));
         ItemStack item = helper.getEntities(EntityType.ITEM).stream().map(ItemEntity::getItem)
-                .filter(stack -> stack.is(ChemicalPlants.ITEM.get())).findFirst().orElse(ItemStack.EMPTY);
+                .filter(stack -> stack.is(FluidMachines.CHEMICAL_PLANT.item().get())).findFirst().orElse(ItemStack.EMPTY);
         helper.assertTrue(FULL.equals(item.get(Assemblers.HELD_RECIPE.get())), "the dropped item holds " + item.get(Assemblers.HELD_RECIPE.get()) + ", not the Held recipe");
         Placed again = placeItem(helper, item, Direction.EAST);
         helper.assertTrue(again.machine().heldRecipe().equals(Optional.of(FULL)), "the item placed again held " + again.machine().heldRecipe());
@@ -488,7 +488,7 @@ final class ChemicalPlantTests {
         List<ItemStack> drops = helper.getEntities(EntityType.ITEM).stream().map(ItemEntity::getItem).toList();
         helper.assertTrue(drops.stream().filter(stack -> stack.is(Items.IRON_INGOT)).mapToInt(ItemStack::getCount).sum() == 3, "the break dropped " + drops + ", not the 3 iron");
         helper.assertTrue(drops.stream().filter(stack -> stack.is(Items.GOLD_INGOT)).mapToInt(ItemStack::getCount).sum() == 5, "the break dropped " + drops + ", not the 5 gold");
-        Placed again = placeItem(helper, drops.stream().filter(stack -> stack.is(ChemicalPlants.ITEM.get())).findFirst().orElseThrow(), Direction.WEST);
+        Placed again = placeItem(helper, drops.stream().filter(stack -> stack.is(FluidMachines.CHEMICAL_PLANT.item().get())).findFirst().orElseThrow(), Direction.WEST);
         helper.assertTrue(again.machine().energy() == 0 && amount(again, 0) == 0 && amount(again, 2) == 0, "the energy or the fluid survived the break");
         helper.succeed();
     }
@@ -508,7 +508,7 @@ final class ChemicalPlantTests {
             helper.assertTrue(connection.block().getY() == ORIGIN.getY(), "a connection is above the bottom layer: " + connection);
             helper.assertTrue(!connection.block().equals(ORIGIN.relative(connection.side())), "a connection stands at an edge's centre: " + connection);
         }
-        helper.assertTrue(helper.getBlockState(ORIGIN).getValue(ChemicalPlantBlock.FLUID_CONNECTIONS), "the origin does not show its rings");
+        helper.assertTrue(helper.getBlockState(ORIGIN).getValue(FluidMachineBlock.FLUID_CONNECTIONS), "the origin does not show its rings");
         helper.succeed();
     }
 
@@ -592,7 +592,7 @@ final class ChemicalPlantTests {
 
         hold(plant, id("gametest/plant_items_only"));
         helper.assertTrue(exposed(helper, plant.facing()).isEmpty(), "a recipe with no fluid gave connections at " + exposed(helper, plant.facing()));
-        helper.assertTrue(!helper.getBlockState(ORIGIN).getValue(ChemicalPlantBlock.FLUID_CONNECTIONS), "the origin shows rings with no fluid");
+        helper.assertTrue(!helper.getBlockState(ORIGIN).getValue(FluidMachineBlock.FLUID_CONNECTIONS), "the origin shows rings with no fluid");
 
         hold(plant, FULL);
         helper.assertTrue(exposed(helper, plant.facing()).size() == 4, "a fluid recipe gave connections at " + exposed(helper, plant.facing()));
@@ -606,7 +606,7 @@ final class ChemicalPlantTests {
         plant.machine().setHeldRecipe(STICK, plant.player());
         helper.assertTrue(exposed(helper, plant.facing()).isEmpty(), "a recipe the plant cannot run left connections at " + exposed(helper, plant.facing()));
         helper.assertTrue(pipe.getCapability() == null, "the cache did not see the connection go");
-        helper.assertTrue(!helper.getBlockState(ORIGIN).getValue(ChemicalPlantBlock.FLUID_CONNECTIONS), "the origin still shows its rings");
+        helper.assertTrue(!helper.getBlockState(ORIGIN).getValue(FluidMachineBlock.FLUID_CONNECTIONS), "the origin still shows its rings");
         helper.succeed();
     }
 
@@ -823,7 +823,7 @@ final class ChemicalPlantTests {
         TagValueOutput saved = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
         plant.machine().saveCustomOnly(saved);
 
-        FluidMachineBlockEntity loaded = ChemicalPlants.blockEntity(helper.absolutePos(ORIGIN), helper.getBlockState(ORIGIN));
+        FluidMachineBlockEntity loaded = FluidMachines.CHEMICAL_PLANT.blockEntity(helper.absolutePos(ORIGIN), helper.getBlockState(ORIGIN));
         loaded.setLevel(helper.getLevel());
         loaded.loadCustomOnly(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), saved.buildResult()));
         helper.assertTrue(loaded.heldRecipe().equals(Optional.of(FULL)), "the Held recipe read back as " + loaded.heldRecipe());
@@ -846,7 +846,7 @@ final class ChemicalPlantTests {
         plant.machine().fluids().set(2, new FluidStack(Fluids.WATER, 1700));
         EnergyHandlerUtil.move(AssemblerMachineTests.supply(), plant.energy(Direction.UP), 40_000, null);
 
-        FluidMachineMenu client = AssemblerMachineTests.openOnTheClient(helper, ChemicalPlants.MENU.get(), AdvancedContainerSetDataPayload.TYPE);
+        FluidMachineMenu client = AssemblerMachineTests.openOnTheClient(helper, FluidMachines.CHEMICAL_PLANT.menu().get(), AdvancedContainerSetDataPayload.TYPE);
         helper.assertTrue(client.fluid(0).getFluid() == Fluids.WATER && client.fluid(0).getAmount() == 400, "the screen shows " + client.fluid(0) + " in box 1");
         helper.assertTrue(client.fluid(1).getFluid() == Fluids.LAVA && client.fluid(1).getAmount() == 25, "the screen shows " + client.fluid(1) + " in box 2");
         helper.assertTrue(client.fluid(2).getAmount() == 1700 && client.fluid(3).isEmpty(), "the screen shows " + client.fluid(2) + " and " + client.fluid(3));

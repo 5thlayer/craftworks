@@ -15,8 +15,7 @@ import io.github._5thlayer.craftworks.machine.MachineKind;
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.FluidMachineMenu;
-import io.github._5thlayer.craftworks.machine.ChemicalPlants;
-import io.github._5thlayer.craftworks.machine.OilRefineries;
+import io.github._5thlayer.craftworks.machine.FluidMachines;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
 import io.github._5thlayer.craftworks.machine.client.FluidMachineScreen;
 import io.github._5thlayer.craftworks.machine.client.HeldMachineScreen;
@@ -109,16 +108,16 @@ public final class AssemblingJeiPlugin implements IModPlugin {
         }
     }
 
-    /** With an Assembler, a Chemical Plant or an Oil Refinery open, the recipe's {@code +} sets its Held recipe (see {@link HeldMachineTransferHandler}). */
+    /** With an Assembler or a fluid machine open, the recipe's {@code +} sets its Held recipe (see {@link HeldMachineTransferHandler}). */
     @Override
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
         for (MachineKind machine : MachineKind.values()) {
             registration.addRecipeTransferHandler(
                     new HeldMachineTransferHandler<>(AssemblerMenu.class, Assemblers.MENU.get(), tab(machine)), tab(machine));
-            registration.addRecipeTransferHandler(
-                    new HeldMachineTransferHandler<>(FluidMachineMenu.class, ChemicalPlants.MENU.get(), tab(machine)), tab(machine));
-            registration.addRecipeTransferHandler(
-                    new HeldMachineTransferHandler<>(FluidMachineMenu.class, OilRefineries.MENU.get(), tab(machine)), tab(machine));
+            for (var fluidMachine : FluidMachines.all()) {
+                registration.addRecipeTransferHandler(
+                        new HeldMachineTransferHandler<>(FluidMachineMenu.class, fluidMachine.menu().get(), tab(machine)), tab(machine));
+            }
         }
     }
 

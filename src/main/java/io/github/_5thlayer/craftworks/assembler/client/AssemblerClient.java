@@ -10,8 +10,7 @@ import io.github._5thlayer.craftworks.assembler.PlanQueueView;
 import io.github._5thlayer.craftworks.assembler.PersonalAssembler;
 import io.github._5thlayer.craftworks.assembler.ReadyRecipeIds;
 import io.github._5thlayer.craftworks.machine.Assemblers;
-import io.github._5thlayer.craftworks.machine.ChemicalPlants;
-import io.github._5thlayer.craftworks.machine.OilRefineries;
+import io.github._5thlayer.craftworks.machine.FluidMachines;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
 import io.github._5thlayer.craftworks.machine.client.FluidMachineScreen;
 import io.github._5thlayer.craftworks.network.QueueSyncPacket;
@@ -61,8 +60,7 @@ public final class AssemblerClient {
     private static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(PersonalAssembler.CRAFTING_PLAN.get(), CraftingPlanScreen::new);
         event.register(Assemblers.MENU.get(), AssemblerScreen::new);
-        event.register(ChemicalPlants.MENU.get(), FluidMachineScreen::new);
-        event.register(OilRefineries.MENU.get(), FluidMachineScreen::new);
+        FluidMachines.all().forEach(machine -> event.register(machine.menu().get(), FluidMachineScreen::new));
     }
 
     /** Above the hotbar in draw order, so the queue is not painted under it. */

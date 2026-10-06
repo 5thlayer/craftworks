@@ -92,6 +92,9 @@ public record FluidMachine(MachineKind kind, MachineDefaults defaults, int itemI
                     new Site(2, -1, Face.AHEAD), new Site(2, 1, Face.AHEAD),
                     new Site(-2, -2, Face.BEHIND), new Site(-2, 0, Face.BEHIND), new Site(-2, 2, Face.BEHIND)));
 
+    /** Every fluid machine, which the config, the tabs and the registrations walk. */
+    public static final List<FluidMachine> ALL = List.of(CHEMICAL_PLANT, OIL_REFINERY);
+
     // -- the item slots -------------------------------------------------------------------------
 
     /** The slot of the product, after the inputs, or {@link MachineSlots#NONE} if the machine has no product slot. */

@@ -22,7 +22,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.fluids.FluidStackTemplate;
@@ -181,9 +180,8 @@ public final class FluidMachineBlockEntity extends HeldMachineBlockEntity {
             }
         }
         BlockState state = getBlockState();
-        if (state.getBlock() instanceof FluidMachineBlock block && state.getValue(block.connectionsProperty()) != connected) {
-            BooleanProperty rings = block.connectionsProperty();
-            server.setBlock(worldPosition, state.setValue(rings, connected), Block.UPDATE_CLIENTS);
+        if (state.getBlock() instanceof FluidMachineBlock && state.getValue(FluidMachineBlock.FLUID_CONNECTIONS) != connected) {
+            server.setBlock(worldPosition, state.setValue(FluidMachineBlock.FLUID_CONNECTIONS, connected), Block.UPDATE_CLIENTS);
             for (Connection connection : connections()) {
                 server.invalidateCapabilities(connection.block());
             }

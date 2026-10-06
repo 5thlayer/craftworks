@@ -16,8 +16,8 @@ import io.github._5thlayer.craftworks.machine.FluidMachineBlockEntity;
 import io.github._5thlayer.craftworks.machine.FluidMachineMenu;
 import io.github._5thlayer.craftworks.machine.HoldVerdict;
 import io.github._5thlayer.craftworks.machine.MachineState;
-import io.github._5thlayer.craftworks.machine.OilRefineries;
-import io.github._5thlayer.craftworks.machine.OilRefineryBlock;
+import io.github._5thlayer.craftworks.machine.FluidMachines;
+import io.github._5thlayer.craftworks.machine.FluidMachineBlock;
 import io.github._5thlayer.craftworks.machine.OilRefineryDefaults;
 import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
 import net.minecraft.core.BlockPos;
@@ -101,7 +101,7 @@ final class OilRefineryTests {
     }
 
     /**
-     * The five connections of a refinery facing {@code facing}, as the issue gives them and not as the code does:
+     * The five connections of an Oil Refinery facing {@code facing}, as the issue gives them and not as the code does:
      * on the bottom layer, two at -1 and +1 along the edge it faces, then three at -2, 0 and +2 along the opposite
      * edge.
      */
@@ -140,11 +140,11 @@ final class OilRefineryTests {
     }
 
     private static List<BlockPos> footprint(GameTestHelper helper, Direction facing) {
-        return OilRefineries.footprint().positions(helper.absolutePos(ORIGIN), facing);
+        return FluidMachines.OIL_REFINERY.footprint().positions(helper.absolutePos(ORIGIN), facing);
     }
 
     private static Placed place(GameTestHelper helper, Direction facing) {
-        return placeItem(helper, new ItemStack(OilRefineries.ITEM.get()), facing);
+        return placeItem(helper, new ItemStack(FluidMachines.OIL_REFINERY.item().get()), facing);
     }
 
     /** Places the stack by a click on the floor under the origin, failing unless the whole footprint stands. */
@@ -156,7 +156,7 @@ final class OilRefineryTests {
         BlockPos floor = helper.absolutePos(ORIGIN.below());
         player.gameMode.useItemOn(player, helper.getLevel(), stack, InteractionHand.MAIN_HAND,
                 new BlockHitResult(Vec3.atCenterOf(floor).relative(Direction.UP, 0.5), Direction.UP, floor, false));
-        var footprint = OilRefineries.footprint();
+        var footprint = FluidMachines.OIL_REFINERY.footprint();
         List<BlockPos> positions = footprint(helper, facing);
         helper.assertTrue(positions.size() == 75, "a 5x5x3 footprint has " + positions.size() + " blocks, not 75 (the origin and 74 parts)");
         for (int i = 0; i < positions.size(); i++) {
@@ -244,7 +244,7 @@ final class OilRefineryTests {
     // -- the craft ------------------------------------------------------------------------------
 
     /**
-     * Water at one connection, lava at another and a drain at each of the other three: the refinery fills its two
+     * Water at one connection, lava at another and a drain at each of the other three: the Oil Refinery fills its two
      * input boxes by the recipe's order, crafts in the recipe's 20 ticks at speed 1, and pushes its three results
      * out through the connections.
      */
@@ -311,10 +311,10 @@ final class OilRefineryTests {
                 refinery.machine().serverTick(helper.getLevel());
             }
             helper.assertTrue(refinery.machine().state() == MachineState.OUTPUT_FULL,
-                    "a refinery with output box " + (out + 1) + " full reported " + refinery.machine().state());
+                    "an Oil Refinery with output box " + (out + 1) + " full reported " + refinery.machine().state());
             helper.assertTrue(refinery.machine().energy() == energy && refinery.machine().craftProgress() == 0
                             && amount(refinery, 0) == water && amount(refinery, 1) == lava && amount(refinery, box) == OUTPUT_VOLUME[out],
-                    "a refinery with output box " + (out + 1) + " full went on: progress " + refinery.machine().craftProgress());
+                    "an Oil Refinery with output box " + (out + 1) + " full went on: progress " + refinery.machine().craftProgress());
 
             // A drain at a connection: the box empties through it, and the craft goes on.
             drain(helper, at.get(3));
@@ -336,7 +336,7 @@ final class OilRefineryTests {
         Placed refinery = place(helper, Direction.WEST);
         expect(refinery, STICK, HoldVerdict.WRONG_CATEGORY);
         expect(refinery, CHEMISTRY, HoldVerdict.WRONG_CATEGORY);
-        // The refinery's own recipe is an Assembling recipe, in crafting.
+        // The Oil Refinery's own recipe is an Assembling recipe, in crafting.
         expect(refinery, ITS_OWN_RECIPE, HoldVerdict.WRONG_CATEGORY);
         expect(refinery, WITH_ITEM, HoldVerdict.HAS_ITEMS);
         expect(refinery, ITEM_RESULT, HoldVerdict.HAS_ITEMS);
@@ -368,8 +368,8 @@ final class OilRefineryTests {
 
     private static void standsWholeAndBreaksAsOne(GameTestHelper helper, Direction facing) {
         Placed refinery = place(helper, facing);
-        helper.assertTrue(helper.getBlockState(ORIGIN).getBlock() == OilRefineries.BLOCK.get(), "the origin is " + helper.getBlockState(ORIGIN));
-        helper.assertTrue(helper.getBlockState(ORIGIN).getValue(OilRefineryBlock.FACING) == facing, "the origin faces " + helper.getBlockState(ORIGIN));
+        helper.assertTrue(helper.getBlockState(ORIGIN).getBlock() == FluidMachines.OIL_REFINERY.block().get(), "the origin is " + helper.getBlockState(ORIGIN));
+        helper.assertTrue(helper.getBlockState(ORIGIN).getValue(FluidMachineBlock.FACING) == facing, "the origin faces " + helper.getBlockState(ORIGIN));
         // The far top corner, a part and not the origin: the whole footprint goes with it.
         BlockPos corner = ORIGIN.above(2).relative(facing, 2).relative(facing.getClockWise(), 2);
         refinery.player().gameMode.destroyBlock(helper.absolutePos(corner));
@@ -377,7 +377,7 @@ final class OilRefineryTests {
             helper.assertTrue(helper.getLevel().getBlockState(pos).isAir(), "the break left " + helper.getLevel().getBlockState(pos) + " at " + pos);
         }
         List<ItemStack> drops = helper.getEntities(EntityType.ITEM).stream().map(ItemEntity::getItem).toList();
-        helper.assertTrue(drops.stream().filter(stack -> stack.is(OilRefineries.ITEM.get())).mapToInt(ItemStack::getCount).sum() == 1,
+        helper.assertTrue(drops.stream().filter(stack -> stack.is(FluidMachines.OIL_REFINERY.item().get())).mapToInt(ItemStack::getCount).sum() == 1,
                 "the break dropped " + drops + ", not one Oil Refinery");
         helper.succeed();
     }
@@ -387,7 +387,7 @@ final class OilRefineryTests {
         hold(refinery, FULL);
         refinery.player().gameMode.destroyBlock(helper.absolutePos(ORIGIN));
         List<ItemStack> drops = helper.getEntities(EntityType.ITEM).stream().map(ItemEntity::getItem).toList();
-        ItemStack dropped = drops.stream().filter(stack -> stack.is(OilRefineries.ITEM.get())).findFirst().orElse(ItemStack.EMPTY);
+        ItemStack dropped = drops.stream().filter(stack -> stack.is(FluidMachines.OIL_REFINERY.item().get())).findFirst().orElse(ItemStack.EMPTY);
         helper.assertTrue(!dropped.isEmpty(), "the break dropped " + drops);
         Placed again = placeItem(helper, dropped, Direction.EAST);
         helper.assertTrue(again.machine().heldRecipe().equals(Optional.of(FULL)), "the placed item holds " + again.machine().heldRecipe());
@@ -398,19 +398,19 @@ final class OilRefineryTests {
 
     private static void connectionsFollowFacing(GameTestHelper helper, Direction facing) {
         Placed refinery = place(helper, facing);
-        helper.assertTrue(exposed(helper, facing).isEmpty(), "a refinery with no recipe answered a fluid lookup at " + exposed(helper, facing));
+        helper.assertTrue(exposed(helper, facing).isEmpty(), "an Oil Refinery with no recipe answered a fluid lookup at " + exposed(helper, facing));
         hold(refinery, FULL);
         Set<String> expected = faces(facing);
-        helper.assertTrue(expected.size() == 5, "a refinery has five connections, not " + expected);
+        helper.assertTrue(expected.size() == 5, "an Oil Refinery has five connections, not " + expected);
         helper.assertTrue(exposed(helper, facing).equals(expected),
                 "facing " + facing + " the fluid capability answered at " + exposed(helper, facing) + ", not at " + expected);
-        // On the bottom layer, on the two opposite edges: two of them on the one the refinery faces.
+        // On the bottom layer, on the two opposite edges: two of them on the one the Oil Refinery faces.
         for (Connection connection : connections(facing)) {
             helper.assertTrue(connection.block().getY() == ORIGIN.getY(), "a connection is above the bottom layer: " + connection);
         }
         helper.assertTrue(connections(facing).stream().filter(connection -> connection.side() == facing).count() == 2,
-                "two connections face the way the refinery does");
-        helper.assertTrue(helper.getBlockState(ORIGIN).getValue(OilRefineryBlock.FLUID_CONNECTIONS), "the origin does not show its rings");
+                "two connections face the way the Oil Refinery does");
+        helper.assertTrue(helper.getBlockState(ORIGIN).getValue(FluidMachineBlock.FLUID_CONNECTIONS), "the origin does not show its rings");
         helper.succeed();
     }
 
@@ -444,7 +444,7 @@ final class OilRefineryTests {
                 helper.assertTrue(items == null, "an item capability at " + pos + " " + side);
             }
         }
-        helper.assertTrue(refinery.machine().inventory().size() == 0, "the refinery has " + refinery.machine().inventory().size() + " item slots");
+        helper.assertTrue(refinery.machine().inventory().size() == 0, "the Oil Refinery has " + refinery.machine().inventory().size() + " item slots");
         helper.succeed();
     }
 

@@ -10,8 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
-import io.github._5thlayer.craftworks.machine.ChemicalPlantDefaults;
-import io.github._5thlayer.craftworks.machine.OilRefineryDefaults;
+import io.github._5thlayer.craftworks.machine.FluidMachine;
 import io.github._5thlayer.craftworks.machine.MachineDefaults;
 import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
 import net.minecraft.resources.Identifier;
@@ -46,7 +45,7 @@ public final class CraftworksConfig {
             ModConfigSpec.IntValue buffer, ModConfigSpec.ConfigValue<List<? extends String>> categories) {
     }
 
-    /** The figures of each machine that crafts, in the config's section for its block: the Assemblers' tiers, then the Chemical Plant and the Oil Refinery. */
+    /** The figures of each machine that crafts, in the config's section for its block: the Assemblers' tiers, then every fluid machine. */
     private static final Map<MachineDefaults, MachineSettings> MACHINES = new LinkedHashMap<>();
 
     static {
@@ -76,8 +75,7 @@ public final class CraftworksConfig {
                                 ? Identifier.tryParse(entry) != null
                                 : Identifier.isValidNamespace(entry)));
         List<MachineDefaults> machines = new ArrayList<>(List.of(AssemblerTier.values()));
-        machines.add(ChemicalPlantDefaults.INSTANCE);
-        machines.add(OilRefineryDefaults.INSTANCE);
+        FluidMachine.ALL.forEach(machine -> machines.add(machine.defaults()));
         for (MachineDefaults machine : machines) {
             builder.comment("The " + machine.blockName() + " block.").push(machine.blockName());
             ModConfigSpec.DoubleValue speed = builder
