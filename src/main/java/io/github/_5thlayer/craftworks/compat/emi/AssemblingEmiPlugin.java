@@ -3,6 +3,10 @@
 
 package io.github._5thlayer.craftworks.compat.emi;
 
+import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.Map;
+
 import dev.emi.emi.api.EmiEntrypoint;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
@@ -14,6 +18,7 @@ import dev.emi.emi.search.EmiSearch;
 import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.assembler.AssemblingRecipeIds;
 import io.github._5thlayer.craftworks.assembler.ReadyRecipeIds;
+import io.github._5thlayer.craftworks.compat.ConfiguredTabs;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.ChemicalPlants;
@@ -25,17 +30,20 @@ import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.Items;
 
 /**
- * Puts {@code craftworks:assembling} in EMI, in a category of its own. EMI has never heard of the type,
- * so without one its recipes are in no viewer at all.
+ * Puts {@code craftworks:assembling} in EMI, in a tab for each machine (ADR-0016): {@code craftworks:assembler}
+ * and {@code craftworks:chemical_plant}, each holding the recipes whose category its machine holds
+ * (see {@link io.github._5thlayer.craftworks.machine.MachineTabs}). EMI has never heard of the type,
+ * so without a category its recipes are in no viewer at all.
  *
  * <p>EMI finds this by its annotation and loads it only when EMI is installed; nothing else in the Mod
  * names an EMI type, so the Mod loads without it.
  *
- * <p>The Personal Assembler is the inventory screen rather than a block, so the Assemblers and the Chemical Plant
- * are the category's workstations; the crafter is only its icon, until the category has one of its own.
+ * <p>The Personal Assembler is the inventory screen rather than a block, so it is no workstation. Each
+ * machine is a workstation of its own tab only, all three Assembler tiers of the Assembler's. The tabs and
+ * workstations are read from the config as the recipe lists are built, on EMI's loading thread: nothing here
+ * touches the font or {@code RenderSystem}.
  *
  * <p>Fill Recipe reaches the Assembler through a handler on the player's inventory, which EMI keys under a
  * null menu type since {@code InventoryMenu} has none. So Fill Recipe queues from the inventory screen and
@@ -46,9 +54,12 @@ import net.minecraft.world.item.Items;
 @EmiEntrypoint
 public final class AssemblingEmiPlugin implements EmiPlugin {
 
-    public static final EmiRecipeCategory ASSEMBLING = new EmiRecipeCategory(
-            Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, CraftworksRecipes.ASSEMBLING),
-            EmiStack.of(Items.CRAFTER));
+    /** The Assembler's tab, {@code craftworks:assembler}, icon Assembler 1; built at registration, when the items exist. */
+    private static EmiRecipeCategory category(MachineKind machine) {
+        return new EmiRecipeCategory(Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, machine.tabName()),
+                EmiStack.of(machine == MachineKind.ASSEMBLER
+                        ? Assemblers.item(AssemblerTier.ONE).get() : ChemicalPlants.ITEM.get()));
+    }
 
     /**
      * Runs the search again when the recipe set syncs, so {@code @craftworks} lists what it makes after
@@ -80,19 +91,31 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
 
     @Override
     public void register(EmiRegistry registry) {
-        registry.addCategory(ASSEMBLING);
-        registry.getRecipeMap()
-                .byType(CraftworksRecipes.ASSEMBLING_TYPE.get())
-                .forEach(holder -> registry.addRecipe(new AssemblingEmiRecipe(ASSEMBLING, holder)));
+        Map<MachineKind, EmiRecipeCategory> tabs = new EnumMap<>(MachineKind.class);
+        for (MachineKind machine : MachineKind.values()) {
+            tabs.put(machine, category(machine));
+            registry.addCategory(tabs.get(machine));
+        }
+        var sorted = ConfiguredTabs.sort("EMI", registry.getRecipeMap().byType(CraftworksRecipes.ASSEMBLING_TYPE.get()),
+                holder -> holder.value().category());
+        var inAssembler = new HashSet<>(sorted.in(MachineKind.ASSEMBLER));
+        for (MachineKind machine : MachineKind.values()) {
+            for (var holder : sorted.in(machine)) {
+                // A recipe in both tabs keeps its own id in the Assembler's and gets a derived one in the plant's,
+                // since EMI keys a recipe by id (see AssemblingEmiRecipe).
+                boolean inAssemblerToo = machine == MachineKind.CHEMICAL_PLANT && inAssembler.contains(holder);
+                registry.addRecipe(new AssemblingEmiRecipe(tabs.get(machine), machine, holder, inAssemblerToo));
+            }
+        }
         registry.addRecipeHandler(null, new PersonalAssemblerEmiHandler());
         registry.addRecipeHandler(Assemblers.MENU.get(), new HeldMachineEmiHandler<>(MachineKind.ASSEMBLER));
         registry.addRecipeHandler(ChemicalPlants.MENU.get(), new HeldMachineEmiHandler<>(MachineKind.CHEMICAL_PLANT));
         registry.addStackProvider(AssemblerScreen.class, AssemblingEmiPlugin::ghostAt);
         registry.addStackProvider(ChemicalPlantScreen.class, AssemblingEmiPlugin::ghostAt);
         for (AssemblerTier tier : AssemblerTier.values()) {
-            registry.addWorkstation(ASSEMBLING, EmiStack.of(Assemblers.item(tier).get()));
+            registry.addWorkstation(tabs.get(MachineKind.ASSEMBLER), EmiStack.of(Assemblers.item(tier).get()));
         }
-        registry.addWorkstation(ASSEMBLING, EmiStack.of(ChemicalPlants.ITEM.get()));
+        registry.addWorkstation(tabs.get(MachineKind.CHEMICAL_PLANT), EmiStack.of(ChemicalPlants.ITEM.get()));
         AssemblingRecipeIds.onSync(AssemblingEmiPlugin::searchAgain);
         ReadyRecipeIds.onChange(AssemblingEmiPlugin::craftablesAgain);
     }

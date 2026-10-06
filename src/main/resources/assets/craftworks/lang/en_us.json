@@ -1,8 +1,10 @@
 {
-  "emi.category.craftworks.assembling": "Assembling",
+  "emi.category.craftworks.assembler": "Assembler",
+  "emi.category.craftworks.chemical_plant": "Chemical Plant",
   "emi.craftworks.assembling.seconds": "%ss",
   "emi.craftworks.assembling.category": "Category: %s",
-  "jei.category.craftworks.assembling": "Assembling",
+  "jei.category.craftworks.assembler": "Assembler",
+  "jei.category.craftworks.chemical_plant": "Chemical Plant",
   "jei.craftworks.assembling.seconds": "%ss",
   "jei.craftworks.assembling.category": "Category: %s",
   "craftworks.fill_recipe": "Assemble",

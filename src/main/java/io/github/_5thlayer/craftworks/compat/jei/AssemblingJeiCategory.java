@@ -8,6 +8,10 @@ import java.util.function.Supplier;
 
 import com.google.common.base.Suppliers;
 import io.github._5thlayer.craftworks.compat.RecipeRow;
+import io.github._5thlayer.craftworks.machine.AssemblerTier;
+import io.github._5thlayer.craftworks.machine.Assemblers;
+import io.github._5thlayer.craftworks.machine.ChemicalPlants;
+import io.github._5thlayer.craftworks.machine.MachineKind;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
@@ -22,7 +26,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -47,20 +50,24 @@ final class AssemblingJeiCategory implements IRecipeCategory<RecipeHolder<Assemb
 
     private final IDrawable icon;
     private final Supplier<Integer> width;
+    private final MachineKind machine;
 
-    AssemblingJeiCategory(IGuiHelper guiHelper, Supplier<Integer> width) {
+    /** The machine's tab: its title and icon, and the recipes it holds are the plugin's to add. */
+    AssemblingJeiCategory(IGuiHelper guiHelper, MachineKind machine, Supplier<Integer> width) {
+        this.machine = machine;
         this.width = Suppliers.memoize(width::get);
-        this.icon = guiHelper.createDrawableItemLike(Items.CRAFTER);
+        this.icon = guiHelper.createDrawableItemLike(machine == MachineKind.ASSEMBLER
+                ? Assemblers.item(AssemblerTier.ONE).get() : ChemicalPlants.ITEM.get());
     }
 
     @Override
     public IRecipeType<RecipeHolder<AssemblingRecipe>> getRecipeType() {
-        return AssemblingJeiPlugin.ASSEMBLING;
+        return AssemblingJeiPlugin.tab(machine);
     }
 
     @Override
     public Component getTitle() {
-        return Component.translatable("jei.category.craftworks.assembling");
+        return Component.translatable("jei.category.craftworks." + machine.tabName());
     }
 
     @Override

@@ -3,11 +3,16 @@
 
 package io.github._5thlayer.craftworks.compat.jei;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import io.github._5thlayer.craftworks.Craftworks;
+import io.github._5thlayer.craftworks.compat.ConfiguredTabs;
+import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.MachineGhosts;
+import io.github._5thlayer.craftworks.machine.MachineKind;
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.ChemicalPlantMenu;
@@ -25,6 +30,7 @@ import mezz.jei.api.recipe.types.IRecipeHolderType;
 import mezz.jei.api.runtime.IClickableIngredient;
 import mezz.jei.api.registration.IAdvancedRegistration;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
+import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.IRecipeTransferRegistration;
@@ -36,8 +42,10 @@ import net.neoforged.neoforge.client.event.RecipesReceivedEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
- * Puts {@code craftworks:assembling} in JEI, in a category of its own, with a recipe button that queues
- * on the Personal Assembler the way EMI's Fill Recipe does (#12, ADR-0004).
+ * Puts {@code craftworks:assembling} in JEI, in a tab for each machine (ADR-0016), {@code craftworks:assembler}
+ * and {@code craftworks:chemical_plant}, each holding the recipes its machine's categories name (see
+ * {@link io.github._5thlayer.craftworks.machine.MachineTabs}), read from the config as JEI builds its lists.
+ * Each has a recipe button that queues on the Personal Assembler the way EMI's Fill Recipe does (#12, ADR-0004).
  *
  * <p>JEI finds this by its annotation and loads it only when JEI is installed; nothing else in the Mod
  * names a JEI type, so the Mod loads without it.
@@ -50,8 +58,23 @@ import net.neoforged.neoforge.common.NeoForge;
 @JeiPlugin
 public final class AssemblingJeiPlugin implements IModPlugin {
 
-    static final IRecipeHolderType<AssemblingRecipe> ASSEMBLING =
-            IRecipeHolderType.create(Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, CraftworksRecipes.ASSEMBLING));
+    private static final Map<MachineKind, IRecipeHolderType<AssemblingRecipe>> TABS = new EnumMap<>(MachineKind.class);
+
+    static {
+        for (MachineKind machine : MachineKind.values()) {
+            TABS.put(machine, IRecipeHolderType.create(Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, machine.tabName())));
+        }
+    }
+
+    /** The machine's tab, {@code craftworks:assembler} or {@code craftworks:chemical_plant} (ADR-0016). */
+    static IRecipeHolderType<AssemblingRecipe> tab(MachineKind machine) {
+        return TABS.get(machine);
+    }
+
+    /** Whether the JEI category uid is one of the machines' tabs. */
+    static boolean isTab(Identifier uid) {
+        return TABS.values().stream().anyMatch(type -> type.getUid().equals(uid));
+    }
 
     private static volatile RecipeMap received = RecipeMap.EMPTY;
 
@@ -66,20 +89,36 @@ public final class AssemblingJeiPlugin implements IModPlugin {
 
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
-        registration.addRecipeCategories(new AssemblingJeiCategory(registration.getJeiHelpers().getGuiHelper(),
-                () -> AssemblingJeiCategory.widthOf(assemblingRecipes())));
+        for (MachineKind machine : MachineKind.values()) {
+            registration.addRecipeCategories(new AssemblingJeiCategory(registration.getJeiHelpers().getGuiHelper(), machine,
+                    () -> AssemblingJeiCategory.widthOf(ConfiguredTabs.current().sort(assemblingRecipes(), holder -> holder.value().category()).in(machine))));
+        }
     }
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
-        registration.addRecipes(ASSEMBLING, assemblingRecipes());
+        var sorted = ConfiguredTabs.sort("JEI", assemblingRecipes(), holder -> holder.value().category());
+        for (MachineKind machine : MachineKind.values()) registration.addRecipes(tab(machine), sorted.in(machine));
+    }
+
+    /** Each machine is a workstation of its own tab only, all three Assembler tiers of the Assembler's. */
+    @Override
+    public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
+        for (AssemblerTier tier : AssemblerTier.values()) {
+            registration.addCraftingStation(tab(MachineKind.ASSEMBLER), new ItemStack(Assemblers.item(tier).get()));
+        }
+        registration.addCraftingStation(tab(MachineKind.CHEMICAL_PLANT), new ItemStack(ChemicalPlants.ITEM.get()));
     }
 
     /** With an Assembler or a Chemical Plant open, the recipe's {@code +} sets its Held recipe (see {@link HeldMachineTransferHandler}). */
     @Override
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
-        registration.addRecipeTransferHandler(new HeldMachineTransferHandler<>(AssemblerMenu.class, Assemblers.MENU.get()), ASSEMBLING);
-        registration.addRecipeTransferHandler(new HeldMachineTransferHandler<>(ChemicalPlantMenu.class, ChemicalPlants.MENU.get()), ASSEMBLING);
+        for (MachineKind machine : MachineKind.values()) {
+            registration.addRecipeTransferHandler(
+                    new HeldMachineTransferHandler<>(AssemblerMenu.class, Assemblers.MENU.get(), tab(machine)), tab(machine));
+            registration.addRecipeTransferHandler(
+                    new HeldMachineTransferHandler<>(ChemicalPlantMenu.class, ChemicalPlants.MENU.get(), tab(machine)), tab(machine));
+        }
     }
 
     /** The Assembler and Chemical Plant screens' ghosts answer Recipe and Uses as a real stack does (see {@link #ghostAt}). */

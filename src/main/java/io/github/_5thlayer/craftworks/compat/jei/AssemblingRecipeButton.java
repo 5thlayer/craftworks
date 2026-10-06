@@ -47,7 +47,7 @@ public final class AssemblingRecipeButton implements IIconButtonController {
 
     /** A button for an Assembling recipe's layout, or none for any other. */
     static <T> IIconButtonController forLayout(IRecipeLayoutDrawable<T> layout) {
-        if (!layout.getRecipeCategory().getRecipeType().getUid().equals(AssemblingJeiPlugin.ASSEMBLING.getUid())) return null;
+        if (!AssemblingJeiPlugin.isTab(layout.getRecipeCategory().getRecipeType().getUid())) return null;
         if (!(layout.getRecipe() instanceof RecipeHolder<?> holder && holder.value() instanceof AssemblingRecipe)) {
             return null;
         }

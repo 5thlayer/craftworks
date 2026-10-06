@@ -44,8 +44,9 @@ public final class ReadyCraftables {
         if (predicate == null || ReadyRecipeIds.all().isEmpty()) return listed;
         Set<String> already = new HashSet<>();
         for (EmiIngredient entry : listed) {
-            if (entry instanceof EmiFavorite favorite && favorite.getRecipe() != null && favorite.getRecipe().getId() != null) {
-                already.add(favorite.getRecipe().getId().toString());
+            if (entry instanceof EmiFavorite favorite && favorite.getRecipe() != null
+                    && AssemblingEmiRecipe.recipeIdOf(favorite.getRecipe()) != null) {
+                already.add(AssemblingEmiRecipe.recipeIdOf(favorite.getRecipe()).toString());
             }
         }
         List<EmiIngredient> widened = new ArrayList<>(listed);

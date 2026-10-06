@@ -26,10 +26,13 @@ final class HeldMachineTransferHandler<M extends AbstractContainerMenu> implemen
 
     private final Class<M> menuClass;
     private final MenuType<M> menuType;
+    private final IRecipeType<RecipeHolder<AssemblingRecipe>> tab;
 
-    HeldMachineTransferHandler(Class<M> menuClass, MenuType<M> menuType) {
+    /** @param tab the machine's tab it is registered on: the one handler serves each of the two tabs */
+    HeldMachineTransferHandler(Class<M> menuClass, MenuType<M> menuType, IRecipeType<RecipeHolder<AssemblingRecipe>> tab) {
         this.menuClass = menuClass;
         this.menuType = menuType;
+        this.tab = tab;
     }
 
     @Override
@@ -44,7 +47,7 @@ final class HeldMachineTransferHandler<M extends AbstractContainerMenu> implemen
 
     @Override
     public IRecipeType<RecipeHolder<AssemblingRecipe>> getRecipeType() {
-        return AssemblingJeiPlugin.ASSEMBLING;
+        return tab;
     }
 
     @Override

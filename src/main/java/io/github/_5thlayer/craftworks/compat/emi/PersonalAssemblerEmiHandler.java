@@ -68,7 +68,7 @@ public final class PersonalAssemblerEmiHandler implements EmiRecipeHandler<Inven
      */
     @Override
     public boolean supportsRecipe(EmiRecipe recipe) {
-        Identifier id = recipe.getId();
+        Identifier id = AssemblingEmiRecipe.recipeIdOf(recipe);
         return id != null && AssemblingRecipeIds.contains(id.toString());
     }
 
@@ -86,7 +86,7 @@ public final class PersonalAssemblerEmiHandler implements EmiRecipeHandler<Inven
     @Override
     public boolean canCraft(EmiRecipe recipe, EmiCraftContext<InventoryMenu> context) {
         if (context.getType() != EmiCraftContext.Type.CRAFTABLE) return true;
-        Identifier id = recipe.getId();
+        Identifier id = AssemblingEmiRecipe.recipeIdOf(recipe);
         return id != null && ReadyRecipeIds.contains(id.toString());
     }
 
@@ -116,7 +116,7 @@ public final class PersonalAssemblerEmiHandler implements EmiRecipeHandler<Inven
      */
     @Override
     public boolean craft(EmiRecipe recipe, EmiCraftContext<InventoryMenu> context) {
-        Identifier id = recipe.getId();
+        Identifier id = AssemblingEmiRecipe.recipeIdOf(recipe);
         if (id == null) return false;
         FillRequest request = FillRequest.of(FillClick.button(), context.getAmount() == Integer.MAX_VALUE);
         ClientPacketDistributor.sendToServer(new FillRecipePacket(id, request));

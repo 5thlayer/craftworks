@@ -18,6 +18,11 @@ public enum MachineKind {
         this.langName = langName;
     }
 
+    /** The machine's recipe viewer tab, {@code craftworks:} this: {@code assembler} or {@code chemical_plant}. */
+    public String tabName() {
+        return langName;
+    }
+
     /** The machine's lang key ending in {@code suffix}, say {@code craftworks.assembler.fill_recipe}. */
     public String langKey(String suffix) {
         return "craftworks." + langName + "." + suffix;

@@ -16,7 +16,6 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
@@ -27,7 +26,8 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  * <p>{@link EmiRecipeHandler} directly, as {@link PersonalAssemblerEmiHandler} is: holding a recipe takes
  * no items, so the button stays lit with an empty inventory. Every Assembling recipe gets it, Hand-craftable
  * or not and Locked or not; whether the open machine takes it, and for this player, is server truth, and the
- * server refuses with a message rather than the button hiding the reason.
+ * server refuses with a message rather than the button hiding the reason. It shows on both machines' tabs,
+ * whichever the open machine holds (ADR-0016).
  */
 public final class HeldMachineEmiHandler<M extends AbstractContainerMenu> implements EmiRecipeHandler<M> {
 
@@ -47,7 +47,7 @@ public final class HeldMachineEmiHandler<M extends AbstractContainerMenu> implem
 
     @Override
     public boolean supportsRecipe(EmiRecipe recipe) {
-        return recipe.getCategory() == AssemblingEmiPlugin.ASSEMBLING && recipe.getId() != null;
+        return recipe instanceof AssemblingEmiRecipe;
     }
 
     @Override
@@ -64,9 +64,7 @@ public final class HeldMachineEmiHandler<M extends AbstractContainerMenu> implem
     /** Sends the recipe and hands the screen back to the Assembler or Chemical Plant, where the Held recipe is shown. */
     @Override
     public boolean craft(EmiRecipe recipe, EmiCraftContext<M> context) {
-        Identifier id = recipe.getId();
-        if (id == null) return false;
-        ClientPacketDistributor.sendToServer(new HoldRecipePacket(id));
+        ClientPacketDistributor.sendToServer(new HoldRecipePacket(AssemblingEmiRecipe.recipeIdOf(recipe)));
         return true;
     }
 }
