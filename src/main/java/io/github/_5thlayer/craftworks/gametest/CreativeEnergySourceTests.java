@@ -68,7 +68,7 @@ final class CreativeEnergySourceTests {
             }
         }
         // The first tick fills the buffer: the Assembler takes what it can hold, and the source gives it all.
-        int capacity = CraftworksConfig.assemblerBuffer(AssemblerTier.ONE);
+        int capacity = CraftworksConfig.buffer(AssemblerTier.ONE);
         helper.succeedWhen(() -> helper.assertTrue(assembler.machine().energy() == capacity,
                 "the Assembler held " + assembler.machine().energy() + " FE, not its " + capacity));
     }

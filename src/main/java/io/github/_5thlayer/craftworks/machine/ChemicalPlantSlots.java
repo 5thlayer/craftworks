@@ -15,6 +15,8 @@ public final class ChemicalPlantSlots {
 
     public static final int SIZE = INPUTS + 1;
 
+    public static final MachineSlots LAYOUT = new MachineSlots(SIZE, INPUTS, PRODUCT);
+
     private ChemicalPlantSlots() {
     }
 }

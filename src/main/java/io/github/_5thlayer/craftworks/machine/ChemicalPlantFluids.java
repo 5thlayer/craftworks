@@ -29,14 +29,14 @@ public final class ChemicalPlantFluids extends FluidStacksResourceHandler {
     /** What the machine says about its boxes. */
     interface Owner {
 
-        /** Whether input box {@code box} takes {@code resource}: it is the fluid ingredient bound to the box. */
-        boolean takesInput(int box, FluidResource resource);
+        /** Whether input box {@code n} takes {@code resource}: it is the Held recipe's {@code n}th fluid ingredient. */
+        boolean takesInput(int n, FluidResource resource);
 
-        /** Whether output box {@code box} takes {@code resource}: it is the fluid result bound to the box. */
-        boolean makesOutput(int box, FluidResource resource);
+        /** Whether output box {@code n} takes {@code resource}: it is the Held recipe's {@code n}th fluid result. */
+        boolean makesOutput(int n, FluidResource resource);
 
-        /** What output box {@code box} holds under the Held recipe, in mB. */
-        int outputCapacity(int box);
+        /** What output box {@code n} holds under the Held recipe, in mB. */
+        int outputCapacity(int n);
 
         void changed();
     }
@@ -52,6 +52,16 @@ public final class ChemicalPlantFluids extends FluidStacksResourceHandler {
         return box >= 0 && box < INPUTS;
     }
 
+    /** Which fluid ingredient or result {@code box} is bound to: {@code n} for input box {@code n} and for output box {@code n}. */
+    public static int binding(int box) {
+        return isInput(box) ? box : box - INPUTS;
+    }
+
+    /** Output box {@code n}, the box the Held recipe's {@code n}th fluid result goes in. */
+    public static int outputBox(int n) {
+        return INPUTS + n;
+    }
+
     /** What box {@code box} holds, empty when it is empty. */
     public FluidStack contents(int box) {
         return getResource(box).toStack(getAmountAsInt(box));
@@ -64,7 +74,7 @@ public final class ChemicalPlantFluids extends FluidStacksResourceHandler {
 
     /** What box {@code box} holds at most, in mB, as the Held recipe sizes it. */
     public int capacity(int box) {
-        return isInput(box) ? INPUT_CAPACITY : owner.outputCapacity(box - INPUTS);
+        return isInput(box) ? INPUT_CAPACITY : owner.outputCapacity(binding(box));
     }
 
     @Override
@@ -74,7 +84,7 @@ public final class ChemicalPlantFluids extends FluidStacksResourceHandler {
 
     @Override
     public boolean isValid(int index, FluidResource resource) {
-        return isInput(index) ? owner.takesInput(index, resource) : owner.makesOutput(index - INPUTS, resource);
+        return isInput(index) ? owner.takesInput(index, resource) : owner.makesOutput(binding(index), resource);
     }
 
     @Override

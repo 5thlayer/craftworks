@@ -16,12 +16,12 @@ import io.github._5thlayer.craftworks.assembler.AssemblingRecipeIds;
 import io.github._5thlayer.craftworks.assembler.ReadyRecipeIds;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.Assemblers;
-import io.github._5thlayer.craftworks.machine.AssemblerGhosts;
 import io.github._5thlayer.craftworks.machine.ChemicalPlants;
+import io.github._5thlayer.craftworks.machine.MachineKind;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
 import io.github._5thlayer.craftworks.machine.client.ChemicalPlantScreen;
+import io.github._5thlayer.craftworks.machine.client.HeldMachineScreen;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
-import java.util.Optional;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
@@ -68,21 +68,12 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
     }
 
     /**
-     * The ghost under the mouse on an Assembler's screen, as EMI's hovered stack, or none where there isn't
-     * one, so EMI's own slot lookup answers for a real stack. One item, whatever count the ghost is drawn
-     * with: Recipe and Uses ask about the item.
+     * The ghost under the mouse on an Assembler's or a Chemical Plant's screen, as EMI's hovered stack, or none
+     * where there isn't one, so EMI's own slot lookup answers for a real stack. One item, whatever count the
+     * ghost is drawn with: Recipe and Uses ask about the item.
      */
-    private static EmiStackInteraction ghostAt(AssemblerScreen screen, int mouseX, int mouseY) {
-        return interaction(screen.ghostAt(mouseX, mouseY));
-    }
-
-    /** The same on a Chemical Plant's screen. */
-    private static EmiStackInteraction ghostAt(ChemicalPlantScreen screen, int mouseX, int mouseY) {
-        return interaction(screen.ghostAt(mouseX, mouseY));
-    }
-
-    private static EmiStackInteraction interaction(Optional<AssemblerGhosts.Ghost> ghost) {
-        return ghost
+    private static EmiStackInteraction ghostAt(HeldMachineScreen<?> screen, int mouseX, int mouseY) {
+        return screen.ghostAt(mouseX, mouseY)
                 .map(shown -> new EmiStackInteraction(EmiStack.of(shown.stack().copyWithCount(1))))
                 .orElse(EmiStackInteraction.EMPTY);
     }
@@ -94,8 +85,8 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
                 .byType(CraftworksRecipes.ASSEMBLING_TYPE.get())
                 .forEach(holder -> registry.addRecipe(new AssemblingEmiRecipe(ASSEMBLING, holder)));
         registry.addRecipeHandler(null, new PersonalAssemblerEmiHandler());
-        registry.addRecipeHandler(Assemblers.MENU.get(), new AssemblerEmiHandler<>("craftworks.assembler.fill_recipe"));
-        registry.addRecipeHandler(ChemicalPlants.MENU.get(), new AssemblerEmiHandler<>("craftworks.chemical_plant.fill_recipe"));
+        registry.addRecipeHandler(Assemblers.MENU.get(), new HeldMachineEmiHandler<>(MachineKind.ASSEMBLER));
+        registry.addRecipeHandler(ChemicalPlants.MENU.get(), new HeldMachineEmiHandler<>(MachineKind.CHEMICAL_PLANT));
         registry.addStackProvider(AssemblerScreen.class, AssemblingEmiPlugin::ghostAt);
         registry.addStackProvider(ChemicalPlantScreen.class, AssemblingEmiPlugin::ghostAt);
         for (AssemblerTier tier : AssemblerTier.values()) {

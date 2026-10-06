@@ -13,12 +13,12 @@ import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.gametest.AssemblerMachineTests.FakeBuilder;
 import io.github._5thlayer.craftworks.machine.Assemblers;
-import io.github._5thlayer.craftworks.machine.AssemblerState;
+import io.github._5thlayer.craftworks.machine.MachineState;
 import io.github._5thlayer.craftworks.machine.ChemicalPlantBlock;
 import io.github._5thlayer.craftworks.machine.ChemicalPlantBlockEntity;
 import io.github._5thlayer.craftworks.machine.ChemicalPlantFluids;
 import io.github._5thlayer.craftworks.machine.ChemicalPlantMenu;
-import io.github._5thlayer.craftworks.machine.ChemicalPlantRates;
+import io.github._5thlayer.craftworks.machine.ChemicalPlantDefaults;
 import io.github._5thlayer.craftworks.machine.ChemicalPlantSlots;
 import io.github._5thlayer.craftworks.machine.ChemicalPlants;
 import io.github._5thlayer.craftworks.machine.HoldVerdict;
@@ -362,7 +362,7 @@ final class ChemicalPlantTests {
         }
         helper.assertTrue(count(plant, ChemicalPlantSlots.PRODUCT) == 3, "it made " + count(plant, ChemicalPlantSlots.PRODUCT) + " crafts, not the 3 the box holds");
         helper.assertTrue(amount(plant, 2) == 1800, "the output box holds " + amount(plant, 2) + " mB, not its 1800");
-        helper.assertTrue(plant.machine().state() == AssemblerState.OUTPUT_FULL, "a plant with a full output box reported " + plant.machine().state());
+        helper.assertTrue(plant.machine().state() == MachineState.OUTPUT_FULL, "a plant with a full output box reported " + plant.machine().state());
 
         // Stalled, it draws nothing, makes no progress and keeps its inputs.
         int energy = plant.machine().energy();
@@ -400,7 +400,7 @@ final class ChemicalPlantTests {
         plant.machine().inventory().set(ChemicalPlantSlots.PRODUCT, ItemResource.of(Items.GOLD_INGOT), 64);
         tick(plant, 30);
         helper.assertTrue(count(plant, ChemicalPlantSlots.PRODUCT) == 64 && count(plant, 0) == 1, "a craft went on with a full product slot");
-        helper.assertTrue(plant.machine().state() == AssemblerState.OUTPUT_FULL, "a plant with a full product slot reported " + plant.machine().state());
+        helper.assertTrue(plant.machine().state() == MachineState.OUTPUT_FULL, "a plant with a full product slot reported " + plant.machine().state());
         helper.assertTrue(amount(plant, 2) == 0, "output went into a box for a craft that never was");
         helper.succeed();
     }
@@ -752,11 +752,11 @@ final class ChemicalPlantTests {
     }
 
     private static void configDefaults(GameTestHelper helper) {
-        helper.assertTrue(CraftworksConfig.speed(ChemicalPlantRates.INSTANCE) == 1.0, "speed is " + CraftworksConfig.speed(ChemicalPlantRates.INSTANCE));
-        helper.assertTrue(CraftworksConfig.power(ChemicalPlantRates.INSTANCE) == 105.0, "power is " + CraftworksConfig.power(ChemicalPlantRates.INSTANCE));
-        helper.assertTrue(CraftworksConfig.buffer(ChemicalPlantRates.INSTANCE) == 50_000, "buffer is " + CraftworksConfig.buffer(ChemicalPlantRates.INSTANCE));
-        helper.assertTrue(CraftworksConfig.categories(ChemicalPlantRates.INSTANCE).equals(List.of(AssemblingCategory.CHEMISTRY)),
-                "categories are " + CraftworksConfig.categories(ChemicalPlantRates.INSTANCE));
+        helper.assertTrue(CraftworksConfig.speed(ChemicalPlantDefaults.INSTANCE) == 1.0, "speed is " + CraftworksConfig.speed(ChemicalPlantDefaults.INSTANCE));
+        helper.assertTrue(CraftworksConfig.power(ChemicalPlantDefaults.INSTANCE) == 105.0, "power is " + CraftworksConfig.power(ChemicalPlantDefaults.INSTANCE));
+        helper.assertTrue(CraftworksConfig.buffer(ChemicalPlantDefaults.INSTANCE) == 50_000, "buffer is " + CraftworksConfig.buffer(ChemicalPlantDefaults.INSTANCE));
+        helper.assertTrue(CraftworksConfig.categories(ChemicalPlantDefaults.INSTANCE).equals(List.of(AssemblingCategory.CHEMISTRY)),
+                "categories are " + CraftworksConfig.categories(ChemicalPlantDefaults.INSTANCE));
         helper.succeed();
     }
 }

@@ -14,7 +14,7 @@ import io.github._5thlayer.craftworks.machine.AssemblerBlock;
 import io.github._5thlayer.craftworks.machine.AssemblerBlockEntity;
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import io.github._5thlayer.craftworks.machine.AssemblerSlots;
-import io.github._5thlayer.craftworks.machine.AssemblerState;
+import io.github._5thlayer.craftworks.machine.MachineState;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.HoldVerdict;
@@ -134,7 +134,7 @@ final class AssemblerFluidTests {
         TestTank.Entity water = tank(helper, beyond(assembler.facing()), Fluids.WATER, 5000);
         AssemblerMachineTests.hold(assembler, WATER_CRAFT);
         AssemblerMachineTests.insert(assembler, 0, Items.DIRT, 2);
-        helper.assertTrue(assembler.machine().state() == AssemblerState.MISSING_INGREDIENTS,
+        helper.assertTrue(assembler.machine().state() == MachineState.MISSING_INGREDIENTS,
                 "an Assembler with the dirt and no water reported " + assembler.machine().state());
 
         // Powered every tick, it crafts on the 14th: the first tick filled the box, and a craft took 250 of it.

@@ -6,8 +6,9 @@ package io.github._5thlayer.craftworks.gametest;
 import java.util.Optional;
 
 import io.github._5thlayer.craftworks.Craftworks;
-import io.github._5thlayer.craftworks.machine.AssemblerGhosts;
+import io.github._5thlayer.craftworks.machine.MachineGhosts;
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
+import io.github._5thlayer.craftworks.machine.HeldRecipeView;
 import io.github._5thlayer.craftworks.machine.AssemblerSlots;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.HeldRecipes;
@@ -49,12 +50,12 @@ final class AssemblerGhostTests {
         AssemblerMenu menu = (AssemblerMenu) assembler.machine().createMenu(1, player.getInventory(), player);
         player.containerMenu = menu;
         var held = HeldRecipes.find(assembler.helper().getLevel(), recipe).orElseThrow().value();
-        menu.show(Optional.of(new AssemblerMenu.Held(recipe, held.ingredients(), held.results())));
+        menu.show(Optional.of(new HeldRecipeView(recipe, held.ingredients(), held.results())));
         return menu;
     }
 
-    private static Optional<AssemblerGhosts.Ghost> at(AssemblerMenu menu, int x, int y, long millis) {
-        return AssemblerGhosts.at(menu, 0, 0, x, y, millis);
+    private static Optional<MachineGhosts.Ghost> at(AssemblerMenu menu, int x, int y, long millis) {
+        return MachineGhosts.at(menu, 0, 0, x, y, millis);
     }
 
     private static int inputX(int slot) {
@@ -72,7 +73,7 @@ final class AssemblerGhostTests {
         helper.assertTrue(at(menu, inputX(0) + 16, INPUT_Y, 0).isEmpty(), "the pixel right of a slot has a ghost");
         helper.assertTrue(at(menu, inputX(0), INPUT_Y - 1, 0).isEmpty(), "the pixel above a slot has a ghost");
         // The screen's corner moves the slots.
-        expect(helper, AssemblerGhosts.at(menu, 10, 20, 10 + inputX(1), 20 + INPUT_Y, 0), Items.LIME_DYE, 1,
+        expect(helper, MachineGhosts.at(menu, 10, 20, 10 + inputX(1), 20 + INPUT_Y, 0), Items.LIME_DYE, 1,
                 10 + inputX(1), 20 + INPUT_Y);
         helper.succeed();
     }
@@ -86,7 +87,7 @@ final class AssemblerGhostTests {
         for (int n = 0; n < members.size() + 1; n++) {
             Item shown = members.get(n % members.size()).value();
             // Each member for a second, then round again, and the count is the recipe's whichever shows.
-            expect(helper, at(menu, inputX(0), INPUT_Y, n * AssemblerGhosts.CYCLE_MILLIS + 999), shown, 2, inputX(0), INPUT_Y);
+            expect(helper, at(menu, inputX(0), INPUT_Y, n * MachineGhosts.CYCLE_MILLIS + 999), shown, 2, inputX(0), INPUT_Y);
         }
         helper.succeed();
     }
@@ -96,8 +97,8 @@ final class AssemblerGhostTests {
         AssemblerMachineTests.hold(assembler, SLIME);
         AssemblerMenu menu = open(assembler, SLIME);
         expect(helper, at(menu, AssemblerMenu.PRODUCT_X, INPUT_Y, 0), Items.SLIME_BALL, 4, AssemblerMenu.PRODUCT_X, INPUT_Y);
-        expect(helper, at(menu, AssemblerGhosts.HEAD_X + 3, AssemblerGhosts.HEAD_Y + 3, 0), Items.SLIME_BALL, 4,
-                AssemblerGhosts.HEAD_X, AssemblerGhosts.HEAD_Y);
+        expect(helper, at(menu, MachineGhosts.HEAD_X + 3, MachineGhosts.HEAD_Y + 3, 0), Items.SLIME_BALL, 4,
+                MachineGhosts.HEAD_X, MachineGhosts.HEAD_Y);
         helper.succeed();
     }
 
@@ -126,11 +127,11 @@ final class AssemblerGhostTests {
         AssemblerMenu menu = (AssemblerMenu) assembler.machine().createMenu(1, player.getInventory(), player);
         helper.assertTrue(at(menu, inputX(0), INPUT_Y, 0).isEmpty(), "an input has a ghost with no Held recipe");
         helper.assertTrue(at(menu, AssemblerMenu.PRODUCT_X, INPUT_Y, 0).isEmpty(), "the product slot has a ghost with no Held recipe");
-        helper.assertTrue(at(menu, AssemblerGhosts.HEAD_X, AssemblerGhosts.HEAD_Y, 0).isEmpty(), "the head has a ghost with no Held recipe");
+        helper.assertTrue(at(menu, MachineGhosts.HEAD_X, MachineGhosts.HEAD_Y, 0).isEmpty(), "the head has a ghost with no Held recipe");
         helper.succeed();
     }
 
-    private static void expect(GameTestHelper helper, Optional<AssemblerGhosts.Ghost> ghost, Item item, int count, int x, int y) {
+    private static void expect(GameTestHelper helper, Optional<MachineGhosts.Ghost> ghost, Item item, int count, int x, int y) {
         helper.assertTrue(ghost.isPresent(), "no ghost where " + item + " was expected");
         ItemStack stack = ghost.get().stack();
         helper.assertTrue(stack.is(item) && stack.getCount() == count, "the ghost is " + stack + ", not " + count + " " + item);

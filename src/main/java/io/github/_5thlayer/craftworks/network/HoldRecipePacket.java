@@ -4,7 +4,7 @@
 package io.github._5thlayer.craftworks.network;
 
 import io.github._5thlayer.craftworks.Craftworks;
-import io.github._5thlayer.craftworks.machine.HeldRecipeMenu;
+import io.github._5thlayer.craftworks.machine.HeldMachineMenu;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -31,7 +31,7 @@ public record HoldRecipePacket(Identifier recipe) implements CustomPacketPayload
     }
 
     static void handle(HoldRecipePacket packet, IPayloadContext context) {
-        if (context.player() instanceof ServerPlayer player && player.containerMenu instanceof HeldRecipeMenu menu) {
+        if (context.player() instanceof ServerPlayer player && player.containerMenu instanceof HeldMachineMenu<?> menu) {
             menu.request(player, packet.recipe());
         }
     }

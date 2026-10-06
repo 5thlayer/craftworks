@@ -29,7 +29,7 @@ final class ChemicalPlantRecipes {
 
     /** Whether the plant's config lists the recipe's category. */
     static boolean takesCategory(AssemblingRecipe recipe) {
-        return CraftworksConfig.categories(ChemicalPlantRates.INSTANCE).contains(recipe.category());
+        return CraftworksConfig.categories(ChemicalPlantDefaults.INSTANCE).contains(recipe.category());
     }
 
     /** Whether the recipe has no more fluid ingredients than input boxes and no more fluid results than output boxes. */

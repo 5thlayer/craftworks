@@ -55,7 +55,7 @@ final class MachineScreens {
         recess(graphics, x, y, width, ENERGY_HEIGHT);
         float charge = capacity <= 0 ? 0f : Math.min(1f, (float) energy / capacity);
         graphics.fill(x, y, x + Math.round(width * charge), y + ENERGY_HEIGHT, ENERGY);
-        Component stored = Component.translatable("craftworks.assembler.energy", energy, capacity);
+        Component stored = Component.translatable("craftworks.machine.energy", energy, capacity);
         graphics.text(font, stored, x + (width - font.width(stored)) / 2, y + 2, 0xFFFFFFFF, true);
     }
 
@@ -87,8 +87,8 @@ final class MachineScreens {
     static void fluidTooltip(GuiGraphicsExtractor graphics, Font font, FluidStack fluid, int capacity, int mouseX, int mouseY) {
         NumberFormat number = NumberFormat.getIntegerInstance();
         graphics.setComponentTooltipForNextFrame(font, List.of(
-                fluid.isEmpty() ? Component.translatable("craftworks.assembler.fluid_empty").withStyle(ChatFormatting.GRAY) : fluid.getHoverName(),
-                Component.translatable("craftworks.assembler.fluid", number.format(fluid.getAmount()), number.format(capacity))
+                fluid.isEmpty() ? Component.translatable("craftworks.machine.fluid_empty").withStyle(ChatFormatting.GRAY) : fluid.getHoverName(),
+                Component.translatable("craftworks.machine.fluid", number.format(fluid.getAmount()), number.format(capacity))
                         .withStyle(ChatFormatting.GRAY)), mouseX, mouseY);
     }
 

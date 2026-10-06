@@ -12,7 +12,7 @@ import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
  * tier, or the Chemical Plant. The config has a section for each, named for its block. Pure: no Minecraft
  * types.
  */
-public interface MachineRates {
+public interface MachineDefaults {
 
     /** The block's name, which names its section of the server config. */
     String blockName();

@@ -85,7 +85,7 @@ A placed machine, on the Assembler's 3x3x2 footprint, that makes its **Held reci
 boxes and two output fluid boxes. A recipe's ingredients and results bind to slots and boxes by order: its
 first fluid ingredient goes in input box 1, its first fluid result in output box 1. An input box holds
 1,000 mB; an output box holds the larger of that and the Overload Limit's crafts' worth of its result, and
-a craft waits while one can't hold what it makes. It ships no recipes: a Consumer supplies them.
+a craft waits while one can't hold what it makes. It ships no recipes: a pack supplies them.
 _Avoid_: chemical plant machine, refinery, assembler (alone)
 
 **Category**:

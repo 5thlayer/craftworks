@@ -37,7 +37,7 @@ public final class CraftworksNetwork {
         registrar.playToClient(ReadyRecipesPacket.TYPE, ReadyRecipesPacket.STREAM_CODEC, ReadyRecipesPacket::handle);
         registrar.playToServer(InventoryWatchPacket.TYPE, InventoryWatchPacket.STREAM_CODEC, InventoryWatchPacket::handle);
         registrar.playToClient(QueueSyncPacket.TYPE, QueueSyncPacket.STREAM_CODEC, QueueSyncPacket::handle);
-        registrar.playToClient(AssemblerHeldPacket.TYPE, AssemblerHeldPacket.STREAM_CODEC, AssemblerHeldPacket::handle);
+        registrar.playToClient(HeldRecipeSyncPacket.TYPE, HeldRecipeSyncPacket.STREAM_CODEC, HeldRecipeSyncPacket::handle);
         registrar.playToServer(HoldRecipePacket.TYPE, HoldRecipePacket.STREAM_CODEC, HoldRecipePacket::handle);
         registrar.playToServer(FillRecipePacket.TYPE, FillRecipePacket.STREAM_CODEC, FillRecipePacket::handle);
         registrar.playToServer(PlanCancelPacket.TYPE, PlanCancelPacket.STREAM_CODEC, PlanCancelPacket::handle);

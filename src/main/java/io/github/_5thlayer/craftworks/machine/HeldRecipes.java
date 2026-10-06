@@ -68,7 +68,7 @@ public final class HeldRecipes {
 
     /** Whether the tier's config lists the recipe's category. */
     public static boolean takesCategory(AssemblerTier tier, AssemblingRecipe recipe) {
-        return CraftworksConfig.assemblerCategories(tier).contains(recipe.category());
+        return CraftworksConfig.categories(tier).contains(recipe.category());
     }
 
     public static boolean fitsSlots(AssemblingRecipe recipe) {

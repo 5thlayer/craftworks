@@ -11,9 +11,9 @@ import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
 import org.junit.jupiter.api.Test;
 
 /** The Chemical Plant's figures before a config says otherwise (#26): Factorio's chemical plant, at 1 FE = 100 J. */
-class ChemicalPlantRatesTest {
+class ChemicalPlantDefaultsTest {
 
-    private static final MachineRates PLANT = ChemicalPlantRates.INSTANCE;
+    private static final MachineDefaults PLANT = ChemicalPlantDefaults.INSTANCE;
 
     @Test
     void itRunsAtSpeedOneDrawing105FeATickWithAFiftyThousandFeBuffer() {
@@ -35,13 +35,13 @@ class ChemicalPlantRatesTest {
     @Test
     void aCraftCostsItsPowerTimesItsTicksWithNoEnergyLostAcrossThem() {
         // A 60 tick craft at speed 1 is 6,300 FE.
-        int duration = AssemblerRates.durationTicks(PLANT.defaultSpeed(), 60);
-        int price = AssemblerRates.fePerCraft(PLANT.defaultPower(), PLANT.defaultSpeed(), 60);
+        int duration = CraftRates.durationTicks(PLANT.defaultSpeed(), 60);
+        int price = CraftRates.fePerCraft(PLANT.defaultPower(), PLANT.defaultSpeed(), 60);
         assertEquals(60, duration);
         assertEquals(6300, price);
         int sum = 0;
         for (int tick = 0; tick < duration; tick++) {
-            sum += AssemblerRates.feForTick(tick, duration, price);
+            sum += CraftRates.feForTick(tick, duration, price);
         }
         assertEquals(price, sum);
     }

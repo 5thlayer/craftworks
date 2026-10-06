@@ -13,7 +13,7 @@ import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.gametest.AssemblerMachineTests.Placed;
 import io.github._5thlayer.craftworks.machine.AssemblerSlots;
-import io.github._5thlayer.craftworks.machine.AssemblerState;
+import io.github._5thlayer.craftworks.machine.MachineState;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.HoldVerdict;
 import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
@@ -98,12 +98,12 @@ final class AssemblingCategoryTests {
         List<AssemblingCategory> tier1 = List.of(AssemblingCategory.CRAFTING, AssemblingCategory.ADVANCED_CRAFTING);
         List<AssemblingCategory> more = List.of(AssemblingCategory.CRAFTING, AssemblingCategory.ADVANCED_CRAFTING,
                 AssemblingCategory.CRAFTING_WITH_FLUID);
-        helper.assertTrue(CraftworksConfig.assemblerCategories(AssemblerTier.ONE).equals(tier1),
-                "tier 1 takes " + CraftworksConfig.assemblerCategories(AssemblerTier.ONE));
-        helper.assertTrue(CraftworksConfig.assemblerCategories(AssemblerTier.TWO).equals(more),
-                "tier 2 takes " + CraftworksConfig.assemblerCategories(AssemblerTier.TWO));
-        helper.assertTrue(CraftworksConfig.assemblerCategories(AssemblerTier.THREE).equals(more),
-                "tier 3 takes " + CraftworksConfig.assemblerCategories(AssemblerTier.THREE));
+        helper.assertTrue(CraftworksConfig.categories(AssemblerTier.ONE).equals(tier1),
+                "tier 1 takes " + CraftworksConfig.categories(AssemblerTier.ONE));
+        helper.assertTrue(CraftworksConfig.categories(AssemblerTier.TWO).equals(more),
+                "tier 2 takes " + CraftworksConfig.categories(AssemblerTier.TWO));
+        helper.assertTrue(CraftworksConfig.categories(AssemblerTier.THREE).equals(more),
+                "tier 3 takes " + CraftworksConfig.categories(AssemblerTier.THREE));
         helper.succeed();
     }
 
@@ -137,11 +137,11 @@ final class AssemblingCategoryTests {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         helper.assertTrue(AssemblerMachineTests.request(assembler, CATEGORY_FLUID) == HoldVerdict.HELD, "tier 2 refused a crafting-with-fluid recipe");
         AssemblerMachineTests.insert(assembler, 0, Items.IRON_INGOT, 1);
-        helper.assertTrue(assembler.machine().state() != AssemblerState.CANT_RUN, "tier 2 could not run it");
+        helper.assertTrue(assembler.machine().state() != MachineState.CANT_RUN, "tier 2 could not run it");
 
         AssemblerMachineTests.swap(helper, assembler, AssemblerTier.ONE, AssemblerMachineTests.ORIGIN);
         helper.assertTrue(assembler.machine().heldRecipe().equals(java.util.Optional.of(CATEGORY_FLUID)), "the swap lost the Held recipe");
-        helper.assertTrue(assembler.machine().state() == AssemblerState.CANT_RUN, "tier 1 state was " + assembler.machine().state());
+        helper.assertTrue(assembler.machine().state() == MachineState.CANT_RUN, "tier 1 state was " + assembler.machine().state());
         SimpleEnergyHandler supply = AssemblerMachineTests.supply();
         for (int tick = 0; tick < 60; tick++) {
             AssemblerMachineTests.feed(assembler, supply, 1000);

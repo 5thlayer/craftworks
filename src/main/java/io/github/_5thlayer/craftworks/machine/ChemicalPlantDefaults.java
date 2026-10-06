@@ -13,11 +13,11 @@ import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
  * The Chemical Plant's figures, Factorio's chemical plant: speed 1, 210 kW, which at 1 FE = 100 J is 105 FE a
  * tick, and the {@code chemistry} category. Its buffer is the Assemblers' 50,000 FE.
  */
-public final class ChemicalPlantRates implements MachineRates {
+public final class ChemicalPlantDefaults implements MachineDefaults {
 
-    public static final ChemicalPlantRates INSTANCE = new ChemicalPlantRates();
+    public static final ChemicalPlantDefaults INSTANCE = new ChemicalPlantDefaults();
 
-    private ChemicalPlantRates() {
+    private ChemicalPlantDefaults() {
     }
 
     @Override

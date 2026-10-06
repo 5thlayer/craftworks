@@ -20,12 +20,13 @@ import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.api.LockHooks;
 import io.github._5thlayer.craftworks.machine.AssemblerBlockEntity;
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
+import io.github._5thlayer.craftworks.machine.HeldRecipeView;
 import io.github._5thlayer.craftworks.machine.AssemblerSlots;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.HeldRecipes;
 import io.github._5thlayer.craftworks.machine.HoldVerdict;
-import io.github._5thlayer.craftworks.network.AssemblerHeldPacket;
+import io.github._5thlayer.craftworks.network.HeldRecipeSyncPacket;
 import io.netty.buffer.Unpooled;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -488,9 +489,9 @@ final class AssemblerMachineTests {
         Placed assembler = place(helper, AssemblerTier.ONE);
         hold(assembler, SAPLING);
         var recipe = HeldRecipes.find(helper.getLevel(), SAPLING).orElseThrow().value();
-        AssemblerMenu.Held sent = new AssemblerMenu.Held(SAPLING, recipe.ingredients(), recipe.results());
-        AssemblerHeldPacket read = crossed(helper, AssemblerHeldPacket.STREAM_CODEC, new AssemblerHeldPacket(7, Optional.of(sent)));
-        AssemblerMenu.Held held = read.held().orElseThrow();
+        HeldRecipeView sent = new HeldRecipeView(SAPLING, recipe.ingredients(), recipe.results());
+        HeldRecipeSyncPacket read = crossed(helper, HeldRecipeSyncPacket.STREAM_CODEC, new HeldRecipeSyncPacket(7, Optional.of(sent)));
+        HeldRecipeView held = read.held().orElseThrow();
         helper.assertTrue(read.containerId() == 7 && held.id().equals(SAPLING), "the packet read back as " + read);
         helper.assertTrue(held.ingredients().size() == 1 && held.ingredients().get(0).count() == 2, "the ingredients read back as " + held.ingredients());
         helper.assertTrue(held.product().is(recipe.product().getItem()), "the product read back as " + held.results());
@@ -500,7 +501,7 @@ final class AssemblerMachineTests {
         helper.assertTrue(menu.held().isEmpty(), "a menu knew the Held recipe before the server sent it");
         menu.broadcastChanges();
         menu.show(Optional.of(held));
-        helper.assertTrue(menu.held().map(AssemblerMenu.Held::id).equals(Optional.of(SAPLING)), "the menu did not take the Held recipe");
+        helper.assertTrue(menu.held().map(HeldRecipeView::id).equals(Optional.of(SAPLING)), "the menu did not take the Held recipe");
         helper.succeed();
     }
 
@@ -513,7 +514,7 @@ final class AssemblerMachineTests {
      */
     private static void energyReachesTheClient(GameTestHelper helper) {
         Placed assembler = place(helper, AssemblerTier.ONE);
-        int capacity = CraftworksConfig.assemblerBuffer(AssemblerTier.ONE);
+        int capacity = CraftworksConfig.buffer(AssemblerTier.ONE);
         helper.assertTrue(capacity > Short.MAX_VALUE, "a buffer of " + capacity + " FE fits a short, so nothing here can wrap");
         SimpleEnergyHandler supply = supply();
         for (int ran = 0; ran < 100 && assembler.machine().energy() < capacity; ran++) {
@@ -525,8 +526,8 @@ final class AssemblerMachineTests {
         AssemblerMenu vanilla = openOnTheClient(assembler);
         helper.assertTrue(vanilla.energy() != capacity, "vanilla's packet carried " + capacity + " FE whole, so this test shows nothing");
         AssemblerMenu neoforge = openOnTheClient(assembler, AdvancedContainerSetDataPayload.TYPE);
-        helper.assertTrue(neoforge.energy() == capacity && neoforge.capacity() == capacity,
-                "the client's energy bar reads " + neoforge.energy() + " of " + neoforge.capacity() + " FE");
+        helper.assertTrue(neoforge.energy() == capacity && neoforge.energyCapacity() == capacity,
+                "the client's energy bar reads " + neoforge.energy() + " of " + neoforge.energyCapacity() + " FE");
         helper.succeed();
     }
 
@@ -537,9 +538,9 @@ final class AssemblerMachineTests {
         double[] power = {37.5, 75.0, 187.5};
         for (AssemblerTier tier : AssemblerTier.values()) {
             int n = tier.ordinal();
-            helper.assertTrue(CraftworksConfig.assemblerSpeed(tier) == speed[n], tier + " speed is " + CraftworksConfig.assemblerSpeed(tier));
-            helper.assertTrue(CraftworksConfig.assemblerPower(tier) == power[n], tier + " power is " + CraftworksConfig.assemblerPower(tier));
-            helper.assertTrue(CraftworksConfig.assemblerBuffer(tier) == 50_000, tier + " buffer is " + CraftworksConfig.assemblerBuffer(tier));
+            helper.assertTrue(CraftworksConfig.speed(tier) == speed[n], tier + " speed is " + CraftworksConfig.speed(tier));
+            helper.assertTrue(CraftworksConfig.power(tier) == power[n], tier + " power is " + CraftworksConfig.power(tier));
+            helper.assertTrue(CraftworksConfig.buffer(tier) == 50_000, tier + " buffer is " + CraftworksConfig.buffer(tier));
         }
         helper.succeed();
     }

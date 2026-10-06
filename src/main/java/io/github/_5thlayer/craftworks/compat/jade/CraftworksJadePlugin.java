@@ -31,8 +31,8 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
 
     @Override
     public void register(IWailaCommonRegistration registration) {
-        registration.registerBlockDataProvider(AssemblerReport.INSTANCE, AssemblerBlockEntity.class);
-        registration.registerBlockDataProvider(AssemblerReport.INSTANCE, ChemicalPlantBlockEntity.class);
+        registration.registerBlockDataProvider(HeldMachineReport.INSTANCE, AssemblerBlockEntity.class);
+        registration.registerBlockDataProvider(HeldMachineReport.INSTANCE, ChemicalPlantBlockEntity.class);
         registration.registerEnergyStorage(InfiniteEnergy.INSTANCE, CreativeEnergySourceBlockEntity.class);
         registration.registerFluidStorage(InfiniteFluid.INSTANCE, CreativeFluidSourceBlockEntity.class);
         registration.registerFluidStorage(AssemblerFluid.INSTANCE, AssemblerBlockEntity.class);
@@ -41,8 +41,8 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
 
     @Override
     public void registerClient(IWailaClientRegistration registration) {
-        registration.registerBlockComponent(AssemblerReport.Client.INSTANCE, AssemblerBlock.class);
-        registration.registerBlockComponent(AssemblerReport.Client.INSTANCE, ChemicalPlantBlock.class);
+        registration.registerBlockComponent(HeldMachineReport.Client.INSTANCE, AssemblerBlock.class);
+        registration.registerBlockComponent(HeldMachineReport.Client.INSTANCE, ChemicalPlantBlock.class);
         registration.registerEnergyStorageClient(InfiniteEnergy.INSTANCE);
         registration.registerFluidStorageClient(InfiniteFluid.INSTANCE);
         registration.registerFluidStorageClient(AssemblerFluid.INSTANCE);

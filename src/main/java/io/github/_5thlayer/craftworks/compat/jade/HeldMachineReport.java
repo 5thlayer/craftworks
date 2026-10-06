@@ -7,8 +7,8 @@ import java.util.Locale;
 import java.util.Optional;
 
 import io.github._5thlayer.craftworks.Craftworks;
-import io.github._5thlayer.craftworks.machine.AssemblerState;
-import io.github._5thlayer.craftworks.machine.HeldMachine;
+import io.github._5thlayer.craftworks.machine.MachineState;
+import io.github._5thlayer.craftworks.machine.HeldMachineBlockEntity;
 import io.github._5thlayer.craftworks.machine.HeldRecipes;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.ChatFormatting;
@@ -30,20 +30,20 @@ import snownee.jade.api.ui.JadeUI;
 import snownee.jade.api.view.ProgressView;
 
 /**
- * What the server tells Jade about an Assembler or a Chemical Plant: its Held recipe, its {@link AssemblerState}
- * and how far its craft is. The state is the block entity's own ({@link HeldMachine#state}), worked out on the
+ * What the server tells Jade about an Assembler or a Chemical Plant: its Held recipe, its {@link MachineState}
+ * and how far its craft is. The state is the block entity's own ({@link HeldMachineBlockEntity#state}), worked out on the
  * server where the checks are and never repeated here.
  *
  * <p>The {@link Client} draws it. They are apart so that a dedicated server never loads Jade's drawing.
  */
-class AssemblerReport implements StreamServerDataProvider<BlockAccessor, AssemblerReport.Data> {
+class HeldMachineReport implements StreamServerDataProvider<BlockAccessor, HeldMachineReport.Data> {
 
-    static final AssemblerReport INSTANCE = new AssemblerReport();
+    static final HeldMachineReport INSTANCE = new HeldMachineReport();
 
     private static final Identifier UID = Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "assembler");
 
-    private static final StreamCodec<ByteBuf, AssemblerState> STATE_CODEC =
-            ByteBufCodecs.idMapper(ordinal -> AssemblerState.values()[ordinal], AssemblerState::ordinal);
+    private static final StreamCodec<ByteBuf, MachineState> STATE_CODEC =
+            ByteBufCodecs.idMapper(ordinal -> MachineState.values()[ordinal], MachineState::ordinal);
 
     private static final StreamCodec<RegistryFriendlyByteBuf, Data> CODEC = StreamCodec.composite(
             ByteBufCodecs.optional(Identifier.STREAM_CODEC), Data::held,
@@ -57,7 +57,7 @@ class AssemblerReport implements StreamServerDataProvider<BlockAccessor, Assembl
      * @param product  what it makes, empty when the recipe is gone after a reload
      * @param progress how far the craft under way is, 0 to 1: the screen's bar
      */
-    record Data(Optional<Identifier> held, ItemStack product, AssemblerState state, float progress) {
+    record Data(Optional<Identifier> held, ItemStack product, MachineState state, float progress) {
     }
 
     @Override
@@ -65,7 +65,7 @@ class AssemblerReport implements StreamServerDataProvider<BlockAccessor, Assembl
         if (!(accessor.getLevel() instanceof ServerLevel server)) {
             return null;
         }
-        HeldMachine machine = accessor.typedBlockEntity();
+        HeldMachineBlockEntity machine = accessor.typedBlockEntity();
         Optional<Identifier> held = machine.heldRecipe();
         ItemStack product = held.flatMap(id -> HeldRecipes.find(server, id))
                 .map(recipe -> recipe.value().product())
@@ -89,7 +89,7 @@ class AssemblerReport implements StreamServerDataProvider<BlockAccessor, Assembl
      * Draws the report: the Held recipe's product, then its state, with a progress bar while it crafts. The
      * fluid boxes are Jade's own bars, from {@link AssemblerFluid} and {@link ChemicalPlantFluidView}.
      */
-    static final class Client extends AssemblerReport implements IBlockComponentProvider {
+    static final class Client extends HeldMachineReport implements IBlockComponentProvider {
 
         static final Client INSTANCE = new Client();
 
@@ -117,7 +117,7 @@ class AssemblerReport implements StreamServerDataProvider<BlockAccessor, Assembl
             });
         }
 
-        private static Component stateText(AssemblerState state) {
+        private static Component stateText(MachineState state) {
             return Component.translatable("craftworks.jade.state." + state.name().toLowerCase(Locale.ROOT));
         }
     }

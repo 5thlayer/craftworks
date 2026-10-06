@@ -6,7 +6,7 @@ package io.github._5thlayer.craftworks.gametest;
 import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.machine.AssemblerBlockEntity;
 import io.github._5thlayer.craftworks.machine.AssemblerSlots;
-import io.github._5thlayer.craftworks.machine.AssemblerState;
+import io.github._5thlayer.craftworks.machine.MachineState;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.HeldRecipes;
 import java.util.List;
@@ -46,7 +46,7 @@ final class AssemblerStateTests {
     private static void noRecipe(GameTestHelper helper) {
         AssemblerMachineTests.Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
         power(assembler);
-        expect(helper, assembler, AssemblerState.NO_RECIPE, false);
+        expect(helper, assembler, MachineState.NO_RECIPE, false);
         helper.succeed();
     }
 
@@ -55,7 +55,7 @@ final class AssemblerStateTests {
         AssemblerMachineTests.hold(assembler, AssemblerTests.OAK_SAPLING);
         AssemblerMachineTests.insert(assembler, 0, Items.OAK_LOG, 2);
         power(assembler);
-        expect(helper, assembler, AssemblerState.CRAFTING, true);
+        expect(helper, assembler, MachineState.CRAFTING, true);
         helper.succeed();
     }
 
@@ -63,10 +63,10 @@ final class AssemblerStateTests {
         AssemblerMachineTests.Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
         AssemblerMachineTests.hold(assembler, AssemblerTests.OAK_SAPLING);
         AssemblerMachineTests.insert(assembler, 0, Items.OAK_LOG, 2);
-        expect(helper, assembler, AssemblerState.NEEDS_POWER, false);
+        expect(helper, assembler, MachineState.NEEDS_POWER, false);
         // Less than a tick's share is still short.
         power(assembler, 1);
-        expect(helper, assembler, AssemblerState.NEEDS_POWER, false);
+        expect(helper, assembler, MachineState.NEEDS_POWER, false);
         helper.succeed();
     }
 
@@ -74,10 +74,10 @@ final class AssemblerStateTests {
         AssemblerMachineTests.Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
         AssemblerMachineTests.hold(assembler, AssemblerTests.OAK_SAPLING);
         power(assembler);
-        expect(helper, assembler, AssemblerState.MISSING_INGREDIENTS, false);
+        expect(helper, assembler, MachineState.MISSING_INGREDIENTS, false);
         // One log is less than the two a craft takes.
         AssemblerMachineTests.insert(assembler, 0, Items.OAK_LOG, 1);
-        expect(helper, assembler, AssemblerState.MISSING_INGREDIENTS, false);
+        expect(helper, assembler, MachineState.MISSING_INGREDIENTS, false);
         helper.succeed();
     }
 
@@ -87,9 +87,9 @@ final class AssemblerStateTests {
         AssemblerMachineTests.hold(assembler, AssemblerTests.OAK_SAPLING);
         AssemblerMachineTests.insert(assembler, 0, Items.OAK_LOG, 2);
         assembler.machine().inventory().set(AssemblerSlots.PRODUCT, ItemResource.of(Items.OAK_SAPLING), 64);
-        expect(helper, assembler, AssemblerState.OUTPUT_FULL, false);
+        expect(helper, assembler, MachineState.OUTPUT_FULL, false);
         power(assembler);
-        expect(helper, assembler, AssemblerState.OUTPUT_FULL, false);
+        expect(helper, assembler, MachineState.OUTPUT_FULL, false);
         helper.succeed();
     }
 
@@ -104,7 +104,7 @@ final class AssemblerStateTests {
         }
         assembler.machine().inventory().set(AssemblerSlots.REMAINDERS, ItemResource.of(Items.STICK), 1);
         power(assembler);
-        expect(helper, assembler, AssemblerState.OUTPUT_FULL, false);
+        expect(helper, assembler, MachineState.OUTPUT_FULL, false);
         helper.succeed();
     }
 
@@ -113,9 +113,9 @@ final class AssemblerStateTests {
         power(assembler);
         // Not through Fill Recipe, which refuses both: a pack's reload or a changed recipe leaves them held.
         assembler.machine().setHeldRecipe(FLUID_RECIPE, assembler.player());
-        expect(helper, assembler, AssemblerState.CANT_RUN, false);
+        expect(helper, assembler, MachineState.CANT_RUN, false);
         assembler.machine().setHeldRecipe(NOT_A_RECIPE, assembler.player());
-        expect(helper, assembler, AssemblerState.CANT_RUN, false);
+        expect(helper, assembler, MachineState.CANT_RUN, false);
         helper.succeed();
     }
 
@@ -123,11 +123,11 @@ final class AssemblerStateTests {
      * The state is the one given, reading it changes nothing, and a tick agrees: it moves the craft on
      * exactly when the state is Crafting.
      */
-    private static void expect(GameTestHelper helper, AssemblerMachineTests.Placed assembler, AssemblerState state, boolean advances) {
+    private static void expect(GameTestHelper helper, AssemblerMachineTests.Placed assembler, MachineState state, boolean advances) {
         AssemblerBlockEntity machine = assembler.machine();
         int energy = machine.energy();
         int progress = machine.craftProgress();
-        AssemblerState reported = machine.state();
+        MachineState reported = machine.state();
         helper.assertTrue(reported == state, "the Assembler reported " + reported + ", not " + state);
         helper.assertTrue(machine.state() == state, "asking again reported " + machine.state());
         helper.assertTrue(machine.energy() == energy && machine.craftProgress() == progress, "asking the state changed the Assembler");

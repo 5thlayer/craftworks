@@ -4,10 +4,10 @@
 package io.github._5thlayer.craftworks.machine;
 
 /**
- * What an Assembler or a Chemical Plant is doing this tick, as {@link HeldMachine#state} reports it: the first of the
+ * What an Assembler or a Chemical Plant is doing this tick, as {@link HeldMachineBlockEntity#state} reports it: the first of the
  * checks its tick makes that it fails, in the order the tick makes them (#28).
  */
-public enum AssemblerState {
+public enum MachineState {
 
     /** No Held recipe: the Assembler idles and draws nothing. */
     NO_RECIPE,

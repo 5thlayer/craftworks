@@ -22,12 +22,12 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  * items, as EMI's Fill Recipe does there. Always offered, whatever the inventory holds, and whether the
  * Assembler takes the recipe for this player is the server's call, which answers in chat.
  */
-final class AssemblerTransferHandler<M extends AbstractContainerMenu> implements IRecipeTransferHandler<M, RecipeHolder<AssemblingRecipe>> {
+final class HeldMachineTransferHandler<M extends AbstractContainerMenu> implements IRecipeTransferHandler<M, RecipeHolder<AssemblingRecipe>> {
 
     private final Class<M> menuClass;
     private final MenuType<M> menuType;
 
-    AssemblerTransferHandler(Class<M> menuClass, MenuType<M> menuType) {
+    HeldMachineTransferHandler(Class<M> menuClass, MenuType<M> menuType) {
         this.menuClass = menuClass;
         this.menuType = menuType;
     }

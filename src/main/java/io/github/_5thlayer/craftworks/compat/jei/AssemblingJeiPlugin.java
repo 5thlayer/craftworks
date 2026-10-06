@@ -7,13 +7,14 @@ import java.util.List;
 import java.util.Optional;
 
 import io.github._5thlayer.craftworks.Craftworks;
-import io.github._5thlayer.craftworks.machine.AssemblerGhosts;
+import io.github._5thlayer.craftworks.machine.MachineGhosts;
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.ChemicalPlantMenu;
 import io.github._5thlayer.craftworks.machine.ChemicalPlants;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
 import io.github._5thlayer.craftworks.machine.client.ChemicalPlantScreen;
+import io.github._5thlayer.craftworks.machine.client.HeldMachineScreen;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
 import mezz.jei.api.IModPlugin;
@@ -74,30 +75,28 @@ public final class AssemblingJeiPlugin implements IModPlugin {
         registration.addRecipes(ASSEMBLING, assemblingRecipes());
     }
 
-    /** With an Assembler or a Chemical Plant open, the recipe's {@code +} sets its Held recipe (see {@link AssemblerTransferHandler}). */
+    /** With an Assembler or a Chemical Plant open, the recipe's {@code +} sets its Held recipe (see {@link HeldMachineTransferHandler}). */
     @Override
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
-        registration.addRecipeTransferHandler(new AssemblerTransferHandler<>(AssemblerMenu.class, Assemblers.MENU.get()), ASSEMBLING);
-        registration.addRecipeTransferHandler(new AssemblerTransferHandler<>(ChemicalPlantMenu.class, ChemicalPlants.MENU.get()), ASSEMBLING);
+        registration.addRecipeTransferHandler(new HeldMachineTransferHandler<>(AssemblerMenu.class, Assemblers.MENU.get()), ASSEMBLING);
+        registration.addRecipeTransferHandler(new HeldMachineTransferHandler<>(ChemicalPlantMenu.class, ChemicalPlants.MENU.get()), ASSEMBLING);
     }
 
     /** The Assembler and Chemical Plant screens' ghosts answer Recipe and Uses as a real stack does (see {@link #ghostAt}). */
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
-        registration.addGuiContainerHandler(AssemblerScreen.class, new IGuiContainerHandler<AssemblerScreen>() {
+        registration.addGuiContainerHandler(AssemblerScreen.class, ghosts());
+        registration.addGuiContainerHandler(ChemicalPlantScreen.class, ghosts());
+    }
+
+    private static <S extends HeldMachineScreen<?>> IGuiContainerHandler<S> ghosts() {
+        return new IGuiContainerHandler<>() {
             @Override
             public Optional<? extends IClickableIngredient<?>> getClickableIngredientUnderMouse(
-                    IClickableIngredientFactory factory, AssemblerScreen screen, double mouseX, double mouseY) {
+                    IClickableIngredientFactory factory, S screen, double mouseX, double mouseY) {
                 return ghostAt(factory, screen.ghostAt(mouseX, mouseY));
             }
-        });
-        registration.addGuiContainerHandler(ChemicalPlantScreen.class, new IGuiContainerHandler<ChemicalPlantScreen>() {
-            @Override
-            public Optional<? extends IClickableIngredient<?>> getClickableIngredientUnderMouse(
-                    IClickableIngredientFactory factory, ChemicalPlantScreen screen, double mouseX, double mouseY) {
-                return ghostAt(factory, screen.ghostAt(mouseX, mouseY));
-            }
-        });
+        };
     }
 
     /**
@@ -106,7 +105,7 @@ public final class AssemblingJeiPlugin implements IModPlugin {
      * Uses ask about the item.
      */
     private static Optional<IClickableIngredient<ItemStack>> ghostAt(
-            IClickableIngredientFactory factory, Optional<AssemblerGhosts.Ghost> ghost) {
+            IClickableIngredientFactory factory, Optional<MachineGhosts.Ghost> ghost) {
         return ghost.flatMap(shown -> factory.createBuilder(shown.stack().copyWithCount(1)).buildWithArea(shown.x(), shown.y(), 16, 16));
     }
 

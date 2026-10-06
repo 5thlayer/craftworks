@@ -122,13 +122,8 @@ public enum HoldVerdict {
         return this == HELD;
     }
 
-    /** The lang key an Assembler tells the player, or null when the recipe was held. */
-    public String messageKey() {
-        return messageKey("assembler");
-    }
-
-    /** The lang key {@code machine} (its lang name, say {@code chemical_plant}) tells the player, or null when the recipe was held. */
-    public String messageKey(String machine) {
-        return refusal == null ? null : "craftworks." + machine + ".refused." + refusal;
+    /** The lang key {@code machine} tells the player, or null when the recipe was held. */
+    public String messageKey(MachineKind machine) {
+        return refusal == null ? null : machine.langKey("refused." + refusal);
     }
 }

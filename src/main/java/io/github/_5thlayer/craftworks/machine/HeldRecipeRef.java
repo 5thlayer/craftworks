@@ -18,7 +18,7 @@ import org.jspecify.annotations.Nullable;
  * <p>Asked every tick and by every pipe, so what is worked out once per recipe instance is cached: whether
  * the machine could run it at all, which a reload of the recipes hands back new instances to ask again.
  */
-final class HeldRecipeSlot {
+final class HeldRecipeRef {
 
     private @Nullable Identifier id;
     /** The recipe instance {@link #runnable} last checked, and whether the machine can run it. Never saved. */

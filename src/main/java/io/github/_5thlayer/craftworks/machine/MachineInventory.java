@@ -27,17 +27,21 @@ final class MachineInventory extends ItemStacksResourceHandler {
         void changed();
     }
 
-    private final int inputs;
+    private final MachineSlots slots;
     private final Owner owner;
 
-    MachineInventory(int size, int inputs, Owner owner) {
-        super(size);
-        this.inputs = inputs;
+    MachineInventory(MachineSlots slots, Owner owner) {
+        super(slots.size());
+        this.slots = slots;
         this.owner = owner;
     }
 
+    MachineSlots slots() {
+        return slots;
+    }
+
     boolean isInput(int slot) {
-        return slot >= 0 && slot < inputs;
+        return slots.isInput(slot);
     }
 
     @Override

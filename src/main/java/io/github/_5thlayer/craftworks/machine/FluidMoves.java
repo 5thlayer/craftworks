@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.ResourceHandlerUtil;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
@@ -28,6 +29,11 @@ final class FluidMoves {
     /** The fluid handler of the block at {@code neighbour}, on its face towards the machine, if it has one. */
     static @Nullable ResourceHandler<FluidResource> across(ServerLevel server, BlockPos neighbour, Direction outward) {
         return server.getCapability(Capabilities.Fluid.BLOCK, neighbour, outward.getOpposite());
+    }
+
+    /** What a pull takes for this recipe fluid: any fluid the ingredient matches. */
+    static Predicate<FluidResource> consumedBy(SizedFluidIngredient wanted) {
+        return fluid -> wanted.ingredient().test(fluid.toStack(1));
     }
 
     /** Moves up to {@code max} mB of what {@code filter} allows from one handler to the other; how much moved. */
