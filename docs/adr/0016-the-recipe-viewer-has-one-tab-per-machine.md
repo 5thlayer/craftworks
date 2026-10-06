@@ -40,3 +40,5 @@ its own id.
 recipe that moves between tabs on a config edit changes EMI id in the same way, once.
 
 FactoryWorks ADR-0096 gives each of its machines a tab of its own too.
+
+**Update (#27):** the Oil Refinery holds `oil-processing` by default, so those recipes now show in its tab, `craftworks:oil_refinery`, with the refinery its only workstation, and no longer in no tab. The rule is unchanged: a category no machine holds still shows in no tab.
