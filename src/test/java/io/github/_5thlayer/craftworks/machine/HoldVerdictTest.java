@@ -22,7 +22,8 @@ class HoldVerdictTest {
 
     @Test
     void aRecipeNothingNamesIsRefusedFirst() {
-        Checks everythingWrong = new Checks(false, false, false, false, false, false, false, true);
+        Checks everythingWrong = Checks.passing().resolves(false).categoryHeld(false).takesFluids(false)
+                .oneFluid(false).fluidFits(false).fitsSlots(false).remaindersFit(false).locked(true);
         assertEquals(HoldVerdict.NOT_ASSEMBLING, HoldVerdict.of(everythingWrong));
     }
 

@@ -117,7 +117,6 @@ class AssemblerReport implements StreamServerDataProvider<BlockAccessor, Assembl
             });
         }
 
-
         private static Component stateText(AssemblerState state) {
             return Component.translatable("craftworks.jade.state." + state.name().toLowerCase(Locale.ROOT));
         }

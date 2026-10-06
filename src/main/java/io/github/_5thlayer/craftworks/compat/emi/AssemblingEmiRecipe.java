@@ -18,9 +18,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.crafting.RecipeHolder;
 
 /**
- * One Assembling recipe as EMI draws it: the item and then the fluid ingredients in a row, an arrow timed to the craft, every
- * item and fluid result, and the recipe's category beneath. A row and not a grid, because an ingredient
- * count (eight plates) is what a grid cannot say.
+ * One Assembling recipe as EMI draws it: the item and then the fluid ingredients in a row, an arrow timed
+ * to the craft, every item and fluid result, and the recipe's category beneath. A row and not a grid,
+ * because an ingredient count (eight plates) is what a grid cannot say.
  */
 public class AssemblingEmiRecipe extends BasicEmiRecipe {
 

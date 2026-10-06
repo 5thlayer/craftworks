@@ -30,13 +30,15 @@ import net.neoforged.neoforge.fluids.FluidStackTemplate;
 import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 
 /**
- * One Assembling recipe as JEI draws it, laid out as in EMI: the item and then the fluid ingredients in a row, an arrow timed
- * to the craft, every item and fluid result, and the recipe's category beneath. A row and not a grid,
- * because an ingredient count is what a grid cannot say.
+ * One Assembling recipe as JEI draws it, laid out as in EMI: the item and then the fluid ingredients in
+ * a row, an arrow timed to the craft, every item and fluid result, and the recipe's category beneath. A
+ * row and not a grid, because an ingredient count is what a grid cannot say.
  *
  * <p>A JEI category has one width for all its recipes, so it is as wide as the widest recipe's row or
- * line of text (see {@link RecipeRow}), measured the first time JEI asks for it: when it draws, on the
- * render thread, and not while plugins register, since measuring a glyph the font hasn't baked uploads it.
+ * line of text (see {@link RecipeRow}), measured the first time JEI asks for it. JEI asks as the category
+ * registers, which it does on the render thread; the width is not measured in the plugin's own code, so
+ * that it stays where JEI calls it, since measuring a glyph the font hasn't baked uploads it, and only
+ * the render thread may.
  */
 final class AssemblingJeiCategory implements IRecipeCategory<RecipeHolder<AssemblingRecipe>> {
 
