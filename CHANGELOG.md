@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- Pipeworks is an optional dependency, from 0.2.0 and below 0.3: a Pipeworks pipe beside a Fluid Connection draws an arm toward it while the connection exists, and loses it when the Held recipe no longer names a fluid. A pack with an older Pipeworks refuses to load.
+
 ## 0.4.2
 
 - EMI and JEI show one tab for each machine in place of the single Assembling tab: Assembler (`craftworks:assembler`, shared by the three tiers) and Chemical Plant (`craftworks:chemical_plant`). A recipe is in every tab whose machine holds its category under the server config, so by default `crafting`, `advanced-crafting` and `crafting-with-fluid` are in the Assembler's tab and `chemistry` in the Chemical Plant's, and a recipe both hold is in both. A category no machine holds (`oil-processing` by default) is in no tab; the log says how many recipes were left out each time the lists are built. Each machine is a workstation of its own tab only, so `U` on an Assembler opens the Assembler tab and `U` on the Chemical Plant opens its tab; the tabs are read from the server config when EMI and JEI build their lists, so an edit shows after the next recipe reload. Fill Recipe and `+` show on both tabs with a machine open, and the Personal Assembler's Fill Recipe works from either. EMI favourites and recipe-tree entries saved under the old `craftworks:assembling` tab are lost once. A resource pack's tab title under `emi.category.craftworks.assembling` or `jei.category.craftworks.assembling` moves to `.assembler` and `.chemical_plant`. (#38)

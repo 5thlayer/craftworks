@@ -38,6 +38,19 @@ jobs:
       - run: ./gradlew publishToMavenLocal
         working-directory: .groundworks
 
+      # Pipeworks, on every dev run, the same way from its tag.
+      - id: pipeworks
+        run: echo "version=$(sed -n 's/^pipeworks_version *= *//p' gradle.properties)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        with:
+          repository: 5thlayer/pipeworks
+          ref: pipeworks-v${{ steps.pipeworks.outputs.version }}
+          path: .pipeworks
+
+      - run: ./gradlew publishToMavenLocal
+        working-directory: .pipeworks
+
       # The build, with the JUnit tests.
       - run: ./gradlew build
 

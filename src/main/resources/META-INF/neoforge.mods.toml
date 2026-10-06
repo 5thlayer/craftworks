@@ -66,6 +66,16 @@ versionRange = "[26.1.11,)"
 ordering = "NONE"
 side = "BOTH"
 
+# Its pipes fill and drain the Fluid Connections and draw an arm toward one while it exists (Pipeworks
+# #11). Not required: the Mod names no Pipeworks type, and a connection reaches any tank or pipe through the
+# fluid capability. The range runs from the Pipeworks that draws the arm up to its next minor, 0.3.
+[[dependencies.${mod_id}]]
+modId = "pipeworks"
+type = "optional"
+versionRange = "[${pipeworks_version},0.3)"
+ordering = "NONE"
+side = "BOTH"
+
 # Removes the inventory's 2x2 crafting grid, keeping its slots (ADR-0007).
 [[mixins]]
 config = "craftworks.mixins.json"

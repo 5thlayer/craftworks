@@ -33,7 +33,10 @@ repositories {
     // Groundworks, from the local maven only, where its release publishes it the moment it is cut,
     // with no site's review to wait on. CI builds its tag there first.
     mavenLocal {
-        content { includeModule 'io.github.5thlayer', 'groundworks' }
+        content {
+            includeModule 'io.github.5thlayer', 'groundworks'
+            includeModule 'io.github.5thlayer', 'pipeworks'
+        }
     }
     // KubeJS and Rhino, its script engine.
     maven {
@@ -192,6 +195,10 @@ dependencies {
     // Required, and never jar-in-jar: the Mod, Wireworks and the Pack share one Groundworks (FactoryWorks ADR-0115).
     implementation groundworks
 
+    // Pipeworks is optional to players, and on every dev run so a Fluid Connection can be tried against its
+    // pipes. The Mod names no Pipeworks type: a pipe reaches a connection through the fluid capability alone.
+    localRuntime "io.github.5thlayer:pipeworks:$pipeworks_version"
+
     // EMI is optional to players, and on every dev run so its Assembling category can be looked at.
     // -PwithJEI puts JEI on the dev runs in its place (#12): a pack ships one viewer, not both.
     compileOnly 'curse.maven:emi-unofficial-port-1544558:8630349'
@@ -293,7 +300,7 @@ tasks.named('check') { dependsOn checkJarLicensing }
 def modProperties = [
         mod_id: mod_id, mod_name: mod_name, mod_description: mod_description, version: mod_version,
         minecraft_version: minecraft_version, neoforge_version: neoforge_version,
-        groundworks_version: groundworks_version,
+        groundworks_version: groundworks_version, pipeworks_version: pipeworks_version,
 ]
 processResources {
     inputs.properties modProperties
