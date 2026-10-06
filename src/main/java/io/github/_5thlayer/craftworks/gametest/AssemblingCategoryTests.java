@@ -3,6 +3,10 @@
 
 package io.github._5thlayer.craftworks.gametest;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.JsonElement;
@@ -24,12 +28,13 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
 
 /**
  * An Assembling recipe's category and its results list (#24): the codec, the tier's categories at Fill
  * Recipe and under Fast Replace, what a craft with several results puts in the two outputs, and that
- * only a recipe with exactly one item result is Hand-craftable. The recipes are the game tests' own.
+ * only a recipe with exactly one item result is Hand-craftable. The recipes are the game tests' own, but for {@code dev_pack/}'s, which only the dev client loads.
  */
 final class AssemblingCategoryTests {
 
@@ -85,17 +90,18 @@ final class AssemblingCategoryTests {
      * refuses fails the build and not only the dev client's log.
      */
     private static void devPack(GameTestHelper helper) {
-        // Read off the mod's own content roots: the module's class loader hides a folder that holds no class.
-        var roots = net.neoforged.fml.ModList.get().getModFileById(Craftworks.MOD_ID).getFile().getContents().getContentRoots();
-        List<java.nio.file.Path> files = new java.util.ArrayList<>();
+        // Read off the mod's own content roots: the module's class loader hides a folder that holds no class. A root
+        // is a folder in every run that has game tests; from a jar this finds nothing and fails, not passes.
+        var roots = ModList.get().getModFileById(Craftworks.MOD_ID).getFile().getContents().getContentRoots();
+        List<Path> files = new ArrayList<>();
         for (var contentRoot : roots) {
-            java.nio.file.Path recipes = contentRoot.resolve("dev_pack/data/craftworks/recipe");
-            if (!java.nio.file.Files.isDirectory(recipes)) {
+            Path recipes = contentRoot.resolve("dev_pack/data/craftworks/recipe");
+            if (!Files.isDirectory(recipes)) {
                 continue;
             }
-            try (var walk = java.nio.file.Files.walk(recipes)) {
+            try (var walk = Files.walk(recipes)) {
                 walk.filter(path -> path.toString().endsWith(".json")).sorted().forEach(files::add);
-            } catch (java.io.IOException e) {
+            } catch (IOException e) {
                 helper.fail("could not list dev_pack's recipes under " + recipes + ": " + e);
                 return;
             }
@@ -107,8 +113,8 @@ final class AssemblingCategoryTests {
         for (var file : files) {
             DataResult<AssemblingRecipe> result;
             try {
-                result = read(helper, java.nio.file.Files.readString(file));
-            } catch (java.io.IOException e) {
+                result = read(helper, Files.readString(file));
+            } catch (IOException e) {
                 helper.fail("could not read " + file + ": " + e);
                 return;
             }
