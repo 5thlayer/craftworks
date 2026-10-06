@@ -3,9 +3,7 @@
 
 package io.github._5thlayer.craftworks.machine;
 
-import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -15,7 +13,6 @@ import io.github._5thlayer.groundworks.Footprint;
 import io.github._5thlayer.groundworks.FootprintItem;
 import io.github._5thlayer.groundworks.FootprintPartBlock;
 import io.github._5thlayer.groundworks.FootprintShape;
-import io.github._5thlayer.groundworks.FootprintShape.Local;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponentType;
@@ -57,7 +54,7 @@ import org.jspecify.annotations.Nullable;
 public final class Assemblers {
 
     /** The Assemblers' footprint, which the Chemical Plant stands on too. */
-    static final FootprintShape SHAPE = square(2);
+    static final FootprintShape SHAPE = FootprintShape.square(3, 2);
 
     private static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(Craftworks.MOD_ID);
     private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Craftworks.MOD_ID);
@@ -146,21 +143,6 @@ public final class Assemblers {
                     .build());
 
     private Assemblers() {
-    }
-
-    /** Factorio's 3x3 tile square, {@code height} blocks tall, the origin at its bottom centre. */
-    private static FootprintShape square(int height) {
-        List<Local> parts = new ArrayList<>();
-        for (int y = 0; y < height; y++) {
-            for (int x = -1; x <= 1; x++) {
-                for (int z = -1; z <= 1; z++) {
-                    if (x != 0 || y != 0 || z != 0) {
-                        parts.add(new Local(x, y, z));
-                    }
-                }
-            }
-        }
-        return FootprintShape.of(parts.toArray(Local[]::new));
     }
 
     /**
