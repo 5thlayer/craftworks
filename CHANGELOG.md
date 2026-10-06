@@ -4,6 +4,7 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- EMI and JEI show an Assembling recipe's fluid ingredients, each in the input row after the item ingredients as a fluid slot with its amount on hover, and the recipe is wider for it. In EMI a fluid ingredient is a real input, so looking up the fluid's uses lists the recipe. A recipe with no fluid ingredient looks as before. (#34)
 - EMI and JEI draw an Assembling recipe at least as wide as its widest line of text, so the category (`Category: crafting-with-fluid`) and the seconds sit inside the recipe and no longer run over the buttons beside it. (#33)
 - Assembler 2 and 3 craft recipes with a fluid ingredient, taking the fluid through two Fluid Connections at the centres of two opposite bottom edges of the machine. They turn with it and show as a grey ring on the casing, and exist only while the Held recipe has a fluid ingredient. Each pulls the fluid the Held recipe needs, and only that, from whatever tank or pipe touches it (anything with NeoForge's fluid capability) into the Assembler's one 1,000 mB fluid box; an Assembler never pushes fluid, though a mod that pushes can fill the box through a connection. (#25)
 - Fill Recipe on Assembler 2 and 3 is refused, with a message, for a recipe with two fluid ingredients or one needing more than 1,000 mB of its fluid a craft, and still for any recipe with a fluid result. Assembler 1 still takes no fluid recipe. (#25)

@@ -23,10 +23,12 @@ import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.FluidStackTemplate;
+import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 
 /**
- * One Assembling recipe as JEI draws it, laid out as in EMI: the ingredients in a row, an arrow timed
+ * One Assembling recipe as JEI draws it, laid out as in EMI: the item and then the fluid ingredients in a row, an arrow timed
  * to the craft, every item and fluid result, and the recipe's category beneath. A row and not a grid,
  * because an ingredient count is what a grid cannot say.
  *
@@ -67,7 +69,7 @@ final class AssemblingJeiCategory implements IRecipeCategory<RecipeHolder<Assemb
         int width = RecipeRow.width(1, 1, 0, 0);
         for (RecipeHolder<AssemblingRecipe> holder : recipes) {
             AssemblingRecipe recipe = holder.value();
-            width = Math.max(width, RecipeRow.width(recipe.ingredients().size(),
+            width = Math.max(width, RecipeRow.width(recipe.ingredients().size() + recipe.fluidIngredients().size(),
                     recipe.results().size() + recipe.fluidResults().size(),
                     font.width(secondsLine(recipe)), font.width(categoryLine(recipe))));
         }
@@ -102,6 +104,13 @@ final class AssemblingJeiCategory implements IRecipeCategory<RecipeHolder<Assemb
                     .addItemStacks(sized.ingredient().items().map(item -> new ItemStack(item, sized.count())).toList());
             x += SLOT;
         }
+        for (SizedFluidIngredient fluid : recipe.fluidIngredients()) {
+            builder.addSlot(RecipeIngredientRole.INPUT, x + 1, 5)
+                    .setStandardSlotBackground()
+                    .addIngredients(NeoForgeTypes.FLUID_STACK,
+                            fluid.ingredient().fluids().stream().map(matching -> new FluidStack(matching, fluid.amount())).toList());
+            x += SLOT;
+        }
         x += ARROW;
         for (ItemStackTemplate result : recipe.results()) {
             builder.addSlot(RecipeIngredientRole.OUTPUT, x + 1, 5)
@@ -120,7 +129,7 @@ final class AssemblingJeiCategory implements IRecipeCategory<RecipeHolder<Assemb
     @Override
     public void createRecipeExtras(IRecipeExtrasBuilder builder, RecipeHolder<AssemblingRecipe> holder, IFocusGroup focuses) {
         AssemblingRecipe recipe = holder.value();
-        int x = recipe.ingredients().size() * SLOT;
+        int x = (recipe.ingredients().size() + recipe.fluidIngredients().size()) * SLOT;
         builder.addAnimatedRecipeArrow(Math.max(recipe.time(), 1)).setPosition(x + RecipeRow.SECONDS_INSET, 5);
         builder.addText(secondsLine(recipe), ARROW + SLOT, 10)
                 .setPosition(x + RecipeRow.SECONDS_INSET, 24)

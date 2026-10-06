@@ -18,7 +18,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.crafting.RecipeHolder;
 
 /**
- * One Assembling recipe as EMI draws it: the ingredients in a row, an arrow timed to the craft, every
+ * One Assembling recipe as EMI draws it: the item and then the fluid ingredients in a row, an arrow timed to the craft, every
  * item and fluid result, and the recipe's category beneath. A row and not a grid, because an ingredient
  * count (eight plates) is what a grid cannot say.
  */
@@ -37,6 +37,7 @@ public class AssemblingEmiRecipe extends BasicEmiRecipe {
         this.secondsLine = Component.translatable("emi.craftworks.assembling.seconds", String.format("%.1f", time / 20F));
         this.categoryLine = Component.translatable("emi.craftworks.assembling.category", recipe.category().id());
         recipe.ingredients().forEach(sized -> inputs.add(NeoForgeEmiIngredient.of(sized)));
+        recipe.fluidIngredients().forEach(fluid -> inputs.add(NeoForgeEmiIngredient.of(fluid)));
         recipe.results().forEach(result -> outputs.add(EmiStack.of(result.create())));
         recipe.fluidResults().forEach(result -> outputs.add(NeoForgeEmiStack.of(result.create())));
         // As wide as its widest line of text, so a narrow recipe's category stays off the buttons beside it (#33).
