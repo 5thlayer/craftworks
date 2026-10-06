@@ -72,9 +72,21 @@ A face of a machine where fluid reaches it, with no direction of its own: its ro
 recipe**, not from a fixed input or output. An **Assembler** of tier 2 or 3 has two, at the centres of two
 opposite bottom-layer edges of its 3x3, turning with it, and only while its Held recipe has a fluid
 ingredient. Each pulls that fluid, and only that, from the block it faces into the one 1,000 mB fluid box,
-and never pushes: an Assembler makes no fluid. Pipeworks' pipes are passive (Pipeworks ADR-0110), so they
-never push into one, but another mod that does push can fill the box through the connection. Tier 1 has none.
+and never pushes: an Assembler makes no fluid. A **Chemical Plant** has four, two at either end of each of
+two opposite bottom-layer edges, and while its Held recipe names a fluid in or out each pulls the fluid
+ingredients into their boxes and pushes the fluid results out of theirs, any connection serving any box.
+Pipeworks' pipes are passive (Pipeworks ADR-0110), so they never push into one, but another mod that does
+push can fill an input box through the connection. Tier 1 has none.
 _Avoid_: port, fluid port (Pipeworks' `FluidPort` type), input, output
+
+**Chemical Plant**:
+A placed machine, on the Assembler's 3x3x2 footprint, that makes its **Held recipe** over and over like an
+**Assembler**, for `chemistry` recipes by default, with two input slots, one product slot, two input fluid
+boxes and two output fluid boxes. A recipe's ingredients and results bind to slots and boxes by order: its
+first fluid ingredient goes in input box 1, its first fluid result in output box 1. An input box holds
+1,000 mB; an output box holds the larger of that and the Overload Limit's crafts' worth of its result, and
+a craft waits while one can't hold what it makes. It ships no recipes: a Consumer supplies them.
+_Avoid_: chemical plant machine, refinery, assembler (alone)
 
 **Category**:
 The kind an Assembling recipe is, one of Factorio's five names and no other: `crafting` (the default),

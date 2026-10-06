@@ -22,6 +22,7 @@ Craftworks replaces the crafting grid with the **Personal Assembler**: ask for a
 - **Other mods' recipes converted.** Every other mod's shaped and shapeless crafting recipes become Assembling recipes at their own ids as recipes load, after your datapacks and KubeJS scripts; your own Assembling recipe at the same id wins. Keep a mod's or a recipe's at the table with `modRecipesExcluded = ["modid", "modid:recipe"]`, or turn it off with `modRecipes = false`.
 - **Route priority.** When several recipes make the same item, the Assembler uses the highest-priority one the player can complete, at every level of the plan.
 - **Assemblers.** Three tiers of placed machine make one Assembling recipe each, their Held recipe, which you set with Fill Recipe on the open screen. Any FE source powers them, and each tier's speed, power and buffer are in the server config. Placing a higher or lower tier over one swaps it in place.
+- **Chemical Plant.** A placed machine for `chemistry` recipes, with two input and two output fluid boxes on four Fluid Connections that pull its ingredients and push its results. It ships no recipes: a pack supplies them.
 - **Locking recipes.** The server config `lockSources` decides what keeps a recipe Locked for a player: `recipeBook` (until the recipe is in their recipe book) and `researchd` (while Researchd blocks it for their team). The Crafting Plan names the research that unlocks it. Other mods add their own locks, with or without a reason, through `io.github._5thlayer.craftworks.api.LockHooks`.
 
 ## Dependencies
