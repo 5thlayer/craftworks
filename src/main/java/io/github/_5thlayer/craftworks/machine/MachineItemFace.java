@@ -8,15 +8,26 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /**
- * The Assembler's item capability, on every face of every block of its footprint: inputs are filtered
- * by the Held recipe and held to the Overload Limit, and only the two outputs extract.
+ * A machine's item capability, on every face of every block of its footprint: inputs are filtered
+ * by the Held recipe and held to the Overload Limit, and only the outputs extract. An Assembler's and a
+ * Chemical Plant's alike.
  */
-final class AssemblerItemFace implements ResourceHandler<ItemResource> {
+final class MachineItemFace implements ResourceHandler<ItemResource> {
 
-    private final AssemblerBlockEntity machine;
-    private final ResourceHandler<ItemResource> inventory;
+    /** What the machine decides about an input slot. */
+    interface Gate {
 
-    AssemblerItemFace(AssemblerBlockEntity machine, ResourceHandler<ItemResource> inventory) {
+        /** Whether input {@code slot} takes {@code resource} under the Held recipe. */
+        boolean accepts(int slot, ItemResource resource);
+
+        /** How many more of its ingredient an insert may put in {@code slot}: the Overload Limit less what it holds. */
+        int overloadRoom(int slot);
+    }
+
+    private final Gate machine;
+    private final MachineInventory inventory;
+
+    MachineItemFace(Gate machine, MachineInventory inventory) {
         this.machine = machine;
         this.inventory = inventory;
     }
@@ -56,7 +67,7 @@ final class AssemblerItemFace implements ResourceHandler<ItemResource> {
 
     @Override
     public int extract(int index, ItemResource resource, int amount, TransactionContext transaction) {
-        if (AssemblerSlots.isInput(index)) {
+        if (inventory.isInput(index)) {
             return 0;
         }
         return inventory.extract(index, resource, amount, transaction);

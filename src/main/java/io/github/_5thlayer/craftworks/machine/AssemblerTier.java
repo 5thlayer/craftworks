@@ -20,7 +20,7 @@ import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
  * Tiers 2 and 3 have a fluid box and Fluid Connections; tier 1 has neither.
  * Pure: no Minecraft types, so the rates are unit-tested.
  */
-public enum AssemblerTier {
+public enum AssemblerTier implements MachineRates {
     ONE("assembler_1", 0.5, 37.5, 50_000, false, List.of(CRAFTING, ADVANCED_CRAFTING)),
     TWO("assembler_2", 0.75, 75.0, 50_000, true, List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID)),
     THREE("assembler_3", 1.25, 187.5, 50_000, true, List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID));
@@ -42,6 +42,7 @@ public enum AssemblerTier {
         this.defaultCategories = defaultCategories;
     }
 
+    @Override
     public String blockName() {
         return blockName;
     }
@@ -50,16 +51,19 @@ public enum AssemblerTier {
         return blockName + "_part";
     }
 
+    @Override
     public double defaultSpeed() {
         return defaultSpeed;
     }
 
     /** FE a tick while crafting. */
+    @Override
     public double defaultPower() {
         return defaultPower;
     }
 
     /** FE the energy buffer holds. */
+    @Override
     public int defaultBuffer() {
         return defaultBuffer;
     }
@@ -70,6 +74,7 @@ public enum AssemblerTier {
     }
 
     /** The recipe categories this tier holds until the server config says otherwise. */
+    @Override
     public List<AssemblingCategory> defaultCategories() {
         return defaultCategories;
     }

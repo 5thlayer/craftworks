@@ -67,4 +67,12 @@ class HoldVerdictTest {
         assertEquals(HoldVerdict.LOCKED, verdict);
         assertEquals("craftworks.assembler.refused.locked", verdict.messageKey());
     }
+
+    @Test
+    void aRefusalIsToldInTheWordsOfTheMachineThatRefused() {
+        assertEquals("craftworks.assembler.refused.wrong_category", HoldVerdict.WRONG_CATEGORY.messageKey());
+        assertEquals("craftworks.chemical_plant.refused.wrong_category", HoldVerdict.WRONG_CATEGORY.messageKey("chemical_plant"));
+        assertEquals("craftworks.chemical_plant.refused.locked", HoldVerdict.LOCKED.messageKey("chemical_plant"));
+        assertNull(HoldVerdict.HELD.messageKey("chemical_plant"));
+    }
 }

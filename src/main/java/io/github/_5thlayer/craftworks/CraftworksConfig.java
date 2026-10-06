@@ -5,11 +5,13 @@ package io.github._5thlayer.craftworks;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
+import io.github._5thlayer.craftworks.machine.ChemicalPlantRates;
+import io.github._5thlayer.craftworks.machine.MachineRates;
 import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
 import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.common.ModConfigSpec;
@@ -38,12 +40,13 @@ public final class CraftworksConfig {
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> MOD_RECIPES_EXCLUDED;
 
-    /** One tier's Assembler figures, in the config's section for that tier. */
+    /** One machine's figures, in the config's section for its block. */
     public record AssemblerSettings(ModConfigSpec.DoubleValue speed, ModConfigSpec.DoubleValue power,
             ModConfigSpec.IntValue buffer, ModConfigSpec.ConfigValue<List<? extends String>> categories) {
     }
 
-    private static final Map<AssemblerTier, AssemblerSettings> ASSEMBLERS = new EnumMap<>(AssemblerTier.class);
+    /** The figures of each machine that crafts, in the config's section for its block: the Assemblers' tiers, then the Chemical Plant. */
+    private static final Map<MachineRates, AssemblerSettings> MACHINES = new LinkedHashMap<>();
 
     static {
         var builder = new ModConfigSpec.Builder();
@@ -71,14 +74,16 @@ public final class CraftworksConfig {
                         value -> value instanceof String entry && (entry.contains(":")
                                 ? Identifier.tryParse(entry) != null
                                 : Identifier.isValidNamespace(entry)));
-        for (AssemblerTier tier : AssemblerTier.values()) {
+        List<MachineRates> machines = new ArrayList<>(List.of(AssemblerTier.values()));
+        machines.add(ChemicalPlantRates.INSTANCE);
+        for (MachineRates tier : machines) {
             builder.comment("The " + tier.blockName() + " block.").push(tier.blockName());
             ModConfigSpec.DoubleValue speed = builder
                     .comment("Crafting speed: a craft takes the recipe's time divided by this, in ticks.")
                     .defineInRange("speed", tier.defaultSpeed(), 0.01, 1000.0);
             ModConfigSpec.DoubleValue power = builder
                     .comment("FE a tick while crafting. A craft costs this times the ticks it takes, spread over them;",
-                            "a tick it can't be paid in full makes no progress, and an idle Assembler draws nothing.")
+                            "a tick it can't be paid in full makes no progress, and an idle machine draws nothing.")
                     .defineInRange("power", tier.defaultPower(), 0.0, 1_000_000.0);
             ModConfigSpec.IntValue buffer = builder
                     .comment("FE the energy buffer holds.")
@@ -92,7 +97,7 @@ public final class CraftworksConfig {
                             () -> AssemblingCategory.CRAFTING.id(),
                             AssemblingCategory::isId);
             builder.pop();
-            ASSEMBLERS.put(tier, new AssemblerSettings(speed, power, buffer, categories));
+            MACHINES.put(tier, new AssemblerSettings(speed, power, buffer, categories));
         }
         SPEC = builder.build();
     }
@@ -115,26 +120,46 @@ public final class CraftworksConfig {
         return SPEC.isLoaded() ? List.copyOf(MOD_RECIPES_EXCLUDED.get()) : List.of();
     }
 
+    /** The machine's crafting speed; its default until a world's config is loaded. */
+    public static double speed(MachineRates machine) {
+        return SPEC.isLoaded() ? MACHINES.get(machine).speed().get() : machine.defaultSpeed();
+    }
+
+    /** The machine's FE a tick while crafting; its default until a world's config is loaded. */
+    public static double power(MachineRates machine) {
+        return SPEC.isLoaded() ? MACHINES.get(machine).power().get() : machine.defaultPower();
+    }
+
+    /** The machine's energy buffer in FE; its default until a world's config is loaded. */
+    public static int buffer(MachineRates machine) {
+        return SPEC.isLoaded() ? MACHINES.get(machine).buffer().get() : machine.defaultBuffer();
+    }
+
+    /** The recipe categories the machine holds; its defaults until a world's config is loaded. */
+    public static List<AssemblingCategory> categories(MachineRates machine) {
+        if (!SPEC.isLoaded()) return machine.defaultCategories();
+        return MACHINES.get(machine).categories().get().stream()
+                .flatMap(name -> AssemblingCategory.byId(name).stream()).toList();
+    }
+
     /** The tier's crafting speed; its default until a world's config is loaded. */
     public static double assemblerSpeed(AssemblerTier tier) {
-        return SPEC.isLoaded() ? ASSEMBLERS.get(tier).speed().get() : tier.defaultSpeed();
+        return speed(tier);
     }
 
     /** The tier's FE a tick while crafting; its default until a world's config is loaded. */
     public static double assemblerPower(AssemblerTier tier) {
-        return SPEC.isLoaded() ? ASSEMBLERS.get(tier).power().get() : tier.defaultPower();
+        return power(tier);
     }
 
     /** The tier's energy buffer in FE; its default until a world's config is loaded. */
     public static int assemblerBuffer(AssemblerTier tier) {
-        return SPEC.isLoaded() ? ASSEMBLERS.get(tier).buffer().get() : tier.defaultBuffer();
+        return buffer(tier);
     }
 
     /** The recipe categories the tier holds; its defaults until a world's config is loaded. */
     public static List<AssemblingCategory> assemblerCategories(AssemblerTier tier) {
-        if (!SPEC.isLoaded()) return tier.defaultCategories();
-        return ASSEMBLERS.get(tier).categories().get().stream()
-                .flatMap(name -> AssemblingCategory.byId(name).stream()).toList();
+        return categories(tier);
     }
 
     /** The configured sources, each once; none until a world's config is loaded. */

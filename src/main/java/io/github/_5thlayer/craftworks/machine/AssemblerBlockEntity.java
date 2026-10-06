@@ -21,7 +21,6 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -30,13 +29,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 import net.neoforged.neoforge.transfer.ResourceHandler;
-import net.neoforged.neoforge.transfer.ResourceHandlerUtil;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
-import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
@@ -75,82 +71,42 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     private static final String ENERGY_KEY = "energy";
     private static final String FLUID_KEY = "fluid";
 
-    private @Nullable Identifier held;
-    /** The recipe instance {@link #runnable} last checked, and whether an Assembler can run it. Never saved. */
-    private @Nullable AssemblingRecipe checked;
-    private boolean checkedRuns;
+    private final HeldRecipeSlot held = new HeldRecipeSlot();
     private int progress;
 
-    private final ItemStacksResourceHandler inventory = new ItemStacksResourceHandler(AssemblerSlots.SIZE) {
-        /**
-         * An input holds at least two crafts of its ingredient however little the item stacks to: cake's
-         * three milk buckets must fit in one slot, and a bucket stacks to one.
-         */
+    private final MachineInventory inventory = new MachineInventory(AssemblerSlots.SIZE, AssemblerSlots.INPUTS,
+            new MachineInventory.Owner() {
+                @Override
+                public Optional<SizedIngredient> ingredientAt(int slot) {
+                    return level instanceof ServerLevel server
+                            ? runnable(server).flatMap(recipe -> AssemblerSlots.ingredientFor(slot, recipe.ingredients()))
+                            : Optional.empty();
+                }
+
+                @Override
+                public void changed() {
+                    setChanged();
+                }
+            });
+
+    private final EnergyBuffer buffer = new EnergyBuffer();
+    private final MachineItemFace items = new MachineItemFace(new MachineItemFace.Gate() {
         @Override
-        protected int getCapacity(int index, ItemResource resource) {
-            int stack = super.getCapacity(index, resource);
-            if (!AssemblerSlots.isInput(index) || resource.isEmpty() || !(level instanceof ServerLevel server)) {
-                return stack;
-            }
-            return runnable(server)
-                    .flatMap(recipe -> AssemblerSlots.ingredientFor(index, recipe.ingredients()))
-                    .map(ingredient -> Math.min(Item.ABSOLUTE_MAX_STACK_SIZE,
-                            Math.max(stack, ingredient.count() * OverloadLimit.MINIMUM)))
-                    .orElse(stack);
+        public boolean accepts(int slot, ItemResource resource) {
+            return AssemblerBlockEntity.this.accepts(slot, resource);
         }
 
         @Override
-        protected void onContentsChanged(int index, ItemStack previousContents) {
-            setChanged();
+        public int overloadRoom(int slot) {
+            return AssemblerBlockEntity.this.overloadRoom(slot);
         }
-    };
-
-    private final Buffer buffer = new Buffer();
-    private final AssemblerItemFace items = new AssemblerItemFace(this, inventory);
+    }, inventory);
     private final AssemblerFluidBox fluidBox = new AssemblerFluidBox(this);
     private final AssemblerFluidConnection fluidConnection = new AssemblerFluidConnection(fluidBox);
-
-    /** What the capability shows: any source fills the buffer, and nothing drains it from outside. */
-    private final EnergyHandler energyFace = new EnergyHandler() {
-        @Override
-        public long getAmountAsLong() {
-            return buffer.getAmountAsLong();
-        }
-
-        @Override
-        public long getCapacityAsLong() {
-            return buffer.getCapacityAsLong();
-        }
-
-        @Override
-        public int insert(int amount, TransactionContext transaction) {
-            return buffer.insert(amount, transaction);
-        }
-
-        @Override
-        public int extract(int amount, TransactionContext transaction) {
-            return 0;
-        }
-    };
 
     public AssemblerBlockEntity(BlockPos pos, BlockState state) {
         super(Assemblers.BLOCK_ENTITY.get(), pos, state);
         buffer.resize(CraftworksConfig.assemblerBuffer(tierOf(state)));
-    }
-
-    /** The energy buffer, sized by the tier's config. Craft draws extract from it; the capability only fills it. */
-    private static final class Buffer extends SimpleEnergyHandler {
-
-        Buffer() {
-            super(0);
-        }
-
-        void resize(int capacity) {
-            this.capacity = capacity;
-            this.maxInsert = capacity;
-            this.maxExtract = capacity;
-            this.energy = Math.min(energy, capacity);
-        }
     }
 
     private static AssemblerTier tierOf(BlockState state) {
@@ -185,7 +141,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     }
 
     EnergyHandler energyFace() {
-        return energyFace;
+        return buffer.face();
     }
 
     /** The fluid box, for the menu and the game tests. Nothing is in it on tier 1. */
@@ -219,7 +175,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     }
 
     public Optional<Identifier> heldRecipe() {
-        return Optional.ofNullable(held);
+        return held.id();
     }
 
     // -- the Held recipe ------------------------------------------------------------------------
@@ -229,18 +185,10 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
      * is worked out once per recipe instance: a reload hands back new ones.
      */
     private Optional<AssemblingRecipe> runnable(ServerLevel server) {
-        if (held == null) {
-            return Optional.empty();
-        }
-        Optional<AssemblingRecipe> recipe = HeldRecipes.find(server, held).map(RecipeHolder::value);
-        recipe.filter(found -> found != checked).ifPresent(found -> {
-            checked = found;
-            checkedRuns = HeldRecipes.canRun(found);
-        });
         // The category and the fluids are asked every time, not cached with the rest: a Fast Replace or a config
         // edit moves them.
-        return recipe.filter(found -> checkedRuns && HeldRecipes.takesCategory(tier(), found)
-                && HeldRecipes.takesFluids(tier(), found));
+        return held.runnable(server, HeldRecipes::canRun,
+                found -> HeldRecipes.takesCategory(tier(), found) && HeldRecipes.takesFluids(tier(), found));
     }
 
     /** The fluid the Held recipe consumes, if it can run here and has one: tier 1 never has. */
@@ -299,15 +247,9 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             if (room <= 0) {
                 return;
             }
-            ResourceHandler<FluidResource> neighbour = server.getCapability(Capabilities.Fluid.BLOCK,
-                    FluidConnections.neighbour(worldPosition, side), side.getOpposite());
-            if (neighbour == null) {
-                continue;
-            }
-            try (Transaction tx = Transaction.openRoot()) {
-                if (ResourceHandlerUtil.move(neighbour, fluidBox, consumedBy(wanted), room, tx) > 0) {
-                    tx.commit();
-                }
+            ResourceHandler<FluidResource> neighbour = FluidMoves.across(server, FluidConnections.neighbour(worldPosition, side), side);
+            if (neighbour != null) {
+                FluidMoves.move(neighbour, fluidBox, consumedBy(wanted), room);
             }
         }
     }
@@ -320,7 +262,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
      * made what the new recipe says.
      */
     public void setHeldRecipe(Identifier next, Player player) {
-        if (next.equals(held)) {
+        if (next.equals(held.idOrNull())) {
             return;
         }
         for (int slot = 0; slot < AssemblerSlots.INPUTS; slot++) {
@@ -331,7 +273,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             inventory.set(slot, ItemResource.EMPTY, 0);
             player.getInventory().placeItemBackInInventory(stack);
         }
-        held = next;
+        held.set(next);
         progress = 0;
         fluidBox.empty();
         if (level instanceof ServerLevel server) {
@@ -344,15 +286,13 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     @Override
     protected void collectImplicitComponents(DataComponentMap.Builder components) {
         super.collectImplicitComponents(components);
-        if (held != null) {
-            components.set(Assemblers.HELD_RECIPE.get(), held);
-        }
+        held.id().ifPresent(id -> components.set(Assemblers.HELD_RECIPE.get(), id));
     }
 
     @Override
     protected void applyImplicitComponents(DataComponentGetter components) {
         super.applyImplicitComponents(components);
-        held = components.get(Assemblers.HELD_RECIPE.get());
+        held.set(components.get(Assemblers.HELD_RECIPE.get()));
     }
 
     // -- input ----------------------------------------------------------------------------------
@@ -409,7 +349,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             int next = progress + 1;
             if (next >= duration) {
                 if (finish(recipe, tx) != null) {
-                    LOGGER.warn("Assembler at {} passed its checks and could not finish {}", worldPosition.toShortString(), held);
+                    LOGGER.warn("Assembler at {} passed its checks and could not finish {}", worldPosition.toShortString(), held.idOrNull());
                     return;
                 }
                 next = 0;
@@ -434,7 +374,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
      * recipe; anywhere else it reads as {@link AssemblerState#NO_RECIPE}. For Jade (#28).
      */
     public AssemblerState state() {
-        if (held == null || !(level instanceof ServerLevel server)) {
+        if (held.id().isEmpty() || !(level instanceof ServerLevel server)) {
             return AssemblerState.NO_RECIPE;
         }
         Optional<AssemblingRecipe> resolved = runnable(server);
@@ -519,9 +459,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     @Override
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
-        if (held != null) {
-            output.store(HELD_KEY, Identifier.CODEC, held);
-        }
+        held.id().ifPresent(id -> output.store(HELD_KEY, Identifier.CODEC, id));
         output.putInt(PROGRESS_KEY, progress);
         inventory.serialize(output.child(ITEMS_KEY));
         buffer.serialize(output.child(ENERGY_KEY));
@@ -532,7 +470,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     @Override
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
-        held = input.read(HELD_KEY, Identifier.CODEC).orElse(null);
+        held.set(input.read(HELD_KEY, Identifier.CODEC).orElse(null));
         progress = input.getIntOr(PROGRESS_KEY, 0);
         inventory.deserialize(input.childOrEmpty(ITEMS_KEY));
         buffer.deserialize(input.childOrEmpty(ENERGY_KEY));

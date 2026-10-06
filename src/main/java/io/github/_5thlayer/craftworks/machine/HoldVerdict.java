@@ -4,7 +4,7 @@
 package io.github._5thlayer.craftworks.machine;
 
 /**
- * Whether an Assembler takes a recipe it was asked to hold, by Fill Recipe on its open screen.
+ * Whether an Assembler or a Chemical Plant takes a recipe it was asked to hold, by Fill Recipe on its open screen.
  *
  * <p>One rule and one message rather than a button that silently does nothing. A recipe the Assembler
  * could never run is refused before its Lock is asked, so it is never reported as merely Locked. Locked
@@ -15,26 +15,26 @@ package io.github._5thlayer.craftworks.machine;
 public enum HoldVerdict {
     HELD(null),
     /** The id names no Assembling recipe the server has loaded. */
-    NOT_ASSEMBLING("craftworks.assembler.refused.not_assembling"),
+    NOT_ASSEMBLING("not_assembling"),
     /** The recipe's category is not one this tier holds, by the server config. */
-    WRONG_CATEGORY("craftworks.assembler.refused.wrong_category"),
+    WRONG_CATEGORY("wrong_category"),
     /** The recipe names a fluid this tier can't take: any on tier 1, and a fluid result on every tier. */
-    HAS_FLUID("craftworks.assembler.refused.has_fluid"),
+    HAS_FLUID("has_fluid"),
     /** The recipe needs two or more fluids, and the Assembler has one fluid box. */
-    TOO_MANY_FLUIDS("craftworks.assembler.refused.too_many_fluids"),
+    TOO_MANY_FLUIDS("too_many_fluids"),
     /** The recipe needs more of its fluid a craft than the fluid box holds. */
-    FLUID_TOO_LARGE("craftworks.assembler.refused.fluid_too_large"),
+    FLUID_TOO_LARGE("fluid_too_large"),
     /** The recipe names more distinct ingredients than the Assembler has input slots. */
-    TOO_MANY_INGREDIENTS("craftworks.assembler.refused.too_many_ingredients"),
+    TOO_MANY_INGREDIENTS("too_many_ingredients"),
     /** One craft's remainders are two items, or more than a stack, so the one remainder slot can't take them. */
-    REMAINDERS_DONT_FIT("craftworks.assembler.refused.remainders_dont_fit"),
+    REMAINDERS_DONT_FIT("remainders_dont_fit"),
     /** The Lock source says the recipe is Locked for the player pressing. */
-    LOCKED("craftworks.assembler.refused.locked");
+    LOCKED("locked");
 
-    private final String messageKey;
+    private final String refusal;
 
-    HoldVerdict(String messageKey) {
-        this.messageKey = messageKey;
+    HoldVerdict(String refusal) {
+        this.refusal = refusal;
     }
 
     /**
@@ -122,8 +122,13 @@ public enum HoldVerdict {
         return this == HELD;
     }
 
-    /** The lang key the player is told, or null when the recipe was held. */
+    /** The lang key an Assembler tells the player, or null when the recipe was held. */
     public String messageKey() {
-        return messageKey;
+        return messageKey("assembler");
+    }
+
+    /** The lang key {@code machine} (its lang name, say {@code chemical_plant}) tells the player, or null when the recipe was held. */
+    public String messageKey(String machine) {
+        return refusal == null ? null : "craftworks." + machine + ".refused." + refusal;
     }
 }

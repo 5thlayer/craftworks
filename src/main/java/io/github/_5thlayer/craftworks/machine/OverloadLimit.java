@@ -33,4 +33,13 @@ public final class OverloadLimit {
     public static int room(int perCraft, int crafts, int held) {
         return Math.max(0, perCraft * crafts - held);
     }
+
+    /**
+     * The volume of a fluid output box: the larger of {@code box} and {@code crafts} crafts' worth of the
+     * {@code amount} the Held recipe makes into it, so a machine holds what it makes for a few crafts before
+     * it stalls. The Pack's {@code OutputTankVolume} rule, with every result pinned to its own box.
+     */
+    public static int outputBox(int box, int crafts, int amount) {
+        return (int) Math.max(box, Math.min(Integer.MAX_VALUE, (long) crafts * amount));
+    }
 }
