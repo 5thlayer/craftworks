@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import io.github._5thlayer.craftworks.Craftworks;
+import io.github._5thlayer.craftworks.network.CraftworksNetwork;
 import io.github._5thlayer.craftworks.network.PlanUpdatePacket;
 import io.github._5thlayer.craftworks.network.QueueSyncPacket;
 import io.github._5thlayer.craftworks.planner.AssemblerCodecs;
@@ -25,7 +26,6 @@ import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
@@ -119,7 +119,7 @@ public final class PersonalAssembler {
     public static void refreshPlan(ServerPlayer player) {
         if (!(player.containerMenu instanceof CraftingPlanMenu menu)) return;
         PlanView view = planView(player, menu.display().recipe());
-        PacketDistributor.sendToPlayer(player, new PlanUpdatePacket(menu.containerId, view.display(), view.all()));
+        CraftworksNetwork.sendToPlayer(player, new PlanUpdatePacket(menu.containerId, view.display(), view.all()));
     }
 
     /** What the screen shows, resolved one way for the open and every update so the two cannot drift. */
@@ -205,6 +205,6 @@ public final class PersonalAssembler {
 
     /** Sends the queue's display view. The plan itself never crosses. */
     public static void sync(ServerPlayer player) {
-        PacketDistributor.sendToPlayer(player, QueueSyncPacket.of(queueOf(player)));
+        CraftworksNetwork.sendToPlayer(player, QueueSyncPacket.of(queueOf(player)));
     }
 }

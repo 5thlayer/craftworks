@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- A player whose connection never opened Craftworks' channels, such as the mock player another mod's game tests make, is sent none of its payloads, where logging one in used to fail with `Payload craftworks:assembling_recipes may not be sent to the client!`. Game tests that load Craftworks beside a pack's own mods no longer fail for it.
+
 ## 0.4.0
 
 - An Assembling recipe's `results` replaces `result`, which no longer reads, so this breaks a pack's own recipes: it is a list of item stacks, and `"result": {"id": "minecraft:stick"}` becomes `"results": [{"id": "minecraft:stick"}]`. It is required, and written `[]` for a recipe that makes only fluids; an empty `results` with no `fluid_results` fails to load. In KubeJS `assembling(result, ingredients)` takes one stack or a list, so scripts read as before. EMI and JEI show every item and fluid result. (#24)
