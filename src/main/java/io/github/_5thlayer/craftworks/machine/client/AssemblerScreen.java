@@ -3,7 +3,6 @@
 
 package io.github._5thlayer.craftworks.machine.client;
 
-import io.github._5thlayer.craftworks.machine.AssemblerFluidBox;
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
@@ -35,7 +34,7 @@ public final class AssemblerScreen extends HeldMachineScreen<AssemblerMenu> {
         MachineScreens.energyBar(graphics, font, energyX, energyY, energyWidth, menu.energy(), menu.energyCapacity());
 
         if (menu.hasFluidBox()) {
-            MachineScreens.fluidGauge(graphics, menu.fluid(), leftPos + FLUID_X, energyY, FLUID_WIDTH, AssemblerFluidBox.CAPACITY);
+            MachineScreens.fluidGauge(graphics, menu.fluid(), leftPos + FLUID_X, energyY, FLUID_WIDTH, menu.fluidCapacity());
         }
     }
 
@@ -44,7 +43,7 @@ public final class AssemblerScreen extends HeldMachineScreen<AssemblerMenu> {
     protected void extractTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         super.extractTooltip(graphics, mouseX, mouseY);
         if (menu.hasFluidBox() && MachineScreens.overGauge(leftPos + FLUID_X, topPos + ENERGY_Y, FLUID_WIDTH, mouseX, mouseY)) {
-            MachineScreens.fluidTooltip(graphics, font, menu.fluid(), AssemblerFluidBox.CAPACITY, mouseX, mouseY);
+            MachineScreens.fluidTooltip(graphics, font, menu.fluid(), menu.fluidCapacity(), mouseX, mouseY);
         }
     }
 }

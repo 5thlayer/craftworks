@@ -16,14 +16,15 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * The Assembler's menu: five inputs, the product and the remainders, as {@link HeldMachineMenu} lays them out.
- * The fluid box (which fluid, by its registry id, and how much) rides in data slots after the shared ones; it
+ * The fluid box (which fluid, by its registry id, and how much, and its volume) rides in data slots after the shared ones; it
  * is drawn only by tiers 2 and 3, which {@link #hasFluidBox} tells the screen.
  */
 public final class AssemblerMenu extends HeldMachineMenu<AssemblerBlockEntity> {
 
-    /** The fluid box takes two: the fluid's registry id, then its amount. */
+    /** The fluid box takes two: the fluid's registry id, then its amount; and a third for what it holds at most. */
     private static final int DATA_FLUID = DATA_SHARED;
-    private static final int DATA_COUNT = DATA_SHARED + 2;
+    private static final int DATA_CAPACITY = DATA_FLUID + 2;
+    private static final int DATA_COUNT = DATA_CAPACITY + 1;
 
     public static final int REMAINDERS_X = PRODUCT_X + 18;
     public static final int INVENTORY_Y = 84;
@@ -46,7 +47,8 @@ public final class AssemblerMenu extends HeldMachineMenu<AssemblerBlockEntity> {
 
     /** Server side, over the machine's own inventory. */
     static AssemblerMenu open(int containerId, Inventory playerInventory, AssemblerBlockEntity machine) {
-        ContainerData data = data(machine, DATA_COUNT, index -> fluidData(machine.fluidBox().contents(), index - DATA_FLUID));
+        ContainerData data = data(machine, DATA_COUNT, index -> index == DATA_CAPACITY ? machine.fluidBox().capacity()
+                : fluidData(machine.fluidBox().contents(), index - DATA_FLUID));
         return new AssemblerMenu(containerId, playerInventory, machine, machine.getBlockPos(), machine.inventory(), data);
     }
 
@@ -63,6 +65,11 @@ public final class AssemblerMenu extends HeldMachineMenu<AssemblerBlockEntity> {
     /** Whether this Assembler's tier has a fluid box, and so the screen a gauge for it. */
     public boolean hasFluidBox() {
         return tier.hasFluidBox();
+    }
+
+    /** What the fluid box holds at most, in mB, as the Held recipe sizes it and the server last told it. */
+    public int fluidCapacity() {
+        return data.get(DATA_CAPACITY);
     }
 
     /** What is in the fluid box, or empty: the fluid and how much, as the server last told it. */

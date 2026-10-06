@@ -60,6 +60,8 @@ final class AssemblerFluidTests {
     private static final Identifier BIG_FLUID = id("gametest/big_fluid");
     private static final Identifier FULL_BOX = id("gametest/full_box");
     /** One fluid ingredient that water and lava both match. */
+    /** One dirt and 10 mB of water make a clay ball. */
+    private static final Identifier WATER_SMALL = id("gametest/water_small");
     private static final Identifier WATER_OR_LAVA = id("gametest/water_or_lava");
     private static final Identifier FLUID_RESULT = id("gametest/fluid_recipe");
     private static final Identifier SAPLING = AssemblerTests.OAK_SAPLING;
@@ -79,6 +81,7 @@ final class AssemblerFluidTests {
         tests.test("an_ingredient_that_several_fluids_match_takes_the_first_and_refuses_another_while_the_box_holds_one", 20,
                 AssemblerFluidTests::multiFluidIngredient);
         tests.test("it_stops_at_1000_mb", 20, AssemblerFluidTests::stopsAtABoxFull);
+        tests.test("a_tier_2_or_3_assembler_stops_pulling_at_4_crafts_worth_and_a_pipe_that_pushes_is_held_to_it", 20, AssemblerFluidTests::stopsAtFourCrafts);
         tests.test("changing_the_held_recipe_voids_the_box", 20, AssemblerFluidTests::voidsOnChange);
         tests.test("the_fluid_box_survives_a_save_and_reload", 20, AssemblerFluidTests::survivesReload);
         for (Direction facing : FACINGS) {
@@ -215,6 +218,29 @@ final class AssemblerFluidTests {
         }
         helper.assertTrue(inBox(assembler) == 1000, "the box holds " + inBox(assembler) + " mB, not its 1000");
         helper.assertTrue(inTank(water) == 4000, "the tank gave " + (5000 - inTank(water)) + " mB, not 1000");
+        helper.succeed();
+    }
+
+    /** 10 mB a craft: the box holds 40 mB, whatever the tier's speed, and a mod that pushes is held to it too. */
+    private static void stopsAtFourCrafts(GameTestHelper helper) {
+        for (AssemblerTier tier : List.of(AssemblerTier.TWO, AssemblerTier.THREE)) {
+            Placed assembler = AssemblerMachineTests.place(helper, tier);
+            TestTank.Entity water = tank(helper, beyond(assembler.facing()), Fluids.WATER, 5000);
+            AssemblerMachineTests.hold(assembler, WATER_SMALL);
+            helper.assertTrue(assembler.machine().fluidBox().capacity() == 40, "a tier " + tier + " box holds " + assembler.machine().fluidBox().capacity() + " mB, not 40");
+            for (int tick = 0; tick < 5; tick++) {
+                assembler.machine().serverTick(helper.getLevel());
+            }
+            helper.assertTrue(inBox(assembler) == 40, "the box holds " + inBox(assembler) + " mB, not the 40 of 4 crafts of 10");
+            helper.assertTrue(inTank(water) == 4960, "the tank gave " + (5000 - inTank(water)) + " mB, not 40");
+            ResourceHandler<FluidResource> face = helper.getLevel().getCapability(Capabilities.Fluid.BLOCK,
+                    helper.absolutePos(beyond(assembler.facing()).relative(assembler.facing().getOpposite())), assembler.facing());
+            helper.assertTrue(face != null && insert(face, Fluids.WATER, 500) == 0, "a mod that pushes filled a box already holding 4 crafts");
+            assembler.machine().fluidBox().set(new FluidStack(Fluids.WATER, 15));
+            helper.assertTrue(insert(face, Fluids.WATER, 500) == 25 && inBox(assembler) == 40, "a mod that pushes took the box past 40 mB: " + inBox(assembler));
+            helper.setBlock(beyond(assembler.facing()), Blocks.AIR);
+            helper.destroyBlock(AssemblerMachineTests.ORIGIN);
+        }
         helper.succeed();
     }
 

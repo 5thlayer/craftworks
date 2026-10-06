@@ -18,7 +18,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * A fluid machine's menu: its item slots, as {@link HeldMachineMenu} lays them out, and its fluid boxes. Each
  * box (which fluid, by its registry id, and how much) rides in data slots after the shared ones, with the
- * volume of the output boxes, which the Held recipe sizes.
+ * volume of every box, which the Held recipe sizes.
  */
 public final class FluidMachineMenu extends HeldMachineMenu<FluidMachineBlockEntity> {
 
@@ -43,23 +43,23 @@ public final class FluidMachineMenu extends HeldMachineMenu<FluidMachineBlockEnt
         this.description = description;
     }
 
-    private static int dataOutputCapacity(FluidMachine description) {
+    private static int dataCapacities(FluidMachine description) {
         return DATA_BOXES + 2 * description.boxes();
     }
 
     private static int dataCount(FluidMachine description) {
-        return dataOutputCapacity(description) + description.fluidOutputs();
+        return dataCapacities(description) + description.boxes();
     }
 
     /** Server side, over the machine's own inventory. */
     static FluidMachineMenu open(MenuType<?> menuType, int containerId, Inventory playerInventory, FluidMachineBlockEntity machine) {
         FluidMachine description = machine.machine();
-        int outputCapacity = dataOutputCapacity(description);
+        int capacities = dataCapacities(description);
         ContainerData data = data(machine, dataCount(description), index -> {
-            if (index < outputCapacity) {
+            if (index < capacities) {
                 return fluidData(machine.fluids().contents((index - DATA_BOXES) / 2), (index - DATA_BOXES) % 2);
             }
-            return machine.fluids().capacity(description.outputBox(index - outputCapacity));
+            return machine.fluids().capacity(index - capacities);
         });
         return new FluidMachineMenu(menuType, containerId, playerInventory, machine, machine.getBlockPos(), description,
                 machine.inventory(), data);
@@ -85,9 +85,8 @@ public final class FluidMachineMenu extends HeldMachineMenu<FluidMachineBlockEnt
         return fluidAt(DATA_BOXES + 2 * box);
     }
 
-    /** What box {@code box} holds at most, in mB: a bucket for an input, and what the Held recipe sizes an output at. */
+    /** What box {@code box} holds at most, in mB, as the Held recipe sizes it and the server last told it. */
     public int fluidCapacity(int box) {
-        return description.isInput(box) ? FluidMachineFluids.INPUT_CAPACITY
-                : data.get(dataOutputCapacity(description) + description.binding(box));
+        return data.get(dataCapacities(description) + box);
     }
 }

@@ -63,7 +63,7 @@ public final class HeldRecipes {
 
     /** Whether one craft's fluid fits the box: at most its capacity. */
     public static boolean fluidFits(AssemblingRecipe recipe) {
-        return recipe.fluidIngredients().stream().allMatch(fluid -> fluid.amount() <= AssemblerFluidBox.CAPACITY);
+        return recipe.fluidIngredients().stream().allMatch(fluid -> fluid.amount() <= FluidBoxes.INPUT_VOLUME);
     }
 
     /** Whether the tier's config lists the recipe's category. */

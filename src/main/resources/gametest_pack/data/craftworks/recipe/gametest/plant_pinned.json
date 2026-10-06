@@ -3,11 +3,11 @@
   "category": "chemistry",
   "ingredients": [],
   "fluid_ingredients": [
-    { "ingredient": "minecraft:water", "amount": 100 }
+    { "ingredient": "minecraft:water", "amount": 10 }
   ],
   "results": [],
   "fluid_results": [
-    { "id": "minecraft:lava", "amount": 100 }
+    { "id": "minecraft:lava", "amount": 40 }
   ],
   "pinned_fluid_results": true,
   "time": 20

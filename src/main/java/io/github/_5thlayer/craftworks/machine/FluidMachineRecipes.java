@@ -39,7 +39,7 @@ final class FluidMachineRecipes {
 
     /** Whether one craft's fluid ingredients each fit an input box. An output box grows to hold its result. */
     static boolean fluidFits(AssemblingRecipe recipe) {
-        return recipe.fluidIngredients().stream().allMatch(fluid -> fluid.amount() <= FluidMachineFluids.INPUT_CAPACITY);
+        return recipe.fluidIngredients().stream().allMatch(fluid -> fluid.amount() <= FluidBoxes.INPUT_VOLUME);
     }
 
     static boolean fitsSlots(FluidMachine machine, AssemblingRecipe recipe) {

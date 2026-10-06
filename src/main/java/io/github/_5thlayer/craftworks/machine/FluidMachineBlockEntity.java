@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.fluids.FluidStackTemplate;
 import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 import net.neoforged.neoforge.transfer.RangedResourceHandler;
 import net.neoforged.neoforge.transfer.ResourceHandler;
@@ -74,16 +75,27 @@ public final class FluidMachineBlockEntity extends HeldMachineBlockEntity {
                                 && resource.matches(recipe.fluidResults().get(n))).isPresent();
             }
 
-            /** The Overload Limit's crafts of the result bound to output box {@code n}, or at least a bucket. */
+            /** 4 crafts' worth of the ingredient bound to input box {@code n}, or a full box. */
+            @Override
+            public int inputCapacity(int n) {
+                if (!(level instanceof ServerLevel server)) {
+                    return FluidBoxes.INPUT_VOLUME;
+                }
+                return runnable(server).filter(recipe -> n < recipe.fluidIngredients().size())
+                        .map(recipe -> FluidBoxes.inputLimit(recipe.fluidIngredients().get(n).amount()))
+                        .orElse(FluidBoxes.INPUT_VOLUME);
+            }
+
+            /** What the Held recipe sizes output box {@code n} at, or the box's own 100 mB. */
             @Override
             public int outputCapacity(int n) {
                 if (!(level instanceof ServerLevel server)) {
-                    return FluidMachineFluids.INPUT_CAPACITY;
+                    return FluidBoxes.OUTPUT_BOX;
                 }
                 return runnable(server).filter(recipe -> n < recipe.fluidResults().size())
-                        .map(recipe -> OverloadLimit.outputBox(FluidMachineFluids.INPUT_CAPACITY, overloadCrafts(recipe),
-                                recipe.fluidResults().get(n).amount()))
-                        .orElse(FluidMachineFluids.INPUT_CAPACITY);
+                        .map(recipe -> FluidBoxes.outputVolumes(machine.fluidOutputs(),
+                                recipe.fluidResults().stream().map(FluidStackTemplate::amount).toList(), recipe.pinnedFluidResults()).get(n))
+                        .orElse(FluidBoxes.OUTPUT_BOX);
             }
 
             @Override
@@ -196,7 +208,7 @@ public final class FluidMachineBlockEntity extends HeldMachineBlockEntity {
         for (Connection connection : connections()) {
             ResourceHandler<FluidResource> neighbour = null;
             for (int box = 0; box < recipe.fluidIngredients().size(); box++) {
-                int room = FluidMachineFluids.INPUT_CAPACITY - fluids.getAmountAsInt(box);
+                int room = fluids.capacity(box) - fluids.getAmountAsInt(box);
                 if (room <= 0) {
                     continue;
                 }

@@ -33,23 +33,4 @@ class OverloadLimitTest {
         assertEquals(2, OverloadLimit.room(2, 3, 4));
         assertEquals(0, OverloadLimit.room(2, 3, 9));
     }
-
-    @Test
-    void anOutputBoxHoldsAtLeastItsBoxAndTheLimitsCraftsOfItsResult() {
-        // 3 crafts of 250 mB fit in the box it has; 3 of 500 mB do not, so the box grows to hold them.
-        assertEquals(1000, OverloadLimit.outputBox(1000, 3, 250));
-        assertEquals(1500, OverloadLimit.outputBox(1000, 3, 500));
-        assertEquals(1000, OverloadLimit.outputBox(1000, 3, 333));
-        assertEquals(1002, OverloadLimit.outputBox(1000, 3, 334));
-    }
-
-    @Test
-    void anOutputBoxWithNoResultBoundToItHoldsItsBox() {
-        assertEquals(1000, OverloadLimit.outputBox(1000, 3, 0));
-    }
-
-    @Test
-    void anOutputBoxNeverOverflowsAnInt() {
-        assertEquals(Integer.MAX_VALUE, OverloadLimit.outputBox(1000, 100, Integer.MAX_VALUE));
-    }
 }

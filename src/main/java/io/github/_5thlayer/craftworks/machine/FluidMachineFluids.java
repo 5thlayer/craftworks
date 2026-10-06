@@ -11,16 +11,13 @@ import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
  * A fluid machine's boxes: its input boxes, then its output boxes. The Held recipe's {@code n}th
  * fluid ingredient goes in input box {@code n} and its {@code n}th fluid result in output box {@code n}.
  *
- * <p>An input box holds {@link #INPUT_CAPACITY} mB, like an Assembler's. An output box holds the larger of
- * that and the Overload Limit's crafts' worth of the result bound to it, so the machine makes a few crafts
- * before it stalls on a full box ({@link OverloadLimit#outputBox}); with no Held recipe, or no result bound to
- * it, 1,000 mB. What may go in is the machine's to say: an input takes the ingredient bound to it, an output
+ * <p>An input box holds the {@link FluidBoxes} rule's 4 crafts' worth of the ingredient bound to it, an output
+ * box the larger of 100 mB and 3 crafts' worth of the result bound to it, the first result taking the boxes
+ * the recipe leaves unused unless the recipe is Pinned; with no Held recipe, or nothing bound to it, a box
+ * holds its own volume. What may go in is the machine's to say: an input takes the ingredient bound to it, an output
  * the result bound to it, so the machine's own craft, a pipe that pushes and its own pull meet the same filter.
  */
 public final class FluidMachineFluids extends FluidStacksResourceHandler {
-
-    /** mB an input box holds, and an output box at least: a bucket's worth. */
-    public static final int INPUT_CAPACITY = AssemblerFluidBox.CAPACITY;
 
     /** What the machine says about its boxes. */
     interface Owner {
@@ -30,6 +27,9 @@ public final class FluidMachineFluids extends FluidStacksResourceHandler {
 
         /** Whether output box {@code n} takes {@code resource}: it is the Held recipe's {@code n}th fluid result. */
         boolean makesOutput(int n, FluidResource resource);
+
+        /** What input box {@code n} holds under the Held recipe, in mB. */
+        int inputCapacity(int n);
 
         /** What output box {@code n} holds under the Held recipe, in mB. */
         int outputCapacity(int n);
@@ -41,7 +41,7 @@ public final class FluidMachineFluids extends FluidStacksResourceHandler {
     private final Owner owner;
 
     FluidMachineFluids(FluidMachine machine, Owner owner) {
-        super(machine.boxes(), INPUT_CAPACITY);
+        super(machine.boxes(), FluidBoxes.INPUT_VOLUME);
         this.machine = machine;
         this.owner = owner;
     }
@@ -58,7 +58,7 @@ public final class FluidMachineFluids extends FluidStacksResourceHandler {
 
     /** What box {@code box} holds at most, in mB, as the Held recipe sizes it. */
     public int capacity(int box) {
-        return machine.isInput(box) ? INPUT_CAPACITY : owner.outputCapacity(machine.binding(box));
+        return machine.isInput(box) ? owner.inputCapacity(machine.binding(box)) : owner.outputCapacity(machine.binding(box));
     }
 
     @Override

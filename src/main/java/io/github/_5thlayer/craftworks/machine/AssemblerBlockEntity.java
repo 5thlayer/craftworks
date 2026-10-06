@@ -126,6 +126,14 @@ public final class AssemblerBlockEntity extends HeldMachineBlockEntity {
                 && fluidIngredient(server).filter(wanted -> FluidMoves.consumedBy(wanted).test(resource)).isPresent();
     }
 
+    /** What the box holds at most, in mB: 4 crafts' worth of the Held recipe's fluid, or a full box with none to size it by. */
+    int fluidCapacity() {
+        if (!(level instanceof ServerLevel server)) {
+            return FluidBoxes.INPUT_VOLUME;
+        }
+        return fluidIngredient(server).map(wanted -> FluidBoxes.inputLimit(wanted.amount())).orElse(FluidBoxes.INPUT_VOLUME);
+    }
+
     /**
      * Makes the connections what the Held recipe says: the origin's block state, which the model draws the
      * rings from, and the capability of the two connection blocks, which every pipe that asked is told changed.
@@ -163,7 +171,7 @@ public final class AssemblerBlockEntity extends HeldMachineBlockEntity {
             return;
         }
         for (Direction side : FluidConnections.sides(facing())) {
-            int room = AssemblerFluidBox.CAPACITY - fluidBox.getAmountAsInt(0);
+            int room = fluidBox.capacity() - fluidBox.getAmountAsInt(0);
             if (room <= 0) {
                 return;
             }

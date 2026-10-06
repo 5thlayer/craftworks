@@ -66,6 +66,9 @@ final class ChemicalPlantTests {
     /** 100 mB of water make 400 mB of water and 100 mB of lava: two output boxes, each bound to a result. */
     private static final Identifier TWO_OUTPUTS = id("gametest/plant_two_outputs");
     /** 1,000 mB of each of two fluids make 1,000 mB of each of two others. */
+    /** 10 mB of water make 40 mB of lava, in one result and one of two output boxes; the other is the same, Pinned. */
+    private static final Identifier ONE_RESULT = id("gametest/plant_one_result");
+    private static final Identifier PINNED = id("gametest/plant_pinned");
     private static final Identifier FULL_BOXES = id("gametest/plant_full_boxes");
     private static final Identifier THREE_FLUIDS = id("gametest/plant_three_fluids");
     private static final Identifier THREE_RESULTS = id("gametest/plant_three_results");
@@ -106,7 +109,10 @@ final class ChemicalPlantTests {
         tests.test("a_neighbour_that_no_connection_faces_is_neither_pulled_from_nor_pushed_to", 20, ChemicalPlantTests::onlyConnectionsAreUsed);
         tests.test("the_connections_come_and_go_with_a_fluid_in_the_held_recipe_and_a_pipe_that_asked_is_told", 20, ChemicalPlantTests::connectionsComeAndGo);
         tests.test("a_connection_fills_an_input_box_and_drains_an_output_box_and_does_neither_the_other_way", 20, ChemicalPlantTests::connectionFaces);
-        tests.test("an_input_box_holds_1000_mb_and_an_output_box_the_larger_of_1000_and_the_overload_limits_crafts_of_its_result", 20, ChemicalPlantTests::boxSizes);
+        tests.test("an_input_box_holds_4_crafts_of_its_ingredient_and_an_output_box_the_larger_of_100_mb_and_3_crafts_of_its_result", 20, ChemicalPlantTests::boxSizes);
+        tests.test("a_chemical_plants_input_box_stops_pulling_at_4_crafts_worth_and_a_pipe_that_pushes_is_held_to_it", 20, ChemicalPlantTests::inputBoxStopsAtFourCrafts);
+        tests.test("a_chemical_plants_output_box_holds_3_crafts_worth_and_the_craft_stalls_past_it", 20, ChemicalPlantTests::outputBoxHoldsCraftsAndStalls);
+        tests.test("a_recipe_with_one_fluid_result_on_a_two_output_plant_gets_the_merged_box_and_pinned_it_does_not", 20, ChemicalPlantTests::mergedAndPinnedBoxes);
         tests.test("changing_the_held_recipe_voids_the_four_boxes", 20, ChemicalPlantTests::voidsOnChange);
         tests.test("fill_recipe_refuses_what_the_boxes_and_slots_of_a_chemical_plant_cannot_hold", 20, ChemicalPlantTests::refusals);
         tests.test("the_item_capability_takes_the_held_recipes_two_ingredients_to_the_overload_limit_and_gives_only_the_product", 20, ChemicalPlantTests::itemFaces);
@@ -333,11 +339,11 @@ final class ChemicalPlantTests {
         helper.assertTrue(plant.machine().inventory().getResource(PRODUCT).getItem() == Items.GOLD_INGOT,
                 "the product was not a gold ingot");
         helper.assertTrue(count(plant, 0) == 2, "the craft left " + count(plant, 0) + " iron, not 2");
-        // The first tick filled each input box from its tank, and the craft took 200 and 100.
-        helper.assertTrue(box(plant, 0).getFluid() == Fluids.WATER && amount(plant, 0) == 800, "input box 1 holds " + box(plant, 0));
-        helper.assertTrue(box(plant, 1).getFluid() == Fluids.LAVA && amount(plant, 1) == 900, "input box 2 holds " + box(plant, 1));
-        helper.assertTrue(inTank(water) == 4000 && inTank(lava) == 4000,
-                "the tanks hold " + inTank(water) + " and " + inTank(lava) + " mB, not 4000 each");
+        // The first tick filled each input box to 4 crafts' worth, 800 and 400 mB, and the craft took 200 and 100.
+        helper.assertTrue(box(plant, 0).getFluid() == Fluids.WATER && amount(plant, 0) == 600, "input box 1 holds " + box(plant, 0));
+        helper.assertTrue(box(plant, 1).getFluid() == Fluids.LAVA && amount(plant, 1) == 300, "input box 2 holds " + box(plant, 1));
+        helper.assertTrue(inTank(water) == 4200 && inTank(lava) == 4600,
+                "the tanks hold " + inTank(water) + " and " + inTank(lava) + " mB, not 4200 and 4600");
         // The result went out through the connections, as it was made.
         helper.assertTrue(inTank(sink) == 600 && sink.tank.getResource(0).getFluid() == Fluids.WATER, "the drain holds " + sink.tank.getResource(0) + " x " + inTank(sink));
         helper.assertTrue(amount(plant, 2) == 0 && amount(plant, 3) == 0, "the output boxes still hold " + amount(plant, 2) + " and " + amount(plant, 3));
@@ -513,7 +519,7 @@ final class ChemicalPlantTests {
             plant.machine().fluids().set(2, new FluidStack(Fluids.WATER, 300));
             TestTank.Entity water = source(helper, connection, Fluids.WATER, 5000);
             tick(plant, 1);
-            helper.assertTrue(amount(plant, 0) == 1000 && inTank(water) == 4000,
+            helper.assertTrue(amount(plant, 0) == 800 && inTank(water) == 4200,
                     "the connection at " + connection + " alone left " + amount(plant, 0) + " mB in the box and " + inTank(water) + " in the tank");
             // The same face, with a drain in the source's place, takes the output.
             TestTank.Entity sink = drain(helper, connection);
@@ -533,9 +539,9 @@ final class ChemicalPlantTests {
         // Lava first and alone: it goes to the box the recipe's second ingredient names, and water has none yet.
         TestTank.Entity lava = source(helper, at.get(2), Fluids.LAVA, 5000);
         tick(plant, 1);
-        helper.assertTrue(amount(plant, 0) == 0 && box(plant, 1).getFluid() == Fluids.LAVA && amount(plant, 1) == 1000,
+        helper.assertTrue(amount(plant, 0) == 0 && box(plant, 1).getFluid() == Fluids.LAVA && amount(plant, 1) == 400,
                 "lava went to " + box(plant, 0) + " and " + box(plant, 1));
-        helper.assertTrue(inTank(lava) == 4000, "the lava tank holds " + inTank(lava));
+        helper.assertTrue(inTank(lava) == 4600, "the lava tank holds " + inTank(lava));
         // A fluid the recipe doesn't use is left where it is.
         helper.setBlock(at.get(2).beyond(), Blocks.AIR);
         TestTank.Entity other = source(helper, at.get(0), Fluids.FLOWING_LAVA, 5000);
@@ -544,8 +550,8 @@ final class ChemicalPlantTests {
         helper.setBlock(at.get(0).beyond(), Blocks.AIR);
         TestTank.Entity water = source(helper, at.get(0), Fluids.WATER, 5000);
         tick(plant, 1);
-        helper.assertTrue(box(plant, 0).getFluid() == Fluids.WATER && amount(plant, 0) == 1000, "water went to " + box(plant, 0));
-        helper.assertTrue(inTank(water) == 4000, "the water tank holds " + inTank(water));
+        helper.assertTrue(box(plant, 0).getFluid() == Fluids.WATER && amount(plant, 0) == 800, "water went to " + box(plant, 0));
+        helper.assertTrue(inTank(water) == 4200, "the water tank holds " + inTank(water));
         helper.succeed();
     }
 
@@ -611,7 +617,7 @@ final class ChemicalPlantTests {
         // A mod that pushes fills the input box the recipe's order names, and only with the fluid it takes there.
         helper.assertTrue(insertFluid(face, Fluids.WATER, 150) == 150 && box(plant, 0).getFluid() == Fluids.WATER, "water did not reach input box 1");
         helper.assertTrue(insertFluid(face, Fluids.LAVA, 50) == 50 && box(plant, 1).getFluid() == Fluids.LAVA, "lava did not reach input box 2");
-        helper.assertTrue(insertFluid(face, Fluids.WATER, 5000) == 850, "input box 1 took more than its 1000 mB");
+        helper.assertTrue(insertFluid(face, Fluids.WATER, 5000) == 650, "input box 1 took more than its 4 crafts' 800 mB");
         helper.assertTrue(insertFluid(face, Fluids.FLOWING_LAVA, 100) == 0, "a fluid the recipe doesn't use went in");
         // Nothing comes out of an input box.
         helper.assertTrue(extractFluid(face, Fluids.WATER, 100) == 0 && extractFluid(face, Fluids.LAVA, 10) == 0, "an input box gave fluid out");
@@ -627,16 +633,18 @@ final class ChemicalPlantTests {
         Placed plant = place(helper);
         FluidMachineFluids boxes = plant.machine().fluids();
         for (int box = 0; box < 4; box++) {
-            helper.assertTrue(boxes.capacity(box) == 1000, "box " + box + " holds " + boxes.capacity(box) + " mB with no Held recipe, not 1000");
+            int expected = box < 2 ? 1000 : 100;
+            helper.assertTrue(boxes.capacity(box) == expected, "box " + box + " holds " + boxes.capacity(box) + " mB with no Held recipe, not " + expected);
         }
-        // Speed 1 and 20 ticks make the Overload Limit 3 crafts.
+        // An input box holds 4 crafts of its ingredient; an output box the larger of 100 mB and 3 crafts of its result.
         hold(plant, FULL);
-        helper.assertTrue(boxes.capacity(0) == 1000 && boxes.capacity(1) == 1000, "the input boxes hold " + boxes.capacity(0) + " and " + boxes.capacity(1));
+        helper.assertTrue(boxes.capacity(0) == 800 && boxes.capacity(1) == 400, "the input boxes hold " + boxes.capacity(0) + " and " + boxes.capacity(1));
         helper.assertTrue(boxes.capacity(2) == 1800, "output box 1 holds " + boxes.capacity(2) + " mB, not 3 crafts of 600");
-        helper.assertTrue(boxes.capacity(3) == 1000, "output box 2 has no result bound to it and holds " + boxes.capacity(3) + " mB, not 1000");
+        helper.assertTrue(boxes.capacity(3) == 100, "output box 2 has no result bound to it and holds " + boxes.capacity(3) + " mB, not 100");
         hold(plant, TWO_OUTPUTS);
+        helper.assertTrue(boxes.capacity(0) == 400, "the input box holds " + boxes.capacity(0) + " mB, not 4 crafts of 100");
         helper.assertTrue(boxes.capacity(2) == 1200, "output box 1 holds " + boxes.capacity(2) + " mB, not 3 crafts of 400");
-        helper.assertTrue(boxes.capacity(3) == 1000, "3 crafts of 100 mB are under the box, which holds " + boxes.capacity(3));
+        helper.assertTrue(boxes.capacity(3) == 300, "output box 2 holds " + boxes.capacity(3) + " mB, not 3 crafts of 100");
         hold(plant, FULL_BOXES);
         helper.assertTrue(boxes.capacity(0) == 1000 && boxes.capacity(2) == 3000 && boxes.capacity(3) == 3000,
                 "1000 mB a craft gave boxes of " + boxes.capacity(0) + ", " + boxes.capacity(2) + " and " + boxes.capacity(3));
@@ -645,8 +653,83 @@ final class ChemicalPlantTests {
         ResourceHandler<FluidResource> face = plant.fluid(plant.connections().get(0));
         helper.assertTrue(extractFluid(face, Fluids.WATER, 1) == 0, "an empty box gave water");
         boxes.set(2, new FluidStack(Fluids.WATER, 1200));
-        boxes.set(3, new FluidStack(Fluids.LAVA, 700));
-        helper.assertTrue(extractFluid(face, Fluids.WATER, 5000) == 1200 && extractFluid(face, Fluids.LAVA, 5000) == 700, "the outputs were not drained whole");
+        boxes.set(3, new FluidStack(Fluids.LAVA, 300));
+        helper.assertTrue(extractFluid(face, Fluids.WATER, 5000) == 1200 && extractFluid(face, Fluids.LAVA, 5000) == 300, "the outputs were not drained whole");
+        helper.succeed();
+    }
+
+    /**
+     * Water at one connection, with no power: the input box fills to 4 crafts of the ingredient bound to it and the
+     * plant pulls no more, a recipe of 10 mB holding 40 and one of 200 mB holding 800. A mod that pushes is held to
+     * the same limit.
+     */
+    private static void inputBoxStopsAtFourCrafts(GameTestHelper helper) {
+        Placed plant = place(helper);
+        List<Connection> at = plant.connections();
+        TestTank.Entity water = source(helper, at.get(0), Fluids.WATER, 5000);
+        hold(plant, ONE_RESULT);
+        for (int tick = 0; tick < 5; tick++) {
+            plant.machine().serverTick(helper.getLevel());
+        }
+        helper.assertTrue(amount(plant, 0) == 40, "input box 1 holds " + amount(plant, 0) + " mB, not the 40 of 4 crafts of 10");
+        helper.assertTrue(inTank(water) == 4960, "the tank gave " + (5000 - inTank(water)) + " mB, not 40");
+        ResourceHandler<FluidResource> face = plant.fluid(at.get(1));
+        helper.assertTrue(insertFluid(face, Fluids.WATER, 500) == 0, "a mod that pushes filled a box already holding 4 crafts");
+        plant.machine().fluids().set(0, new FluidStack(Fluids.WATER, 10));
+        helper.assertTrue(insertFluid(face, Fluids.WATER, 500) == 30 && amount(plant, 0) == 40, "a mod that pushes took the box past 40 mB: " + amount(plant, 0));
+        // 200 mB a craft: 4 crafts is 800 mB.
+        plant.machine().fluids().set(0, FluidStack.EMPTY);
+        hold(plant, FULL);
+        helper.assertTrue(insertFluid(face, Fluids.WATER, 5000) == 800 && amount(plant, 0) == 800, "200 mB a craft filled the box to " + amount(plant, 0));
+        helper.succeed();
+    }
+
+    /**
+     * With no way out the plant makes crafts until its output box can't hold another's result, and waits there. A
+     * recipe of 40 mB a craft that is Pinned keeps to its own box, 3 crafts' worth, 120 mB; unpinned, the first
+     * result also takes the unused box's 100 mB and the volume is 200, 5 crafts.
+     */
+    private static void outputBoxHoldsCraftsAndStalls(GameTestHelper helper) {
+        for (Identifier recipe : List.of(PINNED, ONE_RESULT)) {
+            int volume = recipe.equals(PINNED) ? 120 : 200;
+            Placed plant = place(helper);
+            source(helper, plant.connections().get(0), Fluids.WATER, 5000);
+            hold(plant, recipe);
+            helper.assertTrue(plant.machine().fluids().capacity(2) == volume,
+                    recipe + " sizes output box 1 at " + plant.machine().fluids().capacity(2) + " mB, not " + volume);
+            SimpleEnergyHandler supply = AssemblerMachineTests.supply();
+            for (int ran = 0; ran < 300; ran++) {
+                tick(plant, supply);
+            }
+            helper.assertTrue(amount(plant, 2) == volume && box(plant, 2).getFluid() == Fluids.LAVA,
+                    recipe + " made " + box(plant, 2) + ", not " + volume + " mB of lava, " + volume / 40 + " crafts");
+            helper.assertTrue(plant.machine().state() == MachineState.OUTPUT_FULL, "a plant with a full output box reported " + plant.machine().state());
+            // Stalled: it draws nothing, makes no progress and takes no input.
+            int energy = plant.machine().energy();
+            int inBox = amount(plant, 0);
+            for (int tick = 0; tick < 10; tick++) {
+                plant.machine().serverTick(helper.getLevel());
+            }
+            helper.assertTrue(plant.machine().energy() == energy && plant.machine().craftProgress() == 0 && amount(plant, 0) == inBox && amount(plant, 2) == volume,
+                    recipe + " went on past a full box");
+            helper.destroyBlock(ORIGIN);
+        }
+        helper.succeed();
+    }
+
+    /** A recipe with one fluid result on a two-output plant gets the unused box's volume too; Pinned, it doesn't. */
+    private static void mergedAndPinnedBoxes(GameTestHelper helper) {
+        Placed plant = place(helper);
+        FluidMachineFluids boxes = plant.machine().fluids();
+        hold(plant, ONE_RESULT);
+        helper.assertTrue(boxes.capacity(2) == 200 && boxes.capacity(3) == 100,
+                "an unpinned recipe sizes its boxes at " + boxes.capacity(2) + " and " + boxes.capacity(3) + ", not 200 (its own 100 and the unused box's) and 100");
+        hold(plant, PINNED);
+        helper.assertTrue(boxes.capacity(2) == 120 && boxes.capacity(3) == 100,
+                "a pinned recipe sizes its boxes at " + boxes.capacity(2) + " and " + boxes.capacity(3) + ", not 120 (3 crafts of 40) and 100");
+        // A recipe with a result in each box has nothing to merge.
+        hold(plant, TWO_OUTPUTS);
+        helper.assertTrue(boxes.capacity(2) == 1200 && boxes.capacity(3) == 300, "two results sized the boxes at " + boxes.capacity(2) + " and " + boxes.capacity(3));
         helper.succeed();
     }
 
@@ -747,7 +830,8 @@ final class ChemicalPlantTests {
         helper.assertTrue(client.fluid(0).getFluid() == Fluids.WATER && client.fluid(0).getAmount() == 400, "the screen shows " + client.fluid(0) + " in box 1");
         helper.assertTrue(client.fluid(1).getFluid() == Fluids.LAVA && client.fluid(1).getAmount() == 25, "the screen shows " + client.fluid(1) + " in box 2");
         helper.assertTrue(client.fluid(2).getAmount() == 1700 && client.fluid(3).isEmpty(), "the screen shows " + client.fluid(2) + " and " + client.fluid(3));
-        helper.assertTrue(client.fluidCapacity(2) == 1800 && client.fluidCapacity(0) == 1000, "the screen shows capacities " + client.fluidCapacity(0) + " and " + client.fluidCapacity(2));
+        helper.assertTrue(client.fluidCapacity(0) == 800 && client.fluidCapacity(1) == 400 && client.fluidCapacity(2) == 1800 && client.fluidCapacity(3) == 100,
+                "the screen shows capacities " + client.fluidCapacity(0) + ", " + client.fluidCapacity(1) + ", " + client.fluidCapacity(2) + " and " + client.fluidCapacity(3));
         helper.assertTrue(client.energy() == plant.machine().energy() && client.energyCapacity() == 50_000, "the screen shows " + client.energy() + " of " + client.energyCapacity() + " FE");
         helper.succeed();
     }
