@@ -21,6 +21,7 @@ import io.github._5thlayer.craftworks.assembler.ReadyRecipeIds;
 import io.github._5thlayer.craftworks.compat.ConfiguredTabs;
 import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.ChemicalPlants;
+import io.github._5thlayer.craftworks.machine.OilRefineries;
 import io.github._5thlayer.craftworks.machine.MachineKind;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
 import io.github._5thlayer.craftworks.machine.client.FluidMachineScreen;
@@ -48,7 +49,7 @@ import net.minecraft.resources.Identifier;
  * null menu type since {@code InventoryMenu} has none. So Fill Recipe queues from the inventory screen and
  * nowhere else.
  *
- * <p>The Assembler and Chemical Plant screens' ghosts answer Recipe and Uses as a real stack does (see {@link #ghostAt}).
+ * <p>The machine screens' ghosts answer Recipe and Uses as a real stack does (see {@link #ghostAt}).
  */
 @EmiEntrypoint
 public final class AssemblingEmiPlugin implements EmiPlugin {
@@ -77,7 +78,7 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
     }
 
     /**
-     * The ghost under the mouse on an Assembler's or a Chemical Plant's screen, as EMI's hovered stack, or none
+     * The ghost under the mouse on a machine's screen, as EMI's hovered stack, or none
      * where there isn't one, so EMI's own slot lookup answers for a real stack. One item, whatever count the
      * ghost is drawn with: Recipe and Uses ask about the item.
      */
@@ -107,6 +108,7 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
         registry.addRecipeHandler(null, new PersonalAssemblerEmiHandler());
         registry.addRecipeHandler(Assemblers.MENU.get(), new HeldMachineEmiHandler<>(MachineKind.ASSEMBLER));
         registry.addRecipeHandler(ChemicalPlants.MENU.get(), new HeldMachineEmiHandler<>(MachineKind.CHEMICAL_PLANT));
+        registry.addRecipeHandler(OilRefineries.MENU.get(), new HeldMachineEmiHandler<>(MachineKind.OIL_REFINERY));
         registry.addStackProvider(AssemblerScreen.class, AssemblingEmiPlugin::ghostAt);
         registry.addStackProvider(FluidMachineScreen.class, AssemblingEmiPlugin::ghostAt);
         for (MachineKind machine : MachineKind.values()) {

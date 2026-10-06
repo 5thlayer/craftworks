@@ -9,6 +9,8 @@
     "craftworks:creative_energy_source",
     "craftworks:creative_fluid_source",
     "craftworks:chemical_plant",
-    "craftworks:chemical_plant_part"
+    "craftworks:chemical_plant_part",
+    "craftworks:oil_refinery",
+    "craftworks:oil_refinery_part"
   ]
 }

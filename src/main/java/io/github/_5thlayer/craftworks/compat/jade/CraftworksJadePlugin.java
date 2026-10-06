@@ -6,6 +6,7 @@ package io.github._5thlayer.craftworks.compat.jade;
 import io.github._5thlayer.craftworks.machine.AssemblerBlock;
 import io.github._5thlayer.craftworks.machine.AssemblerBlockEntity;
 import io.github._5thlayer.craftworks.machine.ChemicalPlantBlock;
+import io.github._5thlayer.craftworks.machine.OilRefineryBlock;
 import io.github._5thlayer.craftworks.machine.FluidMachineBlockEntity;
 import io.github._5thlayer.craftworks.machine.CreativeEnergySourceBlockEntity;
 import io.github._5thlayer.craftworks.machine.CreativeFluidSourceBlockEntity;
@@ -15,14 +16,14 @@ import snownee.jade.api.IWailaPlugin;
 import snownee.jade.api.WailaPlugin;
 
 /**
- * Shows an Assembler's or a Chemical Plant's Held recipe, state and energy in Jade's tooltip, with the fluid box of
- * tiers 2 and 3 and the Chemical Plant's boxes as Jade's own fluid bars (#25, #26); the Creative Energy Source's energy as Infinite FE (#28); and the Creative
+ * Shows an Assembler's, a Chemical Plant's or an Oil Refinery's Held recipe, state and energy in Jade's tooltip, with the fluid box of
+ * tiers 2 and 3 and the Chemical Plant's and Oil Refinery's boxes as Jade's own fluid bars (#25, #26, #27); the Creative Energy Source's energy as Infinite FE (#28); and the Creative
  * Fluid Source's fluid as, say, "Water, infinite" (#32).
  *
  * <p>Jade finds this by its annotation and loads it only when Jade is installed; nothing else in the Mod
  * names a Jade type, so the Mod loads without it.
  *
- * <p>Every block of an Assembler's or a Chemical Plant's footprint shows the same, with no code of ours: Groundworks' own Jade
+ * <p>Every block of a machine's footprint shows the same, with no code of ours: Groundworks' own Jade
  * plugin reads a part as its origin, whose block entity and energy are the Assembler's. The item list is
  * Jade's own, from the item capability.
  */
@@ -43,6 +44,7 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
     public void registerClient(IWailaClientRegistration registration) {
         registration.registerBlockComponent(HeldMachineReport.Client.INSTANCE, AssemblerBlock.class);
         registration.registerBlockComponent(HeldMachineReport.Client.INSTANCE, ChemicalPlantBlock.class);
+        registration.registerBlockComponent(HeldMachineReport.Client.INSTANCE, OilRefineryBlock.class);
         registration.registerEnergyStorageClient(InfiniteEnergy.INSTANCE);
         registration.registerFluidStorageClient(InfiniteFluid.INSTANCE);
         registration.registerFluidStorageClient(AssemblerFluid.INSTANCE);

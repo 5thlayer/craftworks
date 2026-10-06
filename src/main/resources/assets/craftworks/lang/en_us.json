@@ -64,6 +64,7 @@
   "craftworks.jade.no_fluid": "No fluid",
   "config.jade.plugin_craftworks.assembler": "Assembler",
   "block.craftworks.chemical_plant": "Chemical Plant",
+  "block.craftworks.oil_refinery": "Oil Refinery",
   "craftworks.chemical_plant.fill_recipe": "Set as this Chemical Plant's recipe",
   "craftworks.chemical_plant.refused.not_assembling": "%s is not an Assembling recipe the Chemical Plant can hold.",
   "craftworks.chemical_plant.refused.wrong_category": "%s is in a recipe category the Chemical Plant can't make.",

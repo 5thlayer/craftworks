@@ -137,6 +137,7 @@ public final class Assemblers {
                     .displayItems((parameters, output) -> {
                         ITEM_BY_TIER.values().forEach(output::accept);
                         output.accept(ChemicalPlants.ITEM.get());
+                        output.accept(OilRefineries.ITEM.get());
                         output.accept(CREATIVE_ENERGY_SOURCE_ITEM.get());
                         output.accept(CREATIVE_FLUID_SOURCE_ITEM.get());
                     })

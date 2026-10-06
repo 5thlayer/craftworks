@@ -12,7 +12,7 @@ import net.minecraft.core.Direction;
  * A machine that holds fluid, described: which machine it is, its item input slots, whether it has a product
  * slot, its input and output fluid boxes and where its Fluid Connections stand. The block entity, the menu, the
  * boxes, the connections and the recipes it may hold all read this and nothing machine-specific, so a machine
- * is one more instance: the Chemical Plant is {@link #CHEMICAL_PLANT}.
+ * is one more instance: the Chemical Plant is {@link #CHEMICAL_PLANT} and the Oil Refinery {@link #OIL_REFINERY}.
  *
  * <p>The boxes are numbered inputs first, then outputs; the Held recipe's {@code n}th fluid ingredient goes in
  * input box {@code n} and its {@code n}th fluid result in output box {@code n}. The item slots are the inputs,
@@ -81,6 +81,16 @@ public record FluidMachine(MachineKind kind, MachineDefaults defaults, int itemI
             2, true, 2, 2, List.of(
                     new Site(1, 1, Face.AHEAD), new Site(1, -1, Face.AHEAD),
                     new Site(-1, 1, Face.BEHIND), new Site(-1, -1, Face.BEHIND)));
+
+    /**
+     * Factorio's oil refinery: no item slots, two input and three output boxes, and five connections on the
+     * bottom layer of its 5x5, where its pipe connections are: two at -1 and +1 along the edge it faces, three at
+     * -2, 0 and +2 along the opposite edge.
+     */
+    public static final FluidMachine OIL_REFINERY = new FluidMachine(MachineKind.OIL_REFINERY, OilRefineryDefaults.INSTANCE,
+            0, false, 2, 3, List.of(
+                    new Site(2, -1, Face.AHEAD), new Site(2, 1, Face.AHEAD),
+                    new Site(-2, -2, Face.BEHIND), new Site(-2, 0, Face.BEHIND), new Site(-2, 2, Face.BEHIND)));
 
     // -- the item slots -------------------------------------------------------------------------
 
