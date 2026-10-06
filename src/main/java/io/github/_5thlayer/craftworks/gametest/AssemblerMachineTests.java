@@ -479,6 +479,8 @@ final class AssemblerMachineTests {
         helper.succeed();
     }
 
+    // -- the client -----------------------------------------------------------------------------
+
     /** The screen is ghosted from a packet, so its codec round-trips and the menu sends it from its own tick. */
     private static void heldReachesTheClient(GameTestHelper helper) {
         Placed assembler = place(helper, AssemblerTier.ONE);
@@ -667,8 +669,9 @@ final class AssemblerMachineTests {
 
     /**
      * Opens the Assembler, as a click on it does, for a server player whose client has these channels, and
-     * builds the client's menu from what the server sent: each packet through its codec, then as the client
-     * handles it. Not the fake player: it opens no menu, and its connection drops what it is sent.
+     * builds the client's menu from what the server sent: the menu from the open screen's extra data, and each
+     * data packet through its codec, then as the client handles it. Not the fake player: it opens no menu, and
+     * its connection drops what it is sent.
      */
     private static AssemblerMenu openOnTheClient(Placed assembler, CustomPacketPayload.Type<?>... channels) {
         GameTestHelper helper = assembler.helper();
