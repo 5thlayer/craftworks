@@ -89,6 +89,11 @@ public record FluidMachine(MachineKind kind, MachineDefaults defaults, int itemI
         return product ? itemInputs : MachineSlots.NONE;
     }
 
+    /** Whether the machine has any item slot, an input or a product: a recipe with an item can be held only if it does. */
+    public boolean hasItemSlots() {
+        return itemInputs > 0 || product;
+    }
+
     public MachineSlots slots() {
         return new MachineSlots(itemInputs + (product ? 1 : 0), itemInputs, productSlot());
     }

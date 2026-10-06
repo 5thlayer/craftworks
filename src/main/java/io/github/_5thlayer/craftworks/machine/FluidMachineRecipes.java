@@ -37,6 +37,11 @@ final class FluidMachineRecipes {
         return recipe.fluidIngredients().size() <= description.fluidInputs() && recipe.fluidResults().size() <= description.fluidOutputs();
     }
 
+    /** Whether the recipe has no item to put in or take out, or the machine has item slots to take them. */
+    static boolean takesItems(FluidMachine description, AssemblingRecipe recipe) {
+        return description.hasItemSlots() || (recipe.ingredients().isEmpty() && recipe.results().isEmpty());
+    }
+
     static boolean fitsSlots(FluidMachine description, AssemblingRecipe recipe) {
         return recipe.ingredients().size() <= description.itemInputs();
     }
@@ -62,7 +67,7 @@ final class FluidMachineRecipes {
 
     /** Whether a machine can run this recipe in a category it holds: what its boxes and slots take. */
     static boolean canRun(FluidMachine description, AssemblingRecipe recipe) {
-        return fluidsFit(description, recipe) && HeldRecipes.fluidFits(recipe) && fitsSlots(description, recipe) && itemsFit(description, recipe);
+        return takesItems(description, recipe) && fluidsFit(description, recipe) && HeldRecipes.fluidFits(recipe) && fitsSlots(description, recipe) && itemsFit(description, recipe);
     }
 
     /** What Fill Recipe on an open fluid machine would answer for this player: the Lock source is asked here, and only here. */
@@ -70,6 +75,7 @@ final class FluidMachineRecipes {
         Optional<AssemblingRecipe> recipe = HeldRecipes.find(player.level(), id).map(RecipeHolder::value);
         return HoldVerdict.of(recipe.map(found -> HoldVerdict.Checks.passing()
                 .categoryHeld(takesCategory(description, found))
+                .takesItems(takesItems(description, found))
                 .oneFluid(fluidsFit(description, found))
                 .fluidFits(HeldRecipes.fluidFits(found))
                 .fitsSlots(fitsSlots(description, found))

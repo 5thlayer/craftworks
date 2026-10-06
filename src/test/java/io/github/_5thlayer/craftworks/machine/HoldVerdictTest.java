@@ -4,8 +4,11 @@
 package io.github._5thlayer.craftworks.machine;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
 
 import io.github._5thlayer.craftworks.machine.HoldVerdict.Checks;
 import org.junit.jupiter.api.Test;
@@ -22,7 +25,7 @@ class HoldVerdictTest {
 
     @Test
     void aRecipeNothingNamesIsRefusedFirst() {
-        Checks everythingWrong = Checks.passing().resolves(false).categoryHeld(false).takesFluids(false)
+        Checks everythingWrong = Checks.passing().resolves(false).categoryHeld(false).takesItems(false).takesFluids(false)
                 .oneFluid(false).fluidFits(false).fitsSlots(false).remaindersFit(false).locked(true);
         assertEquals(HoldVerdict.NOT_ASSEMBLING, HoldVerdict.of(everythingWrong));
     }
@@ -74,5 +77,27 @@ class HoldVerdictTest {
         assertEquals("craftworks.chemical_plant.refused.wrong_category", HoldVerdict.WRONG_CATEGORY.messageKey(MachineKind.CHEMICAL_PLANT));
         assertEquals("craftworks.chemical_plant.refused.locked", HoldVerdict.LOCKED.messageKey(MachineKind.CHEMICAL_PLANT));
         assertNull(HoldVerdict.HELD.messageKey(MachineKind.CHEMICAL_PLANT));
+    }
+
+    @Test
+    void aRecipeWithItemsOnAMachineWithNoItemSlotsIsRefusedAfterItsCategoryAndBeforeTheRest() {
+        Checks failing = Checks.passing().takesItems(false).takesFluids(false).fitsSlots(false).locked(true);
+        HoldVerdict verdict = HoldVerdict.of(failing);
+        assertEquals(HoldVerdict.HAS_ITEMS, verdict);
+        assertEquals("craftworks.assembler.refused.has_items", verdict.messageKey(MachineKind.ASSEMBLER));
+        assertEquals(HoldVerdict.WRONG_CATEGORY, HoldVerdict.of(failing.categoryHeld(false)));
+    }
+
+    @Test
+    void aMachineWithItemSlotsNeverRefusesForHavingItems() {
+        assertTrue(FluidMachine.CHEMICAL_PLANT.hasItemSlots());
+        assertTrue(HoldVerdict.of(Checks.passing()).held());
+    }
+
+    @Test
+    void aMachineWithNeitherInputsNorAProductHasNoItemSlots() {
+        FluidMachine fluidsOnly = new FluidMachine(MachineKind.CHEMICAL_PLANT, ChemicalPlantDefaults.INSTANCE, 0, false, 2, 3, List.of());
+        assertFalse(fluidsOnly.hasItemSlots());
+        assertTrue(new FluidMachine(MachineKind.CHEMICAL_PLANT, ChemicalPlantDefaults.INSTANCE, 0, true, 2, 3, List.of()).hasItemSlots());
     }
 }
