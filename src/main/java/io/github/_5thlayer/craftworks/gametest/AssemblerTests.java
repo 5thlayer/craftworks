@@ -3,24 +3,13 @@
 
 package io.github._5thlayer.craftworks.gametest;
 
-import java.util.UUID;
 
-import com.mojang.authlib.GameProfile;
 import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.assembler.FillRequest;
 import io.github._5thlayer.craftworks.assembler.PersonalAssembler;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.embedded.EmbeddedChannel;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.Connection;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.CommonListenerCookie;
-import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
@@ -28,9 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.EventHooks;
-import org.jspecify.annotations.Nullable;
 
 /**
  * The Plan queue on a real player: Fill Recipe queues on the server, the player's tick delivers,
@@ -97,7 +84,7 @@ final class AssemblerTests {
         player.saveWithoutId(saved);
 
         // Read back into a new player, which is what a login does with a save.
-        ServerPlayer reloaded = player(helper);
+        ServerPlayer reloaded = TestConnection.player(helper);
         reloaded.load(TagValueInput.create(ProblemReporter.DISCARDING, reloaded.registryAccess(), saved.buildResult()));
         var after = PersonalAssembler.queueOf(reloaded).entries();
         helper.assertTrue(after.equals(before), "the queue was saved as " + before + " and read back as " + after);
@@ -125,36 +112,9 @@ final class AssemblerTests {
     }
 
     static ServerPlayer playerHolding(GameTestHelper helper, ItemStack stack) {
-        ServerPlayer player = player(helper);
+        ServerPlayer player = TestConnection.player(helper);
         player.getInventory().add(stack);
         return player;
-    }
-
-    private static ServerPlayer player(GameTestHelper helper) {
-        var level = helper.getLevel();
-        ServerPlayer player = new ServerPlayer(level.getServer(), level,
-                new GameProfile(UUID.randomUUID(), "craftworks-test"), ClientInformation.createDefault());
-        Connection connection = new Connection(PacketFlow.SERVERBOUND);
-        new EmbeddedChannel(connection);
-        player.connection = new Quiet(level.getServer(), connection, player);
-        player.snapTo(helper.absoluteVec(new Vec3(1.5, 1, 1.5)));
-        return player;
-    }
-
-    /** A connection that sends nothing, so the Mod's syncs to a player with no client go nowhere. */
-    private static final class Quiet extends ServerGamePacketListenerImpl {
-
-        Quiet(MinecraftServer server, Connection connection, ServerPlayer player) {
-            super(server, connection, player, CommonListenerCookie.createInitial(player.getGameProfile(), false));
-        }
-
-        @Override
-        public void send(Packet<?> packet) {
-        }
-
-        @Override
-        public void send(Packet<?> packet, @Nullable ChannelFutureListener listener) {
-        }
     }
 
     static int count(ServerPlayer player, Item item) {

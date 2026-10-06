@@ -27,25 +27,19 @@ import io.github._5thlayer.craftworks.machine.HeldRecipes;
 import io.github._5thlayer.craftworks.machine.HoldVerdict;
 import io.github._5thlayer.craftworks.network.AssemblerHeldPacket;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFutureListener;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.Connection;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.game.ClientboundContainerSetDataPacket;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ClientInformation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.CommonListenerCookie;
-import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
@@ -130,7 +124,7 @@ final class AssemblerMachineTests {
         tests.test("a_higher_tier_placed_over_an_assembler_swaps_it_whole_and_a_lower_one_swaps_it_back", 20, AssemblerMachineTests::fastReplace);
         tests.test("the_held_recipe_and_contents_survive_a_save_and_reload", 20, AssemblerMachineTests::survivesReload);
         tests.test("the_open_assemblers_held_recipe_crosses_to_the_client", 20, AssemblerMachineTests::heldCrossesTheWire);
-        tests.test("the_assemblers_energy_above_a_short_crosses_to_the_client_whole", 20, AssemblerMachineTests::energyCrossesTheWire);
+        tests.test("the_assemblers_energy_above_a_short_crosses_to_the_client_whole", 20, AssemblerMachineTests::energyReachesTheClient);
         tests.test("each_tier_starts_from_its_default_speed_power_and_buffer", 20, AssemblerMachineTests::configDefaults);
         tests.test("craftworks_names_no_wireworks_pipeworks_or_factoryworks_type", 20, AssemblerMachineTests::namesNoSiblingType);
     }
@@ -491,9 +485,7 @@ final class AssemblerMachineTests {
         hold(assembler, SAPLING);
         var recipe = HeldRecipes.find(helper.getLevel(), SAPLING).orElseThrow().value();
         AssemblerMenu.Held sent = new AssemblerMenu.Held(SAPLING, recipe.ingredients(), recipe.results());
-        RegistryFriendlyByteBuf buffer = buffer(helper);
-        AssemblerHeldPacket.STREAM_CODEC.encode(buffer, new AssemblerHeldPacket(7, Optional.of(sent)));
-        AssemblerHeldPacket read = AssemblerHeldPacket.STREAM_CODEC.decode(buffer);
+        AssemblerHeldPacket read = crossed(helper, AssemblerHeldPacket.STREAM_CODEC, new AssemblerHeldPacket(7, Optional.of(sent)));
         AssemblerMenu.Held held = read.held().orElseThrow();
         helper.assertTrue(read.containerId() == 7 && held.id().equals(SAPLING), "the packet read back as " + read);
         helper.assertTrue(held.ingredients().size() == 1 && held.ingredients().get(0).count() == 2, "the ingredients read back as " + held.ingredients());
@@ -512,9 +504,10 @@ final class AssemblerMachineTests {
      * The energy bar reads data slots, which vanilla's packet sends as shorts, so 50,000 FE would wrap; the
      * server player NeoForge patches sends the whole int instead to a client with its channel. The Assembler
      * is opened for a real server player once with that channel and once without, and each time the client's
-     * menu is built from what crossed.
+     * menu is built from what the server sent. The test's connection says which channels the client has, so
+     * this guards the server's side, not that a NeoForge client still offers the channel.
      */
-    private static void energyCrossesTheWire(GameTestHelper helper) {
+    private static void energyReachesTheClient(GameTestHelper helper) {
         Placed assembler = place(helper, AssemblerTier.ONE);
         int capacity = CraftworksConfig.assemblerBuffer(AssemblerTier.ONE);
         helper.assertTrue(capacity > Short.MAX_VALUE, "a buffer of " + capacity + " FE fits a short, so nothing here can wrap");
@@ -522,11 +515,12 @@ final class AssemblerMachineTests {
         for (int ran = 0; ran < 100 && assembler.machine().energy() < capacity; ran++) {
             feed(assembler, supply, capacity);
         }
-        helper.assertTrue(assembler.machine().energy() == capacity, "the buffer took " + assembler.machine().energy() + " of " + capacity + " FE");
+        int stored = assembler.machine().energy();
+        helper.assertTrue(stored == capacity, "the buffer took " + stored + " of " + capacity + " FE");
 
-        AssemblerMenu vanilla = openOnTheClient(assembler, false);
+        AssemblerMenu vanilla = openOnTheClient(assembler);
         helper.assertTrue(vanilla.energy() != capacity, "vanilla's packet carried " + capacity + " FE whole, so this test shows nothing");
-        AssemblerMenu neoforge = openOnTheClient(assembler, true);
+        AssemblerMenu neoforge = openOnTheClient(assembler, AdvancedContainerSetDataPayload.TYPE);
         helper.assertTrue(neoforge.energy() == capacity && neoforge.capacity() == capacity,
                 "the client's energy bar reads " + neoforge.energy() + " of " + neoforge.capacity() + " FE");
         helper.succeed();
@@ -672,65 +666,45 @@ final class AssemblerMachineTests {
     }
 
     /**
-     * Opens the Assembler for a server player of its own, as a click on it does, and builds the client's menu
-     * from the packets that crossed. Not the fake player: it opens no menu, and its connection drops what it
-     * is sent.
+     * Opens the Assembler, as a click on it does, for a server player whose client has these channels, and
+     * builds the client's menu from what the server sent: each packet through its codec, then as the client
+     * handles it. Not the fake player: it opens no menu, and its connection drops what it is sent.
      */
-    private static AssemblerMenu openOnTheClient(Placed assembler, boolean neoforge) {
+    private static AssemblerMenu openOnTheClient(Placed assembler, CustomPacketPayload.Type<?>... channels) {
         GameTestHelper helper = assembler.helper();
-        ServerLevel level = helper.getLevel();
-        ServerPlayer player = new ServerPlayer(level.getServer(), level, new GameProfile(UUID.randomUUID(), "craftworks_view"),
-                ClientInformation.createDefault());
-        Wire wire = new Wire(level.getServer(), player, neoforge);
-        player.connection = wire;
+        ServerPlayer player = TestConnection.player(helper, channels);
         BlockPos at = helper.absolutePos(ORIGIN);
-        level.getBlockState(at).useWithoutItem(level, player, new BlockHitResult(Vec3.atCenterOf(at), Direction.UP, at, false));
+        helper.getBlockState(ORIGIN).useWithoutItem(helper.getLevel(), player, new BlockHitResult(Vec3.atCenterOf(at), Direction.UP, at, false));
 
         AssemblerMenu client = null;
-        for (Packet<?> packet : wire.sent) {
+        for (Packet<?> packet : TestConnection.sentTo(player)) {
             if (packet instanceof ClientboundCustomPayloadPacket(AdvancedOpenScreenPayload open)) {
-                client = new AssemblerMenu(open.windowId(), player.getInventory(),
-                        new RegistryFriendlyByteBuf(Unpooled.wrappedBuffer(open.additionalData()), level.registryAccess()));
-            } else if (client != null && packet instanceof ClientboundCustomPayloadPacket(AdvancedContainerSetDataPayload data)) {
-                RegistryFriendlyByteBuf buffer = buffer(helper);
-                AdvancedContainerSetDataPayload.STREAM_CODEC.encode(buffer, data);
-                AdvancedContainerSetDataPayload read = AdvancedContainerSetDataPayload.STREAM_CODEC.decode(buffer);
-                client.setData(read.dataId(), read.value());
-            } else if (client != null && packet instanceof ClientboundContainerSetDataPacket data) {
-                RegistryFriendlyByteBuf buffer = buffer(helper);
-                ClientboundContainerSetDataPacket.STREAM_CODEC.encode(buffer, data);
-                ClientboundContainerSetDataPacket read = ClientboundContainerSetDataPacket.STREAM_CODEC.decode(buffer);
-                client.setData(read.getId(), read.getValue());
+                helper.assertTrue(open.menuType() == Assemblers.MENU.get(), "the screen opened is " + open.menuType());
+                client = (AssemblerMenu) open.menuType().create(open.windowId(), player.getInventory(),
+                        new RegistryFriendlyByteBuf(Unpooled.wrappedBuffer(open.additionalData()), helper.getLevel().registryAccess()));
+            } else if (packet instanceof ClientboundCustomPayloadPacket(AdvancedContainerSetDataPayload data)) {
+                // NeoForge's client hands its payload on as vanilla's packet, in memory and never written.
+                setData(helper, client, crossed(helper, AdvancedContainerSetDataPayload.STREAM_CODEC, data).toVanillaPacket());
+            } else if (packet instanceof ClientboundContainerSetDataPacket data) {
+                setData(helper, client, crossed(helper, ClientboundContainerSetDataPacket.STREAM_CODEC, data));
             }
         }
-        helper.assertTrue(client != null, "opening the Assembler sent the client no screen: " + wire.sent);
+        helper.assertTrue(client != null, "opening the Assembler sent the client no screen: " + TestConnection.sentTo(player));
         return client;
     }
 
-    /** A server's end of a connection that keeps every packet it is sent, with NeoForge's channel for whole data slots or without. */
-    private static final class Wire extends ServerGamePacketListenerImpl {
-
-        final List<Packet<?>> sent = new ArrayList<>();
-        private final boolean neoforge;
-
-        Wire(MinecraftServer server, ServerPlayer player, boolean neoforge) {
-            super(server, new Connection(PacketFlow.SERVERBOUND), player, CommonListenerCookie.createInitial(player.getGameProfile(), false));
-            this.neoforge = neoforge;
-        }
-
-        @Override
-        public void send(Packet<?> packet, @Nullable ChannelFutureListener listener) {
-            sent.add(packet);
-        }
-
-        @Override
-        public boolean hasChannel(Identifier payload) {
-            return neoforge && payload.equals(AdvancedContainerSetDataPayload.TYPE.id());
-        }
+    /** What the client does with a data packet: sets the slot of the menu it names, which must be the one open. */
+    private static void setData(GameTestHelper helper, @Nullable AssemblerMenu client, ClientboundContainerSetDataPacket packet) {
+        helper.assertTrue(client != null && packet.getContainerId() == client.containerId,
+                "a data packet for container " + packet.getContainerId() + " came with no such screen open");
+        client.setData(packet.getId(), packet.getValue());
     }
 
-    static RegistryFriendlyByteBuf buffer(GameTestHelper helper) {
-        return new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+    /** A value after a trip over the network: written by its codec and read back. */
+    private static <T> T crossed(GameTestHelper helper, StreamCodec<? super RegistryFriendlyByteBuf, T> codec, T value) {
+        RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        codec.encode(buffer, value);
+        return codec.decode(buffer);
     }
 
     static void hold(Placed assembler, Identifier recipe) {
