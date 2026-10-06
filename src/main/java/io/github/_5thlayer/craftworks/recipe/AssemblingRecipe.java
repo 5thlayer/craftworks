@@ -45,6 +45,10 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
  * {@code fluid_results} is not. The first goes to an Assembler's product slot and the rest to its remainder
  * slot; the Personal Assembler plans only a recipe with exactly one (CONTEXT.md, Hand-craftable).
  *
+ * <p>{@code pinned_fluid_results} is false when omitted. A machine gives the first fluid result the boxes the
+ * recipe leaves unused unless the recipe is Pinned, which keeps each fluid result to its own output box
+ * (CONTEXT.md, Pinned).
+ *
  * <p>A result is a template, not a stack: {@code ItemStack.CODEC} refuses an item whose components
  * are not bound yet, which they are not during the datapack load that reads recipes.
  *
@@ -53,7 +57,7 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 public record AssemblingRecipe(
         List<SizedIngredient> ingredients, List<ItemStackTemplate> results, int time, int priority,
         List<SizedFluidIngredient> fluidIngredients, List<FluidStackTemplate> fluidResults, boolean handCraftable,
-        AssemblingCategory category) implements Recipe<RecipeInput> {
+        AssemblingCategory category, boolean pinnedFluidResults) implements Recipe<RecipeInput> {
 
     public static final int DEFAULT_TIME = 10;
     public static final int DEFAULT_PRIORITY = 0;
@@ -157,7 +161,8 @@ public record AssemblingRecipe(
                             .forGetter(AssemblingRecipe::fluidResults),
                     Codec.BOOL.optionalFieldOf("hand_craftable", true).forGetter(AssemblingRecipe::handCraftable),
                     AssemblingCategory.CODEC.optionalFieldOf("category", AssemblingCategory.CRAFTING)
-                            .forGetter(AssemblingRecipe::category))
+                            .forGetter(AssemblingRecipe::category),
+                    Codec.BOOL.optionalFieldOf("pinned_fluid_results", false).forGetter(AssemblingRecipe::pinnedFluidResults))
                     .apply(instance, AssemblingRecipe::new))
             .flatXmap(AssemblingRecipe::makesSomething, AssemblingRecipe::makesSomething);
 
@@ -180,5 +185,6 @@ public record AssemblingRecipe(
             FluidStackTemplate.STREAM_CODEC.apply(ByteBufCodecs.list()), AssemblingRecipe::fluidResults,
             ByteBufCodecs.BOOL, AssemblingRecipe::handCraftable,
             CATEGORY_STREAM_CODEC, AssemblingRecipe::category,
+            ByteBufCodecs.BOOL, AssemblingRecipe::pinnedFluidResults,
             AssemblingRecipe::new);
 }

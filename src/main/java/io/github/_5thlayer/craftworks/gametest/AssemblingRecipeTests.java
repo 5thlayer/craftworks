@@ -10,7 +10,9 @@ import io.github._5thlayer.craftworks.planner.AssemblingRecipeSet;
 import io.github._5thlayer.craftworks.planner.Ingredient;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
 import io.github._5thlayer.craftworks.recipe.RuntimeAssemblingRecipes;
+import io.netty.buffer.Unpooled;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
 /**
  * That Assembling recipes are read off {@code craftworks:assembling} as the server loaded them, adapted
@@ -38,6 +40,7 @@ final class AssemblingRecipeTests {
         tests.test("an_ingredient_carries_its_remainder", 20, AssemblingRecipeTests::remainder);
         tests.test("machine_only_and_fluid_recipes_are_never_planned", 20, AssemblingRecipeTests::machineOnly);
         tests.test("assembling_recipes_load_placeable_and_unlockable", 20, AssemblingRecipeTests::placeable);
+        tests.test("pinned_fluid_results_is_false_unless_set_and_survives_the_wire", 20, AssemblingRecipeTests::pinned);
     }
 
     /**
@@ -141,6 +144,37 @@ final class AssemblingRecipeTests {
         if (slime.ingredients().get(1).remainder("minecraft:lime_dye") != null) {
             helper.fail("lime dye leaves nothing, and " + SLIME_BALL + " says it does");
             return;
+        }
+        helper.succeed();
+    }
+
+    private static void pinned(GameTestHelper helper) {
+        var byType = helper.getLevel().getServer().getRecipeManager().recipeMap()
+                .byType(CraftworksRecipes.ASSEMBLING_TYPE.get());
+        io.github._5thlayer.craftworks.recipe.AssemblingRecipe pinned = null;
+        io.github._5thlayer.craftworks.recipe.AssemblingRecipe unpinned = null;
+        for (var holder : byType) {
+            String id = holder.id().identifier().toString();
+            if (id.equals("craftworks:gametest/plant_pinned")) pinned = holder.value();
+            if (id.equals("craftworks:gametest/plant_one_result")) unpinned = holder.value();
+        }
+        if (pinned == null || unpinned == null) {
+            helper.fail("the recipe manager holds neither or only one of the pinned and unpinned plant recipes");
+            return;
+        }
+        if (!pinned.pinnedFluidResults() || unpinned.pinnedFluidResults()) {
+            helper.fail("pinned_fluid_results reads wrong: plant_pinned " + pinned.pinnedFluidResults() + ", plant_one_result "
+                    + unpinned.pinnedFluidResults() + "; true, and false where the file leaves it out");
+            return;
+        }
+        var codec = CraftworksRecipes.ASSEMBLING_SERIALIZER.get().streamCodec();
+        for (var recipe : List.of(pinned, unpinned)) {
+            RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+            codec.encode(buffer, recipe);
+            if (codec.decode(buffer).pinnedFluidResults() != recipe.pinnedFluidResults()) {
+                helper.fail("pinned_fluid_results did not survive the stream codec on " + recipe);
+                return;
+            }
         }
         helper.succeed();
     }

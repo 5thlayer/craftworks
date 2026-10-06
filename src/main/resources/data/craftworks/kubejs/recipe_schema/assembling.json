@@ -62,6 +62,13 @@
 			"type": "string",
 			"optional": "crafting",
 			"excluded": true
+		},
+		{
+			"name": "pinned_fluid_results",
+			"role": "other",
+			"type": "boolean",
+			"optional": false,
+			"excluded": true
 		}
 	],
 	"unique": ["results"]

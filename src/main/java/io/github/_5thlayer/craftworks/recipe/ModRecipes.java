@@ -126,7 +126,7 @@ public final class ModRecipes {
         List<SizedIngredient> ingredients = new ArrayList<>();
         bag.forEach((ingredient, count) -> ingredients.add(new SizedIngredient(ingredient, count)));
         return new AssemblingRecipe(ingredients, List.of(result), AssemblingRecipe.DEFAULT_TIME,
-                AssemblingRecipe.DEFAULT_PRIORITY, List.of(), List.of(), true, AssemblingCategory.CRAFTING);
+                AssemblingRecipe.DEFAULT_PRIORITY, List.of(), List.of(), true, AssemblingCategory.CRAFTING, false);
     }
 
     private static boolean assemblesItsOwn(Recipe<?> recipe) {
