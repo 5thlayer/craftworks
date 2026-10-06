@@ -11,8 +11,9 @@ import dev.emi.emi.api.render.EmiTexture;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.WidgetHolder;
-import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
+import io.github._5thlayer.craftworks.compat.RecipeRow;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.crafting.RecipeHolder;
 
@@ -23,21 +24,24 @@ import net.minecraft.world.item.crafting.RecipeHolder;
  */
 public class AssemblingEmiRecipe extends BasicEmiRecipe {
 
-    private static final int SLOT = 18;
+    private static final int SLOT = RecipeRow.SLOT;
 
     private final int time;
-    /** Not {@code category}: that is {@code BasicEmiRecipe}'s own, the EMI category the recipe is listed under. */
-    private final AssemblingCategory assemblingCategory;
+    private final Component secondsLine;
+    private final Component categoryLine;
 
     public AssemblingEmiRecipe(EmiRecipeCategory category, RecipeHolder<AssemblingRecipe> holder) {
         super(category, holder.id().identifier(), 0, 44);
         AssemblingRecipe recipe = holder.value();
         this.time = recipe.time();
-        this.assemblingCategory = recipe.category();
+        this.secondsLine = Component.translatable("emi.craftworks.assembling.seconds", String.format("%.1f", time / 20F));
+        this.categoryLine = Component.translatable("emi.craftworks.assembling.category", recipe.category().id());
         recipe.ingredients().forEach(sized -> inputs.add(NeoForgeEmiIngredient.of(sized)));
         recipe.results().forEach(result -> outputs.add(EmiStack.of(result.create())));
         recipe.fluidResults().forEach(result -> outputs.add(NeoForgeEmiStack.of(result.create())));
-        this.width = inputs.size() * SLOT + 30 + outputs.size() * SLOT;
+        // As wide as its widest line of text, so a narrow recipe's category stays off the buttons beside it (#33).
+        var font = Minecraft.getInstance().font;
+        this.width = RecipeRow.width(inputs.size(), outputs.size(), font.width(secondsLine), font.width(categoryLine));
     }
 
     @Override
@@ -49,11 +53,9 @@ public class AssemblingEmiRecipe extends BasicEmiRecipe {
         }
         widgets.addTexture(EmiTexture.EMPTY_ARROW, x + 3, 5);
         widgets.addFillingArrow(x + 3, 5, Math.max(time, 1) * 50);
-        widgets.addText(Component.translatable("emi.craftworks.assembling.seconds",
-                String.format("%.1f", time / 20F)), x + 3, 24, 0xFF808080, false);
-        widgets.addText(Component.translatable("emi.craftworks.assembling.category", assemblingCategory.id()),
-                0, 35, 0xFF808080, false);
-        x += 30;
+        widgets.addText(secondsLine, x + RecipeRow.SECONDS_INSET, 24, 0xFF808080, false);
+        widgets.addText(categoryLine, 0, 35, 0xFF808080, false);
+        x += RecipeRow.ARROW;
         for (EmiStack output : outputs) {
             widgets.addSlot(output, x, 4).recipeContext(this);
             x += SLOT;

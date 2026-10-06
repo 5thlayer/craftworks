@@ -3,6 +3,9 @@
 
 package io.github._5thlayer.craftworks.compat.jei;
 
+import java.util.Collection;
+
+import io.github._5thlayer.craftworks.compat.RecipeRow;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
@@ -13,6 +16,7 @@ import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import mezz.jei.api.recipe.types.IRecipeType;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
@@ -26,21 +30,19 @@ import net.neoforged.neoforge.fluids.FluidStackTemplate;
  * to the craft, every item and fluid result, and the recipe's category beneath. A row and not a grid,
  * because an ingredient count is what a grid cannot say.
  *
- * <p>A JEI category has one width for all its recipes, so the row is as wide as the recipe with the
- * most ingredients plus the one with the most results, counted when the recipes are registered.
+ * <p>A JEI category has one width for all its recipes, so it is as wide as the widest recipe's row or
+ * line of text (see {@link RecipeRow}), measured when the recipes are registered.
  */
 final class AssemblingJeiCategory implements IRecipeCategory<RecipeHolder<AssemblingRecipe>> {
 
-    private static final int SLOT = 18;
-    private static final int ARROW = 30;
+    private static final int SLOT = RecipeRow.SLOT;
+    private static final int ARROW = RecipeRow.ARROW;
 
     private final IDrawable icon;
-    private final int maxInputs;
-    private final int maxOutputs;
+    private final int width;
 
-    AssemblingJeiCategory(IGuiHelper guiHelper, int maxInputs, int maxOutputs) {
-        this.maxInputs = maxInputs;
-        this.maxOutputs = maxOutputs;
+    AssemblingJeiCategory(IGuiHelper guiHelper, int width) {
+        this.width = width;
         this.icon = guiHelper.createDrawableItemLike(Items.CRAFTER);
     }
 
@@ -56,7 +58,28 @@ final class AssemblingJeiCategory implements IRecipeCategory<RecipeHolder<Assemb
 
     @Override
     public int getWidth() {
-        return maxInputs * SLOT + ARROW + maxOutputs * SLOT;
+        return width;
+    }
+
+    /** The width that holds every one of these recipes: at least one row of one ingredient and one result. */
+    static int widthOf(Collection<RecipeHolder<AssemblingRecipe>> recipes) {
+        var font = Minecraft.getInstance().font;
+        int width = RecipeRow.width(1, 1, 0, 0);
+        for (RecipeHolder<AssemblingRecipe> holder : recipes) {
+            AssemblingRecipe recipe = holder.value();
+            width = Math.max(width, RecipeRow.width(recipe.ingredients().size(),
+                    recipe.results().size() + recipe.fluidResults().size(),
+                    font.width(secondsLine(recipe)), font.width(categoryLine(recipe))));
+        }
+        return width;
+    }
+
+    private static Component secondsLine(AssemblingRecipe recipe) {
+        return Component.translatable("jei.craftworks.assembling.seconds", String.format("%.1f", recipe.time() / 20F));
+    }
+
+    private static Component categoryLine(AssemblingRecipe recipe) {
+        return Component.translatable("jei.craftworks.assembling.category", recipe.category().id());
     }
 
     @Override
@@ -98,12 +121,11 @@ final class AssemblingJeiCategory implements IRecipeCategory<RecipeHolder<Assemb
     public void createRecipeExtras(IRecipeExtrasBuilder builder, RecipeHolder<AssemblingRecipe> holder, IFocusGroup focuses) {
         AssemblingRecipe recipe = holder.value();
         int x = recipe.ingredients().size() * SLOT;
-        builder.addAnimatedRecipeArrow(Math.max(recipe.time(), 1)).setPosition(x + 3, 5);
-        builder.addText(Component.translatable("jei.craftworks.assembling.seconds",
-                String.format("%.1f", recipe.time() / 20F)), ARROW + SLOT, 10)
-                .setPosition(x + 3, 24)
+        builder.addAnimatedRecipeArrow(Math.max(recipe.time(), 1)).setPosition(x + RecipeRow.SECONDS_INSET, 5);
+        builder.addText(secondsLine(recipe), ARROW + SLOT, 10)
+                .setPosition(x + RecipeRow.SECONDS_INSET, 24)
                 .setColor(0xFF808080);
-        builder.addText(Component.translatable("jei.craftworks.assembling.category", recipe.category().id()), getWidth(), 10)
+        builder.addText(categoryLine(recipe), getWidth(), 10)
                 .setPosition(0, 33)
                 .setColor(0xFF808080);
     }
