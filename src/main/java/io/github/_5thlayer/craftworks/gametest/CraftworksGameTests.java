@@ -37,6 +37,9 @@ public final class CraftworksGameTests {
 
     private static final String GAMETEST_PACK = "craftworks.gametestPack";
 
+    /** Set by the {@code client} run, which turns on {@code dev_pack/}. */
+    private static final String DEV_PACK = "craftworks.devPack";
+
     /** Set by a {@code -PwithKubeJS} run, which puts KubeJS and the sample script on the server. */
     private static final String KUBEJS_TESTS = "craftworks.kubejsTests";
 
@@ -61,6 +64,9 @@ public final class CraftworksGameTests {
             // The tests' own fluid-handler block, which a player's world never has.
             TestTank.register(modBus);
         }
+        if (Boolean.getBoolean(DEV_PACK)) {
+            modBus.addListener(CraftworksGameTests::addDevPack);
+        }
         registerDevLockReason();
     }
 
@@ -83,6 +89,16 @@ public final class CraftworksGameTests {
      */
     private static void addGameTestPack(AddPackFindersEvent event) {
         event.addPackFinders(id("gametest_pack"), PackType.SERVER_DATA, Component.literal("Craftworks game tests"),
+                PackSource.BUILT_IN, true, Pack.Position.TOP);
+    }
+
+    /**
+     * Recipes for trying the Assembler in the dev client, which vanilla's don't cover: a fluid ingredient
+     * ({@code dev/with_fluid}) and two item results ({@code dev/two_results}). In {@code dev_pack/} in the
+     * jar; only the {@code client} run sets {@value #DEV_PACK}, so no player's world sees them.
+     */
+    private static void addDevPack(AddPackFindersEvent event) {
+        event.addPackFinders(id("dev_pack"), PackType.SERVER_DATA, Component.literal("Craftworks dev recipes"),
                 PackSource.BUILT_IN, true, Pack.Position.TOP);
     }
 

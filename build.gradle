@@ -82,6 +82,9 @@ neoForge {
             if (providers.gradleProperty('devLockReason').isPresent()) {
                 systemProperty 'craftworks.devLockReason', providers.gradleProperty('devLockReason').get()
             }
+            // Recipes for trying the Assembler by hand (a fluid ingredient, two results), a datapack in the
+            // jar that only this run turns on.
+            systemProperty 'craftworks.devPack', 'true'
         }
         // Runs the Mod's game tests headless and exits, non-zero if any fails. 26.1 has no
         // namespace property, so the selector is what keeps vanilla's tests out.

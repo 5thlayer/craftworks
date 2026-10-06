@@ -1,0 +1,9 @@
+{
+  "type": "craftworks:assembling",
+  "ingredients": [ { "ingredient": "minecraft:cobblestone", "count": 4 } ],
+  "results": [
+    { "id": "minecraft:gravel", "count": 2 },
+    { "id": "minecraft:flint", "count": 1 }
+  ],
+  "time": 40
+}

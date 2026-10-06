@@ -1,0 +1,7 @@
+{
+  "type": "craftworks:assembling",
+  "category": "crafting-with-fluid",
+  "ingredients": [ { "ingredient": "minecraft:sand", "count": 1 } ],
+  "fluid_ingredients": [ { "ingredient": "minecraft:water", "amount": 250 } ],
+  "results": [ { "id": "minecraft:clay_ball", "count": 4 } ]
+}
