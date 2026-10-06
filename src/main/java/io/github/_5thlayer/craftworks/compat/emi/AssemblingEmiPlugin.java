@@ -100,7 +100,7 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
             for (var holder : sorted.in(machine)) {
                 // A recipe in both tabs keeps its own id in the Assembler's and gets a derived one in the plant's,
                 // since EMI keys a recipe by id (see AssemblingEmiRecipe).
-                boolean sharedWithAssembler = machine == MachineKind.CHEMICAL_PLANT && inAssembler.contains(holder);
+                boolean sharedWithAssembler = machine != MachineKind.ASSEMBLER && inAssembler.contains(holder);
                 registry.addRecipe(new AssemblingEmiRecipe(tabs.get(machine), machine, holder, sharedWithAssembler));
             }
         }

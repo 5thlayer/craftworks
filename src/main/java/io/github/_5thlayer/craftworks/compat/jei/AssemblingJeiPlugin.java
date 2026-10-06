@@ -65,7 +65,7 @@ public final class AssemblingJeiPlugin implements IModPlugin {
         }
     }
 
-    /** The machine's tab, {@code craftworks:assembler} or {@code craftworks:chemical_plant} (ADR-0016). */
+    /** The machine's tab, {@code craftworks:} its {@link MachineKind#tabName()} (ADR-0016). */
     static IRecipeHolderType<AssemblingRecipe> tab(MachineKind machine) {
         return TABS.get(machine);
     }

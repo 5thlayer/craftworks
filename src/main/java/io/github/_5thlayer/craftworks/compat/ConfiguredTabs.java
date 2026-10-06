@@ -3,10 +3,11 @@
 
 package io.github._5thlayer.craftworks.compat;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
@@ -38,9 +39,12 @@ public final class ConfiguredTabs {
 
     /** The tabs under the config as it is now. */
     public static MachineTabs current() {
-        List<List<AssemblingCategory>> tiers = new ArrayList<>();
-        for (AssemblerTier tier : AssemblerTier.values()) tiers.add(CraftworksConfig.categories(tier));
-        return MachineTabs.of(tiers, CraftworksConfig.categories(ChemicalPlantDefaults.INSTANCE), oilRefinery());
+        Map<MachineKind, List<AssemblingCategory>> categories = new EnumMap<>(MachineKind.class);
+        categories.put(MachineKind.ASSEMBLER, Arrays.stream(AssemblerTier.values())
+                .flatMap(tier -> CraftworksConfig.categories(tier).stream()).distinct().toList());
+        categories.put(MachineKind.CHEMICAL_PLANT, CraftworksConfig.categories(ChemicalPlantDefaults.INSTANCE));
+        categories.put(MachineKind.OIL_REFINERY, oilRefinery());
+        return MachineTabs.of(categories);
     }
 
     /**

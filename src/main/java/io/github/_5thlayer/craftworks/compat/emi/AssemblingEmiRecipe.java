@@ -41,7 +41,7 @@ public class AssemblingEmiRecipe extends BasicEmiRecipe {
     /**
      * @param tab the machine whose tab this is
      * @param sharedWithAssembler the recipe is also in the Assembler's tab, which keeps its own id as EMI's: EMI
-     *     keys a recipe by id, so this copy's is {@code craftworks:chemical_plant/<namespace>/<path>}
+     *     keys a recipe by id, so this copy's is {@code craftworks:<tab>/<namespace>/<path>}
      */
     public AssemblingEmiRecipe(EmiRecipeCategory category, MachineKind tab, RecipeHolder<AssemblingRecipe> holder, boolean sharedWithAssembler) {
         super(category, sharedWithAssembler ? copyId(tab, holder.id().identifier()) : holder.id().identifier(), 0, 44);
