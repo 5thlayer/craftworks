@@ -16,7 +16,7 @@ import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
 
 /**
  * Which Recipe viewer tabs an Assembling recipe goes in (ADR-0016): one tab per machine, the Assembler's
- * (shared by its three tiers) and the Chemical Plant's. A recipe is in every tab whose machine holds its
+ * (shared by its three tiers), the Chemical Plant's and the Oil Refinery's. A recipe is in every tab whose machine holds its
  * {@link AssemblingCategory category}, so in both when both hold it, and in none when no machine does.
  *
  * <p>Built from the categories the server config gives each machine, read when the viewer builds its
@@ -26,11 +26,13 @@ public final class MachineTabs {
 
     private final Map<MachineKind, Set<AssemblingCategory>> held = new EnumMap<>(MachineKind.class);
 
-    private MachineTabs(Set<AssemblingCategory> assembler, Set<AssemblingCategory> chemicalPlant) {
+    private MachineTabs(Set<AssemblingCategory> assembler, Set<AssemblingCategory> chemicalPlant,
+            Set<AssemblingCategory> oilRefinery) {
         for (MachineKind machine : MachineKind.values()) {
             held.put(machine, switch (machine) {
                 case ASSEMBLER -> assembler;
                 case CHEMICAL_PLANT -> chemicalPlant;
+                case OIL_REFINERY -> oilRefinery;
             });
         }
     }
@@ -38,13 +40,17 @@ public final class MachineTabs {
     /**
      * @param assemblerTiers the categories each Assembler tier holds; the tab takes any tier's
      * @param chemicalPlant the categories the Chemical Plant holds
+     * @param oilRefinery the categories the Oil Refinery holds
      */
-    public static MachineTabs of(List<List<AssemblingCategory>> assemblerTiers, List<AssemblingCategory> chemicalPlant) {
+    public static MachineTabs of(List<List<AssemblingCategory>> assemblerTiers, List<AssemblingCategory> chemicalPlant,
+            List<AssemblingCategory> oilRefinery) {
         Set<AssemblingCategory> assembler = EnumSet.noneOf(AssemblingCategory.class);
         assemblerTiers.forEach(assembler::addAll);
         Set<AssemblingCategory> plant = EnumSet.noneOf(AssemblingCategory.class);
         plant.addAll(chemicalPlant);
-        return new MachineTabs(assembler, plant);
+        Set<AssemblingCategory> refinery = EnumSet.noneOf(AssemblingCategory.class);
+        refinery.addAll(oilRefinery);
+        return new MachineTabs(assembler, plant, refinery);
     }
 
     /** The tabs a recipe of this category is in, Assembler first; empty when no machine holds it. */

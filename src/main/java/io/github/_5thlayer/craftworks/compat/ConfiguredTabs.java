@@ -40,7 +40,17 @@ public final class ConfiguredTabs {
     public static MachineTabs current() {
         List<List<AssemblingCategory>> tiers = new ArrayList<>();
         for (AssemblerTier tier : AssemblerTier.values()) tiers.add(CraftworksConfig.categories(tier));
-        return MachineTabs.of(tiers, CraftworksConfig.categories(ChemicalPlantDefaults.INSTANCE));
+        return MachineTabs.of(tiers, CraftworksConfig.categories(ChemicalPlantDefaults.INSTANCE), oilRefinery());
+    }
+
+    /**
+     * The categories the Oil Refinery holds: none, for now. There is no refinery block and so no {@code oil_refinery}
+     * config section to read them from, so its tab is inert and {@code oil-processing} recipes show in no tab, as
+     * before. When the section lands this reads {@code CraftworksConfig.categories} of the refinery's defaults
+     * ({@code oil-processing}) as the plant's line above does.
+     */
+    private static List<AssemblingCategory> oilRefinery() {
+        return List.of();
     }
 
     /** The recipes sorted into their tabs under the current config, quietly. */
@@ -62,19 +72,23 @@ public final class ConfiguredTabs {
         return sorted;
     }
 
-    /** The item a machine's tab shows: Assembler 1 for the Assembler's, the Chemical Plant for its own. */
+    /**
+     * The item a machine's tab shows: Assembler 1 for the Assembler's, the Chemical Plant for its own, and the
+     * Chemical Plant again for the Oil Refinery's until its item exists.
+     */
     public static Item icon(MachineKind machine) {
         return switch (machine) {
             case ASSEMBLER -> Assemblers.item(AssemblerTier.ONE).get();
-            case CHEMICAL_PLANT -> ChemicalPlants.ITEM.get();
+            case CHEMICAL_PLANT, OIL_REFINERY -> ChemicalPlants.ITEM.get();
         };
     }
 
-    /** The workstations of a machine's tab, and of no other: every Assembler tier, or the Chemical Plant. */
+    /** The workstations of a machine's tab, and of no other: every Assembler tier, or the Chemical Plant; none for the Oil Refinery until its block exists. */
     public static List<Item> workstations(MachineKind machine) {
         return switch (machine) {
             case ASSEMBLER -> Arrays.stream(AssemblerTier.values()).map(tier -> (Item) Assemblers.item(tier).get()).toList();
             case CHEMICAL_PLANT -> List.of(ChemicalPlants.ITEM.get());
+            case OIL_REFINERY -> List.of();
         };
     }
 }

@@ -20,12 +20,13 @@ import org.junit.jupiter.api.Test;
 /** Which recipe viewer tabs an Assembling recipe goes in, from the categories each machine holds (#38). */
 class MachineTabsTest {
 
-    /** The default config: tier 1 holds two categories, tiers 2 and 3 add one, the plant holds chemistry. */
+    /** The default config: tier 1 holds two categories, tiers 2 and 3 add one, the plant holds chemistry and the refinery oil-processing. */
     private static final MachineTabs DEFAULTS = MachineTabs.of(
             List.of(List.of(CRAFTING, ADVANCED_CRAFTING),
                     List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID),
                     List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID)),
-            List.of(CHEMISTRY));
+            List.of(CHEMISTRY),
+            List.of(OIL_PROCESSING));
 
     @Test
     void underTheDefaultConfigTheAssemblerTabTakesAnyCategoryAnyTierHolds() {
@@ -40,20 +41,26 @@ class MachineTabsTest {
     }
 
     @Test
+    void anOilProcessingRecipeLandsInTheOilRefinerysTabWhenItHoldsTheCategory() {
+        assertEquals(List.of(MachineKind.OIL_REFINERY), DEFAULTS.tabsFor(OIL_PROCESSING));
+    }
+
+    @Test
     void aCategoryNoMachineHoldsIsInNoTab() {
-        assertEquals(List.of(), DEFAULTS.tabsFor(OIL_PROCESSING));
+        MachineTabs inert = MachineTabs.of(List.of(List.of(CRAFTING)), List.of(CHEMISTRY), List.of());
+        assertEquals(List.of(), inert.tabsFor(OIL_PROCESSING));
     }
 
     @Test
     void aCategoryBothMachinesHoldIsInBothTabs() {
-        MachineTabs both = MachineTabs.of(List.of(List.of(CRAFTING), List.of(CHEMISTRY)), List.of(CHEMISTRY, CRAFTING));
+        MachineTabs both = MachineTabs.of(List.of(List.of(CRAFTING), List.of(CHEMISTRY)), List.of(CHEMISTRY, CRAFTING), List.of());
         assertEquals(List.of(MachineKind.ASSEMBLER, MachineKind.CHEMICAL_PLANT), both.tabsFor(CHEMISTRY));
         assertEquals(List.of(MachineKind.ASSEMBLER, MachineKind.CHEMICAL_PLANT), both.tabsFor(CRAFTING));
     }
 
     @Test
     void aMachineHoldingNothingHasNoRecipes() {
-        MachineTabs none = MachineTabs.of(List.of(List.of(), List.of()), List.of());
+        MachineTabs none = MachineTabs.of(List.of(List.of(), List.of()), List.of(), List.of());
         assertEquals(List.of(), none.tabsFor(CRAFTING));
     }
 
@@ -66,7 +73,8 @@ class MachineTabsTest {
         recipes.put("gear", ADVANCED_CRAFTING);
         recipes.put("fuel", OIL_PROCESSING);
 
-        MachineTabs.Sorted<String> sorted = DEFAULTS.sort(recipes.keySet(), recipes::get);
+        MachineTabs.Sorted<String> sorted = MachineTabs.of(List.of(List.of(CRAFTING, ADVANCED_CRAFTING)), List.of(CHEMISTRY), List.of())
+                .sort(recipes.keySet(), recipes::get);
 
         assertEquals(List.of("plank", "gear"), sorted.in(MachineKind.ASSEMBLER));
         assertEquals(List.of("acid"), sorted.in(MachineKind.CHEMICAL_PLANT));
@@ -74,8 +82,16 @@ class MachineTabsTest {
     }
 
     @Test
+    void sortingPutsAnOilProcessingRecipeInTheRefinerysTabAndLeavesNoneOut() {
+        MachineTabs.Sorted<String> sorted = DEFAULTS.sort(List.of("crude"), recipe -> OIL_PROCESSING);
+        assertEquals(List.of("crude"), sorted.in(MachineKind.OIL_REFINERY));
+        assertEquals(List.of(), sorted.in(MachineKind.ASSEMBLER));
+        assertEquals(0, sorted.leftOut());
+    }
+
+    @Test
     void aRecipeInBothTabsIsCountedInNeitherLeftOut() {
-        MachineTabs both = MachineTabs.of(List.of(List.of(CHEMISTRY)), List.of(CHEMISTRY));
+        MachineTabs both = MachineTabs.of(List.of(List.of(CHEMISTRY)), List.of(CHEMISTRY), List.of());
         MachineTabs.Sorted<String> sorted = both.sort(List.of("acid"), recipe -> CHEMISTRY);
         assertEquals(List.of("acid"), sorted.in(MachineKind.ASSEMBLER));
         assertEquals(List.of("acid"), sorted.in(MachineKind.CHEMICAL_PLANT));

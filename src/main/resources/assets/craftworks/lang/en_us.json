@@ -1,10 +1,12 @@
 {
   "emi.category.craftworks.assembler": "Assembler",
   "emi.category.craftworks.chemical_plant": "Chemical Plant",
+  "emi.category.craftworks.oil_refinery": "Oil Refinery",
   "emi.craftworks.assembling.seconds": "%ss",
   "emi.craftworks.assembling.category": "Category: %s",
   "jei.category.craftworks.assembler": "Assembler",
   "jei.category.craftworks.chemical_plant": "Chemical Plant",
+  "jei.category.craftworks.oil_refinery": "Oil Refinery",
   "jei.craftworks.assembling.seconds": "%ss",
   "jei.craftworks.assembling.category": "Category: %s",
   "craftworks.fill_recipe": "Assemble",
