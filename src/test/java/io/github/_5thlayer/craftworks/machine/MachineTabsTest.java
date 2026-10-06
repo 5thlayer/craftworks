@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test;
 /** Which recipe viewer tabs an Assembling recipe goes in, from the categories each machine holds (#38). */
 class MachineTabsTest {
 
-    /** Hand-built defaults: tier 1 holds two categories, tiers 2 and 3 add one, the plant holds chemistry and the refinery oil-processing. */
-    private static final MachineTabs DEFAULTS_WITH_REFINERY = tabs(
+    /** Hand-built defaults: tier 1 holds two categories, tiers 2 and 3 add one, the Chemical Plant holds chemistry and the Oil Refinery oil-processing. */
+    private static final MachineTabs DEFAULTS_WITH_OIL_REFINERY = tabs(
             List.of(List.of(CRAFTING, ADVANCED_CRAFTING), List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID),
                     List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID)),
             List.of(CHEMISTRY),
@@ -38,19 +38,19 @@ class MachineTabsTest {
 
     @Test
     void underTheDefaultConfigTheAssemblerTabTakesAnyCategoryAnyTierHolds() {
-        assertEquals(List.of(MachineKind.ASSEMBLER), DEFAULTS_WITH_REFINERY.tabsFor(CRAFTING));
-        assertEquals(List.of(MachineKind.ASSEMBLER), DEFAULTS_WITH_REFINERY.tabsFor(ADVANCED_CRAFTING));
-        assertEquals(List.of(MachineKind.ASSEMBLER), DEFAULTS_WITH_REFINERY.tabsFor(CRAFTING_WITH_FLUID));
+        assertEquals(List.of(MachineKind.ASSEMBLER), DEFAULTS_WITH_OIL_REFINERY.tabsFor(CRAFTING));
+        assertEquals(List.of(MachineKind.ASSEMBLER), DEFAULTS_WITH_OIL_REFINERY.tabsFor(ADVANCED_CRAFTING));
+        assertEquals(List.of(MachineKind.ASSEMBLER), DEFAULTS_WITH_OIL_REFINERY.tabsFor(CRAFTING_WITH_FLUID));
     }
 
     @Test
     void underTheDefaultConfigChemistryIsTheChemicalPlantsAlone() {
-        assertEquals(List.of(MachineKind.CHEMICAL_PLANT), DEFAULTS_WITH_REFINERY.tabsFor(CHEMISTRY));
+        assertEquals(List.of(MachineKind.CHEMICAL_PLANT), DEFAULTS_WITH_OIL_REFINERY.tabsFor(CHEMISTRY));
     }
 
     @Test
     void anOilProcessingRecipeLandsInTheOilRefinerysTabWhenItHoldsTheCategory() {
-        assertEquals(List.of(MachineKind.OIL_REFINERY), DEFAULTS_WITH_REFINERY.tabsFor(OIL_PROCESSING));
+        assertEquals(List.of(MachineKind.OIL_REFINERY), DEFAULTS_WITH_OIL_REFINERY.tabsFor(OIL_PROCESSING));
     }
 
     /** The real defaults, as {@code ConfiguredTabs} reads them with nothing in the config. */
@@ -82,7 +82,7 @@ class MachineTabsTest {
     }
 
     @Test
-    void aCategoryTheRefineryAndTheAssemblerBothHoldIsInBothTabs() {
+    void aCategoryTheOilRefineryAndTheAssemblerBothHoldIsInBothTabs() {
         MachineTabs both = tabs(List.of(List.of(OIL_PROCESSING)), List.of(), List.of(OIL_PROCESSING));
         assertEquals(List.of(MachineKind.ASSEMBLER, MachineKind.OIL_REFINERY), both.tabsFor(OIL_PROCESSING));
     }
@@ -111,8 +111,8 @@ class MachineTabsTest {
     }
 
     @Test
-    void sortingPutsAnOilProcessingRecipeInTheRefinerysTabAndLeavesNoneOut() {
-        MachineTabs.Sorted<String> sorted = DEFAULTS_WITH_REFINERY.sort(List.of("crude"), recipe -> OIL_PROCESSING);
+    void sortingPutsAnOilProcessingRecipeInTheOilRefinerysTabAndLeavesNoneOut() {
+        MachineTabs.Sorted<String> sorted = DEFAULTS_WITH_OIL_REFINERY.sort(List.of("crude"), recipe -> OIL_PROCESSING);
         assertEquals(List.of("crude"), sorted.in(MachineKind.OIL_REFINERY));
         assertEquals(List.of(), sorted.in(MachineKind.ASSEMBLER));
         assertEquals(0, sorted.leftOut());
