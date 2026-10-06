@@ -15,11 +15,11 @@ import io.github._5thlayer.craftworks.gametest.AssemblerMachineTests.FakeBuilder
 import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.MachineState;
 import io.github._5thlayer.craftworks.machine.ChemicalPlantBlock;
-import io.github._5thlayer.craftworks.machine.ChemicalPlantBlockEntity;
-import io.github._5thlayer.craftworks.machine.ChemicalPlantFluids;
-import io.github._5thlayer.craftworks.machine.ChemicalPlantMenu;
+import io.github._5thlayer.craftworks.machine.FluidMachine;
+import io.github._5thlayer.craftworks.machine.FluidMachineBlockEntity;
+import io.github._5thlayer.craftworks.machine.FluidMachineFluids;
+import io.github._5thlayer.craftworks.machine.FluidMachineMenu;
 import io.github._5thlayer.craftworks.machine.ChemicalPlantDefaults;
-import io.github._5thlayer.craftworks.machine.ChemicalPlantSlots;
 import io.github._5thlayer.craftworks.machine.ChemicalPlants;
 import io.github._5thlayer.craftworks.machine.HoldVerdict;
 import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
@@ -76,6 +76,7 @@ final class ChemicalPlantTests {
     private static final Identifier STICK = Identifier.parse("minecraft:stick");
     private static final Identifier WATER_CRAFT = AssemblerFluidTests.WATER_CRAFT;
 
+    private static final int PRODUCT = FluidMachine.CHEMICAL_PLANT.productSlot();
     private static final BlockPos ORIGIN = AssemblerMachineTests.ORIGIN;
     private static final List<Direction> FACINGS = List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST);
 
@@ -143,8 +144,8 @@ final class ChemicalPlantTests {
     /** A Chemical Plant placed in a test, with the player who placed it and the way it faces. */
     record Placed(GameTestHelper helper, FakeBuilder player, Direction facing) {
 
-        ChemicalPlantBlockEntity machine() {
-            return helper.getBlockEntity(ORIGIN, ChemicalPlantBlockEntity.class);
+        FluidMachineBlockEntity machine() {
+            return helper.getBlockEntity(ORIGIN, FluidMachineBlockEntity.class);
         }
 
         EnergyHandler energy(Direction side) {
@@ -204,7 +205,7 @@ final class ChemicalPlantTests {
     private static HoldVerdict request(Placed plant, Identifier recipe) {
         FakeBuilder player = plant.player();
         // Not openMenu: a fake player's opens nothing, so the menu the block entity makes is set by hand.
-        ChemicalPlantMenu menu = (ChemicalPlantMenu) plant.machine().createMenu(1, player.getInventory(), player);
+        FluidMachineMenu menu = (FluidMachineMenu) plant.machine().createMenu(1, player.getInventory(), player);
         player.containerMenu = menu;
         return menu.request(player, recipe);
     }
@@ -324,12 +325,12 @@ final class ChemicalPlantTests {
 
         SimpleEnergyHandler supply = AssemblerMachineTests.supply();
         int ran = 0;
-        while (count(plant, ChemicalPlantSlots.PRODUCT) == 0 && ran < 100) {
+        while (count(plant, PRODUCT) == 0 && ran < 100) {
             tick(plant, supply);
             ran++;
         }
         helper.assertTrue(ran == 20, "it finished its craft after " + ran + " ticks, not 20");
-        helper.assertTrue(plant.machine().inventory().getResource(ChemicalPlantSlots.PRODUCT).getItem() == Items.GOLD_INGOT,
+        helper.assertTrue(plant.machine().inventory().getResource(PRODUCT).getItem() == Items.GOLD_INGOT,
                 "the product was not a gold ingot");
         helper.assertTrue(count(plant, 0) == 2, "the craft left " + count(plant, 0) + " iron, not 2");
         // The first tick filled each input box from its tank, and the craft took 200 and 100.
@@ -360,7 +361,7 @@ final class ChemicalPlantTests {
             }
             tick(plant, supply);
         }
-        helper.assertTrue(count(plant, ChemicalPlantSlots.PRODUCT) == 3, "it made " + count(plant, ChemicalPlantSlots.PRODUCT) + " crafts, not the 3 the box holds");
+        helper.assertTrue(count(plant, PRODUCT) == 3, "it made " + count(plant, PRODUCT) + " crafts, not the 3 the box holds");
         helper.assertTrue(amount(plant, 2) == 1800, "the output box holds " + amount(plant, 2) + " mB, not its 1800");
         helper.assertTrue(plant.machine().state() == MachineState.OUTPUT_FULL, "a plant with a full output box reported " + plant.machine().state());
 
@@ -378,13 +379,13 @@ final class ChemicalPlantTests {
 
         // A drain at a connection: the box empties through it, and the craft goes on.
         TestTank.Entity sink = drain(helper, at.get(2));
-        for (int ran = 0; ran < 60 && count(plant, ChemicalPlantSlots.PRODUCT) < 4; ran++) {
+        for (int ran = 0; ran < 60 && count(plant, PRODUCT) < 4; ran++) {
             if (count(plant, 0) == 0) {
                 insert(plant, 0, Items.IRON_INGOT, 1);
             }
             tick(plant, supply);
         }
-        helper.assertTrue(count(plant, ChemicalPlantSlots.PRODUCT) == 4, "it made " + count(plant, ChemicalPlantSlots.PRODUCT) + " crafts, not 4, once drained");
+        helper.assertTrue(count(plant, PRODUCT) == 4, "it made " + count(plant, PRODUCT) + " crafts, not 4, once drained");
         helper.assertTrue(inTank(sink) >= 1800, "the drain took " + inTank(sink) + " mB");
         helper.assertTrue(inTank(water) < 8000, "no water was pulled");
         helper.succeed();
@@ -397,9 +398,9 @@ final class ChemicalPlantTests {
         source(helper, at.get(3), Fluids.LAVA, 5000);
         hold(plant, FULL);
         insert(plant, 0, Items.IRON_INGOT, 1);
-        plant.machine().inventory().set(ChemicalPlantSlots.PRODUCT, ItemResource.of(Items.GOLD_INGOT), 64);
+        plant.machine().inventory().set(PRODUCT, ItemResource.of(Items.GOLD_INGOT), 64);
         tick(plant, 30);
-        helper.assertTrue(count(plant, ChemicalPlantSlots.PRODUCT) == 64 && count(plant, 0) == 1, "a craft went on with a full product slot");
+        helper.assertTrue(count(plant, PRODUCT) == 64 && count(plant, 0) == 1, "a craft went on with a full product slot");
         helper.assertTrue(plant.machine().state() == MachineState.OUTPUT_FULL, "a plant with a full product slot reported " + plant.machine().state());
         helper.assertTrue(amount(plant, 2) == 0, "output went into a box for a craft that never was");
         helper.succeed();
@@ -434,7 +435,7 @@ final class ChemicalPlantTests {
             plant.machine().serverTick(helper.getLevel());
         }
         // 105 FE a tick for the 20 ticks of the craft.
-        helper.assertTrue(count(plant, ChemicalPlantSlots.PRODUCT) == 1, "the craft did not finish in 20 ticks");
+        helper.assertTrue(count(plant, PRODUCT) == 1, "the craft did not finish in 20 ticks");
         helper.assertTrue(fed - plant.machine().energy() == 2100, "the craft cost " + (fed - plant.machine().energy()) + " FE, not 2100");
         helper.succeed();
     }
@@ -472,7 +473,7 @@ final class ChemicalPlantTests {
         Placed plant = place(helper);
         hold(plant, FULL);
         insert(plant, 0, Items.IRON_INGOT, 3);
-        plant.machine().inventory().set(ChemicalPlantSlots.PRODUCT, ItemResource.of(Items.GOLD_INGOT), 5);
+        plant.machine().inventory().set(PRODUCT, ItemResource.of(Items.GOLD_INGOT), 5);
         plant.machine().fluids().set(0, new FluidStack(Fluids.WATER, 500));
         plant.machine().fluids().set(2, new FluidStack(Fluids.WATER, 700));
         EnergyHandlerUtil.move(AssemblerMachineTests.supply(), plant.energy(Direction.UP), 1000, null);
@@ -624,7 +625,7 @@ final class ChemicalPlantTests {
 
     private static void boxSizes(GameTestHelper helper) {
         Placed plant = place(helper);
-        ChemicalPlantFluids boxes = plant.machine().fluids();
+        FluidMachineFluids boxes = plant.machine().fluids();
         for (int box = 0; box < 4; box++) {
             helper.assertTrue(boxes.capacity(box) == 1000, "box " + box + " holds " + boxes.capacity(box) + " mB with no Held recipe, not 1000");
         }
@@ -652,7 +653,7 @@ final class ChemicalPlantTests {
     private static void voidsOnChange(GameTestHelper helper) {
         Placed plant = place(helper);
         hold(plant, FULL);
-        ChemicalPlantFluids boxes = plant.machine().fluids();
+        FluidMachineFluids boxes = plant.machine().fluids();
         boxes.set(0, new FluidStack(Fluids.WATER, 600));
         boxes.set(1, new FluidStack(Fluids.LAVA, 600));
         boxes.set(2, new FluidStack(Fluids.WATER, 600));
@@ -692,16 +693,16 @@ final class ChemicalPlantTests {
         hold(plant, FULL);
         helper.assertTrue(insert(plant, 1, Items.IRON_INGOT, 1) == 0, "iron went into the slot the recipe leaves unused");
         helper.assertTrue(insert(plant, 0, Items.COPPER_INGOT, 1) == 0, "copper went into the iron's slot");
-        helper.assertTrue(insert(plant, ChemicalPlantSlots.PRODUCT, Items.GOLD_INGOT, 1) == 0, "an insert reached the product slot");
+        helper.assertTrue(insert(plant, PRODUCT, Items.GOLD_INGOT, 1) == 0, "an insert reached the product slot");
         // The Overload Limit: 3 crafts of one iron each.
         helper.assertTrue(insert(plant, 0, Items.IRON_INGOT, 64) == 3, "the iron slot took more than the Overload Limit's 3");
-        plant.machine().inventory().set(ChemicalPlantSlots.PRODUCT, ItemResource.of(Items.GOLD_INGOT), 4);
+        plant.machine().inventory().set(PRODUCT, ItemResource.of(Items.GOLD_INGOT), 4);
         try (Transaction tx = Transaction.openRoot()) {
             helper.assertTrue(plant.items(Direction.DOWN).extract(0, ItemResource.of(Items.IRON_INGOT), 1, tx) == 0, "an input extracted");
-            helper.assertTrue(plant.items(Direction.DOWN).extract(ChemicalPlantSlots.PRODUCT, ItemResource.of(Items.GOLD_INGOT), 4, tx) == 4,
+            helper.assertTrue(plant.items(Direction.DOWN).extract(PRODUCT, ItemResource.of(Items.GOLD_INGOT), 4, tx) == 4,
                     "the product did not extract");
         }
-        helper.assertTrue(plant.items(Direction.NORTH).size() == ChemicalPlantSlots.SIZE, "the item capability has " + plant.items(Direction.NORTH).size() + " slots");
+        helper.assertTrue(plant.items(Direction.NORTH).size() == FluidMachine.CHEMICAL_PLANT.slots().size(), "the item capability has " + plant.items(Direction.NORTH).size() + " slots");
         helper.succeed();
     }
 
@@ -719,7 +720,7 @@ final class ChemicalPlantTests {
         TagValueOutput saved = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
         plant.machine().saveCustomOnly(saved);
 
-        ChemicalPlantBlockEntity loaded = new ChemicalPlantBlockEntity(helper.absolutePos(ORIGIN), helper.getBlockState(ORIGIN));
+        FluidMachineBlockEntity loaded = ChemicalPlants.blockEntity(helper.absolutePos(ORIGIN), helper.getBlockState(ORIGIN));
         loaded.setLevel(helper.getLevel());
         loaded.loadCustomOnly(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), saved.buildResult()));
         helper.assertTrue(loaded.heldRecipe().equals(Optional.of(FULL)), "the Held recipe read back as " + loaded.heldRecipe());
@@ -742,7 +743,7 @@ final class ChemicalPlantTests {
         plant.machine().fluids().set(2, new FluidStack(Fluids.WATER, 1700));
         EnergyHandlerUtil.move(AssemblerMachineTests.supply(), plant.energy(Direction.UP), 40_000, null);
 
-        ChemicalPlantMenu client = AssemblerMachineTests.openOnTheClient(helper, ChemicalPlants.MENU.get(), AdvancedContainerSetDataPayload.TYPE);
+        FluidMachineMenu client = AssemblerMachineTests.openOnTheClient(helper, ChemicalPlants.MENU.get(), AdvancedContainerSetDataPayload.TYPE);
         helper.assertTrue(client.fluid(0).getFluid() == Fluids.WATER && client.fluid(0).getAmount() == 400, "the screen shows " + client.fluid(0) + " in box 1");
         helper.assertTrue(client.fluid(1).getFluid() == Fluids.LAVA && client.fluid(1).getAmount() == 25, "the screen shows " + client.fluid(1) + " in box 2");
         helper.assertTrue(client.fluid(2).getAmount() == 1700 && client.fluid(3).isEmpty(), "the screen shows " + client.fluid(2) + " and " + client.fluid(3));

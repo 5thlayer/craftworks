@@ -8,16 +8,18 @@ import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /**
- * What a Chemical Plant's Fluid Connections expose to NeoForge's fluid capability, the same on all four: its
- * four boxes, of which an input box is only filled, through the box's own filter, and an output box is only
+ * What a fluid machine's Fluid Connections expose to NeoForge's fluid capability, the same on every one: its
+ * boxes, of which an input box is only filled, through the box's own filter, and an output box is only
  * drained. A connection has no direction of its own, but a box has: nothing is taken out of an ingredient
  * and nothing is put in a result.
  */
-final class ChemicalPlantFluidFace implements ResourceHandler<FluidResource> {
+final class FluidMachineFace implements ResourceHandler<FluidResource> {
 
+    private final FluidMachine machine;
     private final ResourceHandler<FluidResource> boxes;
 
-    ChemicalPlantFluidFace(ResourceHandler<FluidResource> boxes) {
+    FluidMachineFace(FluidMachine machine, ResourceHandler<FluidResource> boxes) {
+        this.machine = machine;
         this.boxes = boxes;
     }
 
@@ -43,16 +45,16 @@ final class ChemicalPlantFluidFace implements ResourceHandler<FluidResource> {
 
     @Override
     public boolean isValid(int index, FluidResource resource) {
-        return ChemicalPlantFluids.isInput(index) && boxes.isValid(index, resource);
+        return machine.isInput(index) && boxes.isValid(index, resource);
     }
 
     @Override
     public int insert(int index, FluidResource resource, int amount, TransactionContext transaction) {
-        return ChemicalPlantFluids.isInput(index) ? boxes.insert(index, resource, amount, transaction) : 0;
+        return machine.isInput(index) ? boxes.insert(index, resource, amount, transaction) : 0;
     }
 
     @Override
     public int extract(int index, FluidResource resource, int amount, TransactionContext transaction) {
-        return ChemicalPlantFluids.isInput(index) ? 0 : boxes.extract(index, resource, amount, transaction);
+        return machine.isInput(index) ? 0 : boxes.extract(index, resource, amount, transaction);
     }
 }

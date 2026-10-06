@@ -6,8 +6,9 @@ package io.github._5thlayer.craftworks.machine;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
-import io.github._5thlayer.craftworks.machine.ChemicalPlantConnections.Connection;
+import io.github._5thlayer.craftworks.machine.FluidMachine.Connection;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -15,8 +16,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -29,76 +33,84 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A Chemical Plant's block entity: a {@link HeldMachineBlockEntity} with two input slots and a product slot,
- * and two input fluid boxes and two output fluid boxes ({@link ChemicalPlantFluids}).
+ * A fluid machine's block entity, the Chemical Plant's for one: a {@link HeldMachineBlockEntity} with the
+ * item slots and the input and output fluid boxes ({@link FluidMachineFluids}) its {@link FluidMachine} describes.
  *
- * <p>The Fluid Connections ({@link ChemicalPlantConnections}) exist only while the Held recipe runs here and
+ * <p>The Fluid Connections ({@link FluidMachine#connections}) exist only while the Held recipe runs here and
  * names a fluid, in or out. Each tick every connection pulls the Held recipe's fluid ingredients from the
  * block it faces, each into the box its order names, and after the craft pushes the fluid results out of their
- * boxes into it: the plant makes fluid, which an Assembler never does. The craft waits while an output box
+ * boxes into it: a fluid machine makes fluid, which an Assembler never does. The craft waits while an output box
  * cannot hold what it makes. Boxes are voided by a change of the Held recipe, as an Assembler's is.
  */
-public final class ChemicalPlantBlockEntity extends HeldMachineBlockEntity {
+public final class FluidMachineBlockEntity extends HeldMachineBlockEntity {
 
     private static final String FLUID_KEY = "fluids";
 
-    private final ChemicalPlantFluids fluids = new ChemicalPlantFluids(new ChemicalPlantFluids.Owner() {
-        @Override
-        public boolean takesInput(int n, FluidResource resource) {
-            return !resource.isEmpty() && level instanceof ServerLevel server
-                    && runnable(server).filter(recipe -> n < recipe.fluidIngredients().size()
-                            && recipe.fluidIngredients().get(n).ingredient().test(resource.toStack(1))).isPresent();
-        }
+    private final FluidMachine machine;
+    /** The menu type this machine opens, registered with it. */
+    private final Supplier<? extends MenuType<?>> menuType;
+    private final FluidMachineFluids fluids;
+    private final FluidMachineFace fluidFace;
+    /** The output boxes alone, which a connection pushes from. */
+    private final ResourceHandler<FluidResource> outputs;
 
-        @Override
-        public boolean makesOutput(int n, FluidResource resource) {
-            return !resource.isEmpty() && level instanceof ServerLevel server
-                    && runnable(server).filter(recipe -> n < recipe.fluidResults().size()
-                            && resource.matches(recipe.fluidResults().get(n))).isPresent();
-        }
-
-        /** The Overload Limit's crafts of the result bound to output box {@code n}, or at least a bucket. */
-        @Override
-        public int outputCapacity(int n) {
-            if (!(level instanceof ServerLevel server)) {
-                return ChemicalPlantFluids.INPUT_CAPACITY;
+    public FluidMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, FluidMachine machine,
+            Supplier<? extends MenuType<?>> menuType) {
+        super(type, pos, state, machine.slots(), machine.defaults());
+        this.machine = machine;
+        this.menuType = menuType;
+        fluids = new FluidMachineFluids(machine, new FluidMachineFluids.Owner() {
+            @Override
+            public boolean takesInput(int n, FluidResource resource) {
+                return !resource.isEmpty() && level instanceof ServerLevel server
+                        && runnable(server).filter(recipe -> n < recipe.fluidIngredients().size()
+                                && recipe.fluidIngredients().get(n).ingredient().test(resource.toStack(1))).isPresent();
             }
-            return runnable(server).filter(recipe -> n < recipe.fluidResults().size())
-                    .map(recipe -> OverloadLimit.outputBox(ChemicalPlantFluids.INPUT_CAPACITY, overloadCrafts(recipe),
-                            recipe.fluidResults().get(n).amount()))
-                    .orElse(ChemicalPlantFluids.INPUT_CAPACITY);
-        }
 
-        @Override
-        public void changed() {
-            setChanged();
-        }
-    });
-    private final ChemicalPlantFluidFace fluidFace = new ChemicalPlantFluidFace(fluids);
-    /** The two output boxes alone, which a connection pushes from. */
-    private final ResourceHandler<FluidResource> outputs = RangedResourceHandler.of(fluids,
-            ChemicalPlantFluids.INPUTS, ChemicalPlantFluids.SIZE);
+            @Override
+            public boolean makesOutput(int n, FluidResource resource) {
+                return !resource.isEmpty() && level instanceof ServerLevel server
+                        && runnable(server).filter(recipe -> n < recipe.fluidResults().size()
+                                && resource.matches(recipe.fluidResults().get(n))).isPresent();
+            }
 
-    public ChemicalPlantBlockEntity(BlockPos pos, BlockState state) {
-        super(ChemicalPlants.BLOCK_ENTITY.get(), pos, state, ChemicalPlantSlots.LAYOUT);
+            /** The Overload Limit's crafts of the result bound to output box {@code n}, or at least a bucket. */
+            @Override
+            public int outputCapacity(int n) {
+                if (!(level instanceof ServerLevel server)) {
+                    return FluidMachineFluids.INPUT_CAPACITY;
+                }
+                return runnable(server).filter(recipe -> n < recipe.fluidResults().size())
+                        .map(recipe -> OverloadLimit.outputBox(FluidMachineFluids.INPUT_CAPACITY, overloadCrafts(recipe),
+                                recipe.fluidResults().get(n).amount()))
+                        .orElse(FluidMachineFluids.INPUT_CAPACITY);
+            }
+
+            @Override
+            public void changed() {
+                setChanged();
+            }
+        });
+        fluidFace = new FluidMachineFace(machine, fluids);
+        outputs = RangedResourceHandler.of(fluids, machine.fluidInputs(), machine.boxes());
     }
 
-    @Override
-    protected MachineDefaults defaults() {
-        return ChemicalPlantDefaults.INSTANCE;
+    /** The machine this describes. */
+    public FluidMachine machine() {
+        return machine;
     }
 
-    /** The four fluid boxes, for the menu and the game tests. */
-    public ChemicalPlantFluids fluids() {
+    /** The fluid boxes, for the menu and the game tests. */
+    public FluidMachineFluids fluids() {
         return fluids;
     }
 
     private Direction facing() {
-        return getBlockState().getValue(ChemicalPlantBlock.FACING);
+        return getBlockState().getValue(HorizontalDirectionalBlock.FACING);
     }
 
     private List<Connection> connections() {
-        return ChemicalPlantConnections.of(worldPosition, facing());
+        return machine.connections(worldPosition, facing());
     }
 
     /**
@@ -108,11 +120,11 @@ public final class ChemicalPlantBlockEntity extends HeldMachineBlockEntity {
     public List<Integer> boxesInUse() {
         Optional<AssemblingRecipe> recipe = level instanceof ServerLevel server ? runnable(server) : Optional.empty();
         List<Integer> shown = new ArrayList<>();
-        for (int box = 0; box < ChemicalPlantFluids.SIZE; box++) {
-            int bound = ChemicalPlantFluids.isInput(box)
+        for (int box = 0; box < machine.boxes(); box++) {
+            int bound = machine.isInput(box)
                     ? recipe.map(found -> found.fluidIngredients().size()).orElse(0)
                     : recipe.map(found -> found.fluidResults().size()).orElse(0);
-            if (ChemicalPlantFluids.binding(box) < bound || fluids.getAmountAsInt(box) > 0) {
+            if (machine.binding(box) < bound || fluids.getAmountAsInt(box) > 0) {
                 shown.add(box);
             }
         }
@@ -122,12 +134,13 @@ public final class ChemicalPlantBlockEntity extends HeldMachineBlockEntity {
     // -- the Held recipe ------------------------------------------------------------------------
 
     /**
-     * The Held recipe if this plant can run it: what its boxes and slots take is worked out once per recipe
+     * The Held recipe if this machine can run it: what its boxes and slots take is worked out once per recipe
      * instance, and its category, which the config moves, every time.
      */
     @Override
     protected Optional<AssemblingRecipe> runnable(ServerLevel server) {
-        return held.runnable(server, ChemicalPlantRecipes::canRun, ChemicalPlantRecipes::takesCategory);
+        return held.runnable(server, recipe -> FluidMachineRecipes.canRun(machine, recipe),
+                recipe -> FluidMachineRecipes.takesCategory(machine, recipe));
     }
 
     /** Whether the Fluid Connections exist: the Held recipe runs here and names a fluid, in or out. Server only. */
@@ -142,26 +155,26 @@ public final class ChemicalPlantBlockEntity extends HeldMachineBlockEntity {
      * connections exist, and otherwise nothing. Asked by the part blocks' lookups, which see only a position.
      */
     @Nullable ResourceHandler<FluidResource> fluidConnection(BlockPos at, Direction side) {
-        return hasFluidConnections() && ChemicalPlantConnections.isFace(worldPosition, facing(), at, side) ? fluidFace : null;
+        return hasFluidConnections() && machine.isConnection(worldPosition, facing(), at, side) ? fluidFace : null;
     }
 
     /**
      * Makes the connections what the Held recipe says: the origin's block state, which the model draws the
-     * rings from, and the capability of the four connection blocks, which every pipe that asked is told
+     * rings from, and the capability of the connection blocks, which every pipe that asked is told
      * changed. A box holding what the recipe no longer binds to it is voided. Asked when the recipe is set and
      * every tick, which also catches a load and a reload of the recipes.
      */
     @Override
     protected void syncConnections(ServerLevel server) {
         boolean connected = hasFluidConnections();
-        for (int box = 0; box < ChemicalPlantFluids.SIZE; box++) {
+        for (int box = 0; box < machine.boxes(); box++) {
             if (!connected || !fluids.isValid(box, fluids.getResource(box))) {
                 fluids.empty(box);
             }
         }
         BlockState state = getBlockState();
-        if (state.getBlock() instanceof ChemicalPlantBlock && state.getValue(ChemicalPlantBlock.FLUID_CONNECTIONS) != connected) {
-            server.setBlock(worldPosition, state.setValue(ChemicalPlantBlock.FLUID_CONNECTIONS, connected), Block.UPDATE_CLIENTS);
+        if (state.hasProperty(AssemblerBlock.FLUID_CONNECTIONS) && state.getValue(AssemblerBlock.FLUID_CONNECTIONS) != connected) {
+            server.setBlock(worldPosition, state.setValue(AssemblerBlock.FLUID_CONNECTIONS, connected), Block.UPDATE_CLIENTS);
             for (Connection connection : connections()) {
                 server.invalidateCapabilities(connection.block());
             }
@@ -183,7 +196,7 @@ public final class ChemicalPlantBlockEntity extends HeldMachineBlockEntity {
         for (Connection connection : connections()) {
             ResourceHandler<FluidResource> neighbour = null;
             for (int box = 0; box < recipe.fluidIngredients().size(); box++) {
-                int room = ChemicalPlantFluids.INPUT_CAPACITY - fluids.getAmountAsInt(box);
+                int room = FluidMachineFluids.INPUT_CAPACITY - fluids.getAmountAsInt(box);
                 if (room <= 0) {
                     continue;
                 }
@@ -214,7 +227,7 @@ public final class ChemicalPlantBlockEntity extends HeldMachineBlockEntity {
     }
 
     private boolean anyOutput() {
-        for (int box = ChemicalPlantFluids.INPUTS; box < ChemicalPlantFluids.SIZE; box++) {
+        for (int box = machine.fluidInputs(); box < machine.boxes(); box++) {
             if (fluids.getAmountAsInt(box) > 0) {
                 return true;
             }
@@ -245,12 +258,12 @@ public final class ChemicalPlantBlockEntity extends HeldMachineBlockEntity {
         }
         ItemStackTemplate product = recipe.productTemplate().orElse(null);
         if (product != null
-                && inventory.insert(ChemicalPlantSlots.PRODUCT, ItemResource.of(product), product.count(), tx) != product.count()) {
+                && inventory.insert(machine.productSlot(), ItemResource.of(product), product.count(), tx) != product.count()) {
             return MachineState.OUTPUT_FULL;
         }
         for (int n = 0; n < recipe.fluidResults().size(); n++) {
             var made = recipe.fluidResults().get(n);
-            if (fluids.insert(ChemicalPlantFluids.outputBox(n), FluidResource.of(made), made.amount(), tx) != made.amount()) {
+            if (fluids.insert(machine.outputBox(n), FluidResource.of(made), made.amount(), tx) != made.amount()) {
                 return MachineState.OUTPUT_FULL;
             }
         }
@@ -275,6 +288,6 @@ public final class ChemicalPlantBlockEntity extends HeldMachineBlockEntity {
 
     @Override
     public @Nullable AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return ChemicalPlantMenu.open(containerId, playerInventory, this);
+        return FluidMachineMenu.open(menuType.get(), containerId, playerInventory, this);
     }
 }

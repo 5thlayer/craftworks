@@ -42,7 +42,7 @@ public final class AssemblerBlockEntity extends HeldMachineBlockEntity {
     private final AssemblerFluidConnection fluidConnection = new AssemblerFluidConnection(fluidBox);
 
     public AssemblerBlockEntity(BlockPos pos, BlockState state) {
-        super(Assemblers.BLOCK_ENTITY.get(), pos, state, AssemblerSlots.LAYOUT);
+        super(Assemblers.BLOCK_ENTITY.get(), pos, state, AssemblerSlots.LAYOUT, null);
     }
 
     private static AssemblerTier tierOf(BlockState state) {

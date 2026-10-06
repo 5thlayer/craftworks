@@ -14,7 +14,7 @@ import io.github._5thlayer.craftworks.machine.MachineGhosts;
 import io.github._5thlayer.craftworks.machine.MachineKind;
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import io.github._5thlayer.craftworks.machine.Assemblers;
-import io.github._5thlayer.craftworks.machine.ChemicalPlantMenu;
+import io.github._5thlayer.craftworks.machine.FluidMachineMenu;
 import io.github._5thlayer.craftworks.machine.ChemicalPlants;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
 import io.github._5thlayer.craftworks.machine.client.ChemicalPlantScreen;
@@ -115,7 +115,7 @@ public final class AssemblingJeiPlugin implements IModPlugin {
             registration.addRecipeTransferHandler(
                     new HeldMachineTransferHandler<>(AssemblerMenu.class, Assemblers.MENU.get(), tab(machine)), tab(machine));
             registration.addRecipeTransferHandler(
-                    new HeldMachineTransferHandler<>(ChemicalPlantMenu.class, ChemicalPlants.MENU.get(), tab(machine)), tab(machine));
+                    new HeldMachineTransferHandler<>(FluidMachineMenu.class, ChemicalPlants.MENU.get(), tab(machine)), tab(machine));
         }
     }
 

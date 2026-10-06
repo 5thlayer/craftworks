@@ -3,6 +3,7 @@
 
 package io.github._5thlayer.craftworks.machine;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import com.mojang.logging.LogUtils;
@@ -64,8 +65,13 @@ public abstract class HeldMachineBlockEntity extends BlockEntity implements Menu
     private final EnergyBuffer buffer = new EnergyBuffer();
     private final MachineItemFace items;
 
-    protected HeldMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, MachineSlots slots) {
+    private final @Nullable MachineDefaults fixedDefaults;
+
+    /** A machine whose figures are fixed gives them here; one that reads them from its block state, as an Assembler does, gives none and overrides {@link #defaults}. */
+    protected HeldMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, MachineSlots slots,
+            @Nullable MachineDefaults fixedDefaults) {
         super(type, pos, state);
+        this.fixedDefaults = fixedDefaults;
         inventory = new MachineInventory(slots, new MachineInventory.Owner() {
             @Override
             public Optional<SizedIngredient> ingredientAt(int slot) {
@@ -82,7 +88,9 @@ public abstract class HeldMachineBlockEntity extends BlockEntity implements Menu
     }
 
     /** The figures this machine starts from before the server config says otherwise. Read from the block state alone. */
-    protected abstract MachineDefaults defaults();
+    protected MachineDefaults defaults() {
+        return Objects.requireNonNull(fixedDefaults, "a machine with no fixed figures overrides defaults()");
+    }
 
     /**
      * The Held recipe if this machine can run it: what it asks once per recipe instance and what it asks every

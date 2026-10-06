@@ -54,7 +54,7 @@ public final class ChemicalPlantBlock extends HorizontalDirectionalBlock impleme
 
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new ChemicalPlantBlockEntity(pos, state);
+        return ChemicalPlants.blockEntity(pos, state);
     }
 
     @Override
@@ -62,12 +62,12 @@ public final class ChemicalPlantBlock extends HorizontalDirectionalBlock impleme
         if (!(level instanceof ServerLevel) || type != ChemicalPlants.BLOCK_ENTITY.get()) {
             return null;
         }
-        return (world, pos, blockState, entity) -> ((ChemicalPlantBlockEntity) entity).serverTick((ServerLevel) world);
+        return (world, pos, blockState, entity) -> ((FluidMachineBlockEntity) entity).serverTick((ServerLevel) world);
     }
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof ChemicalPlantBlockEntity machine) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof FluidMachineBlockEntity machine) {
             player.openMenu(machine, buffer -> buffer.writeBlockPos(pos));
         }
         return InteractionResult.SUCCESS;

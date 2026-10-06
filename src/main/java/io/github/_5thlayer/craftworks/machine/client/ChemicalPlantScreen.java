@@ -3,8 +3,8 @@
 
 package io.github._5thlayer.craftworks.machine.client;
 
-import io.github._5thlayer.craftworks.machine.ChemicalPlantFluids;
-import io.github._5thlayer.craftworks.machine.ChemicalPlantMenu;
+import io.github._5thlayer.craftworks.machine.FluidMachine;
+import io.github._5thlayer.craftworks.machine.FluidMachineMenu;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -13,7 +13,7 @@ import net.minecraft.world.entity.player.Inventory;
  * The Chemical Plant's screen: a {@link HeldMachineScreen} over two inputs and the product, with a gauge for each
  * of its four fluid boxes (the inputs, then the outputs) and the energy in the buffer below.
  */
-public final class ChemicalPlantScreen extends HeldMachineScreen<ChemicalPlantMenu> {
+public final class ChemicalPlantScreen extends HeldMachineScreen<FluidMachineMenu> {
 
     private static final int GAUGE_Y = 57;
     private static final int GAUGE_WIDTH = 36;
@@ -22,14 +22,14 @@ public final class ChemicalPlantScreen extends HeldMachineScreen<ChemicalPlantMe
     private static final int ENERGY_Y = 72;
     private static final int ENERGY_WIDTH = 160;
 
-    public ChemicalPlantScreen(ChemicalPlantMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title, 176, ChemicalPlantMenu.INVENTORY_Y + 82, ChemicalPlantMenu.INVENTORY_Y);
+    public ChemicalPlantScreen(FluidMachineMenu menu, Inventory playerInventory, Component title) {
+        super(menu, playerInventory, title, 176, FluidMachineMenu.INVENTORY_Y + 82, FluidMachineMenu.INVENTORY_Y);
     }
 
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-        for (int box = 0; box < ChemicalPlantFluids.SIZE; box++) {
+        for (int box = 0; box < FluidMachine.CHEMICAL_PLANT.boxes(); box++) {
             MachineScreens.fluidGauge(graphics, menu.fluid(box), leftPos + GAUGE_X[box], topPos + GAUGE_Y, GAUGE_WIDTH, menu.fluidCapacity(box));
         }
         MachineScreens.energyBar(graphics, font, leftPos + 8, topPos + ENERGY_Y, ENERGY_WIDTH, menu.energy(), menu.energyCapacity());
@@ -39,7 +39,7 @@ public final class ChemicalPlantScreen extends HeldMachineScreen<ChemicalPlantMe
     @Override
     protected void extractTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         super.extractTooltip(graphics, mouseX, mouseY);
-        for (int box = 0; box < ChemicalPlantFluids.SIZE; box++) {
+        for (int box = 0; box < FluidMachine.CHEMICAL_PLANT.boxes(); box++) {
             if (MachineScreens.overGauge(leftPos + GAUGE_X[box], topPos + GAUGE_Y, GAUGE_WIDTH, mouseX, mouseY)) {
                 MachineScreens.fluidTooltip(graphics, font, menu.fluid(box), menu.fluidCapacity(box), mouseX, mouseY);
                 return;

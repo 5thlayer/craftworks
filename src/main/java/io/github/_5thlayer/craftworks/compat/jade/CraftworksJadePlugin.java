@@ -6,7 +6,7 @@ package io.github._5thlayer.craftworks.compat.jade;
 import io.github._5thlayer.craftworks.machine.AssemblerBlock;
 import io.github._5thlayer.craftworks.machine.AssemblerBlockEntity;
 import io.github._5thlayer.craftworks.machine.ChemicalPlantBlock;
-import io.github._5thlayer.craftworks.machine.ChemicalPlantBlockEntity;
+import io.github._5thlayer.craftworks.machine.FluidMachineBlockEntity;
 import io.github._5thlayer.craftworks.machine.CreativeEnergySourceBlockEntity;
 import io.github._5thlayer.craftworks.machine.CreativeFluidSourceBlockEntity;
 import snownee.jade.api.IWailaClientRegistration;
@@ -32,11 +32,11 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
     @Override
     public void register(IWailaCommonRegistration registration) {
         registration.registerBlockDataProvider(HeldMachineReport.INSTANCE, AssemblerBlockEntity.class);
-        registration.registerBlockDataProvider(HeldMachineReport.INSTANCE, ChemicalPlantBlockEntity.class);
+        registration.registerBlockDataProvider(HeldMachineReport.INSTANCE, FluidMachineBlockEntity.class);
         registration.registerEnergyStorage(InfiniteEnergy.INSTANCE, CreativeEnergySourceBlockEntity.class);
         registration.registerFluidStorage(InfiniteFluid.INSTANCE, CreativeFluidSourceBlockEntity.class);
         registration.registerFluidStorage(AssemblerFluid.INSTANCE, AssemblerBlockEntity.class);
-        registration.registerFluidStorage(ChemicalPlantFluidView.INSTANCE, ChemicalPlantBlockEntity.class);
+        registration.registerFluidStorage(FluidMachineFluidView.INSTANCE, FluidMachineBlockEntity.class);
     }
 
     @Override
@@ -46,6 +46,6 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
         registration.registerEnergyStorageClient(InfiniteEnergy.INSTANCE);
         registration.registerFluidStorageClient(InfiniteFluid.INSTANCE);
         registration.registerFluidStorageClient(AssemblerFluid.INSTANCE);
-        registration.registerFluidStorageClient(ChemicalPlantFluidView.INSTANCE);
+        registration.registerFluidStorageClient(FluidMachineFluidView.INSTANCE);
     }
 }

@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.github._5thlayer.craftworks.Craftworks;
-import io.github._5thlayer.craftworks.machine.ChemicalPlantBlockEntity;
+import io.github._5thlayer.craftworks.machine.FluidMachineBlockEntity;
 import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.fluids.FluidStack;
 import snownee.jade.api.Accessor;
@@ -19,20 +19,20 @@ import snownee.jade.api.view.IServerExtensionProvider;
 import snownee.jade.api.view.ViewGroup;
 
 /**
- * A Chemical Plant's fluid boxes in Jade, as Jade draws any tank: a bar of each box's fluid out of its volume,
+ * A fluid machine's boxes in Jade, as Jade draws any tank: a bar of each box's fluid out of its volume,
  * empty while it holds none (#26). The boxes the Held recipe binds a fluid to and any that holds some, inputs
- * then outputs. Its own provider, since the boxes' capability is on the four Fluid Connections and not on the
+ * then outputs. Its own provider, since the boxes' capability is on the Fluid Connections and not on the
  * Origin block entity Jade looks at.
  */
-final class ChemicalPlantFluidView implements IServerExtensionProvider<FluidView.Data>, IClientExtensionProvider<FluidView.Data, FluidView> {
+final class FluidMachineFluidView implements IServerExtensionProvider<FluidView.Data>, IClientExtensionProvider<FluidView.Data, FluidView> {
 
-    static final ChemicalPlantFluidView INSTANCE = new ChemicalPlantFluidView();
+    static final FluidMachineFluidView INSTANCE = new FluidMachineFluidView();
 
-    private static final Identifier UID = Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "chemical_plant_fluids");
+    private static final Identifier UID = Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "fluid_machine_fluids");
 
     @Override
     public List<ViewGroup<FluidView.Data>> getGroups(Accessor<?> accessor) {
-        if (!(accessor.getTarget() instanceof ChemicalPlantBlockEntity machine)) {
+        if (!(accessor.getTarget() instanceof FluidMachineBlockEntity machine)) {
             return List.of();
         }
         List<FluidView.Data> bars = new ArrayList<>();

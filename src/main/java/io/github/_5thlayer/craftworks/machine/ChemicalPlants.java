@@ -54,13 +54,19 @@ public final class ChemicalPlants {
 
     private static final Footprint FOOTPRINT = Footprint.declare(Assemblers.SHAPE, BLOCK, PART, ITEM);
 
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ChemicalPlantBlockEntity>> BLOCK_ENTITY =
-            BLOCK_ENTITIES.register("chemical_plant", () -> new BlockEntityType<>(ChemicalPlantBlockEntity::new, BLOCK.get()));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<FluidMachineBlockEntity>> BLOCK_ENTITY =
+            BLOCK_ENTITIES.register("chemical_plant", () -> new BlockEntityType<>(ChemicalPlants::blockEntity, BLOCK.get()));
 
-    public static final Supplier<MenuType<ChemicalPlantMenu>> MENU =
-            MENUS.register("chemical_plant", () -> IMenuTypeExtension.create(ChemicalPlantMenu::new));
+    public static final Supplier<MenuType<FluidMachineMenu>> MENU =
+            MENUS.register("chemical_plant", () -> IMenuTypeExtension.create((containerId, playerInventory, buffer) ->
+                    new FluidMachineMenu(ChemicalPlants.MENU.get(), containerId, playerInventory, buffer, FluidMachine.CHEMICAL_PLANT)));
 
     private ChemicalPlants() {
+    }
+
+    /** A Chemical Plant's block entity: the fluid machine, as {@link FluidMachine#CHEMICAL_PLANT} describes it. */
+    public static FluidMachineBlockEntity blockEntity(BlockPos pos, BlockState state) {
+        return new FluidMachineBlockEntity(BLOCK_ENTITY.get(), pos, state, FluidMachine.CHEMICAL_PLANT, MENU);
     }
 
     public static void register(IEventBus modBus) {
@@ -94,7 +100,7 @@ public final class ChemicalPlants {
             return null;
         }
         BlockPos origin = part.footprint().standingOrigin(level, pos, state);
-        return origin != null && level.getBlockEntity(origin) instanceof ChemicalPlantBlockEntity machine
+        return origin != null && level.getBlockEntity(origin) instanceof FluidMachineBlockEntity machine
                 ? machine.fluidConnection(pos, side) : null;
     }
 }

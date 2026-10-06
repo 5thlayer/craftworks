@@ -8,20 +8,16 @@ import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
 
 /**
- * A Chemical Plant's four fluid boxes: two input boxes, then two output boxes. The Held recipe's {@code n}th
+ * A fluid machine's boxes: its input boxes, then its output boxes. The Held recipe's {@code n}th
  * fluid ingredient goes in input box {@code n} and its {@code n}th fluid result in output box {@code n}.
  *
  * <p>An input box holds {@link #INPUT_CAPACITY} mB, like an Assembler's. An output box holds the larger of
- * that and the Overload Limit's crafts' worth of the result bound to it, so the plant makes a few crafts
+ * that and the Overload Limit's crafts' worth of the result bound to it, so the machine makes a few crafts
  * before it stalls on a full box ({@link OverloadLimit#outputBox}); with no Held recipe, or no result bound to
  * it, 1,000 mB. What may go in is the machine's to say: an input takes the ingredient bound to it, an output
- * the result bound to it, so the plant's own craft, a pipe that pushes and its own pull meet the same filter.
+ * the result bound to it, so the machine's own craft, a pipe that pushes and its own pull meet the same filter.
  */
-public final class ChemicalPlantFluids extends FluidStacksResourceHandler {
-
-    public static final int INPUTS = 2;
-    public static final int OUTPUTS = 2;
-    public static final int SIZE = INPUTS + OUTPUTS;
+public final class FluidMachineFluids extends FluidStacksResourceHandler {
 
     /** mB an input box holds, and an output box at least: a bucket's worth. */
     public static final int INPUT_CAPACITY = AssemblerFluidBox.CAPACITY;
@@ -41,25 +37,13 @@ public final class ChemicalPlantFluids extends FluidStacksResourceHandler {
         void changed();
     }
 
+    private final FluidMachine machine;
     private final Owner owner;
 
-    ChemicalPlantFluids(Owner owner) {
-        super(SIZE, INPUT_CAPACITY);
+    FluidMachineFluids(FluidMachine machine, Owner owner) {
+        super(machine.boxes(), INPUT_CAPACITY);
+        this.machine = machine;
         this.owner = owner;
-    }
-
-    public static boolean isInput(int box) {
-        return box >= 0 && box < INPUTS;
-    }
-
-    /** Which fluid ingredient or result {@code box} is bound to: {@code n} for input box {@code n} and for output box {@code n}. */
-    public static int binding(int box) {
-        return isInput(box) ? box : box - INPUTS;
-    }
-
-    /** Output box {@code n}, the box the Held recipe's {@code n}th fluid result goes in. */
-    public static int outputBox(int n) {
-        return INPUTS + n;
     }
 
     /** What box {@code box} holds, empty when it is empty. */
@@ -74,7 +58,7 @@ public final class ChemicalPlantFluids extends FluidStacksResourceHandler {
 
     /** What box {@code box} holds at most, in mB, as the Held recipe sizes it. */
     public int capacity(int box) {
-        return isInput(box) ? INPUT_CAPACITY : owner.outputCapacity(binding(box));
+        return machine.isInput(box) ? INPUT_CAPACITY : owner.outputCapacity(machine.binding(box));
     }
 
     @Override
@@ -84,7 +68,7 @@ public final class ChemicalPlantFluids extends FluidStacksResourceHandler {
 
     @Override
     public boolean isValid(int index, FluidResource resource) {
-        return isInput(index) ? owner.takesInput(index, resource) : owner.makesOutput(binding(index), resource);
+        return machine.isInput(index) ? owner.takesInput(index, resource) : owner.makesOutput(machine.binding(index), resource);
     }
 
     @Override
@@ -99,9 +83,9 @@ public final class ChemicalPlantFluids extends FluidStacksResourceHandler {
         }
     }
 
-    /** Empties every box: the Held recipe changed, or the plant cannot run it. */
+    /** Empties every box: the Held recipe changed, or the machine cannot run it. */
     void emptyAll() {
-        for (int box = 0; box < SIZE; box++) {
+        for (int box = 0; box < machine.boxes(); box++) {
             empty(box);
         }
     }
