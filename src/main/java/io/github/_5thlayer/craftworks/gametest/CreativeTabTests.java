@@ -8,6 +8,7 @@ import java.util.List;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.ChemicalPlants;
+import io.github._5thlayer.craftworks.machine.OilRefineries;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.CreativeModeTab;
@@ -42,6 +43,7 @@ final class CreativeTabTests {
                 Assemblers.item(AssemblerTier.TWO).get(),
                 Assemblers.item(AssemblerTier.THREE).get(),
                 ChemicalPlants.ITEM.get(),
+                OilRefineries.ITEM.get(),
                 Assemblers.CREATIVE_ENERGY_SOURCE_ITEM.get(),
                 Assemblers.CREATIVE_FLUID_SOURCE_ITEM.get());
         List<Item> listed = craftworks.getDisplayItems().stream().map(ItemStack::getItem).toList();

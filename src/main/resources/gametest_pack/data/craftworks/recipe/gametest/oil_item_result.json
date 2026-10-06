@@ -1,0 +1,8 @@
+{
+  "type": "craftworks:assembling",
+  "category": "oil-processing",
+  "ingredients": [],
+  "fluid_ingredients": [ { "ingredient": "minecraft:water", "amount": 100 } ],
+  "results": [ { "id": "minecraft:gold_nugget", "count": 1 } ],
+  "time": 20
+}
