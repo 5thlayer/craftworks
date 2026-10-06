@@ -4,121 +4,178 @@
     "ring": "craftworks:block/fluid_connection",
     "particle": "craftworks:block/fluid_connection"
   },
-  "elements": [
-    {
-      "from": [
-        -16,
-        0,
-        -32
-      ],
-      "to": [
-        0,
-        16,
-        -32
-      ],
-      "faces": {
-        "north": {
-          "uv": [
+  "loader": "neoforge:composite",
+  "children": {
+    "part_-1_0_1": {
+      "textures": {
+        "ring": "craftworks:block/fluid_connection"
+      },
+      "transform": {
+        "translation": [
+          -1,
+          0,
+          1
+        ]
+      },
+      "elements": [
+        {
+          "from": [
+            -16,
             0,
+            32
+          ],
+          "to": [
             0,
             16,
-            16
+            32
           ],
-          "texture": "#ring"
+          "faces": {
+            "south": {
+              "uv": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "texture": "#ring"
+            }
+          }
         }
-      }
+      ]
     },
-    {
-      "from": [
-        16,
-        0,
-        -32
-      ],
-      "to": [
-        32,
-        16,
-        -32
-      ],
-      "faces": {
-        "north": {
-          "uv": [
+    "part_0_0_-1": {
+      "textures": {
+        "ring": "craftworks:block/fluid_connection"
+      },
+      "transform": {
+        "translation": [
+          0,
+          0,
+          -1
+        ]
+      },
+      "elements": [
+        {
+          "from": [
+            -16,
             0,
+            -16
+          ],
+          "to": [
             0,
             16,
-            16
+            -16
           ],
-          "texture": "#ring"
+          "faces": {
+            "north": {
+              "uv": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "texture": "#ring"
+            }
+          }
+        },
+        {
+          "from": [
+            16,
+            0,
+            -16
+          ],
+          "to": [
+            32,
+            16,
+            -16
+          ],
+          "faces": {
+            "north": {
+              "uv": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "texture": "#ring"
+            }
+          }
         }
-      }
+      ]
     },
-    {
-      "from": [
-        -32,
-        0,
-        48
-      ],
-      "to": [
-        -16,
-        16,
-        48
-      ],
-      "faces": {
-        "south": {
-          "uv": [
+    "part_0_0_1": {
+      "textures": {
+        "ring": "craftworks:block/fluid_connection"
+      },
+      "transform": {
+        "translation": [
+          0,
+          0,
+          1
+        ]
+      },
+      "elements": [
+        {
+          "from": [
             0,
             0,
-            16,
-            16
+            32
           ],
-          "texture": "#ring"
+          "to": [
+            16,
+            16,
+            32
+          ],
+          "faces": {
+            "south": {
+              "uv": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "texture": "#ring"
+            }
+          }
         }
-      }
+      ]
     },
-    {
-      "from": [
-        0,
-        0,
-        48
-      ],
-      "to": [
-        16,
-        16,
-        48
-      ],
-      "faces": {
-        "south": {
-          "uv": [
-            0,
-            0,
+    "part_1_0_1": {
+      "textures": {
+        "ring": "craftworks:block/fluid_connection"
+      },
+      "transform": {
+        "translation": [
+          1,
+          0,
+          1
+        ]
+      },
+      "elements": [
+        {
+          "from": [
             16,
-            16
+            0,
+            32
           ],
-          "texture": "#ring"
-        }
-      }
-    },
-    {
-      "from": [
-        32,
-        0,
-        48
-      ],
-      "to": [
-        48,
-        16,
-        48
-      ],
-      "faces": {
-        "south": {
-          "uv": [
-            0,
-            0,
+          "to": [
+            32,
             16,
-            16
+            32
           ],
-          "texture": "#ring"
+          "faces": {
+            "south": {
+              "uv": [
+                0,
+                0,
+                16,
+                16
+              ],
+              "texture": "#ring"
+            }
+          }
         }
-      }
+      ]
     }
-  ]
+  }
 }
