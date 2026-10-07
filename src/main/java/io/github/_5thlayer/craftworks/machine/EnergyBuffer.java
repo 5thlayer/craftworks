@@ -8,8 +8,8 @@ import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /**
- * The energy buffer of a machine that crafts, an Assembler: sized by the machine's
- * config, drawn from by its craft, and filled from outside through {@link #face}, which never gives any back.
+ * An Assembler's energy buffer: sized by its tier's config, drawn from by its craft, and filled from outside through
+ * {@link #face}, which never gives any back.
  */
 final class EnergyBuffer extends SimpleEnergyHandler {
 
