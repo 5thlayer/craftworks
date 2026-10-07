@@ -18,8 +18,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * What a machine's Fluid Connection does with the block it faces: look up its fluid handler, and move fluid
- * between it and a box in one transaction, simulated within and committed only if some moved. An Assembler
- * only pulls; a Chemical Plant pulls its ingredients and pushes its results.
+ * between it and a box in one transaction, simulated within and committed only if some moved. A machine pulls
+ * its ingredients and pushes its results.
  */
 final class FluidMoves {
 

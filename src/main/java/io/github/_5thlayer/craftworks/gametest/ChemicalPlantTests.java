@@ -17,7 +17,7 @@ import io.github._5thlayer.craftworks.machine.MachineState;
 import io.github._5thlayer.craftworks.machine.FluidMachineBlock;
 import io.github._5thlayer.craftworks.machine.FluidMachine;
 import io.github._5thlayer.craftworks.machine.FluidMachineBlockEntity;
-import io.github._5thlayer.craftworks.machine.FluidMachineFluids;
+import io.github._5thlayer.craftworks.machine.MachineFluids;
 import io.github._5thlayer.craftworks.machine.FluidMachineMenu;
 import io.github._5thlayer.craftworks.machine.ChemicalPlantDefaults;
 import io.github._5thlayer.craftworks.machine.FluidMachines;
@@ -632,7 +632,7 @@ final class ChemicalPlantTests {
 
     private static void boxSizes(GameTestHelper helper) {
         Placed plant = place(helper);
-        FluidMachineFluids boxes = plant.machine().fluids();
+        MachineFluids boxes = plant.machine().fluids();
         for (int box = 0; box < 4; box++) {
             int expected = box < 2 ? 1000 : 100;
             helper.assertTrue(boxes.capacity(box) == expected, "box " + box + " holds " + boxes.capacity(box) + " mB with no Held recipe, not " + expected);
@@ -723,7 +723,7 @@ final class ChemicalPlantTests {
     private static void overfullBoxIsKept(GameTestHelper helper) {
         Placed plant = place(helper);
         hold(plant, ONE_RESULT);
-        FluidMachineFluids boxes = plant.machine().fluids();
+        MachineFluids boxes = plant.machine().fluids();
         boxes.set(0, new FluidStack(Fluids.WATER, 300));
         boxes.set(2, new FluidStack(Fluids.LAVA, 250));
         helper.assertTrue(boxes.capacity(2) == 200 && boxes.capacity(0) == 40, "the boxes hold " + boxes.capacity(0) + " and " + boxes.capacity(2));
@@ -740,7 +740,7 @@ final class ChemicalPlantTests {
 
     private static void mergedAndPinnedBoxes(GameTestHelper helper) {
         Placed plant = place(helper);
-        FluidMachineFluids boxes = plant.machine().fluids();
+        MachineFluids boxes = plant.machine().fluids();
         hold(plant, ONE_RESULT);
         helper.assertTrue(boxes.capacity(2) == 200 && boxes.capacity(3) == 100,
                 "an unpinned recipe sizes its boxes at " + boxes.capacity(2) + " and " + boxes.capacity(3) + ", not 200 (its own 100 and the unused box's) and 100");
@@ -756,7 +756,7 @@ final class ChemicalPlantTests {
     private static void voidsOnChange(GameTestHelper helper) {
         Placed plant = place(helper);
         hold(plant, FULL);
-        FluidMachineFluids boxes = plant.machine().fluids();
+        MachineFluids boxes = plant.machine().fluids();
         boxes.set(0, new FluidStack(Fluids.WATER, 600));
         boxes.set(1, new FluidStack(Fluids.LAVA, 600));
         boxes.set(2, new FluidStack(Fluids.WATER, 600));

@@ -32,11 +32,6 @@ final class FluidMachineRecipes {
         return CraftworksConfig.categories(description.defaults()).contains(recipe.category());
     }
 
-    /** Whether the recipe has no more fluid ingredients than input boxes and no more fluid results than output boxes. */
-    static boolean fluidsFit(FluidMachine description, AssemblingRecipe recipe) {
-        return recipe.fluidIngredients().size() <= description.fluidInputs() && recipe.fluidResults().size() <= description.fluidOutputs();
-    }
-
     /** Whether the recipe has no item to put in or take out, or the machine has item slots to take them. */
     static boolean takesItems(FluidMachine description, AssemblingRecipe recipe) {
         return description.hasItemSlots() || (recipe.ingredients().isEmpty() && recipe.results().isEmpty());
@@ -67,7 +62,7 @@ final class FluidMachineRecipes {
 
     /** Whether a machine can run this recipe in a category it holds: what its boxes and slots take. */
     static boolean canRun(FluidMachine description, AssemblingRecipe recipe) {
-        return takesItems(description, recipe) && fluidsFit(description, recipe) && HeldRecipes.fluidFits(recipe) && fitsSlots(description, recipe) && itemsFit(description, recipe);
+        return takesItems(description, recipe) && HeldRecipes.fluidsHaveBoxes(description.layout(), recipe) && HeldRecipes.fluidVolumeFits(recipe) && fitsSlots(description, recipe) && itemsFit(description, recipe);
     }
 
     /** What Fill Recipe on an open fluid machine would answer for this player: the Lock source is asked here, and only here. */
@@ -76,8 +71,8 @@ final class FluidMachineRecipes {
         return HoldVerdict.of(recipe.map(found -> HoldVerdict.Checks.passing()
                 .categoryHeld(takesCategory(description, found))
                 .takesItems(takesItems(description, found))
-                .oneFluid(fluidsFit(description, found))
-                .fluidFits(HeldRecipes.fluidFits(found))
+                .fluidsHaveBoxes(HeldRecipes.fluidsHaveBoxes(description.layout(), found))
+                .fluidVolumeFits(HeldRecipes.fluidVolumeFits(found))
                 .fitsSlots(fitsSlots(description, found))
                 .remaindersFit(itemsFit(description, found))
                 .locked(RuntimePlanSource.lockedFor(player).test(id.toString())))

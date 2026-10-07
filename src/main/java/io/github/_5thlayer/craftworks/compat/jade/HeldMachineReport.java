@@ -88,7 +88,7 @@ class HeldMachineReport implements StreamServerDataProvider<BlockAccessor, HeldM
 
     /**
      * Draws the report: the Held recipe's product, then its state, with a progress bar while it crafts. The
-     * fluid boxes are Jade's own bars, from {@link AssemblerFluid} and {@link FluidMachineFluidView}.
+     * fluid boxes are Jade's own bars, from {@link AssemblerFluidView} and {@link FluidMachineFluidView}.
      */
     static final class Client extends HeldMachineReport implements IBlockComponentProvider {
 

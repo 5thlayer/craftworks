@@ -87,8 +87,8 @@ final class CreativeFluidSourceTests {
         }
         helper.assertTrue(assembler.machine().inventory().getResource(AssemblerSlots.PRODUCT).getItem() == Items.CLAY_BALL,
                 "no clay ball after " + ran + " ticks");
-        helper.assertTrue(assembler.machine().fluidBox().contents().getAmount() == 750,
-                "the box holds " + assembler.machine().fluidBox().contents() + ", not the 1000 mB of water it filled to less the 250 spent");
+        helper.assertTrue(assembler.machine().fluids().contents(0).getAmount() == 750,
+                "the box holds " + assembler.machine().fluids().contents(0) + ", not the 1000 mB of water it filled to less the 250 spent");
         helper.succeed();
     }
 

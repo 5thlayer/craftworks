@@ -8,8 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.List;
-
 import io.github._5thlayer.craftworks.machine.HoldVerdict.Checks;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +24,7 @@ class HoldVerdictTest {
     @Test
     void aRecipeNothingNamesIsRefusedFirst() {
         Checks everythingWrong = Checks.passing().resolves(false).categoryHeld(false).takesItems(false).takesFluids(false)
-                .oneFluid(false).fluidFits(false).fitsSlots(false).remaindersFit(false).locked(true);
+                .fluidsHaveBoxes(false).fluidVolumeFits(false).fitsSlots(false).remaindersFit(false).locked(true);
         assertEquals(HoldVerdict.NOT_ASSEMBLING, HoldVerdict.of(everythingWrong));
     }
 
@@ -34,18 +32,18 @@ class HoldVerdictTest {
     void aRecipeItCouldNeverRunIsRefusedBeforeItsLockIsAsked() {
         Checks locked = Checks.passing().locked(true);
         assertEquals(HoldVerdict.HAS_FLUID, HoldVerdict.of(locked.takesFluids(false)));
-        assertEquals(HoldVerdict.TOO_MANY_FLUIDS, HoldVerdict.of(locked.oneFluid(false)));
-        assertEquals(HoldVerdict.FLUID_TOO_LARGE, HoldVerdict.of(locked.fluidFits(false)));
+        assertEquals(HoldVerdict.TOO_MANY_FLUIDS, HoldVerdict.of(locked.fluidsHaveBoxes(false)));
+        assertEquals(HoldVerdict.FLUID_TOO_LARGE, HoldVerdict.of(locked.fluidVolumeFits(false)));
         assertEquals(HoldVerdict.TOO_MANY_INGREDIENTS, HoldVerdict.of(locked.fitsSlots(false)));
         assertEquals(HoldVerdict.REMAINDERS_DONT_FIT, HoldVerdict.of(locked.remaindersFit(false)));
     }
 
     @Test
     void theFluidRefusalsComeInOrderAfterTheCategoryAndBeforeTheSlots() {
-        Checks failing = Checks.passing().fitsSlots(false).fluidFits(false);
+        Checks failing = Checks.passing().fitsSlots(false).fluidVolumeFits(false);
         assertEquals(HoldVerdict.FLUID_TOO_LARGE, HoldVerdict.of(failing));
-        assertEquals(HoldVerdict.TOO_MANY_FLUIDS, HoldVerdict.of(failing.oneFluid(false)));
-        assertEquals(HoldVerdict.HAS_FLUID, HoldVerdict.of(failing.oneFluid(false).takesFluids(false)));
+        assertEquals(HoldVerdict.TOO_MANY_FLUIDS, HoldVerdict.of(failing.fluidsHaveBoxes(false)));
+        assertEquals(HoldVerdict.HAS_FLUID, HoldVerdict.of(failing.fluidsHaveBoxes(false).takesFluids(false)));
         assertEquals(HoldVerdict.WRONG_CATEGORY,
                 HoldVerdict.of(failing.takesFluids(false).categoryHeld(false)));
     }
@@ -96,8 +94,8 @@ class HoldVerdictTest {
 
     @Test
     void aMachineWithNeitherInputsNorAProductHasNoItemSlots() {
-        FluidMachine fluidsOnly = new FluidMachine(MachineKind.CHEMICAL_PLANT, ChemicalPlantDefaults.INSTANCE, 0, false, 2, 3, List.of());
+        FluidMachine fluidsOnly = new FluidMachine(MachineKind.CHEMICAL_PLANT, ChemicalPlantDefaults.INSTANCE, 0, false, FluidLayout.ASSEMBLER);
         assertFalse(fluidsOnly.hasItemSlots());
-        assertTrue(new FluidMachine(MachineKind.CHEMICAL_PLANT, ChemicalPlantDefaults.INSTANCE, 0, true, 2, 3, List.of()).hasItemSlots());
+        assertTrue(new FluidMachine(MachineKind.CHEMICAL_PLANT, ChemicalPlantDefaults.INSTANCE, 0, true, FluidLayout.ASSEMBLER).hasItemSlots());
     }
 }

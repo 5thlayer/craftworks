@@ -24,13 +24,13 @@ public final class FluidMachineScreen extends HeldMachineScreen<FluidMachineMenu
 
     public FluidMachineScreen(FluidMachineMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title, 176, FluidMachineMenu.INVENTORY_Y + 82, FluidMachineMenu.INVENTORY_Y);
-        gauges = FluidGaugeLayout.of(menu.description());
+        gauges = FluidGaugeLayout.of(menu.description().layout());
     }
 
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-        for (int box = 0; box < menu.description().boxes(); box++) {
+        for (int box = 0; box < menu.description().layout().boxes(); box++) {
             MachineScreens.fluidGauge(graphics, menu.fluid(box), leftPos + gauges.x(box), topPos + GAUGE_Y, gauges.width(), menu.fluidCapacity(box));
         }
         MachineScreens.energyBar(graphics, font, leftPos + 8, topPos + ENERGY_Y, ENERGY_WIDTH, menu.energy(), menu.energyCapacity());
@@ -40,7 +40,7 @@ public final class FluidMachineScreen extends HeldMachineScreen<FluidMachineMenu
     @Override
     protected void extractTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         super.extractTooltip(graphics, mouseX, mouseY);
-        for (int box = 0; box < menu.description().boxes(); box++) {
+        for (int box = 0; box < menu.description().layout().boxes(); box++) {
             if (MachineScreens.overGauge(leftPos + gauges.x(box), topPos + GAUGE_Y, gauges.width(), mouseX, mouseY)) {
                 MachineScreens.fluidTooltip(graphics, font, menu.fluid(box), menu.fluidCapacity(box), mouseX, mouseY);
                 return;

@@ -297,7 +297,7 @@ final class OilRefineryTests {
             source(helper, at.get(0), Fluids.WATER, 8000);
             source(helper, at.get(1), Fluids.LAVA, 8000);
             hold(refinery, FULL);
-            int box = refinery.machine().description().outputBox(out);
+            int box = refinery.machine().description().layout().outputBox(out);
             helper.assertTrue(refinery.machine().fluids().capacity(box) == OUTPUT_VOLUME[out],
                     "output box " + (out + 1) + " holds " + refinery.machine().fluids().capacity(box) + " mB, not " + OUTPUT_VOLUME[out]);
             refinery.machine().fluids().set(box, new FluidStack(OUTPUT_FLUID[out], OUTPUT_VOLUME[out]));

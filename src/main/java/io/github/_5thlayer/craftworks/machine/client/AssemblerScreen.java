@@ -4,46 +4,55 @@
 package io.github._5thlayer.craftworks.machine.client;
 
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
+import io.github._5thlayer.craftworks.machine.FluidGaugeLayout;
+import io.github._5thlayer.craftworks.machine.FluidLayout;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
  * The Assembler's screen: a {@link HeldMachineScreen} over five inputs, the product and the remainders, with
- * the energy in the buffer below; tiers 2 and 3 add the fluid box as a gauge beside the energy bar.
+ * the energy in the buffer below; tiers 2 and 3 add a gauge for each fluid box (the inputs, then the outputs, as
+ * {@link FluidGaugeLayout} lays them across) between the slots and the energy bar, and stand a row taller.
  */
 public final class AssemblerScreen extends HeldMachineScreen<AssemblerMenu> {
 
+    private static final int GAUGE_Y = 57;
+    private static final int ENERGY_Y_WITH_FLUIDS = 72;
     private static final int ENERGY_Y = 60;
     private static final int ENERGY_WIDTH = 160;
-    // With a fluid box the energy bar gives up its right end to the gauge, the same height.
-    private static final int ENERGY_WIDTH_WITH_FLUID = 104;
-    private static final int FLUID_X = 8 + ENERGY_WIDTH_WITH_FLUID + 4;
-    private static final int FLUID_WIDTH = 8 + ENERGY_WIDTH - FLUID_X;
+
+    private final FluidGaugeLayout gauges = FluidGaugeLayout.of(FluidLayout.ASSEMBLER);
 
     public AssemblerScreen(AssemblerMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title, 176, 166, AssemblerMenu.INVENTORY_Y);
+        super(menu, playerInventory, title, 176, menu.inventoryY() + 82, menu.inventoryY());
     }
 
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-        int energyX = leftPos + 8;
-        int energyY = topPos + ENERGY_Y;
-        int energyWidth = menu.hasFluidBox() ? ENERGY_WIDTH_WITH_FLUID : ENERGY_WIDTH;
-        MachineScreens.energyBar(graphics, font, energyX, energyY, energyWidth, menu.energy(), menu.energyCapacity());
-
-        if (menu.hasFluidBox()) {
-            MachineScreens.fluidGauge(graphics, menu.fluid(), leftPos + FLUID_X, energyY, FLUID_WIDTH, menu.fluidCapacity());
+        if (!menu.hasFluidBoxes()) {
+            MachineScreens.energyBar(graphics, font, leftPos + 8, topPos + ENERGY_Y, ENERGY_WIDTH, menu.energy(), menu.energyCapacity());
+            return;
         }
+        for (int box = 0; box < FluidLayout.ASSEMBLER.boxes(); box++) {
+            MachineScreens.fluidGauge(graphics, menu.fluid(box), leftPos + gauges.x(box), topPos + GAUGE_Y, gauges.width(), menu.fluidCapacity(box));
+        }
+        MachineScreens.energyBar(graphics, font, leftPos + 8, topPos + ENERGY_Y_WITH_FLUIDS, ENERGY_WIDTH, menu.energy(), menu.energyCapacity());
     }
 
-    /** Over the gauge, the fluid's name and how much of the box it fills. */
+    /** Over a gauge, the fluid's name and how much of the box it fills. */
     @Override
     protected void extractTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         super.extractTooltip(graphics, mouseX, mouseY);
-        if (menu.hasFluidBox() && MachineScreens.overGauge(leftPos + FLUID_X, topPos + ENERGY_Y, FLUID_WIDTH, mouseX, mouseY)) {
-            MachineScreens.fluidTooltip(graphics, font, menu.fluid(), menu.fluidCapacity(), mouseX, mouseY);
+        if (!menu.hasFluidBoxes()) {
+            return;
+        }
+        for (int box = 0; box < FluidLayout.ASSEMBLER.boxes(); box++) {
+            if (MachineScreens.overGauge(leftPos + gauges.x(box), topPos + GAUGE_Y, gauges.width(), mouseX, mouseY)) {
+                MachineScreens.fluidTooltip(graphics, font, menu.fluid(box), menu.fluidCapacity(box), mouseX, mouseY);
+                return;
+            }
         }
     }
 }

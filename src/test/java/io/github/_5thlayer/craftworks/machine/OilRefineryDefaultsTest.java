@@ -36,8 +36,8 @@ class OilRefineryDefaultsTest {
     void itHasNoItemSlotsTwoInputBoxesAndThreeOutputBoxes() {
         FluidMachine refinery = FluidMachine.OIL_REFINERY;
         assertEquals(false, refinery.hasItemSlots());
-        assertEquals(2, refinery.fluidInputs());
-        assertEquals(3, refinery.fluidOutputs());
-        assertEquals(5, refinery.connections().size());
+        assertEquals(2, refinery.layout().fluidInputs());
+        assertEquals(3, refinery.layout().fluidOutputs());
+        assertEquals(5, refinery.layout().connections().size());
     }
 }
