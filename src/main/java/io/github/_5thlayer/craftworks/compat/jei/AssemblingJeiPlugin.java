@@ -13,7 +13,6 @@ import io.github._5thlayer.craftworks.machine.AssemblerTab;
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
-import io.github._5thlayer.craftworks.machine.client.HeldMachineScreen;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
 import mezz.jei.api.IModPlugin;
@@ -96,17 +95,17 @@ public final class AssemblingJeiPlugin implements IModPlugin {
         registration.addRecipeTransferHandler(new HeldMachineTransferHandler<>(AssemblerMenu.class, Assemblers.MENU.get(), TAB), TAB);
     }
 
-    /** The machine screens' ghosts answer Recipe and Uses as a real stack does (see {@link #ghostAt}). */
+    /** The Assembler screen's ghosts answer Recipe and Uses as a real stack does (see {@link #ghostAt}). */
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         registration.addGuiContainerHandler(AssemblerScreen.class, ghosts());
     }
 
-    private static <S extends HeldMachineScreen<?>> IGuiContainerHandler<S> ghosts() {
+    private static IGuiContainerHandler<AssemblerScreen> ghosts() {
         return new IGuiContainerHandler<>() {
             @Override
             public Optional<? extends IClickableIngredient<?>> getClickableIngredientUnderMouse(
-                    IClickableIngredientFactory factory, S screen, double mouseX, double mouseY) {
+                    IClickableIngredientFactory factory, AssemblerScreen screen, double mouseX, double mouseY) {
                 return ghostAt(factory, screen.ghostAt(mouseX, mouseY));
             }
         };

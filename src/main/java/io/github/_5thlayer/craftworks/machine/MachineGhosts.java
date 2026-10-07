@@ -42,7 +42,7 @@ public final class MachineGhosts {
      * or empty over a filled slot, over an empty one with nothing to ghost, with no Held recipe, and over the
      * rest of the panel. {@code millis} is the time that picks a tag ingredient's member.
      */
-    public static Optional<Ghost> at(HeldMachineMenu<?> menu, int left, int top, int mouseX, int mouseY, long millis) {
+    public static Optional<Ghost> at(AssemblerMenu menu, int left, int top, int mouseX, int mouseY, long millis) {
         Optional<HeldRecipeView> held = menu.held();
         MachineSlots layout = menu.layout();
         if (held.isEmpty()) {

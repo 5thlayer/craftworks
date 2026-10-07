@@ -7,7 +7,7 @@ import java.util.Optional;
 
 import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.machine.HeldRecipeView;
-import io.github._5thlayer.craftworks.machine.HeldMachineMenu;
+import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -37,7 +37,7 @@ public record HeldRecipeSyncPacket(int containerId, Optional<HeldRecipeView> hel
     }
 
     static void handle(HeldRecipeSyncPacket packet, IPayloadContext context) {
-        if (context.player().containerMenu instanceof HeldMachineMenu<?> menu
+        if (context.player().containerMenu instanceof AssemblerMenu menu
                 && context.player().containerMenu.containerId == packet.containerId()) {
             menu.show(packet.held());
         }

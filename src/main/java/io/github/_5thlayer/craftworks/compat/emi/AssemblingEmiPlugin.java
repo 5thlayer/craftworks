@@ -18,7 +18,6 @@ import io.github._5thlayer.craftworks.compat.ConfiguredTabs;
 import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.AssemblerTab;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
-import io.github._5thlayer.craftworks.machine.client.HeldMachineScreen;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
 
 import net.minecraft.client.Minecraft;
@@ -40,7 +39,7 @@ import net.minecraft.resources.Identifier;
  * null menu type since {@code InventoryMenu} has none. So Fill Recipe queues from the inventory screen and
  * nowhere else.
  *
- * <p>The machine screens' ghosts answer Recipe and Uses as a real stack does (see {@link #ghostAt}).
+ * <p>The Assembler screen's ghosts answer Recipe and Uses as a real stack does (see {@link #ghostAt}).
  */
 @EmiEntrypoint
 public final class AssemblingEmiPlugin implements EmiPlugin {
@@ -69,11 +68,11 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
     }
 
     /**
-     * The ghost under the mouse on a machine's screen, as EMI's hovered stack, or none
+     * The ghost under the mouse on the Assembler's screen, as EMI's hovered stack, or none
      * where there isn't one, so EMI's own slot lookup answers for a real stack. One item, whatever count the
      * ghost is drawn with: Recipe and Uses ask about the item.
      */
-    private static EmiStackInteraction ghostAt(HeldMachineScreen<?> screen, int mouseX, int mouseY) {
+    private static EmiStackInteraction ghostAt(AssemblerScreen screen, int mouseX, int mouseY) {
         return screen.ghostAt(mouseX, mouseY)
                 .map(shown -> new EmiStackInteraction(EmiStack.of(shown.stack().copyWithCount(1))))
                 .orElse(EmiStackInteraction.EMPTY);
