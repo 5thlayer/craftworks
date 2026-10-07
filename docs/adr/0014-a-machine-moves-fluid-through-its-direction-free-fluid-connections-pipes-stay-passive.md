@@ -40,6 +40,6 @@ Assemblers to make fluid, or to hold two fluids at once, needs a new decision.
 
 The fluid box's size is superseded by ADR-0017.
 
-The Assembler's one fluid box, its two connections and its never pushing are superseded by #40: an Assembler of tier 2
-or 3 has two input and three output boxes on six connections and pushes its fluid results out, as the Chemical Plant
-does (ADR-0015). The connections stay direction-free and the pipes passive. ADR-0018 will record the decision.
+The Assembler's one fluid box, its two connections and its never pushing are superseded by ADR-0018 (#40): an
+Assembler of tier 2 or 3 has two input and three output boxes on six connections and pushes its fluid results out. The
+connections stay direction-free and the pipes passive.
