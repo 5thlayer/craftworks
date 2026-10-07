@@ -67,14 +67,15 @@ public record FluidLayout(int fluidInputs, int fluidOutputs, List<Site> connecti
     }
 
     /**
-     * An Assembler's, of every tier: two input and three output boxes, and six connections, all three blocks of
-     * the bottom layer along each of the two opposite edges of its 3x3, three on the side it faces and three on the
-     * other. With six, a recipe of up to five fluids has a connection for
-     * each, since a connection has no direction and each pipe network carries one fluid.
+     * An Assembler's, of every tier: two input and three output boxes, and six connections on the bottom layer,
+     * spaced so no two of their pipes touch: the two ends of the edge it faces, the two ends of the opposite edge,
+     * and the centre of each side. A recipe of up to five fluids has a connection and a pipe network for each, since
+     * a connection has no direction and each network carries one fluid. The sites are symmetric under a half turn.
      */
     public static final FluidLayout ASSEMBLER = new FluidLayout(2, 3, List.of(
-            new Site(1, -1, Face.AHEAD), new Site(1, 0, Face.AHEAD), new Site(1, 1, Face.AHEAD),
-            new Site(-1, -1, Face.BEHIND), new Site(-1, 0, Face.BEHIND), new Site(-1, 1, Face.BEHIND)));
+            new Site(1, -1, Face.AHEAD), new Site(1, 1, Face.AHEAD),
+            new Site(-1, -1, Face.BEHIND), new Site(-1, 1, Face.BEHIND),
+            new Site(0, -1, Face.LEFT), new Site(0, 1, Face.RIGHT)));
 
     // -- the fluid boxes ------------------------------------------------------------------------
 

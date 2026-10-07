@@ -113,10 +113,16 @@ final class AssemblerFluidTests {
         tests.test("the_five_fluid_boxes_survive_a_save_and_reload_and_only_fluids_is_written", 20, AssemblerFluidTests::survivesReload);
         tests.test("an_old_save_with_one_fluid_box_loads_into_input_box_1_and_fluids_wins_over_it", 20, AssemblerFluidTests::oldFormatMigrates);
         for (Direction facing : FACINGS) {
-            tests.test("the_six_fluid_connections_of_an_assembler_facing_" + facing.getName() + "_stand_on_the_three_bottom_blocks_of_its_two_edges", 20,
+            tests.test("the_six_fluid_connections_of_an_assembler_facing_" + facing.getName() + "_stand_on_the_ends_of_its_front_and_back_edges_and_the_centres_of_its_sides", 20,
                     helper -> connectionsFollowFacing(helper, facing));
             tests.test("any_one_of_the_six_connections_alone_feeds_and_drains_an_assembler_facing_" + facing.getName(), 40,
                     helper -> anyConnectionDoes(helper, facing));
+        }
+        for (Direction facing : FACINGS) {
+            tests.test("an_assembler_facing_" + facing.getName() + "_shows_no_fluid_capability_on_the_centres_of_its_front_and_back_edges", 20,
+                    helper -> oldCentresAreNotConnections(helper, facing));
+            tests.test("an_assembler_facing_" + facing.getName() + "_makes_a_five_fluid_recipe_through_five_separate_networks", 40,
+                    helper -> fiveNetworks(helper, facing));
         }
         tests.test("a_neighbour_that_no_connection_of_an_assembler_faces_is_neither_pulled_from_nor_pushed_to", 20, AssemblerFluidTests::onlyConnectionsAreUsed);
         tests.test("tier_1_has_the_six_fluid_connections_while_it_holds_a_fluid_recipe", 20, AssemblerFluidTests::tier1HasTheConnections);
@@ -157,23 +163,25 @@ final class AssemblerFluidTests {
     }
 
     /**
-     * The six connections of an Assembler facing {@code facing}, as the issue gives them and not as the code does:
-     * all three bottom-layer blocks along the edge it faces, left to right, then the three along the opposite edge.
-     * The first three are on the facing side.
+     * The six connections of an Assembler facing {@code facing}, as the issue gives them and not as the code does,
+     * spaced so no two of their pipes touch: the two ends of the bottom-layer edge it faces, left to right, the two
+     * ends of the opposite edge, then the centre of its left side and the centre of its right. The first two are on
+     * the facing side.
      */
     static List<Connection> connections(Direction facing) {
-        List<Connection> found = new ArrayList<>();
-        for (Direction side : List.of(facing, facing.getOpposite())) {
-            for (int along = -1; along <= 1; along++) {
-                found.add(new Connection(ORIGIN.relative(side).relative(facing.getClockWise(), along), side));
-            }
-        }
-        return found;
+        Direction right = facing.getClockWise();
+        return List.of(
+                new Connection(ORIGIN.relative(facing).relative(right, -1), facing),
+                new Connection(ORIGIN.relative(facing).relative(right, 1), facing),
+                new Connection(ORIGIN.relative(facing.getOpposite()).relative(right, -1), facing.getOpposite()),
+                new Connection(ORIGIN.relative(facing.getOpposite()).relative(right, 1), facing.getOpposite()),
+                new Connection(ORIGIN.relative(right, -1), right.getOpposite()),
+                new Connection(ORIGIN.relative(right, 1), right));
     }
 
-    /** The block a connection faces, in test coordinates: two from the origin, the way it points, on the edge's centre. */
-    static BlockPos beyond(Direction side) {
-        return ORIGIN.relative(side, 2);
+    /** The block the first connection faces: the left end of the edge the Assembler faces, where a lone tank or pipe goes. */
+    static BlockPos beyond(Direction facing) {
+        return connections(facing).get(0).beyond();
     }
 
     private static TestTank.Entity tank(GameTestHelper helper, BlockPos at, Fluid fluid, int amount, TestTank.Mode mode) {
@@ -275,7 +283,7 @@ final class AssemblerFluidTests {
         Direction facing = assembler.facing();
         // The connections on the facing side are asked first.
         TestTank.Entity water = tank(helper, beyond(facing), Fluids.WATER, 400);
-        TestTank.Entity lava = tank(helper, beyond(facing.getOpposite()), Fluids.LAVA, 5000);
+        TestTank.Entity lava = tank(helper, connections(facing).get(2).beyond(), Fluids.LAVA, 5000);
         AssemblerMachineTests.hold(assembler, WATER_OR_LAVA);
         AssemblerMachineTests.insert(assembler, 0, Items.DIRT, 1);
         tick(helper, assembler, 1);
@@ -491,7 +499,7 @@ final class AssemblerFluidTests {
         return found;
     }
 
-    /** The faces that are connections for a facing, as {@link #exposed} spells them: the bottom layer's two edges. */
+    /** The faces that are connections for a facing, as {@link #exposed} spells them: the six sites of the bottom layer. */
     private static Set<String> connectionFaces(Direction facing) {
         Set<String> faces = new TreeSet<>();
         for (Connection connection : connections(facing)) {
@@ -508,13 +516,59 @@ final class AssemblerFluidTests {
         helper.assertTrue(expected.size() == 6, "an Assembler has six connections, not " + expected);
         helper.assertTrue(exposed(helper, assembler).equals(expected),
                 "facing " + facing + " the fluid capability answered at " + exposed(helper, assembler) + ", not at " + expected);
-        // On the bottom layer, three to each of the two opposite edges, the first three on the side it faces.
+        // On the bottom layer, and no two of their pipes touch, so each carries a network of its own.
         for (Connection connection : connections(facing)) {
             helper.assertTrue(connection.block().getY() == ORIGIN.getY(), "a connection is above the bottom layer: " + connection);
         }
-        helper.assertTrue(connections(facing).subList(0, 3).stream().allMatch(connection -> connection.side() == facing),
-                "the first three connections are not on the side it faces");
+        helper.assertTrue(connections(facing).subList(0, 2).stream().allMatch(connection -> connection.side() == facing),
+                "the first two connections are not on the side it faces");
+        List<Connection> all = connections(facing);
+        for (int one = 0; one < all.size(); one++) {
+            for (int other = one + 1; other < all.size(); other++) {
+                BlockPos gap = all.get(one).beyond().subtract(all.get(other).beyond());
+                helper.assertTrue(Math.abs(gap.getX()) + Math.abs(gap.getY()) + Math.abs(gap.getZ()) > 1,
+                        "the pipes at " + all.get(one) + " and " + all.get(other) + " touch");
+            }
+        }
         helper.assertTrue(helper.getBlockState(ORIGIN).getValue(AssemblerBlock.FLUID_CONNECTIONS), "the origin does not show its connections");
+        helper.succeed();
+    }
+
+    /** The centres of the front and back edges were connections once, with the edges' ends: now they answer nothing. */
+    private static void oldCentresAreNotConnections(GameTestHelper helper, Direction facing) {
+        Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO, facing);
+        AssemblerMachineTests.hold(assembler, WATER_CRAFT);
+        for (Direction side : List.of(facing, facing.getOpposite())) {
+            BlockPos centre = helper.absolutePos(ORIGIN.relative(side));
+            helper.assertTrue(helper.getLevel().getCapability(Capabilities.Fluid.BLOCK, centre, side) == null,
+                    "the centre of the edge on the " + side + " side answered a fluid lookup, facing " + facing);
+        }
+        helper.succeed();
+    }
+
+    /**
+     * Five of the six connections, each with a tank of its own and nothing closing a side between them: a recipe of two
+     * fluids in and three out, the five boxes, crafts with every fluid in its own network.
+     */
+    private static void fiveNetworks(GameTestHelper helper, Direction facing) {
+        Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.THREE, facing);
+        List<Connection> at = connections(facing);
+        TestTank.Entity water = source(helper, at.get(0), Fluids.WATER, 5000);
+        TestTank.Entity lava = source(helper, at.get(1), Fluids.LAVA, 5000);
+        List<TestTank.Entity> sinks = List.of(drain(helper, at.get(2)), drain(helper, at.get(4)), drain(helper, at.get(5)));
+        AssemblerMachineTests.hold(assembler, THREE_OUTPUTS);
+
+        SimpleEnergyHandler supply = AssemblerMachineTests.supply();
+        for (int ran = 0; ran < 40 && inTank(sinks.get(0)) == 0; ran++) {
+            AssemblerMachineTests.feed(assembler, supply, 1000);
+            assembler.machine().serverTick(helper.getLevel());
+        }
+        tick(helper, assembler, 2);
+        helper.assertTrue(inTank(water) < 5000 && inTank(lava) < 5000, "an input was not pulled: " + inTank(water) + " and " + inTank(lava) + " mB left");
+        helper.assertTrue(drained(sinks.get(0), Fluids.LAVA) == 30, "the drain beside the back holds " + sinks.get(0).tank.getResource(0) + " x " + inTank(sinks.get(0)));
+        // Any connection serves any box, so the 100 mB of water made in two boxes lands in the two water drains between them.
+        int waterOut = drained(sinks.get(1), Fluids.WATER) + drained(sinks.get(2), Fluids.WATER);
+        helper.assertTrue(waterOut == 100, "the two water drains hold " + waterOut + " mB, not the 100 made");
         helper.succeed();
     }
 
@@ -547,10 +601,10 @@ final class AssemblerFluidTests {
         assembler.machine().fluids().set(2, new FluidStack(Fluids.WATER, 300));
         Direction facing = assembler.facing();
         Direction across = facing.getClockWise();
-        // The edge centre that is not a connection (two sides of it), beside a corner's side face, and above a connection
-        // block's neighbour in the upper layer, and above the footprint.
-        for (BlockPos at : List.of(ORIGIN.relative(across, 2),
-                ORIGIN.relative(across.getOpposite(), 2),
+        // The centres of the front and back edges, which were connections before the six were spaced apart, beside a
+        // corner's side face, and above a connection block's neighbour in the upper layer, and above the footprint.
+        for (BlockPos at : List.of(ORIGIN.relative(facing, 2),
+                ORIGIN.relative(facing.getOpposite(), 2),
                 ORIGIN.relative(facing).relative(across, 2),
                 ORIGIN.above().relative(facing, 2),
                 ORIGIN.relative(facing).above(2))) {

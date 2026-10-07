@@ -71,20 +71,27 @@ def _group(elements, textures, ambient_occlusion, particle):
 
 def rings(sites):
     """The grey ring of each connection: (x, z, side) is the footprint block, in blocks from the origin, and the
-    side its face points, 'north' or 'south', as the machine faces north."""
+    side its face points, as the machine faces north."""
     elements = []
     for x, z, side in sites:
-        plane = 16 * z if side == "north" else 16 * z + 16
-        elements.append({"from": [16 * x, 0, plane], "to": [16 * x + 16, 16, plane], "faces": {side: _face("#ring")}})
+        if side in ("north", "south"):
+            plane = 16 * z if side == "north" else 16 * z + 16
+            box = ([16 * x, 0, plane], [16 * x + 16, 16, plane])
+        else:
+            plane = 16 * x if side == "west" else 16 * x + 16
+            box = ([plane, 0, 16 * z], [plane, 16, 16 * z + 16])
+        elements.append({"from": box[0], "to": box[1], "faces": {side: _face("#ring")}})
     ring = "craftworks:block/fluid_connection"
     return _group(elements, {"ring": ring}, False, ring)
 
 
 MODELS_TO_WRITE = {
-    # Every Assembler tier, 3x3: a connection on each of the three bottom-layer blocks of the two opposite
-    # edges, the edge it faces (north) and the other. The casings are hand-written and not made here.
-    "assembler_connections": rings([(-1, -1, "north"), (0, -1, "north"), (1, -1, "north"),
-                                    (-1, 1, "south"), (0, 1, "south"), (1, 1, "south")]),
+    # Every Assembler tier, 3x3, spaced so no two pipes beside them touch: the two ends of the edge it faces
+    # (north) and of the other, and the centre of each side. The layout is symmetric under a half turn, so the
+    # blockstate's two rotations cover the four facings. The casings are hand-written and not made here.
+    "assembler_connections": rings([(-1, -1, "north"), (1, -1, "north"),
+                                    (-1, 1, "south"), (1, 1, "south"),
+                                    (-1, 0, "west"), (1, 0, "east")]),
 }
 
 

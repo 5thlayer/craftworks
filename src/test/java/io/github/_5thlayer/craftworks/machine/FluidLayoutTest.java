@@ -43,10 +43,11 @@ class FluidLayoutTest {
     }
 
     @Test
-    void anAssemblersConnectionsAreTheThreeBottomBlocksOfBothEdges() {
+    void anAssemblersConnectionsAreTheEndsOfItsFrontAndBackEdgesAndTheCentresOfItsSides() {
         assertEquals(List.of(
-                new Site(1, -1, Face.AHEAD), new Site(1, 0, Face.AHEAD), new Site(1, 1, Face.AHEAD),
-                new Site(-1, -1, Face.BEHIND), new Site(-1, 0, Face.BEHIND), new Site(-1, 1, Face.BEHIND)),
+                new Site(1, -1, Face.AHEAD), new Site(1, 1, Face.AHEAD),
+                new Site(-1, -1, Face.BEHIND), new Site(-1, 1, Face.BEHIND),
+                new Site(0, -1, Face.LEFT), new Site(0, 1, Face.RIGHT)),
                 ASSEMBLER.connections());
     }
 
@@ -54,8 +55,17 @@ class FluidLayoutTest {
     @Test
     void theSixSitesAreSymmetricUnderAHalfTurn() {
         List<Site> turned = ASSEMBLER.connections().stream()
-                .map(site -> new Site(-site.ahead(), -site.right(), site.face() == Face.AHEAD ? Face.BEHIND : Face.AHEAD))
+                .map(site -> new Site(-site.ahead(), -site.right(), opposite(site.face())))
                 .toList();
         assertTrue(turned.containsAll(ASSEMBLER.connections()) && ASSEMBLER.connections().containsAll(turned));
+    }
+
+    private static Face opposite(Face face) {
+        return switch (face) {
+            case AHEAD -> Face.BEHIND;
+            case BEHIND -> Face.AHEAD;
+            case LEFT -> Face.RIGHT;
+            case RIGHT -> Face.LEFT;
+        };
     }
 }
