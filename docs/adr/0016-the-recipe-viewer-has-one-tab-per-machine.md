@@ -42,3 +42,5 @@ recipe that moves between tabs on a config edit changes EMI id in the same way, 
 FactoryWorks ADR-0096 gives each of its machines a tab of its own too.
 
 **Update (#27):** the Oil Refinery holds `oil-processing` by default, so those recipes now show in its tab, `craftworks:oil_refinery`, with the Oil Refinery its only workstation, and no longer in no tab. The rule is unchanged: a category no machine holds still shows in no tab.
+
+**Update (#40, ADR-0018):** the Chemical Plant and the Oil Refinery are gone, so the Recipe viewer is back to one tab, `craftworks:assembler`, with all three tiers as its workstations, and EMI's `craftworks:chemical_plant/<namespace>/<path>` ids go with the second tab. A category no tier holds still shows in no tab, and `MachineTabs` stays as it was.

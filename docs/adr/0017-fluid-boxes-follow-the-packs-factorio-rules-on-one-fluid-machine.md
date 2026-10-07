@@ -42,3 +42,5 @@ a third fluid machine would make a third copy.
 starts at 100 mB, and an input box holds 4 crafts' worth, so a tier-2 Assembler on a recipe of 10 mB a craft holds
 40 mB, not a bucket. The Pack sets `pinned_fluid_results` on its `basic_oil_processing` when that recipe moves onto
 Craftworks. ADR-0015's sizing paragraph is superseded; its connections stand.
+
+The one fluid machine is now the Assembler (ADR-0018, #40): the Chemical Plant and the Oil Refinery are removed, and an Assembler of tier 2 or 3 has the two input and three output boxes, sized by these rules, of `FluidLayout.ASSEMBLER`. The rules themselves stand.

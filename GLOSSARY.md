@@ -64,41 +64,21 @@ _Avoid_: plannable, machine-only
 
 **Assembler**:
 A placed machine, in tiers 1 to 3, that makes its **Held recipe** over and over from the items and power
-it is given. Never the **Personal Assembler**, which always takes its full name.
-_Avoid_: assembling machine, crafter, auto crafter, machine (alone)
+it is given, whether the recipe makes items, fluids or both. Tiers 2 and 3 also hold fluid: two input fluid
+boxes and three output fluid boxes, bound to the recipe's fluids by order. Tier 1 takes no recipe that names a
+fluid. Never the **Personal Assembler**, which always takes its full name.
+_Avoid_: assembling machine, crafter, auto crafter, machine (alone), Chemical Plant, Oil Refinery (the two
+machines it replaced)
 
 **Fluid Connection**:
-A face of a machine where fluid reaches it, with no direction of its own: its role comes from the **Held
-recipe**, not from a fixed input or output. An **Assembler** of tier 2 or 3 has two, at the centres of two
-opposite bottom-layer edges of its 3x3, turning with it, and only while its Held recipe has a fluid
-ingredient. Each pulls that fluid, and only that, from the block it faces into the one fluid box, until it
-holds 4 crafts' worth, and never pushes: an Assembler makes no fluid. A **Chemical Plant** has four, two at
-either end of each of two opposite bottom-layer edges, and an **Oil Refinery** five, two on the bottom-layer
-edge it faces and three on the opposite one, where Factorio's have their pipe connections. While its Held
-recipe names a fluid in or out each pulls the fluid ingredients into their boxes and pushes the fluid results
-out of theirs, any connection serving any box.
-Pipeworks' pipes are passive (Pipeworks ADR-0110), so they never push into one, but another mod that does
-push can fill an input box through the connection. Tier 1 has none.
+A face of an **Assembler** where fluid reaches it, with no direction of its own: its role comes from the **Held
+recipe**, not from a fixed input or output. An Assembler of tier 2 or 3 has six, all three bottom-layer blocks
+along the edge it faces and along the opposite one, turning with it. They exist only while its Held recipe names
+a fluid in or out; each then pulls the fluid ingredients into their input boxes and pushes the fluid results out of
+the output boxes, and any connection serves any box. A recipe of several fluids needs a connection for each, as
+a pipe network carries one fluid. Pipeworks' pipes are passive (Pipeworks ADR-0110), so they never push into one,
+but another mod that does push can fill an input box through the connection. Tier 1 has none.
 _Avoid_: port, fluid port (Pipeworks' `FluidPort` type), input, output
-
-**Chemical Plant**:
-A placed machine, on the Assembler's 3x3x2 footprint, that makes its **Held recipe** over and over like an
-**Assembler**, for `chemistry` recipes by default, with two input slots, one product slot, two input fluid
-boxes and two output fluid boxes. A recipe's ingredients and results bind to slots and boxes by order: its
-first fluid ingredient goes in input box 1, its first fluid result in output box 1. Its boxes are sized by
-Factorio's rules, as the FactoryWorks Pack's are: an input box holds 1,000 mB but is filled only to 4 crafts'
-worth of its ingredient; an output box holds the larger of 100 mB and 3 crafts' worth of its result, and the
-first result also takes the boxes a recipe leaves unused unless the recipe is **Pinned**. A craft waits while
-an output box can't hold what it makes. It ships no recipes: a pack supplies them.
-_Avoid_: chemical plant machine, refinery, assembler (alone)
-
-**Oil Refinery**:
-A placed machine, on a 5x5 footprint three blocks tall, that makes its **Held recipe** over and over like a
-**Chemical Plant**, for `oil-processing` recipes by default, with no item slots, two input fluid boxes and
-three output fluid boxes, bound by order and sized as the Chemical Plant's are. A recipe that uses or makes
-an item can't be its Held recipe. It ships no recipes: in the FactoryWorks Pack it splits crude oil into
-heavy oil, light oil and petroleum gas.
-_Avoid_: refinery (alone), oil processor, cracker
 
 **Pinned**:
 Said of an Assembling recipe whose fluid results each keep to their own output box: the first result does
@@ -106,10 +86,10 @@ not take the boxes the recipe leaves unused. Factorio's basic oil processing is 
 _Avoid_: fixed, locked (a **Locked** recipe is another thing)
 
 **Category**:
-The kind an Assembling recipe is, one of Factorio's five names and no other: `crafting` (the default),
-`advanced-crafting`, `crafting-with-fluid`, `chemistry`, `oil-processing`. Each tier of Assembler holds the
-categories its server config lists, and Fill Recipe refuses a recipe outside them. The Personal Assembler
-ignores it: it is no machine, and plans through any Hand-craftable recipe whatever its category.
+The kind an Assembling recipe is, one of three names and no other: `crafting` (the default),
+`advanced-crafting` and `crafting-with-fluid`, the last for any recipe with a fluid in or out. Each tier of
+Assembler holds the categories its server config lists, and Fill Recipe refuses a recipe outside them. The
+Personal Assembler ignores it: it is no machine, and plans through any Hand-craftable recipe whatever its category.
 _Avoid_: type (the recipe's `type` is its Minecraft recipe type), tag
 
 **Held recipe**:
@@ -142,7 +122,6 @@ _Avoid_: research, unlock provider
 
 **Recipe viewer**:
 The item list and recipe screen through which the player asks the Personal Assembler for items: EMI or JEI. A
-player cannot use Craftworks without one. It shows Assembling recipes in one tab per machine, the Assembler's,
-the Chemical Plant's and the Oil Refinery's, each holding the recipes whose **Category** that machine holds; a category no machine
-holds is in no tab (ADR-0016).
+player cannot use Craftworks without one. It shows Assembling recipes in one tab, the Assembler's, holding the
+recipes whose **Category** any tier of Assembler holds; a category no tier holds is in no tab (ADR-0016).
 _Avoid_: item interface, recipe browser, JEI (for both)
