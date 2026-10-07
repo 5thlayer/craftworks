@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+## 0.7.0
+
 - An Assembler's six Fluid Connections move: they stand on the ends of its front and back edges and the centres of its sides, where they were all three blocks of those two edges, so no two pipes laid beside them touch and a recipe of five fluids gets five separate networks. A pipe laid against the old centres of the front and back edges no longer connects. Nothing is saved with the connections, so no world needs migrating. (#45)
 
 ## 0.6.0
