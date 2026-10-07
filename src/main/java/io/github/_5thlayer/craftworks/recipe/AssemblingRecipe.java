@@ -37,8 +37,8 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
  * and defaults to 0. A pack changes either by overriding the recipe.
  *
  * <p>{@code ingredients}, {@code results}, {@code fluid_ingredients} and {@code fluid_results} default to empty,
- * so a recipe that uses or makes only fluids, such as a fluid-only Assembler recipe, need not name its empty item lists, and
- * {@code hand_craftable} defaults to true, so a recipe written before it existed reads unchanged. Fluids are NeoForge's own types so that
+ * so a recipe that uses and makes only fluids need not name its empty item lists, and {@code hand_craftable}
+ * defaults to true, so a recipe written before it existed reads unchanged. Fluids are NeoForge's own types so that
  * Craftworks names no fluid Library (5thlayer/factoryworks#578).
  *
  * <p>{@code category} names the recipe's kind, one of {@link AssemblingCategory}'s three, and decides which

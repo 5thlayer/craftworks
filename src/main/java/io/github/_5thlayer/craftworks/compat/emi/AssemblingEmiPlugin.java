@@ -26,8 +26,8 @@ import net.minecraft.resources.Identifier;
 
 /**
  * Puts {@code craftworks:assembling} in EMI, in one tab, {@code craftworks:assembler}, holding the recipes whose
- * category an Assembler tier holds (see {@link io.github._5thlayer.craftworks.machine.MachineTabs}). EMI has never heard of the type,
- * so without a category its recipes are in no viewer at all.
+ * category an Assembler tier holds (see {@link io.github._5thlayer.craftworks.machine.MachineTabs}). EMI has
+ * never heard of the type, so without a category its recipes are in no viewer at all.
  *
  * <p>EMI finds this by its annotation and loads it only when EMI is installed; nothing else in the Mod
  * names an EMI type, so the Mod loads without it.

@@ -16,8 +16,8 @@ import com.mojang.serialization.DataResult;
  * decide the tiers that may hold it. Written in recipes and in the server config by its {@link #id}.
  *
  * <p>No Minecraft game types, only DFU's codec, so a tier's defaults are unit-tested. The constants' order
- * is sent over the network, by {@link AssemblingRecipe}'s stream codec: new ones go at the end, and none are
- * reordered.
+ * is sent over the network, by {@link AssemblingRecipe}'s stream codec: new ones go at the end, none are
+ * reordered, and only the last may be removed (as 0.6 removed {@code chemistry} and {@code oil-processing}).
  */
 public enum AssemblingCategory {
     CRAFTING("crafting"),

@@ -13,7 +13,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * A recipe viewer's Fill Recipe was pressed with an Assembler open: set it as the Held recipe, or be told why not. It carries the recipe and nothing else; whether this player may set it is the server's call.
+ * A recipe viewer's Fill Recipe was pressed with an Assembler open: set it as the Held recipe, or be told why not.
+ * It carries the recipe and nothing else; whether this player may set it is the server's call.
  */
 public record HoldRecipePacket(Identifier recipe) implements CustomPacketPayload {
 

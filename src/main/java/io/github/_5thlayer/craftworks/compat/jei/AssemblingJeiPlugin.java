@@ -38,7 +38,8 @@ import net.neoforged.neoforge.common.NeoForge;
 /**
  * Puts {@code craftworks:assembling} in JEI, in one tab (ADR-0016), {@code craftworks:assembler}, holding the
  * recipes an Assembler tier's categories name (see {@link io.github._5thlayer.craftworks.machine.MachineTabs}),
- * read from the config as JEI builds its lists. It has a recipe button that queues on the Personal Assembler the way EMI's Fill Recipe does (#12, ADR-0004).
+ * read from the config as JEI builds its lists. It has a recipe button that queues on the Personal Assembler the
+ * way EMI's Fill Recipe does (#12, ADR-0004).
  *
  * <p>JEI finds this by its annotation and loads it only when JEI is installed; nothing else in the Mod
  * names a JEI type, so the Mod loads without it.
