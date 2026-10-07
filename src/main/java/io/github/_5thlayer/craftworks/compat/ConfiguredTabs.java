@@ -50,7 +50,7 @@ public final class ConfiguredTabs {
             Collection<RecipeHolder<AssemblingRecipe>> recipes) {
         AssemblerTab.Sorted<RecipeHolder<AssemblingRecipe>> sorted = sort(recipes);
         if (sorted.leftOut() > 0) {
-            LOGGER.info("Craftworks: {} of {} Assembling recipes are in no {} tab, since no tier holds their category",
+            LOGGER.info("Craftworks: {} of {} Assembling recipes are in no {} tab, since no machine holds their category",
                     sorted.leftOut(), recipes.size(), viewer);
         }
         return sorted;

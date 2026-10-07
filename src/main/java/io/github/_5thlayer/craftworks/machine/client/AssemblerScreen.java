@@ -42,8 +42,8 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
     private final int barWidth;
 
     public AssemblerScreen(AssemblerMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title, 176, menu.inventoryY() + 82);
-        inventoryLabelY = menu.inventoryY() - 11;
+        super(menu, playerInventory, title, 176, AssemblerMenu.INVENTORY_Y + 82);
+        inventoryLabelY = AssemblerMenu.INVENTORY_Y - 11;
         barX = AssemblerMenu.INPUT_X + menu.layout().inputs() * 18 + 4;
         barWidth = AssemblerMenu.PRODUCT_X - 6 - barX;
     }

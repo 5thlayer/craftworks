@@ -30,14 +30,14 @@ import org.jspecify.annotations.Nullable;
  * ({@link MachineFluids}) of {@link FluidLayout#ASSEMBLER} and the Fluid Connections ({@link FluidLayout#connections})
  * that pull the Held recipe's fluid ingredients in and push its fluid results out.
  *
- * <p>The connections exist only while the Held recipe runs here and names a fluid, in or out. The port knows
+ * <p>The connections exist only while the Held recipe runs here and names a fluid, in or out. The fluid side knows
  * the Held recipe only through its {@link Host}, so a test can stand one up with a recipe of its own and reach
  * every part of it without the craft loop: {@link #pull} and {@link #push} are one move each, {@link #take} and
  * {@link #place} are the fluid part of one craft, and the boxes are saved and loaded as {@code fluids}. The boxes
  * are kept over a reload and a Fast Replace between any two tiers, and voided by a change of the Held recipe
  * ({@link #empty}).
  */
-public final class AssemblerFluidPort {
+public final class AssemblerFluidSide {
 
     private static final String FLUID_KEY = "fluids";
     /** What saves before the boxes were many kept: one box, holding the Held recipe's one fluid ingredient. */
@@ -45,7 +45,7 @@ public final class AssemblerFluidPort {
 
     private static final FluidLayout LAYOUT = FluidLayout.ASSEMBLER;
 
-    /** What the port asks of the Assembler that owns it. */
+    /** What the fluid side asks of the Assembler that owns it. */
     public interface Host {
 
         /** The Held recipe if the Assembler can run it; empty with none, and off the server, which alone resolves it. */
@@ -55,7 +55,7 @@ public final class AssemblerFluidPort {
         BlockPos pos();
 
         /** The origin's block state: its facing turns the connections, and its connection flag is what the model draws. */
-        BlockState state();
+        BlockState blockState();
 
         /** The boxes changed, so the block entity needs saving. */
         void changed();
@@ -67,7 +67,7 @@ public final class AssemblerFluidPort {
     /** The output boxes alone, which a connection pushes from. */
     private final ResourceHandler<FluidResource> outputs;
 
-    public AssemblerFluidPort(Host host) {
+    public AssemblerFluidSide(Host host) {
         this.host = host;
         boxes = new MachineFluids(LAYOUT, new MachineFluids.Owner() {
             @Override
@@ -117,7 +117,7 @@ public final class AssemblerFluidPort {
     }
 
     private Direction facing() {
-        return host.state().getValue(AssemblerBlock.FACING);
+        return host.blockState().getValue(AssemblerBlock.FACING);
     }
 
     private List<Connection> connections() {
@@ -169,7 +169,7 @@ public final class AssemblerFluidPort {
                 boxes.empty(box);
             }
         }
-        BlockState state = host.state();
+        BlockState state = host.blockState();
         if (state.getBlock() instanceof AssemblerBlock && state.getValue(AssemblerBlock.FLUID_CONNECTIONS) != connected) {
             server.setBlock(host.pos(), state.setValue(AssemblerBlock.FLUID_CONNECTIONS, connected), Block.UPDATE_CLIENTS);
             for (Connection connection : connections()) {
@@ -231,9 +231,10 @@ public final class AssemblerFluidPort {
     }
 
     /**
-     * Takes one craft's fluid ingredients, the {@code n}th from input box {@code n}. Returns null if they all
-     * went, and otherwise {@link MachineState#MISSING_INGREDIENTS}. Never part of a craft: the caller aborts
-     * the transaction on a stop.
+     * Takes one craft's fluid ingredients out of the input boxes, the {@code n}th from input box {@code n}, in
+     * {@code tx}. Returns null if they all went, and otherwise {@link MachineState#MISSING_INGREDIENTS} for the
+     * first box that is empty, holds another fluid or holds less than the recipe needs. Some may already be
+     * taken in {@code tx} on a stop, so the caller aborts it.
      */
     public @Nullable MachineState take(AssemblingRecipe recipe, TransactionContext tx) {
         List<SizedFluidIngredient> wanted = recipe.fluidIngredients();

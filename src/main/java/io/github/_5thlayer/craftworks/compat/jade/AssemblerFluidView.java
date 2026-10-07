@@ -32,16 +32,16 @@ final class AssemblerFluidView implements IServerExtensionProvider<FluidView.Dat
 
     @Override
     public List<ViewGroup<FluidView.Data>> getGroups(Accessor<?> accessor) {
-        if (!(accessor.getTarget() instanceof AssemblerBlockEntity machine)) {
+        if (!(accessor.getTarget() instanceof AssemblerBlockEntity assembler)) {
             return List.of();
         }
         List<FluidView.Data> bars = new ArrayList<>();
-        for (int box : machine.fluidPort().boxesInUse()) {
-            FluidStack contents = machine.fluids().contents(box);
+        for (int box : assembler.fluidSide().boxesInUse()) {
+            FluidStack contents = assembler.fluidSide().boxes().contents(box);
             JadeFluidObject fluid = contents.isEmpty()
                     ? JadeFluidObject.empty()
                     : JadeFluidObject.of(contents.getFluid(), contents.getAmount(), contents.getComponentsPatch());
-            bars.add(new FluidView.Data(fluid, machine.fluids().displayCapacity(box)));
+            bars.add(new FluidView.Data(fluid, assembler.fluidSide().boxes().displayCapacity(box)));
         }
         return bars.isEmpty() ? List.of() : List.of(new ViewGroup<>(bars));
     }

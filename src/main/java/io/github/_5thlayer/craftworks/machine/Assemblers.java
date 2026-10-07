@@ -203,7 +203,7 @@ public final class Assemblers {
             return null;
         }
         BlockPos origin = part.footprint().standingOrigin(level, pos, state);
-        return origin != null && level.getBlockEntity(origin) instanceof AssemblerBlockEntity machine
-                ? machine.fluidPort().connection(pos, side) : null;
+        return origin != null && level.getBlockEntity(origin) instanceof AssemblerBlockEntity assembler
+                ? assembler.fluidSide().connection(pos, side) : null;
     }
 }

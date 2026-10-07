@@ -38,7 +38,7 @@ import org.slf4j.Logger;
 /**
  * An Assembler's block entity, one type for all three tiers: the Held recipe, seven item slots (five inputs, the
  * product and the remainders), an energy buffer and the craft under way. Its fluid boxes and Fluid Connections
- * are its {@link AssemblerFluidPort}, which it owns.
+ * are its {@link AssemblerFluidSide}, which it owns.
  *
  * <p>The Held recipe is an id, resolved when asked and never on load, when the recipes may not be there. It
  * is never matched from the items put in; Fill Recipe on the open screen sets it ({@link AssemblerMenu#request}).
@@ -66,14 +66,14 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     private final MachineInventory inventory;
     private final EnergyBuffer buffer = new EnergyBuffer();
     private final MachineItemFace items;
-    private final AssemblerFluidPort fluidPort;
+    private final AssemblerFluidSide fluidSide;
 
     public AssemblerBlockEntity(BlockPos pos, BlockState state) {
         super(Assemblers.BLOCK_ENTITY.get(), pos, state);
         inventory = new MachineInventory(AssemblerSlots.LAYOUT, new MachineInventory.Owner() {
             @Override
             public Optional<SizedIngredient> ingredientAt(int slot) {
-                return level instanceof ServerLevel server ? runnable(server).flatMap(recipe -> ingredientFor(slot, recipe)) : Optional.empty();
+                return runnable().flatMap(recipe -> ingredientFor(slot, recipe));
             }
 
             @Override
@@ -82,10 +82,10 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             }
         });
         items = new MachineItemFace(this, inventory);
-        fluidPort = new AssemblerFluidPort(new AssemblerFluidPort.Host() {
+        fluidSide = new AssemblerFluidSide(new AssemblerFluidSide.Host() {
             @Override
             public Optional<AssemblingRecipe> runnable() {
-                return level instanceof ServerLevel server ? AssemblerBlockEntity.this.runnable(server) : Optional.empty();
+                return AssemblerBlockEntity.this.runnable();
             }
 
             @Override
@@ -94,7 +94,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             }
 
             @Override
-            public BlockState state() {
+            public BlockState blockState() {
                 return getBlockState();
             }
 
@@ -103,7 +103,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
                 setChanged();
             }
         });
-        buffer.resize(CraftworksConfig.buffer(tier()));
+        resizeBuffer();
     }
 
     private static AssemblerTier tierOf(BlockState state) {
@@ -139,13 +139,13 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     }
 
     /** The fluid boxes and Fluid Connections. */
-    public AssemblerFluidPort fluidPort() {
-        return fluidPort;
+    public AssemblerFluidSide fluidSide() {
+        return fluidSide;
     }
 
-    /** The fluid boxes, for the menu and the game tests. */
+    /** The fluid boxes, which the menu, Jade and the game tests read through this rather than through the fluid side. */
     public MachineFluids fluids() {
-        return fluidPort.boxes();
+        return fluidSide.boxes();
     }
 
     /** The energy in the buffer, in FE. */
@@ -168,10 +168,14 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     // -- the Held recipe ------------------------------------------------------------------------
 
     /**
-     * The Held recipe if this Assembler can run it. Whether it can at all is worked out once per recipe
-     * instance; the category is asked every time, since a Fast Replace or a config edit moves it.
+     * The Held recipe if this Assembler can run it; empty with none, and off the server, which alone resolves
+     * it. Whether it can run it at all is worked out once per recipe instance; the category is asked every
+     * time, since a Fast Replace or a config edit moves it.
      */
-    private Optional<AssemblingRecipe> runnable(ServerLevel server) {
+    private Optional<AssemblingRecipe> runnable() {
+        if (!(level instanceof ServerLevel server)) {
+            return Optional.empty();
+        }
         return held.runnable(server, HeldRecipes::canRun, found -> HeldRecipes.takesCategory(tier(), found));
     }
 
@@ -201,9 +205,9 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         }
         held.set(next);
         progress = 0;
-        fluidPort.empty();
+        fluidSide.empty();
         if (level instanceof ServerLevel server) {
-            fluidPort.syncConnections(server);
+            fluidSide.syncConnections(server);
         }
         setChanged();
     }
@@ -226,10 +230,10 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     /** Whether input {@code slot} takes {@code resource}: false off the server, which alone resolves the Held recipe. */
     @Override
     public boolean accepts(int slot, ItemResource resource) {
-        if (resource.isEmpty() || !(level instanceof ServerLevel server)) {
+        if (resource.isEmpty()) {
             return false;
         }
-        return runnable(server)
+        return runnable()
                 .flatMap(recipe -> ingredientFor(slot, recipe))
                 .filter(ingredient -> ingredient.ingredient().test(resource.toStack(1)))
                 .isPresent();
@@ -241,10 +245,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
      */
     @Override
     public int overloadRoom(int slot) {
-        if (!(level instanceof ServerLevel server)) {
-            return 0;
-        }
-        return runnable(server)
+        return runnable()
                 .flatMap(recipe -> ingredientFor(slot, recipe)
                         .map(ingredient -> OverloadLimit.room(ingredient.count(), overloadCrafts(recipe),
                                 inventory.getAmountAsInt(slot))))
@@ -260,15 +261,15 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
 
     public void serverTick(ServerLevel server) {
         resizeBuffer();
-        fluidPort.syncConnections(server);
-        Optional<AssemblingRecipe> resolved = runnable(server);
+        fluidSide.syncConnections(server);
+        Optional<AssemblingRecipe> resolved = runnable();
         if (resolved.isEmpty()) {
             return;
         }
         AssemblingRecipe recipe = resolved.get();
-        fluidPort.pull(server, recipe);
+        fluidSide.pull(server, recipe);
         craft(recipe);
-        fluidPort.push(server);
+        fluidSide.push(server);
     }
 
     private void craft(AssemblingRecipe recipe) {
@@ -315,10 +316,10 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
      * recipe; anywhere else it reads as {@link MachineState#NO_RECIPE}. For Jade (#28).
      */
     public MachineState state() {
-        if (held.id().isEmpty() || !(level instanceof ServerLevel server)) {
+        if (held.id().isEmpty() || !(level instanceof ServerLevel)) {
             return MachineState.NO_RECIPE;
         }
-        Optional<AssemblingRecipe> resolved = runnable(server);
+        Optional<AssemblingRecipe> resolved = runnable();
         if (resolved.isEmpty()) {
             return MachineState.CANT_RUN;
         }
@@ -345,7 +346,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
      * caller aborts the transaction on a stop.
      */
     private @Nullable MachineState finish(AssemblingRecipe recipe, TransactionContext tx) {
-        MachineState stopped = fluidPort.take(recipe, tx);
+        MachineState stopped = fluidSide.take(recipe, tx);
         if (stopped != null) {
             return stopped;
         }
@@ -363,7 +364,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
                 && inventory.insert(AssemblerSlots.PRODUCT, ItemResource.of(product), product.count(), tx) != product.count()) {
             return MachineState.OUTPUT_FULL;
         }
-        return fluidPort.place(recipe, tx);
+        return fluidSide.place(recipe, tx);
     }
 
     /**
@@ -403,10 +404,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
 
     /** The Held recipe's ticks at this tier's speed, or 0 with none that runs. Server only. */
     public int craftDuration() {
-        if (!(level instanceof ServerLevel server)) {
-            return 0;
-        }
-        return runnable(server).map(this::duration).orElse(0);
+        return runnable().map(this::duration).orElse(0);
     }
 
     // -- persistence ----------------------------------------------------------------------------
@@ -418,7 +416,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         output.putInt(PROGRESS_KEY, progress);
         inventory.serialize(output.child(ITEMS_KEY));
         buffer.serialize(output.child(ENERGY_KEY));
-        fluidPort.save(output);
+        fluidSide.save(output);
     }
 
     /** The id only. It is resolved when asked, never here, where the recipes may not be loaded. */
@@ -429,7 +427,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         progress = input.getIntOr(PROGRESS_KEY, 0);
         inventory.deserialize(input.childOrEmpty(ITEMS_KEY));
         buffer.deserialize(input.childOrEmpty(ENERGY_KEY));
-        fluidPort.load(input);
+        fluidSide.load(input);
     }
 
     /**

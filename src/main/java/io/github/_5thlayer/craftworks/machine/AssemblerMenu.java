@@ -47,6 +47,7 @@ import org.jspecify.annotations.Nullable;
 public final class AssemblerMenu extends AbstractContainerMenu {
 
     private static final FluidLayout LAYOUT = FluidLayout.ASSEMBLER;
+    private static final MachineSlots SLOTS = AssemblerSlots.LAYOUT;
 
     private static final int DATA_PROGRESS = 0;
     private static final int DATA_DURATION = 1;
@@ -55,8 +56,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
     /** The data slots before the fluid boxes': progress, duration, energy and its capacity. */
     private static final int DATA_SHARED = 4;
     /** Each box takes two: the fluid's registry id, then its amount. */
-    private static final int DATA_BOXES = DATA_SHARED;
-    private static final int DATA_CAPACITIES = DATA_BOXES + 2 * LAYOUT.boxes();
+    private static final int DATA_CAPACITIES = DATA_SHARED + 2 * LAYOUT.boxes();
     private static final int DATA_COUNT = DATA_CAPACITIES + LAYOUT.boxes();
 
     public static final int INPUT_X = 8;
@@ -66,11 +66,10 @@ public final class AssemblerMenu extends AbstractContainerMenu {
     /** Where the player's inventory starts: the gauges and the energy bar take a row each between the slots and it. */
     public static final int INVENTORY_Y = 96;
 
-    private final @Nullable AssemblerBlockEntity machine;
+    private final @Nullable AssemblerBlockEntity assembler;
     private final BlockPos pos;
     private final ContainerData data;
     private final Player player;
-    private final MachineSlots layout = AssemblerSlots.LAYOUT;
 
     /** What the screen shows of the Held recipe; the server sends it, and it is empty until then. */
     private Optional<HeldRecipeView> held = Optional.empty();
@@ -86,22 +85,22 @@ public final class AssemblerMenu extends AbstractContainerMenu {
 
     /**
      * The inputs from {@link #INPUT_X}, the product at {@link #PRODUCT_X} and the remainders beside it, and the
-     * player's inventory from {@link #INVENTORY_Y} down. The client's {@code machine} is null, and its slots stand
+     * player's inventory from {@link #INVENTORY_Y} down. The client's {@code assembler} is null, and its slots stand
      * over a stub the menu's own sync fills.
      */
-    private AssemblerMenu(int containerId, Inventory playerInventory, @Nullable AssemblerBlockEntity machine, BlockPos pos,
+    private AssemblerMenu(int containerId, Inventory playerInventory, @Nullable AssemblerBlockEntity assembler, BlockPos pos,
             ItemStacksResourceHandler inventory, ContainerData data) {
         super(Assemblers.MENU.get(), containerId);
-        this.machine = machine;
+        this.assembler = assembler;
         this.pos = pos;
         this.data = data;
         this.player = playerInventory.player;
         IndexModifier<ItemResource> modifier = inventory::set;
-        for (int slot = 0; slot < layout.inputs(); slot++) {
+        for (int slot = 0; slot < SLOTS.inputs(); slot++) {
             addSlot(new InputSlot(inventory, modifier, slot, INPUT_X + slot * 18, INPUT_Y));
         }
-        for (int slot = layout.product(); slot < layout.size(); slot++) {
-            addSlot(new OutputSlot(inventory, modifier, slot, PRODUCT_X + (slot - layout.product()) * 18, INPUT_Y));
+        for (int slot = SLOTS.product(); slot < SLOTS.size(); slot++) {
+            addSlot(new OutputSlot(inventory, modifier, slot, PRODUCT_X + (slot - SLOTS.product()) * 18, INPUT_Y));
         }
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
@@ -114,29 +113,24 @@ public final class AssemblerMenu extends AbstractContainerMenu {
         addDataSlots(data);
     }
 
-    /** Where the player's inventory starts: lower for the gauges, and the screen is that much taller. */
-    public int inventoryY() {
-        return INVENTORY_Y;
-    }
-
     /** Server side, over the Assembler's own inventory. */
-    static AssemblerMenu open(int containerId, Inventory playerInventory, AssemblerBlockEntity machine) {
+    static AssemblerMenu open(int containerId, Inventory playerInventory, AssemblerBlockEntity assembler) {
         ContainerData data = new ContainerData() {
             @Override
             public int get(int index) {
-                if (index < DATA_BOXES) {
+                if (index < DATA_SHARED) {
                     return switch (index) {
-                        case DATA_PROGRESS -> machine.craftProgress();
-                        case DATA_DURATION -> machine.craftDuration();
-                        case DATA_ENERGY -> machine.energy();
-                        case DATA_ENERGY_CAPACITY -> machine.energyCapacity();
+                        case DATA_PROGRESS -> assembler.craftProgress();
+                        case DATA_DURATION -> assembler.craftDuration();
+                        case DATA_ENERGY -> assembler.energy();
+                        case DATA_ENERGY_CAPACITY -> assembler.energyCapacity();
                         default -> 0;
                     };
                 }
                 if (index < DATA_CAPACITIES) {
-                    return fluidData(machine.fluids().contents((index - DATA_BOXES) / 2), (index - DATA_BOXES) % 2);
+                    return fluidData(assembler.fluids().contents((index - DATA_SHARED) / 2), (index - DATA_SHARED) % 2);
                 }
-                return index < DATA_COUNT ? machine.fluids().displayCapacity(index - DATA_CAPACITIES) : 0;
+                return index < DATA_COUNT ? assembler.fluids().displayCapacity(index - DATA_CAPACITIES) : 0;
             }
 
             @Override
@@ -148,7 +142,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
                 return DATA_COUNT;
             }
         };
-        return new AssemblerMenu(containerId, playerInventory, machine, machine.getBlockPos(), machine.inventory(), data);
+        return new AssemblerMenu(containerId, playerInventory, assembler, assembler.getBlockPos(), assembler.inventory(), data);
     }
 
     /** The two data slots of a fluid box holding {@code contents}: {@code half} 0 is the fluid's registry id, 1 its amount. */
@@ -163,13 +157,18 @@ public final class AssemblerMenu extends AbstractContainerMenu {
         return amount <= 0 || fluid == Fluids.EMPTY ? FluidStack.EMPTY : new FluidStack(fluid, amount);
     }
 
+    /** Where the player's inventory starts, {@link #INVENTORY_Y}: below the gauges and the energy bar. */
+    public int inventoryY() {
+        return INVENTORY_Y;
+    }
+
     public BlockPos pos() {
         return pos;
     }
 
     /** Where the Assembler's slots are among the menu's, ahead of the player's. */
     public MachineSlots layout() {
-        return layout;
+        return SLOTS;
     }
 
     /** The Held recipe as the client was last told it, or empty. */
@@ -198,7 +197,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
 
     /** What is in box {@code box} (the inputs, then the outputs), or empty: the fluid and how much, as the server last told it. */
     public FluidStack fluid(int box) {
-        return fluidAt(DATA_BOXES + 2 * box);
+        return fluidAt(DATA_SHARED + 2 * box);
     }
 
     /** What box {@code box} holds at most, in mB, as the Held recipe sizes it and the server last told it. */
@@ -208,7 +207,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
 
     /** Whether input {@code slot} holds less than one craft of the Held recipe needs, so the screen draws it red. */
     public boolean isShort(int slot) {
-        return held.filter(recipe -> layout.isShort(slot, recipe.ingredients(),
+        return held.filter(recipe -> SLOTS.isShort(slot, recipe.ingredients(),
                 slots.get(slot).getItem().getCount(), SizedIngredient::count)).isPresent();
     }
 
@@ -216,8 +215,8 @@ public final class AssemblerMenu extends AbstractContainerMenu {
     @Override
     public void broadcastChanges() {
         super.broadcastChanges();
-        if (machine != null && player instanceof ServerPlayer server && machine.getLevel() instanceof ServerLevel level) {
-            Optional<Identifier> now = machine.heldRecipe();
+        if (assembler != null && player instanceof ServerPlayer server && assembler.getLevel() instanceof ServerLevel level) {
+            Optional<Identifier> now = assembler.heldRecipe();
             if (!Objects.equals(sent, now)) {
                 sent = now;
                 Optional<HeldRecipeView> view = now.flatMap(id -> HeldRecipes.find(level, id)
@@ -233,12 +232,12 @@ public final class AssemblerMenu extends AbstractContainerMenu {
      * player, and never again (ADR-0013).
      */
     public HoldVerdict request(ServerPlayer player, Identifier id) {
-        if (machine == null) {
+        if (assembler == null) {
             return HoldVerdict.NOT_ASSEMBLING;
         }
-        HoldVerdict verdict = HeldRecipes.verdict(player, machine.tier(), id);
+        HoldVerdict verdict = HeldRecipes.verdict(player, assembler.tier(), id);
         if (verdict.held()) {
-            machine.setHeldRecipe(id, player);
+            assembler.setHeldRecipe(id, player);
         } else {
             player.sendSystemMessage(Component.translatable(verdict.messageKey(), HeldRecipes.name(player.level(), id)));
         }
@@ -253,11 +252,11 @@ public final class AssemblerMenu extends AbstractContainerMenu {
         }
         ItemStack stack = slot.getItem();
         ItemStack original = stack.copy();
-        if (index < layout.size()) {
-            if (!moveItemStackTo(stack, layout.size(), slots.size(), true)) {
+        if (index < SLOTS.size()) {
+            if (!moveItemStackTo(stack, SLOTS.size(), slots.size(), true)) {
                 return ItemStack.EMPTY;
             }
-        } else if (!moveItemStackTo(stack, 0, layout.inputs(), false)) {
+        } else if (!moveItemStackTo(stack, 0, SLOTS.inputs(), false)) {
             return ItemStack.EMPTY;
         }
         if (stack.isEmpty()) {
@@ -270,7 +269,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (machine != null && machine.isRemoved()) {
+        if (assembler != null && assembler.isRemoved()) {
             return false;
         }
         // Vanilla's buffer in Container.stillValidBlockEntity, so a screen opened at full reach stays open.
@@ -291,10 +290,10 @@ public final class AssemblerMenu extends AbstractContainerMenu {
             if (stack.isEmpty()) {
                 return false;
             }
-            if (machine != null) {
-                return machine.accepts(getSlotIndex(), ItemResource.of(stack));
+            if (assembler != null) {
+                return assembler.accepts(getSlotIndex(), ItemResource.of(stack));
             }
-            return held.filter(recipe -> layout.accepts(getSlotIndex(), recipe.ingredients(), stack,
+            return held.filter(recipe -> SLOTS.accepts(getSlotIndex(), recipe.ingredients(), stack,
                     (SizedIngredient sized, ItemStack item) -> sized.ingredient().test(item))).isPresent();
         }
     }
