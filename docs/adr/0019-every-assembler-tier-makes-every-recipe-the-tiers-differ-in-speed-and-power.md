@@ -21,8 +21,9 @@ recipes are unchanged, so tier 1 gains fluid handling at the same cost; a pack t
 
 **Considered: keeping the gate as a config default only.** The tier could still hold two categories by default and
 a pack lift it. It would leave a rule that the code no longer needs and the player has to learn, for the sake of
-a Factorio ladder the mod does not follow. A pack that wants the ladder restricts `assembler_1`'s `categories`,
-and Fill Recipe then refuses by category, as it always did.
+a Factorio ladder the mod does not follow. A pack that wants something of the ladder back leaves `crafting-with-fluid` out of
+`assembler_1`'s `categories`, and Fill Recipe then refuses those recipes by category; a recipe of another
+category that names a fluid is held on any tier, since no check on fluids is left.
 
 **Considered: a flag on the tier that a pack sets.** A second knob for what the category list already says.
 
@@ -36,5 +37,6 @@ and Fill Recipe then refuses by category, as it always did.
 - Every tier's screen draws the gauge row and stands the inventory lower, and Jade shows tier 1's fluid bars.
 - ADR-0016's rule stands for a restricted config: a category no tier holds shows in no tab.
 
-This amends ADR-0018 (tier 1 has the boxes and holds the fluid category) and ADR-0014 (tier 1 has no fluid box and
-refuses a fluid recipe, and a Fast Replace to it voids the boxes).
+This amends ADR-0018 (tier 1 has the boxes and holds the fluid category), ADR-0017 (every tier, not only 2 and 3,
+has the boxes its rules size) and ADR-0014 (tier 1 has no fluid box and refuses a fluid recipe, and a Fast Replace
+to it voids the boxes).

@@ -18,7 +18,7 @@ import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
  * 1 FE = 100 J: 75, 150 and 375 kW. The categories are the recipe kinds a tier may hold, and every tier holds all
  * three, {@code crafting}, {@code advanced-crafting} and {@code crafting-with-fluid}, until the server config says
  * otherwise. Every tier has the fluid boxes and Fluid Connections of {@link FluidLayout#ASSEMBLER}, the Assembler's
- * one layout, so the tiers differ only in speed, power and buffer.
+ * one layout, so the tiers differ only in speed, power, buffer and art.
  * The rates are pure, so they are unit-tested.
  */
 public enum AssemblerTier implements MachineDefaults {

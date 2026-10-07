@@ -44,3 +44,5 @@ starts at 100 mB, and an input box holds 4 crafts' worth, so a tier-2 Assembler 
 Craftworks. ADR-0015's sizing paragraph is superseded; its connections stand.
 
 The one fluid machine is now the Assembler (ADR-0018, #40): the Chemical Plant and the Oil Refinery are removed, and an Assembler of tier 2 or 3 has the two input and three output boxes, sized by these rules, of `FluidLayout.ASSEMBLER`. The rules themselves stand.
+
+Every tier of Assembler has those boxes since ADR-0019 (#41), tier 1 included; the rules stand.

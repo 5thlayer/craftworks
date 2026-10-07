@@ -26,9 +26,10 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
  * resolved lazily because a block entity loads before the recipes do.
  *
  * <p>Every Assembling recipe is one, Hand-craftable or not, except the kinds this tier cannot run: one
- * whose category the tier's server config does not list, one with more fluid ingredients or results than the boxes of {@link FluidLayout#ASSEMBLER}
- * (two in, three out) or with more of a fluid a craft than an input box holds, one with more distinct
- * ingredients than the five input slots, and one whose remainders don't fit the one remainder slot.
+ * whose category the tier's server config does not list, one with more fluid ingredients or results than the
+ * boxes of {@link FluidLayout#ASSEMBLER} (two in, three out) or with more of a fluid a craft than an input box
+ * holds, one with more distinct ingredients than the five input slots, and one whose remainders don't fit the one
+ * remainder slot.
  */
 public final class HeldRecipes {
 

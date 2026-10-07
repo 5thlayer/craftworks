@@ -23,6 +23,8 @@ tasks.withType(Jar).configureEach {
 }
 
 def gameTestReport = layout.buildDirectory.file('reports/gametest.xml').get().asFile
+// The game test server's own directory, apart from the dev client's.
+def gameTestDirectory = file('run/gametest')
 
 // EMI for 26.1: the unofficial port.
 def emi = 'curse.maven:emi-unofficial-port-1544558:8630349'
@@ -94,7 +96,7 @@ neoForge {
         // A directory of its own, so nothing the dev client loads or saves reaches it.
         gameTestServer {
             type = 'gameTestServer'
-            gameDirectory = project.file('run/gametest')
+            gameDirectory = gameTestDirectory
             programArguments.addAll '--tests', "${mod_id}:*", '--report', gameTestReport.absolutePath
             // The recipes only the game tests read, a datapack in the jar that only this run turns on.
             systemProperty 'craftworks.gametestPack', 'true'
@@ -118,7 +120,7 @@ tasks.named('runGameTestServer') {
         gameTestReport.delete()
         gameTestReport.parentFile.mkdirs()
         // The tests read the defaults: a config an earlier run wrote would keep the categories it listed then.
-        file('run/gametest/config/craftworks-server.toml').delete()
+        new File(gameTestDirectory, 'config/craftworks-server.toml').delete()
     }
     doLast {
         if (!gameTestReport.exists()) throw new GradleException("The game test server wrote no report at $gameTestReport")

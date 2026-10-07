@@ -723,7 +723,7 @@ final class AssemblerMachineTests {
 
     /** Runs {@code body} with {@code tier}'s server config listing only these categories, and restores it after, as a world's config would. */
     static void withCategories(AssemblerTier tier, List<AssemblingCategory> categories, Runnable body) {
-        var setting = CraftworksConfig.settings(tier).categories();
+        var setting = CraftworksConfig.categoriesSetting(tier);
         List<? extends String> before = setting.get();
         setting.set(categories.stream().map(AssemblingCategory::id).toList());
         try {
