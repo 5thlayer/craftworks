@@ -44,11 +44,11 @@ public final class FluidMachineMenu extends HeldMachineMenu<FluidMachineBlockEnt
     }
 
     private static int dataCapacities(FluidMachine description) {
-        return DATA_BOXES + 2 * description.boxes();
+        return DATA_BOXES + 2 * description.layout().boxes();
     }
 
     private static int dataCount(FluidMachine description) {
-        return dataCapacities(description) + description.boxes();
+        return dataCapacities(description) + description.layout().boxes();
     }
 
     /** Server side, over the machine's own inventory. */

@@ -1,0 +1,12 @@
+{
+  "type": "craftworks:assembling",
+  "category": "crafting-with-fluid",
+  "ingredients": [ { "ingredient": "minecraft:clay_ball", "count": 2 } ],
+  "fluid_ingredients": [
+    { "ingredient": "minecraft:water", "amount": 250 },
+    { "ingredient": "minecraft:lava", "amount": 100 }
+  ],
+  "results": [ { "id": "minecraft:terracotta", "count": 2 } ],
+  "fluid_results": [ { "id": "minecraft:lava", "amount": 150 } ],
+  "time": 60
+}

@@ -11,7 +11,7 @@
         "fluid_connections": "true"
       },
       "apply": {
-        "model": "craftworks:block/fluid_connection"
+        "model": "craftworks:block/assembler_connections"
       }
     },
     {
@@ -20,7 +20,7 @@
         "fluid_connections": "true"
       },
       "apply": {
-        "model": "craftworks:block/fluid_connection",
+        "model": "craftworks:block/assembler_connections",
         "y": 90
       }
     }

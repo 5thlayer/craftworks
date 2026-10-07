@@ -4,10 +4,11 @@
 package io.github._5thlayer.craftworks.machine;
 
 /**
- * Where a fluid machine's gauges stand across its screen, in one row: the input gauges, then the output gauges, the
+ * Where a machine's gauges stand across its screen, in one row: the input gauges, then the output gauges, the
  * boxes in order. They fill the panel's width from {@link #LEFT} to {@link #RIGHT}, with {@link #GAP} between the
  * gauges of a group and {@link #GROUP_GAP} between the inputs and the outputs, so a Chemical Plant's four are 36
- * wide at 8, 48, 92 and 132, and an Oil Refinery's five 28 wide at 8, 40, 76, 108 and 140. Pure: no Minecraft types.
+ * wide at 8, 48, 92 and 132, and an Assembler's five (an Oil Refinery's too) 28 wide at 8, 40, 76, 108 and 140.
+ * Pure: no Minecraft types.
  */
 public record FluidGaugeLayout(int inputs, int outputs) {
 
@@ -16,8 +17,8 @@ public record FluidGaugeLayout(int inputs, int outputs) {
     public static final int GAP = 4;
     public static final int GROUP_GAP = 8;
 
-    public static FluidGaugeLayout of(FluidMachine machine) {
-        return new FluidGaugeLayout(machine.fluidInputs(), machine.fluidOutputs());
+    public static FluidGaugeLayout of(FluidLayout layout) {
+        return new FluidGaugeLayout(layout.fluidInputs(), layout.fluidOutputs());
     }
 
     private int boxes() {

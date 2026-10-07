@@ -3,8 +3,11 @@
 
 package io.github._5thlayer.craftworks.machine;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
+import io.github._5thlayer.craftworks.machine.FluidLayout.Connection;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -17,32 +20,82 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.fluids.FluidStackTemplate;
 import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
+import net.neoforged.neoforge.transfer.RangedResourceHandler;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 import org.jspecify.annotations.Nullable;
 
 /**
  * An Assembler's block entity, one type for all three tiers: a {@link HeldMachineBlockEntity} with seven item
- * slots (five inputs, the product and the remainders) and a fluid box on tiers 2 and 3.
+ * slots (five inputs, the product and the remainders) and, on tiers 2 and 3, the input and output fluid boxes
+ * ({@link MachineFluids}) of {@link FluidLayout#ASSEMBLER}.
  *
- * <p>Tiers 2 and 3 take a fluid ingredient through the Fluid Connections ({@link FluidConnections}), which
- * exist only while the Held recipe has one: each tick every connection pulls the Held recipe's fluid from
- * the block it faces into the one fluid box, up to the box's room, and the craft takes its amount from the
- * box with the items. The box is kept over a reload and a Fast Replace between the two tiers, and voided by
- * a change of the Held recipe and by a tier with no box. An Assembler never pushes fluid.
+ * <p>The Fluid Connections ({@link FluidLayout#connections}) exist only while the Held recipe runs here and
+ * names a fluid, in or out. Each tick every connection pulls the Held recipe's fluid ingredients from the
+ * block it faces, each into the box its order names, and after the craft pushes the fluid results out of their
+ * boxes into it. The craft waits while an output box cannot hold what it makes. The boxes are kept over a reload
+ * and a Fast Replace between tiers 2 and 3, and voided by a change of the Held recipe and by tier 1, which has none.
  */
 public final class AssemblerBlockEntity extends HeldMachineBlockEntity {
 
-    private static final String FLUID_KEY = "fluid";
+    private static final String FLUID_KEY = "fluids";
+    /** What saves before the boxes were many kept: one box, holding the Held recipe's one fluid ingredient. */
+    private static final String OLD_FLUID_KEY = "fluid";
 
-    private final AssemblerFluidBox fluidBox = new AssemblerFluidBox(this);
-    private final AssemblerFluidConnection fluidConnection = new AssemblerFluidConnection(fluidBox);
+    private static final FluidLayout LAYOUT = FluidLayout.ASSEMBLER;
+
+    private final MachineFluids fluids;
+    private final MachineFluidFace fluidFace;
+    /** The output boxes alone, which a connection pushes from. */
+    private final ResourceHandler<FluidResource> outputs;
 
     public AssemblerBlockEntity(BlockPos pos, BlockState state) {
         super(Assemblers.BLOCK_ENTITY.get(), pos, state, AssemblerSlots.LAYOUT, AssemblerBlockEntity::tierOf);
+        fluids = new MachineFluids(LAYOUT, new MachineFluids.Owner() {
+            @Override
+            public boolean takesInput(int n, FluidResource resource) {
+                return !resource.isEmpty() && level instanceof ServerLevel server
+                        && runnable(server).filter(recipe -> n < recipe.fluidIngredients().size()
+                                && recipe.fluidIngredients().get(n).ingredient().test(resource.toStack(1))).isPresent();
+            }
+
+            @Override
+            public boolean makesOutput(int n, FluidResource resource) {
+                return !resource.isEmpty() && level instanceof ServerLevel server
+                        && runnable(server).filter(recipe -> n < recipe.fluidResults().size()
+                                && resource.matches(recipe.fluidResults().get(n))).isPresent();
+            }
+
+            /** 4 crafts' worth of the ingredient bound to input box {@code n}, or a full box. */
+            @Override
+            public int inputCapacity(int n) {
+                return inputBoxCapacity(n);
+            }
+
+            /** What the Held recipe sizes output box {@code n} at, or the box's own 100 mB. */
+            @Override
+            public int outputCapacity(int n) {
+                if (!(level instanceof ServerLevel server)) {
+                    return FluidBoxes.OUTPUT_BOX;
+                }
+                return runnable(server).filter(recipe -> n < recipe.fluidResults().size())
+                        .map(recipe -> FluidBoxes.outputVolumes(LAYOUT.fluidOutputs(),
+                                recipe.fluidResults().stream().map(FluidStackTemplate::amount).toList(), recipe.pinnedFluidResults()).get(n))
+                        .orElse(FluidBoxes.OUTPUT_BOX);
+            }
+
+            @Override
+            public void changed() {
+                setChanged();
+            }
+        });
+        fluidFace = new MachineFluidFace(LAYOUT, fluids);
+        outputs = RangedResourceHandler.of(fluids, LAYOUT.fluidInputs(), LAYOUT.boxes());
     }
 
     private static AssemblerTier tierOf(BlockState state) {
@@ -56,36 +109,46 @@ public final class AssemblerBlockEntity extends HeldMachineBlockEntity {
 
     /**
      * Swapped for another tier by Fast Replace, which keeps this block entity: the buffer follows the new tier,
-     * and a tier with no fluid box voids what the box held.
+     * and a tier with no fluid boxes voids what they held.
      */
     @Override
     public void setBlockState(BlockState state) {
         super.setBlockState(state);
         resizeBuffer();
-        if (!tierOf(state).hasFluidBox()) {
-            fluidBox.empty();
+        if (!tierOf(state).hasFluidBoxes()) {
+            fluids.emptyAll();
         }
     }
 
-    /** The fluid box, for the menu and the game tests. Nothing is in it on tier 1. */
-    public AssemblerFluidBox fluidBox() {
-        return fluidBox;
-    }
-
-    /**
-     * The fluid capability of the footprint block at {@code at}, seen from {@code side}: the box where that
-     * block is a Fluid Connection and the face is the one pointing away from the machine, while the
-     * connections exist, and otherwise nothing. Asked by the part blocks' lookups, which see only a position.
-     */
-    @Nullable ResourceHandler<FluidResource> fluidConnection(BlockPos at, Direction side) {
-        if (!hasFluidConnections()) {
-            return null;
-        }
-        return FluidConnections.sideAt(worldPosition, facing(), at).filter(side::equals).isPresent() ? fluidConnection : null;
+    /** The fluid boxes, for the menu and the game tests. Nothing is in them on tier 1. */
+    public MachineFluids fluids() {
+        return fluids;
     }
 
     private Direction facing() {
         return getBlockState().getValue(AssemblerBlock.FACING);
+    }
+
+    private List<Connection> connections() {
+        return LAYOUT.connections(worldPosition, facing());
+    }
+
+    /**
+     * The boxes worth showing, in order: those the Held recipe binds a fluid to, and any that holds some. Server
+     * only, which alone resolves the Held recipe. For Jade.
+     */
+    public List<Integer> boxesInUse() {
+        Optional<AssemblingRecipe> recipe = level instanceof ServerLevel server ? runnable(server) : Optional.empty();
+        List<Integer> shown = new ArrayList<>();
+        for (int box = 0; box < LAYOUT.boxes(); box++) {
+            int bound = LAYOUT.isInput(box)
+                    ? recipe.map(found -> found.fluidIngredients().size()).orElse(0)
+                    : recipe.map(found -> found.fluidResults().size()).orElse(0);
+            if (LAYOUT.binding(box) < bound || fluids.getAmountAsInt(box) > 0) {
+                shown.add(box);
+            }
+        }
+        return shown;
     }
 
     // -- the Held recipe ------------------------------------------------------------------------
@@ -100,93 +163,113 @@ public final class AssemblerBlockEntity extends HeldMachineBlockEntity {
                 found -> HeldRecipes.takesCategory(tier(), found) && HeldRecipes.takesFluids(tier(), found));
     }
 
-    /** The fluid the Held recipe consumes, if it can run here and has one: tier 1 never has. */
-    private Optional<SizedFluidIngredient> fluidIngredient(ServerLevel server) {
-        return runnable(server).flatMap(AssemblerBlockEntity::fluidOf);
-    }
-
-    /** The one fluid ingredient a recipe an Assembler can run has, if any. */
-    private static Optional<SizedFluidIngredient> fluidOf(AssemblingRecipe recipe) {
-        return recipe.fluidIngredients().stream().findFirst();
-    }
-
-    /** Whether the Fluid Connections exist: the Held recipe runs here and has a fluid ingredient. Server only. */
+    /** Whether the Fluid Connections exist: the Held recipe runs here and names a fluid, in or out. Server only. */
     public boolean hasFluidConnections() {
-        return level instanceof ServerLevel server && fluidIngredient(server).isPresent();
+        return level instanceof ServerLevel server
+                && runnable(server).filter(recipe -> !recipe.fluidIngredients().isEmpty() || !recipe.fluidResults().isEmpty()).isPresent();
     }
 
-    /** Whether the box takes {@code resource}: it is what the Held recipe consumes. False off the server. */
-    boolean takesFluid(FluidResource resource) {
-        return !resource.isEmpty() && level instanceof ServerLevel server
-                && fluidIngredient(server).filter(wanted -> FluidMoves.consumedBy(wanted).test(resource)).isPresent();
-    }
-
-    /** What the box holds at most, in mB: 4 crafts' worth of the Held recipe's fluid, or a full box with none to size it by. */
-    int fluidCapacity() {
-        return inputBoxCapacity(0);
+    /**
+     * The fluid capability of the footprint block at {@code at}, seen from {@code side}: the boxes where that
+     * block is a Fluid Connection and the face is the one pointing away from the machine, while the
+     * connections exist, and otherwise nothing. Asked by the part blocks' lookups, which see only a position.
+     */
+    @Nullable ResourceHandler<FluidResource> fluidConnection(BlockPos at, Direction side) {
+        return hasFluidConnections() && LAYOUT.isConnection(worldPosition, facing(), at, side) ? fluidFace : null;
     }
 
     /**
      * Makes the connections what the Held recipe says: the origin's block state, which the model draws the
-     * rings from, and the capability of the two connection blocks, which every pipe that asked is told changed.
-     * A box holding what the recipe no longer takes is voided. Asked when the recipe is set and every tick,
-     * which also catches a Fast Replace, a load and a reload of the recipes.
+     * rings from, and the capability of the connection blocks, which every pipe that asked is told
+     * changed. A box holding what the recipe no longer binds to it is voided. Asked when the recipe is set and
+     * every tick, which also catches a Fast Replace, a load and a reload of the recipes.
      */
     @Override
     protected void syncConnections(ServerLevel server) {
-        boolean connected = fluidIngredient(server).isPresent();
-        if (!connected || !takesFluid(fluidBox.getResource(0))) {
-            fluidBox.empty();
+        boolean connected = hasFluidConnections();
+        for (int box = 0; box < LAYOUT.boxes(); box++) {
+            if (!connected || !fluids.isValid(box, fluids.getResource(box))) {
+                fluids.empty(box);
+            }
         }
         BlockState state = getBlockState();
         if (state.getBlock() instanceof AssemblerBlock && state.getValue(AssemblerBlock.FLUID_CONNECTIONS) != connected) {
             server.setBlock(worldPosition, state.setValue(AssemblerBlock.FLUID_CONNECTIONS, connected), Block.UPDATE_CLIENTS);
-            for (Direction side : FluidConnections.sides(facing())) {
-                server.invalidateCapabilities(FluidConnections.at(worldPosition, side));
+            for (Connection connection : connections()) {
+                server.invalidateCapabilities(connection.block());
             }
         }
     }
 
     @Override
     protected void emptyFluids() {
-        fluidBox.empty();
+        fluids.emptyAll();
     }
 
     /**
-     * Each connection pulls what the Held recipe consumes from the block it faces, up to the box's room. One
-     * transaction a connection, simulated within and committed: a neighbour holding another fluid gives none.
+     * Each connection pulls what the Held recipe consumes from the block it faces, each fluid into the box its
+     * order names, up to the box's room. One transaction a connection and a box, simulated within and
+     * committed: a neighbour holding another fluid gives none.
      */
     @Override
     protected void beforeCraft(ServerLevel server, AssemblingRecipe recipe) {
-        Optional<SizedFluidIngredient> wanted = fluidOf(recipe);
-        if (wanted.isEmpty()) {
-            return;
+        for (Connection connection : connections()) {
+            ResourceHandler<FluidResource> neighbour = null;
+            for (int box = 0; box < recipe.fluidIngredients().size(); box++) {
+                int room = fluids.capacity(box) - fluids.getAmountAsInt(box);
+                if (room <= 0) {
+                    continue;
+                }
+                if (neighbour == null) {
+                    neighbour = FluidMoves.across(server, connection.beyond(), connection.side());
+                    if (neighbour == null) {
+                        break;
+                    }
+                }
+                FluidMoves.move(neighbour, RangedResourceHandler.ofSingleIndex(fluids, box),
+                        FluidMoves.consumedBy(recipe.fluidIngredients().get(box)), room);
+            }
         }
-        for (Direction side : FluidConnections.sides(facing())) {
-            int room = fluidBox.capacity() - fluidBox.getAmountAsInt(0);
-            if (room <= 0) {
+    }
+
+    /** Each connection pushes what the output boxes hold into the block it faces, as much as it takes. */
+    @Override
+    protected void afterCraft(ServerLevel server) {
+        for (Connection connection : connections()) {
+            if (!anyOutput()) {
                 return;
             }
-            ResourceHandler<FluidResource> neighbour = FluidMoves.across(server, FluidConnections.neighbour(worldPosition, side), side);
+            ResourceHandler<FluidResource> neighbour = FluidMoves.across(server, connection.beyond(), connection.side());
             if (neighbour != null) {
-                FluidMoves.move(neighbour, fluidBox, FluidMoves.consumedBy(wanted.get()), room);
+                FluidMoves.move(outputs, neighbour, fluid -> true, Integer.MAX_VALUE);
             }
         }
+    }
+
+    private boolean anyOutput() {
+        for (int box = LAYOUT.fluidInputs(); box < LAYOUT.boxes(); box++) {
+            if (fluids.getAmountAsInt(box) > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // -- the craft ------------------------------------------------------------------------------
 
     /**
-     * Takes one craft's inputs, the {@code n}th ingredient from the {@code n}th slot and its fluid from the
-     * box, and places its first result in the product slot and, in the remainder slot, the ingredients'
-     * remainders and its further results.
+     * Takes one craft's inputs, the {@code n}th fluid ingredient from input box {@code n} and the {@code n}th
+     * item ingredient from the {@code n}th slot, and places its first item result in the product slot and, in the
+     * remainder slot, the ingredients' remainders and its further item results, and each fluid result in the
+     * output box its order names.
      */
     @Override
     protected @Nullable MachineState finish(AssemblingRecipe recipe, TransactionContext tx) {
-        for (SizedFluidIngredient fluid : recipe.fluidIngredients()) {
-            FluidResource resource = fluidBox.getResource(0);
-            if (resource.isEmpty() || !fluid.test(resource.toStack(fluidBox.getAmountAsInt(0)))
-                    || fluidBox.extract(0, resource, fluid.amount(), tx) != fluid.amount()) {
+        List<SizedFluidIngredient> wanted = recipe.fluidIngredients();
+        for (int box = 0; box < wanted.size(); box++) {
+            FluidResource resource = fluids.getResource(box);
+            if (resource.isEmpty() || !wanted.get(box).test(resource.toStack(fluids.getAmountAsInt(box)))
+                    || fluids.extract(box, resource, wanted.get(box).amount(), tx) != wanted.get(box).amount()) {
                 return MachineState.MISSING_INGREDIENTS;
             }
         }
@@ -204,6 +287,12 @@ public final class AssemblerBlockEntity extends HeldMachineBlockEntity {
                 && inventory.insert(AssemblerSlots.PRODUCT, ItemResource.of(product), product.count(), tx) != product.count()) {
             return MachineState.OUTPUT_FULL;
         }
+        for (int n = 0; n < recipe.fluidResults().size(); n++) {
+            var made = recipe.fluidResults().get(n);
+            if (fluids.insert(LAYOUT.outputBox(n), FluidResource.of(made), made.amount(), tx) != made.amount()) {
+                return MachineState.OUTPUT_FULL;
+            }
+        }
         return null;
     }
 
@@ -220,16 +309,32 @@ public final class AssemblerBlockEntity extends HeldMachineBlockEntity {
 
     // -- persistence ----------------------------------------------------------------------------
 
+    /** Only {@code fluids} is ever written, the boxes in order. */
     @Override
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
-        fluidBox.serialize(output.child(FLUID_KEY));
+        fluids.serialize(output.child(FLUID_KEY));
     }
 
+    /**
+     * Reads {@code fluids} if the save has it. A save from before the boxes were many has {@code fluid}, one box
+     * that took the Held recipe's one fluid ingredient, and what it held goes in input box 0, which takes that
+     * ingredient now. A box above its new capacity is left as it is: {@link MachineFluids#displayCapacity} covers it.
+     */
     @Override
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
-        fluidBox.deserialize(input.childOrEmpty(FLUID_KEY));
+        Optional<ValueInput> current = input.child(FLUID_KEY);
+        if (current.isPresent()) {
+            fluids.deserialize(current.get());
+            return;
+        }
+        fluids.emptyAll();
+        input.child(OLD_FLUID_KEY).ifPresent(old -> {
+            FluidStacksResourceHandler single = new FluidStacksResourceHandler(1, FluidBoxes.INPUT_VOLUME);
+            single.deserialize(old);
+            fluids.set(0, single.getResource(0).toStack(single.getAmountAsInt(0)));
+        });
     }
 
     // -- the screen -----------------------------------------------------------------------------

@@ -186,7 +186,7 @@ public final class Assemblers {
         event.registerBlockEntity(Capabilities.Item.BLOCK, BLOCK_ENTITY.get(), (machine, side) -> machine.itemFace());
         event.registerBlockEntity(Capabilities.Energy.BLOCK, BLOCK_ENTITY.get(), (machine, side) -> machine.energyFace());
         event.registerBlockEntity(Capabilities.Energy.BLOCK, CREATIVE_ENERGY_SOURCE_ENTITY.get(), (source, side) -> source.energyFace());
-        // Fluid is not forwarded whole as those are: only the two connection blocks answer, on their one outward
+        // Fluid is not forwarded whole as those are: only the connection blocks answer, on their one outward
         // face, and a part's lookup sees no more than its position. The origin has none, so Groundworks' forward
         // finds nothing there and falls through to this one.
         event.registerBlock(Capabilities.Fluid.BLOCK, (level, pos, state, entity, side) -> fluidConnection(level, pos, state, side),

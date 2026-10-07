@@ -8,17 +8,28 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-/** Where a fluid machine's gauges stand across its screen. */
+/** Where a machine's gauges stand across its screen. */
 class FluidGaugeLayoutTest {
 
     @Test
     void theChemicalPlantsFourStandWhereTheyAlwaysDid() {
-        FluidGaugeLayout layout = FluidGaugeLayout.of(FluidMachine.CHEMICAL_PLANT);
+        FluidGaugeLayout layout = FluidGaugeLayout.of(FluidMachine.CHEMICAL_PLANT.layout());
         assertEquals(36, layout.width());
         assertEquals(8, layout.x(0));
         assertEquals(48, layout.x(1));
         assertEquals(92, layout.x(2));
         assertEquals(132, layout.x(3));
+    }
+
+    @Test
+    void theAssemblersFiveStandWhereTheOilRefineryDid() {
+        FluidGaugeLayout layout = FluidGaugeLayout.of(FluidLayout.ASSEMBLER);
+        assertEquals(28, layout.width());
+        assertEquals(8, layout.x(0));
+        assertEquals(40, layout.x(1));
+        assertEquals(76, layout.x(2));
+        assertEquals(108, layout.x(3));
+        assertEquals(140, layout.x(4));
     }
 
     @Test

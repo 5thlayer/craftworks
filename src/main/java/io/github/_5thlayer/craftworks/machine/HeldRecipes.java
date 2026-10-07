@@ -26,10 +26,10 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
  * resolved lazily because a block entity loads before the recipes do.
  *
  * <p>Every Assembling recipe is one, Hand-craftable or not, except the kinds this tier cannot run: one
- * whose category the tier's server config does not list, one with a fluid result (no Assembler makes
- * fluid), one with a fluid ingredient on tier 1 (which has no fluid box), one with two fluid ingredients or
- * with more of its fluid a craft than the box holds, one with more distinct ingredients than the five input
- * slots, and one whose remainders don't fit the one remainder slot.
+ * whose category the tier's server config does not list, one that names a fluid, in or out, on tier 1 (which
+ * has no fluid boxes), one with more fluid ingredients or results than the boxes of {@link FluidLayout#ASSEMBLER}
+ * (two in, three out) or with more of a fluid a craft than an input box holds, one with more distinct
+ * ingredients than the five input slots, and one whose remainders don't fit the one remainder slot.
  */
 public final class HeldRecipes {
 
@@ -48,21 +48,18 @@ public final class HeldRecipes {
         return Optional.of(assembling);
     }
 
-    /**
-     * Whether this tier takes the recipe's fluids: no fluid result on any tier, and a fluid ingredient only
-     * with a fluid box.
-     */
+    /** Whether this tier takes the recipe's fluids: it names none, or the tier has fluid boxes. */
     public static boolean takesFluids(AssemblerTier tier, AssemblingRecipe recipe) {
-        return recipe.fluidResults().isEmpty() && (recipe.fluidIngredients().isEmpty() || tier.hasFluidBox());
+        return (recipe.fluidIngredients().isEmpty() && recipe.fluidResults().isEmpty()) || tier.hasFluidBoxes();
     }
 
-    /** Whether the recipe needs at most one fluid, the one the box holds. */
-    public static boolean oneFluid(AssemblingRecipe recipe) {
-        return recipe.fluidIngredients().size() <= 1;
+    /** Whether the recipe has no more fluid ingredients than the layout has input boxes and no more fluid results than output boxes. */
+    public static boolean fluidsHaveBoxes(FluidLayout layout, AssemblingRecipe recipe) {
+        return recipe.fluidIngredients().size() <= layout.fluidInputs() && recipe.fluidResults().size() <= layout.fluidOutputs();
     }
 
-    /** Whether one craft's fluid fits the box: at most its capacity. */
-    public static boolean fluidFits(AssemblingRecipe recipe) {
+    /** Whether one craft's fluid fits an input box: at most its capacity. */
+    public static boolean fluidVolumeFits(AssemblingRecipe recipe) {
         return recipe.fluidIngredients().stream().allMatch(fluid -> fluid.amount() <= FluidBoxes.INPUT_VOLUME);
     }
 
@@ -111,13 +108,12 @@ public final class HeldRecipes {
     }
 
     /**
-     * Whether an Assembler of any tier can run this recipe: at most one fluid ingredient and one the box
-     * holds, it fits the input slots, and its remainders fit. What a tier adds, its categories and its
-     * fluids (a fluid result is no tier's), is asked of the tier ({@link #takesCategory}, {@link
-     * #takesFluids}).
+     * Whether an Assembler of any tier can run this recipe: its fluids fit the boxes of {@link
+     * FluidLayout#ASSEMBLER}, it fits the input slots, and its remainders fit. What a tier adds, its categories
+     * and whether it has fluid boxes at all, is asked of the tier ({@link #takesCategory}, {@link #takesFluids}).
      */
     public static boolean canRun(AssemblingRecipe recipe) {
-        return oneFluid(recipe) && fluidFits(recipe) && fitsSlots(recipe) && remaindersFit(recipe);
+        return fluidsHaveBoxes(FluidLayout.ASSEMBLER, recipe) && fluidVolumeFits(recipe) && fitsSlots(recipe) && remaindersFit(recipe);
     }
 
 
@@ -127,8 +123,8 @@ public final class HeldRecipes {
         return HoldVerdict.of(recipe.map(found -> HoldVerdict.Checks.passing()
                 .categoryHeld(takesCategory(tier, found))
                 .takesFluids(takesFluids(tier, found))
-                .oneFluid(oneFluid(found))
-                .fluidFits(fluidFits(found))
+                .fluidsHaveBoxes(fluidsHaveBoxes(FluidLayout.ASSEMBLER, found))
+                .fluidVolumeFits(fluidVolumeFits(found))
                 .fitsSlots(fitsSlots(found))
                 .remaindersFit(remaindersFit(found))
                 .locked(RuntimePlanSource.lockedFor(player).test(id.toString())))

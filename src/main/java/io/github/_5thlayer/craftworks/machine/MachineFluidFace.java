@@ -8,18 +8,18 @@ import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /**
- * What a fluid machine's Fluid Connections expose to NeoForge's fluid capability, the same on every one: its
+ * What a machine's Fluid Connections expose to NeoForge's fluid capability, the same on every one: its
  * boxes, of which an input box is only filled, through the box's own filter, and an output box is only
  * drained. A connection has no direction of its own, but a box has: nothing is taken out of an ingredient
  * and nothing is put in a result.
  */
-final class FluidMachineFace implements ResourceHandler<FluidResource> {
+final class MachineFluidFace implements ResourceHandler<FluidResource> {
 
-    private final FluidMachine description;
+    private final FluidLayout layout;
     private final ResourceHandler<FluidResource> boxes;
 
-    FluidMachineFace(FluidMachine description, ResourceHandler<FluidResource> boxes) {
-        this.description = description;
+    MachineFluidFace(FluidLayout layout, ResourceHandler<FluidResource> boxes) {
+        this.layout = layout;
         this.boxes = boxes;
     }
 
@@ -45,16 +45,16 @@ final class FluidMachineFace implements ResourceHandler<FluidResource> {
 
     @Override
     public boolean isValid(int index, FluidResource resource) {
-        return description.isInput(index) && boxes.isValid(index, resource);
+        return layout.isInput(index) && boxes.isValid(index, resource);
     }
 
     @Override
     public int insert(int index, FluidResource resource, int amount, TransactionContext transaction) {
-        return description.isInput(index) ? boxes.insert(index, resource, amount, transaction) : 0;
+        return layout.isInput(index) ? boxes.insert(index, resource, amount, transaction) : 0;
     }
 
     @Override
     public int extract(int index, FluidResource resource, int amount, TransactionContext transaction) {
-        return description.isInput(index) ? 0 : boxes.extract(index, resource, amount, transaction);
+        return layout.isInput(index) ? 0 : boxes.extract(index, resource, amount, transaction);
     }
 }

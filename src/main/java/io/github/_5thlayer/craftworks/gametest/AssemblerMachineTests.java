@@ -115,7 +115,7 @@ final class AssemblerMachineTests {
         tests.test("an_assembler_with_no_recipe_draws_nothing", 20, AssemblerMachineTests::idleDrawsNothing);
         tests.test("fill_recipe_with_a_recipe_locked_for_that_player_is_refused", 20, AssemblerMachineTests::lockedIsRefused);
         tests.test("a_held_recipe_is_never_checked_against_the_lock_again", 20, AssemblerMachineTests::heldIsNeverRechecked);
-        tests.test("fill_recipe_refuses_a_fluid_recipe_more_than_five_ingredients_and_remainders_that_dont_fit", 20, AssemblerMachineTests::cannotRun);
+        tests.test("fill_recipe_refuses_more_than_five_ingredients_and_remainders_that_dont_fit_and_tier_1_a_fluid_recipe", 20, AssemblerMachineTests::cannotRun);
         tests.test("an_assembler_holds_and_crafts_a_recipe_the_player_cannot_hand_craft", 20, AssemblerMachineTests::machineOnly);
         tests.test("breaking_an_assembler_drops_its_contents_and_the_item_keeps_its_held_recipe", 20, AssemblerMachineTests::breaking);
         tests.test("a_cake_craft_puts_its_buckets_in_the_remainder_slot", 20, AssemblerMachineTests::cake);
@@ -232,19 +232,25 @@ final class AssemblerMachineTests {
 
     private static void cannotRun(GameTestHelper helper) {
         Placed assembler = place(helper, AssemblerTier.TWO);
-        HoldVerdict fluid = request(assembler, FLUID_RECIPE);
         HoldVerdict many = request(assembler, SIX_INGREDIENTS);
         HoldVerdict remainders = request(assembler, TWO_REMAINDERS);
         HoldVerdict none = request(assembler, id("gametest/not_a_recipe"));
-        helper.assertTrue(fluid == HoldVerdict.HAS_FLUID, "a fluid recipe was " + fluid);
         helper.assertTrue(many == HoldVerdict.TOO_MANY_INGREDIENTS, "six ingredients was " + many);
         helper.assertTrue(remainders == HoldVerdict.REMAINDERS_DONT_FIT, "a bucket and a bottle left behind was " + remainders);
         helper.assertTrue(none == HoldVerdict.NOT_ASSEMBLING, "an id naming no recipe was " + none);
         helper.assertTrue(assembler.machine().heldRecipe().isEmpty(), "a refused recipe was held");
-        helper.assertTrue(assembler.player().heard.containsAll(List.of("craftworks.assembler.refused.has_fluid",
-                "craftworks.assembler.refused.too_many_ingredients", "craftworks.assembler.refused.remainders_dont_fit",
-                "craftworks.assembler.refused.not_assembling")),
+        helper.assertTrue(assembler.player().heard.containsAll(List.of("craftworks.assembler.refused.too_many_ingredients",
+                "craftworks.assembler.refused.remainders_dont_fit", "craftworks.assembler.refused.not_assembling")),
                 "the player was told " + assembler.player().heard);
+
+        // A fluid recipe is held by tiers 2 and 3 and refused by tier 1, which has no fluid boxes.
+        helper.destroyBlock(ORIGIN);
+        Placed tier1 = place(helper, AssemblerTier.ONE);
+        HoldVerdict fluid = request(tier1, FLUID_RECIPE);
+        helper.assertTrue(fluid == HoldVerdict.HAS_FLUID, "a fluid recipe was " + fluid);
+        helper.assertTrue(tier1.machine().heldRecipe().isEmpty(), "a refused recipe was held");
+        helper.assertTrue(tier1.player().heard.contains("craftworks.assembler.refused.has_fluid"),
+                "the player was told " + tier1.player().heard);
         helper.succeed();
     }
 

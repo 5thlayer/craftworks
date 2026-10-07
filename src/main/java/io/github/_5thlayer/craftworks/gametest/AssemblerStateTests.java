@@ -109,9 +109,10 @@ final class AssemblerStateTests {
     }
 
     private static void cantRun(GameTestHelper helper) {
-        AssemblerMachineTests.Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
+        AssemblerMachineTests.Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
         power(assembler);
-        // Not through Fill Recipe, which refuses both: a pack's reload or a changed recipe leaves them held.
+        // Not through Fill Recipe, which refuses both: a pack's reload or a changed recipe leaves them held. A fluid
+        // recipe is one tier 1 can't run; tiers 2 and 3 run any.
         assembler.machine().setHeldRecipe(FLUID_RECIPE, assembler.player());
         expect(helper, assembler, MachineState.CANT_RUN, false);
         assembler.machine().setHeldRecipe(NOT_A_RECIPE, assembler.player());

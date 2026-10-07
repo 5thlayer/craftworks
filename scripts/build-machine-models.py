@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """Writes the stand-in block models of the fluid machines: a casing over the footprint and the rings of its Fluid
-Connections.
+Connections, and the rings of the Assemblers' (whose casings are written by hand).
 
 A machine's origin draws the whole footprint, which is wider and taller than one block. Minecraft refuses an
 element whose 'from' or 'to' is below -16 or above 32 (CuboidModelElement), a block and a half either way from the
@@ -119,6 +119,10 @@ def rings(sites):
 
 
 MODELS_TO_WRITE = {
+    # The Assemblers of tiers 2 and 3, 3x3: a connection on each of the three bottom-layer blocks of the two opposite
+    # edges, the edge it faces (north) and the other. The casings are hand-written and not made here.
+    "assembler_connections": rings([(-1, -1, "north"), (0, -1, "north"), (1, -1, "north"),
+                                    (-1, 1, "south"), (0, 1, "south"), (1, 1, "south")]),
     # Factorio's chemical plant: 3x3, two tall; a connection at each end of the two opposite edges.
     "chemical_plant": casing(3, 2, "chemical_plant"),
     "chemical_plant_connections": rings([(-1, -1, "north"), (-1, 1, "south"), (1, -1, "north"), (1, 1, "south")]),

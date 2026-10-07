@@ -15,8 +15,8 @@ import snownee.jade.api.IWailaPlugin;
 import snownee.jade.api.WailaPlugin;
 
 /**
- * Shows an Assembler's, a Chemical Plant's or an Oil Refinery's Held recipe, state and energy in Jade's tooltip, with the fluid box of
- * tiers 2 and 3 and the Chemical Plant's and Oil Refinery's boxes as Jade's own fluid bars (#25, #26, #27); the Creative Energy Source's energy as Infinite FE (#28); and the Creative
+ * Shows an Assembler's, a Chemical Plant's or an Oil Refinery's Held recipe, state and energy in Jade's tooltip, with the fluid boxes of
+ * tiers 2 and 3 and the Chemical Plant's and Oil Refinery's boxes as Jade's own fluid bars (#25, #26, #27, #40); the Creative Energy Source's energy as Infinite FE (#28); and the Creative
  * Fluid Source's fluid as, say, "Water, infinite" (#32).
  *
  * <p>Jade finds this by its annotation and loads it only when Jade is installed; nothing else in the Mod
@@ -35,7 +35,7 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
         registration.registerBlockDataProvider(HeldMachineReport.INSTANCE, FluidMachineBlockEntity.class);
         registration.registerEnergyStorage(InfiniteEnergy.INSTANCE, CreativeEnergySourceBlockEntity.class);
         registration.registerFluidStorage(InfiniteFluid.INSTANCE, CreativeFluidSourceBlockEntity.class);
-        registration.registerFluidStorage(AssemblerFluid.INSTANCE, AssemblerBlockEntity.class);
+        registration.registerFluidStorage(AssemblerFluidView.INSTANCE, AssemblerBlockEntity.class);
         registration.registerFluidStorage(FluidMachineFluidView.INSTANCE, FluidMachineBlockEntity.class);
     }
 
@@ -45,7 +45,7 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
         registration.registerBlockComponent(HeldMachineReport.Client.INSTANCE, FluidMachineBlock.class);
         registration.registerEnergyStorageClient(InfiniteEnergy.INSTANCE);
         registration.registerFluidStorageClient(InfiniteFluid.INSTANCE);
-        registration.registerFluidStorageClient(AssemblerFluid.INSTANCE);
+        registration.registerFluidStorageClient(AssemblerFluidView.INSTANCE);
         registration.registerFluidStorageClient(FluidMachineFluidView.INSTANCE);
     }
 }

@@ -16,18 +16,24 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * The Assembler's menu: five inputs, the product and the remainders, as {@link HeldMachineMenu} lays them out.
- * The fluid box (which fluid, by its registry id, and how much, and its volume) rides in data slots after the shared ones; it
- * is drawn only by tiers 2 and 3, which {@link #hasFluidBox} tells the screen.
+ * Each fluid box (which fluid, by its registry id, and how much) rides in data slots after the shared ones, with the
+ * volume of every box, which the Held recipe sizes; they are drawn only by tiers 2 and 3, which {@link #hasFluidBoxes}
+ * tells the screen, and which stand lower to give the gauges a row.
  */
 public final class AssemblerMenu extends HeldMachineMenu<AssemblerBlockEntity> {
 
-    /** The fluid box takes two: the fluid's registry id, then its amount; and a third for what it holds at most. */
-    private static final int DATA_FLUID = DATA_SHARED;
-    private static final int DATA_CAPACITY = DATA_FLUID + 2;
-    private static final int DATA_COUNT = DATA_CAPACITY + 1;
+    private static final FluidLayout LAYOUT = FluidLayout.ASSEMBLER;
+
+    /** Each box takes two: the fluid's registry id, then its amount. */
+    private static final int DATA_BOXES = DATA_SHARED;
+    private static final int DATA_CAPACITIES = DATA_BOXES + 2 * LAYOUT.boxes();
+    private static final int DATA_COUNT = DATA_CAPACITIES + LAYOUT.boxes();
 
     public static final int REMAINDERS_X = PRODUCT_X + 18;
+    /** Where the player's inventory starts on tier 1. */
     public static final int INVENTORY_Y = 84;
+    /** Lower on tiers 2 and 3: the gauges and the energy bar take a row each between the slots and the inventory. */
+    public static final int INVENTORY_Y_WITH_FLUIDS = 96;
 
     private final AssemblerTier tier;
 
@@ -39,16 +45,38 @@ public final class AssemblerMenu extends HeldMachineMenu<AssemblerBlockEntity> {
 
     private AssemblerMenu(int containerId, Inventory playerInventory, @Nullable AssemblerBlockEntity machine, BlockPos pos,
             ItemStacksResourceHandler inventory, ContainerData data) {
-        super(Assemblers.MENU.get(), containerId, playerInventory, machine, pos, AssemblerSlots.LAYOUT, inventory, data, INVENTORY_Y);
-        // The client has no machine to ask, but the block it opened is there.
-        this.tier = machine != null ? machine.tier()
+        this(containerId, playerInventory, machine, pos, inventory, data, tierOf(playerInventory, machine, pos));
+    }
+
+    private AssemblerMenu(int containerId, Inventory playerInventory, @Nullable AssemblerBlockEntity machine, BlockPos pos,
+            ItemStacksResourceHandler inventory, ContainerData data, AssemblerTier tier) {
+        super(Assemblers.MENU.get(), containerId, playerInventory, machine, pos, AssemblerSlots.LAYOUT, inventory, data, inventoryY(tier));
+        this.tier = tier;
+    }
+
+    /** The client has no machine to ask, but the block it opened is there. */
+    private static AssemblerTier tierOf(Inventory playerInventory, @Nullable AssemblerBlockEntity machine, BlockPos pos) {
+        return machine != null ? machine.tier()
                 : playerInventory.player.level().getBlockState(pos).getBlock() instanceof AssemblerBlock block ? block.tier() : AssemblerTier.ONE;
+    }
+
+    private static int inventoryY(AssemblerTier tier) {
+        return tier.hasFluidBoxes() ? INVENTORY_Y_WITH_FLUIDS : INVENTORY_Y;
+    }
+
+    /** Where the player's inventory starts: lower where the gauges are, and the screen is that much taller. */
+    public int inventoryY() {
+        return inventoryY(tier);
     }
 
     /** Server side, over the machine's own inventory. */
     static AssemblerMenu open(int containerId, Inventory playerInventory, AssemblerBlockEntity machine) {
-        ContainerData data = data(machine, DATA_COUNT, index -> index == DATA_CAPACITY ? machine.fluidBox().displayCapacity()
-                : fluidData(machine.fluidBox().contents(), index - DATA_FLUID));
+        ContainerData data = data(machine, DATA_COUNT, index -> {
+            if (index < DATA_CAPACITIES) {
+                return fluidData(machine.fluids().contents((index - DATA_BOXES) / 2), (index - DATA_BOXES) % 2);
+            }
+            return machine.fluids().displayCapacity(index - DATA_CAPACITIES);
+        });
         return new AssemblerMenu(containerId, playerInventory, machine, machine.getBlockPos(), machine.inventory(), data);
     }
 
@@ -62,18 +90,18 @@ public final class AssemblerMenu extends HeldMachineMenu<AssemblerBlockEntity> {
         return HeldRecipes.verdict(player, machine.tier(), id);
     }
 
-    /** Whether this Assembler's tier has a fluid box, and so the screen a gauge for it. */
-    public boolean hasFluidBox() {
-        return tier.hasFluidBox();
+    /** Whether this Assembler's tier has fluid boxes, and so the screen gauges for them. */
+    public boolean hasFluidBoxes() {
+        return tier.hasFluidBoxes();
     }
 
-    /** What the fluid box holds at most, in mB, as the Held recipe sizes it and the server last told it. */
-    public int fluidCapacity() {
-        return data.get(DATA_CAPACITY);
+    /** What is in box {@code box} (the inputs, then the outputs), or empty: the fluid and how much, as the server last told it. */
+    public FluidStack fluid(int box) {
+        return fluidAt(DATA_BOXES + 2 * box);
     }
 
-    /** What is in the fluid box, or empty: the fluid and how much, as the server last told it. */
-    public FluidStack fluid() {
-        return fluidAt(DATA_FLUID);
+    /** What box {@code box} holds at most, in mB, as the Held recipe sizes it and the server last told it. */
+    public int fluidCapacity(int box) {
+        return data.get(DATA_CAPACITIES + box);
     }
 }
