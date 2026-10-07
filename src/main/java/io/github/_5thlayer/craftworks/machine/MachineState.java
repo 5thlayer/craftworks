@@ -4,7 +4,7 @@
 package io.github._5thlayer.craftworks.machine;
 
 /**
- * What an Assembler or a Chemical Plant is doing this tick, as {@link HeldMachineBlockEntity#state} reports it: the first of the
+ * What an Assembler is doing this tick, as {@link HeldMachineBlockEntity#state} reports it: the first of the
  * checks its tick makes that it fails, in the order the tick makes them (#28).
  */
 public enum MachineState {
@@ -18,7 +18,7 @@ public enum MachineState {
     CANT_RUN,
     /** An input slot holds less than one craft of its ingredient. */
     MISSING_INGREDIENTS,
-    /** An output cannot take a craft's result: the product slot, an Assembler's remainder slot or a Chemical Plant's output box. */
+    /** An output cannot take a craft's result: the product slot, the remainder slot or a fluid output box. */
     OUTPUT_FULL,
     /** The buffer cannot pay this tick's FE. */
     NEEDS_POWER,

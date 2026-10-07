@@ -3,9 +3,7 @@
 
 package io.github._5thlayer.craftworks.compat.jei;
 
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import io.github._5thlayer.craftworks.Craftworks;
@@ -14,10 +12,7 @@ import io.github._5thlayer.craftworks.machine.MachineGhosts;
 import io.github._5thlayer.craftworks.machine.MachineKind;
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import io.github._5thlayer.craftworks.machine.Assemblers;
-import io.github._5thlayer.craftworks.machine.FluidMachineMenu;
-import io.github._5thlayer.craftworks.machine.FluidMachines;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
-import io.github._5thlayer.craftworks.machine.client.FluidMachineScreen;
 import io.github._5thlayer.craftworks.machine.client.HeldMachineScreen;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
@@ -41,10 +36,9 @@ import net.neoforged.neoforge.client.event.RecipesReceivedEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
- * Puts {@code craftworks:assembling} in JEI, in a tab for each machine (ADR-0016), {@code craftworks:assembler}
- * and {@code craftworks:chemical_plant}, each holding the recipes its machine's categories name (see
- * {@link io.github._5thlayer.craftworks.machine.MachineTabs}), read from the config as JEI builds its lists.
- * Each has a recipe button that queues on the Personal Assembler the way EMI's Fill Recipe does (#12, ADR-0004).
+ * Puts {@code craftworks:assembling} in JEI, in one tab (ADR-0016), {@code craftworks:assembler}, holding the
+ * recipes an Assembler tier's categories name (see {@link io.github._5thlayer.craftworks.machine.MachineTabs}),
+ * read from the config as JEI builds its lists. It has a recipe button that queues on the Personal Assembler the way EMI's Fill Recipe does (#12, ADR-0004).
  *
  * <p>JEI finds this by its annotation and loads it only when JEI is installed; nothing else in the Mod
  * names a JEI type, so the Mod loads without it.
@@ -57,22 +51,13 @@ import net.neoforged.neoforge.common.NeoForge;
 @JeiPlugin
 public final class AssemblingJeiPlugin implements IModPlugin {
 
-    private static final Map<MachineKind, IRecipeHolderType<AssemblingRecipe>> TABS = new EnumMap<>(MachineKind.class);
+    /** The Assembler's tab, {@code craftworks:} its {@link MachineKind#tabName()} (ADR-0016). */
+    static final IRecipeHolderType<AssemblingRecipe> TAB =
+            IRecipeHolderType.create(Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, MachineKind.ASSEMBLER.tabName()));
 
-    static {
-        for (MachineKind machine : MachineKind.values()) {
-            TABS.put(machine, IRecipeHolderType.create(Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, machine.tabName())));
-        }
-    }
-
-    /** The machine's tab, {@code craftworks:} its {@link MachineKind#tabName()} (ADR-0016). */
-    static IRecipeHolderType<AssemblingRecipe> tab(MachineKind machine) {
-        return TABS.get(machine);
-    }
-
-    /** Whether the JEI category uid is one of the machines' tabs. */
+    /** Whether the JEI category uid is the Assembler's tab. */
     static boolean isTab(Identifier uid) {
-        return TABS.values().stream().anyMatch(type -> type.getUid().equals(uid));
+        return TAB.getUid().equals(uid);
     }
 
     private static volatile RecipeMap received = RecipeMap.EMPTY;
@@ -88,44 +73,32 @@ public final class AssemblingJeiPlugin implements IModPlugin {
 
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
-        for (MachineKind machine : MachineKind.values()) {
-            registration.addRecipeCategories(new AssemblingJeiCategory(registration.getJeiHelpers().getGuiHelper(), machine,
-                    () -> AssemblingJeiCategory.widthOf(ConfiguredTabs.sort(assemblingRecipes()).in(machine))));
-        }
+        registration.addRecipeCategories(new AssemblingJeiCategory(registration.getJeiHelpers().getGuiHelper(),
+                () -> AssemblingJeiCategory.widthOf(ConfiguredTabs.sort(assemblingRecipes()).in(MachineKind.ASSEMBLER))));
     }
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
         var sorted = ConfiguredTabs.sortLogged("JEI", assemblingRecipes());
-        for (MachineKind machine : MachineKind.values()) registration.addRecipes(tab(machine), sorted.in(machine));
+        registration.addRecipes(TAB, sorted.in(MachineKind.ASSEMBLER));
     }
 
-    /** Each machine is a workstation of its own tab only, all three Assembler tiers of the Assembler's. */
+    /** All three Assembler tiers are workstations of the tab. */
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
-        for (MachineKind machine : MachineKind.values()) {
-            ConfiguredTabs.workstations(machine).forEach(item -> registration.addCraftingStation(tab(machine), new ItemStack(item)));
-        }
+        ConfiguredTabs.workstations().forEach(item -> registration.addCraftingStation(TAB, new ItemStack(item)));
     }
 
-    /** With an Assembler or a fluid machine open, the recipe's {@code +} sets its Held recipe (see {@link HeldMachineTransferHandler}). */
+    /** With an Assembler open, the recipe's {@code +} sets its Held recipe (see {@link HeldMachineTransferHandler}). */
     @Override
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
-        for (MachineKind machine : MachineKind.values()) {
-            registration.addRecipeTransferHandler(
-                    new HeldMachineTransferHandler<>(AssemblerMenu.class, Assemblers.MENU.get(), tab(machine)), tab(machine));
-            for (var fluidMachine : FluidMachines.all()) {
-                registration.addRecipeTransferHandler(
-                        new HeldMachineTransferHandler<>(FluidMachineMenu.class, fluidMachine.menu().get(), tab(machine)), tab(machine));
-            }
-        }
+        registration.addRecipeTransferHandler(new HeldMachineTransferHandler<>(AssemblerMenu.class, Assemblers.MENU.get(), TAB), TAB);
     }
 
     /** The machine screens' ghosts answer Recipe and Uses as a real stack does (see {@link #ghostAt}). */
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         registration.addGuiContainerHandler(AssemblerScreen.class, ghosts());
-        registration.addGuiContainerHandler(FluidMachineScreen.class, ghosts());
     }
 
     private static <S extends HeldMachineScreen<?>> IGuiContainerHandler<S> ghosts() {

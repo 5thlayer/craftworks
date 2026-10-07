@@ -1,9 +1,0 @@
-{
-  "type": "craftworks:assembling",
-  "category": "oil-processing",
-  "ingredients": [],
-  "fluid_ingredients": [ { "ingredient": "minecraft:water", "amount": 1001 } ],
-  "results": [],
-  "fluid_results": [ { "id": "minecraft:lava", "amount": 30 } ],
-  "time": 20
-}

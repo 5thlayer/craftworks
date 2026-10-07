@@ -8,8 +8,8 @@ import java.util.List;
 
 /**
  * How big a fluid box is: the figures the FactoryWorks Pack measured from Factorio (ADR-0017), as constants
- * beside {@link OverloadLimit}'s and not as config, for every fluid box in Craftworks, an Assembler's and a
- * fluid machine's.
+ * beside {@link OverloadLimit}'s and not as config, for every fluid box in Craftworks, which are the
+ * Assembler's.
  *
  * <p>An input box holds {@link #INPUT_VOLUME} mB, but is filled only until it holds {@link #INPUT_CRAFTS}
  * crafts' worth of the ingredient bound to it, whatever the crafting speed. An output box is

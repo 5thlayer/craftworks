@@ -37,11 +37,11 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
  * and defaults to 0. A pack changes either by overriding the recipe.
  *
  * <p>{@code ingredients}, {@code results}, {@code fluid_ingredients} and {@code fluid_results} default to empty,
- * so a recipe that uses or makes only fluids, such as an Oil Refinery's, need not name its empty item lists, and
+ * so a recipe that uses or makes only fluids, such as a fluid-only Assembler recipe, need not name its empty item lists, and
  * {@code hand_craftable} defaults to true, so a recipe written before it existed reads unchanged. Fluids are NeoForge's own types so that
  * Craftworks names no fluid Library (5thlayer/factoryworks#578).
  *
- * <p>{@code category} names the recipe's kind, one of {@link AssemblingCategory}'s five, and decides which
+ * <p>{@code category} names the recipe's kind, one of {@link AssemblingCategory}'s three, and decides which
  * Assemblers may hold it; omitted, it is {@code crafting}. {@code results} is a list of item stacks, empty only when
  * {@code fluid_results} is not. The first goes to an Assembler's product slot and the rest to its remainder
  * slot; the Personal Assembler plans only a recipe with exactly one (GLOSSARY.md, Hand-craftable).

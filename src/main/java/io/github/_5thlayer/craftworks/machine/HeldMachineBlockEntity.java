@@ -35,7 +35,7 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
 /**
- * The block entity of a machine that makes its Held recipe over and over, an Assembler or a Chemical Plant:
+ * The block entity of a machine that makes its Held recipe over and over, an Assembler:
  * the Held recipe, the item slots, an energy buffer and the craft under way. What a machine adds is its fluid
  * boxes, which recipes it can run, and what one craft takes and makes ({@link #finish}).
  *
@@ -351,8 +351,7 @@ public abstract class HeldMachineBlockEntity extends BlockEntity implements Menu
 
     /**
      * Places what {@code count} of {@code resource} leave behind when a craft takes them, or returns
-     * {@link MachineState#OUTPUT_FULL}. Nothing by default: Fill Recipe refuses a Chemical Plant a recipe whose
-     * ingredients leave any.
+     * {@link MachineState#OUTPUT_FULL}. Nothing by default.
      */
     protected @Nullable MachineState placeRemainder(ItemResource resource, int count, TransactionContext tx) {
         return null;

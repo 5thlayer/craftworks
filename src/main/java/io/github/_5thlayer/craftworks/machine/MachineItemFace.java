@@ -9,8 +9,7 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /**
  * A machine's item capability, on every face of every block of its footprint: inputs are filtered
- * by the Held recipe and held to the Overload Limit, and only the outputs extract. An Assembler's and a
- * Chemical Plant's alike.
+ * by the Held recipe and held to the Overload Limit, and only the outputs extract.
  */
 final class MachineItemFace implements ResourceHandler<ItemResource> {
 

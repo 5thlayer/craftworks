@@ -48,23 +48,21 @@ final class AssemblingJeiCategory implements IRecipeCategory<RecipeHolder<Assemb
 
     private final IDrawable icon;
     private final Supplier<Integer> width;
-    private final MachineKind machine;
 
-    /** The machine's tab: its title and icon, and the recipes it holds are the plugin's to add. */
-    AssemblingJeiCategory(IGuiHelper guiHelper, MachineKind machine, Supplier<Integer> width) {
-        this.machine = machine;
+    /** The Assembler's tab: its title and icon, and the recipes it holds are the plugin's to add. */
+    AssemblingJeiCategory(IGuiHelper guiHelper, Supplier<Integer> width) {
         this.width = Suppliers.memoize(width::get);
-        this.icon = guiHelper.createDrawableItemLike(ConfiguredTabs.icon(machine));
+        this.icon = guiHelper.createDrawableItemLike(ConfiguredTabs.icon());
     }
 
     @Override
     public IRecipeType<RecipeHolder<AssemblingRecipe>> getRecipeType() {
-        return AssemblingJeiPlugin.tab(machine);
+        return AssemblingJeiPlugin.TAB;
     }
 
     @Override
     public Component getTitle() {
-        return Component.translatable("jei.category.craftworks." + machine.tabName());
+        return Component.translatable("jei.category.craftworks." + MachineKind.ASSEMBLER.tabName());
     }
 
     @Override

@@ -34,7 +34,7 @@ import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The menu of a machine that makes its Held recipe, an Assembler's or the Chemical Plant's: its inputs in a row,
+ * The menu of a machine that makes its Held recipe, an Assembler's: its inputs in a row,
  * then its outputs, then the player's inventory; the Held recipe and how far its craft is. No recipe is picked
  * here and none cleared: the recipe viewer's Fill Recipe lands on {@link #request}, and the Held recipe is
  * replaced, never removed.
@@ -85,7 +85,7 @@ public abstract class HeldMachineMenu<M extends HeldMachineBlockEntity> extends 
         for (int slot = 0; slot < layout.inputs(); slot++) {
             addSlot(new InputSlot(inventory, modifier, slot, INPUT_X + slot * 18, INPUT_Y));
         }
-        for (int slot = layout.hasProduct() ? layout.product() : layout.size(); slot < layout.size(); slot++) {
+        for (int slot = layout.product(); slot < layout.size(); slot++) {
             addSlot(new OutputSlot(inventory, modifier, slot, PRODUCT_X + (slot - layout.product()) * 18, INPUT_Y));
         }
         for (int row = 0; row < 3; row++) {

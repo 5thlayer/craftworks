@@ -15,9 +15,9 @@ import java.util.function.Function;
 import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
 
 /**
- * Which Recipe viewer tabs an Assembling recipe goes in (ADR-0016): one tab per machine, the Assembler's
- * (shared by its three tiers), the Chemical Plant's and the Oil Refinery's. A recipe is in every tab whose machine holds its
- * {@link AssemblingCategory category}, so in each machine's that holds it, and in none when no machine does.
+ * Which Recipe viewer tabs an Assembling recipe goes in (ADR-0016): one tab per machine, which is the
+ * Assembler's alone (shared by its three tiers). A recipe is in every tab whose machine holds its
+ * {@link AssemblingCategory category}, and in none when no machine does.
  *
  * <p>Built from the categories the server config gives each machine, read when the viewer builds its
  * lists, so it is the config of that moment and never live. Pure: no Minecraft or viewer types.

@@ -1,9 +1,0 @@
-{
-  "multipart": [
-    {
-      "apply": {
-        "model": "craftworks:block/oil_refinery_part"
-      }
-    }
-  ]
-}

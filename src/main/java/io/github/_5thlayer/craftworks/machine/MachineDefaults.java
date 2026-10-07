@@ -9,7 +9,7 @@ import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
 
 /**
  * The figures a machine that crafts starts from before the server config says otherwise: an Assembler's
- * tier, or the Chemical Plant. The config has a section for each, named for its block. Pure: no Minecraft
+ * tier. The config has a section for each, named for its block. Pure: no Minecraft
  * types.
  */
 public interface MachineDefaults {

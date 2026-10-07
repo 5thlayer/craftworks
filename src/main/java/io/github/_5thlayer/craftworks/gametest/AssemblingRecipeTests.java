@@ -155,15 +155,15 @@ final class AssemblingRecipeTests {
         io.github._5thlayer.craftworks.recipe.AssemblingRecipe unpinned = null;
         for (var holder : byType) {
             String id = holder.id().identifier().toString();
-            if (id.equals("craftworks:gametest/plant_pinned")) pinned = holder.value();
-            if (id.equals("craftworks:gametest/plant_one_result")) unpinned = holder.value();
+            if (id.equals("craftworks:gametest/assembler_pinned")) pinned = holder.value();
+            if (id.equals("craftworks:gametest/assembler_one_result")) unpinned = holder.value();
         }
         if (pinned == null || unpinned == null) {
-            helper.fail("the recipe manager holds neither or only one of the pinned and unpinned plant recipes");
+            helper.fail("the recipe manager holds neither or only one of the pinned and unpinned assembler recipes");
             return;
         }
         if (!pinned.pinnedFluidResults() || unpinned.pinnedFluidResults()) {
-            helper.fail("pinned_fluid_results reads wrong: plant_pinned " + pinned.pinnedFluidResults() + ", plant_one_result "
+            helper.fail("pinned_fluid_results reads wrong: assembler_pinned " + pinned.pinnedFluidResults() + ", assembler_one_result "
                     + unpinned.pinnedFluidResults() + "; true, and false where the file leaves it out");
             return;
         }

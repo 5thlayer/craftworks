@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
-import io.github._5thlayer.craftworks.machine.FluidMachine;
 import io.github._5thlayer.craftworks.machine.MachineDefaults;
 import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
 import net.minecraft.resources.Identifier;
@@ -45,7 +44,7 @@ public final class CraftworksConfig {
             ModConfigSpec.IntValue buffer, ModConfigSpec.ConfigValue<List<? extends String>> categories) {
     }
 
-    /** The figures of each machine that crafts, in the config's section for its block: the Assemblers' tiers, then every fluid machine. */
+    /** The figures of each Assembler tier, in the config's section for its block. */
     private static final Map<MachineDefaults, MachineSettings> MACHINES = new LinkedHashMap<>();
 
     static {
@@ -74,9 +73,7 @@ public final class CraftworksConfig {
                         value -> value instanceof String entry && (entry.contains(":")
                                 ? Identifier.tryParse(entry) != null
                                 : Identifier.isValidNamespace(entry)));
-        List<MachineDefaults> machines = new ArrayList<>(List.of(AssemblerTier.values()));
-        FluidMachine.ALL.forEach(machine -> machines.add(machine.defaults()));
-        for (MachineDefaults machine : machines) {
+        for (AssemblerTier machine : AssemblerTier.values()) {
             builder.comment("The " + machine.blockName() + " block.").push(machine.blockName());
             ModConfigSpec.DoubleValue speed = builder
                     .comment("Crafting speed: a craft takes the recipe's time divided by this, in ticks.")
@@ -89,7 +86,7 @@ public final class CraftworksConfig {
                     .comment("FE the energy buffer holds.")
                     .defineInRange("buffer", machine.defaultBuffer(), 1, Integer.MAX_VALUE);
             var categories = builder
-                    .comment("The categories of Assembling recipe this machine can hold, by Factorio's names: "
+                    .comment("The categories of Assembling recipe this machine can hold: "
                             + AssemblingCategory.ids() + ".",
                             "Fill Recipe refuses a recipe whose category is not listed.")
                     .defineListAllowEmpty("categories",

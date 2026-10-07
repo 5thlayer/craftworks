@@ -1,6 +1,6 @@
 {
   "type": "craftworks:assembling",
-  "category": "chemistry",
+  "category": "crafting-with-fluid",
   "ingredients": [
     { "ingredient": "minecraft:iron_ingot", "count": 1 }
   ],

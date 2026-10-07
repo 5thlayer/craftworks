@@ -1,9 +1,0 @@
-{
-  "multipart": [
-    {
-      "apply": {
-        "model": "craftworks:block/chemical_plant_part"
-      }
-    }
-  ]
-}

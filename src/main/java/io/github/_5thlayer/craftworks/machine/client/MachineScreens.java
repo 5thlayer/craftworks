@@ -17,7 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.fluids.FluidStack;
 
 /**
- * What the screens of the machines that craft draw alike, an Assembler's and a Chemical Plant's: the grey panel's
+ * What the screens of the machines that craft draw, an Assembler's: the grey panel's
  * bevelled slots, the energy bar, a fluid gauge and its tooltip, and an empty slot's ghost. A stand-in drawn
  * from fills (real art is 5thlayer/craftworks#22).
  */

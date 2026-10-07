@@ -16,7 +16,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * The screen of a machine that makes its Held recipe, an Assembler's or the Chemical Plant's: the Held recipe at
+ * The screen of a machine that makes its Held recipe, an Assembler's: the Held recipe at
  * its head as its product's icon and name, the machine's slots and how far the craft is. A machine adds its
  * energy bar and fluid gauges below. A stand-in drawn from fills (real art is 5thlayer/craftworks#22).
  *
