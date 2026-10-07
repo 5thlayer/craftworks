@@ -72,8 +72,9 @@ machines it replaced)
 
 **Fluid Connection**:
 A face of an **Assembler** where fluid reaches it, with no direction of its own: its role comes from the **Held
-recipe**, not from a fixed input or output. An Assembler of any tier has six, all three bottom-layer blocks
-along the edge it faces and along the opposite one, turning with it. They exist only while its Held recipe names
+recipe**, not from a fixed input or output. An Assembler of any tier has six on the bottom layer, spaced so no
+two of their pipes touch: the two ends of the edge it faces, the two ends of the opposite one and the centre of each
+side, turning with it. They exist only while its Held recipe names
 a fluid in or out; each then pulls the fluid ingredients into their input boxes and pushes the fluid results out of
 the output boxes, and any connection serves any box. A recipe of several fluids needs a connection for each, as
 a pipe network carries one fluid. Pipeworks' pipes are passive (Pipeworks ADR-0110), so they never push into one,

@@ -13,8 +13,8 @@ own (ADR-0014).
 **Decision.** The Chemical Plant, the Oil Refinery and their categories, `chemistry` and `oil-processing`, are
 removed (#40). An Assembler of tier 2 or 3 makes every **Assembling recipe**, whether it makes items, fluids or
 both, with two input and three output fluid boxes bound by order and sized by ADR-0017's rules, on six
-**Fluid Connections**: all three bottom-layer blocks along the edge it faces and along the opposite one, the two
-edge centres it had and the four corners the plant had. Connections stay direction-free and pipes stay passive
+**Fluid Connections**, spaced so no two of their pipes touch (#45): the two ends of the bottom-layer edge it faces,
+the two ends of the opposite edge, and the centre of each side. Connections stay direction-free and pipes stay passive
 (ADR-0014): while the **Held recipe** names a fluid, in or out, each connection pulls the ingredients into their
 input boxes and pushes the results out of the output boxes, any connection serving any box, and an input box can
 only be filled and an output box only drained (ADR-0015's rule, now the Assembler's). A craft waits while an
@@ -33,8 +33,17 @@ fluid in or out. A recipe that names a removed category fails to load, with an e
 
 **Considered: fewer connections.** The Assembler's two would not do, and neither would four. Connections have no
 direction and each pipe network carries one fluid, so a recipe with *k* different fluids needs *k* separate
-connections, and a recipe of five, a two-in, three-out oil split, needs five. Six covers it and leaves a spare, and
-the sites are symmetric under a half turn, so two blockstate rotations still cover the four facings.
+connections, and a recipe of five, a two-in, three-out oil split, needs five. The first six sites were all three
+blocks along the edge it faces and along the opposite one, and their pipes touched side by side: at most four of the
+six carried separate networks, so "leaves a spare" counted connections, not networks (#45). Six spaced apart give six
+networks: the ends of the front and back edges and the centre of each side, so a recipe of five fluids needs no closing
+item on a pipe side. The sites are symmetric under a half turn (front ends and back ends swap, as do the two side
+centres), so two blockstate rotations still cover the four facings.
+
+**Considered: five connections**, dropping the front so the side a player stands at stays clear. Fewer places to lay a
+pipe, and it broke the half-turn symmetry, which a fourth rotation would have paid for. **Considered: keeping the touching
+six** and closing a pipe side between neighbours, which leaves the pack, and Pipeworks (5thlayer/pipeworks#15), to
+provide the closing item.
 
 **Considered: aliasing the removed categories** to `crafting-with-fluid`. A recipe that says `chemistry` would then
 load silently into a different category and, with the plant's boxes gone, with different sizing: a pack author
