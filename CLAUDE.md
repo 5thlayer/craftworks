@@ -6,7 +6,9 @@ A player-held crafting planner, the Personal Assembler. See `GLOSSARY.md` for th
 
 Commit on the current branch; open a feature branch only when the user asks for one.
 
-Anything that changes the mod's behaviour gets a `/code-review`. Doc and plumbing changes skip it: that
+Anything that changes the mod's behaviour gets a review by the `code-review` skill in `.claude/skills/` (mattpocock-skills:
+a Standards and a Spec review, side by side), and by no other code review, Claude Code's built-in `/code-review`
+included. Doc and plumbing changes skip it: that
 covers `CLAUDE.md`, `GLOSSARY.md`, ADRs, `docs/`, `.claude/` (skills, settings), submodule bumps, and
 tooling or CI config.
 
