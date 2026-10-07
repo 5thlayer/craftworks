@@ -7,7 +7,7 @@ status: accepted
 > **Imported from PlanetaryFactory ADR-0052**, unchanged apart from renumbering. Craftworks began as
 > PlanetaryFactory's `core/assembler/`. Issue numbers (`#n`) and ADRs cited as PlanetaryFactory
 > refer to adamico/planetary-factory. [ADR-0006](0006-craftworks-is-its-own-mod.md) records where
-> Craftworks departs from this decision; the glossary in `CONTEXT.md` has the current terms.
+> Craftworks departs from this decision; the glossary in `GLOSSARY.md` has the current terms.
 
 ADR-0001 built the Personal Assembler's queue, resolver and codecs around an item named by its
 registry id as a bare string. That is the decision that keeps the queue's rules — reservations,

@@ -1,13 +1,13 @@
 # Craftworks
 
-A player-held crafting planner, the Personal Assembler. See `CONTEXT.md` for the domain glossary.
+A player-held crafting planner, the Personal Assembler. See `GLOSSARY.md` for the domain glossary.
 
 ## Workflow
 
 Commit on the current branch; open a feature branch only when the user asks for one.
 
 Anything that changes the mod's behaviour gets a `/code-review`. Doc and plumbing changes skip it: that
-covers `CLAUDE.md`, `CONTEXT.md`, ADRs, `docs/`, `.claude/` (skills, settings), submodule bumps, and
+covers `CLAUDE.md`, `GLOSSARY.md`, ADRs, `docs/`, `.claude/` (skills, settings), submodule bumps, and
 tooling or CI config.
 
 ## Releases
@@ -34,4 +34,4 @@ The five default labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready
 
 ### Domain docs
 
-Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+Single-context: `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.

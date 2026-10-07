@@ -8,7 +8,7 @@ supersedes: [287]
 > **Imported from PlanetaryFactory ADR-0065**, unchanged apart from renumbering. Craftworks began as
 > PlanetaryFactory's `core/assembler/`. Issue numbers (`#n`) and ADRs cited as PlanetaryFactory
 > refer to adamico/planetary-factory. [ADR-0006](0006-craftworks-is-its-own-mod.md) records where
-> Craftworks departs from this decision; the glossary in `CONTEXT.md` has the current terms.
+> Craftworks departs from this decision; the glossary in `GLOSSARY.md` has the current terms.
 
 ADR-0003 made **Fill Recipe** open the Crafting Plan with the cursor on **+1**, so one craft still
 took two clicks. Factorio crafts straight from the recipe, with a click and a modifier (#288).

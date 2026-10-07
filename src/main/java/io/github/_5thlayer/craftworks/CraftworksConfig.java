@@ -20,7 +20,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public final class CraftworksConfig {
 
     /**
-     * What can lock a recipe for a player, besides any registered hook (CONTEXT.md, Lock source).
+     * What can lock a recipe for a player, besides any registered hook (GLOSSARY.md, Lock source).
      * Named as a pack author writes them in the TOML.
      */
     public enum LockSource {

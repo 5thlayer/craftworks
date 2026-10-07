@@ -8,7 +8,7 @@ supersedes: [95, 160]
 > **Imported from PlanetaryFactory ADR-0066**, unchanged apart from renumbering. Craftworks began as
 > PlanetaryFactory's `core/assembler/`. Issue numbers (`#n`) and ADRs cited as PlanetaryFactory
 > refer to adamico/planetary-factory. [ADR-0006](0006-craftworks-is-its-own-mod.md) records where
-> Craftworks departs from this decision; the glossary in `CONTEXT.md` has the current terms.
+> Craftworks departs from this decision; the glossary in `GLOSSARY.md` has the current terms.
 
 ADR-0001 and #95 made the Personal Assembler a panel opened from the inventory screen, and #160 built
 it: a menu of its own whose only jobs were to list the queue, carry a cancel button per row, and be a

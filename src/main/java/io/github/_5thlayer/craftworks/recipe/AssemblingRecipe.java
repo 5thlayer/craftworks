@@ -31,7 +31,7 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 
 /**
  * An Assembling recipe as the recipe manager holds it: the {@code craftworks:assembling} type, the only
- * kind the Personal Assembler plans with (CONTEXT.md).
+ * kind the Personal Assembler plans with (GLOSSARY.md).
  *
  * <p>{@code time} is ticks per craft and defaults to 10; {@code priority} is the recipe's Route priority
  * and defaults to 0. A pack changes either by overriding the recipe.
@@ -44,11 +44,11 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
  * <p>{@code category} names the recipe's kind, one of {@link AssemblingCategory}'s five, and decides which
  * Assemblers may hold it; omitted, it is {@code crafting}. {@code results} is a list of item stacks, empty only when
  * {@code fluid_results} is not. The first goes to an Assembler's product slot and the rest to its remainder
- * slot; the Personal Assembler plans only a recipe with exactly one (CONTEXT.md, Hand-craftable).
+ * slot; the Personal Assembler plans only a recipe with exactly one (GLOSSARY.md, Hand-craftable).
  *
  * <p>{@code pinned_fluid_results} is false when omitted. A machine gives the first fluid result the boxes the
  * recipe leaves unused unless the recipe is Pinned, which keeps each fluid result to its own output box
- * (CONTEXT.md, Pinned).
+ * (GLOSSARY.md, Pinned).
  *
  * <p>A result is a template, not a stack: {@code ItemStack.CODEC} refuses an item whose components
  * are not bound yet, which they are not during the datapack load that reads recipes.
