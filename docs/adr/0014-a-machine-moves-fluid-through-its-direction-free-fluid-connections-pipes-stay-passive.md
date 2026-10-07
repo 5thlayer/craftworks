@@ -45,4 +45,4 @@ Assembler of tier 2 or 3 has two input and three output boxes on six connections
 connections stay direction-free and the pipes passive.
 
 Tier 1 has the same fluid layout and connections, and a Fast Replace to it keeps the boxes, as ADR-0019 (#41)
-decides: tier 1 no longer has none and refuses a fluid recipe.
+decides: tier 1 no longer lacks them, nor refuses a fluid recipe.

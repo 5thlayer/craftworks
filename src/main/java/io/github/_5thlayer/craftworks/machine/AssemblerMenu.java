@@ -31,7 +31,7 @@ public final class AssemblerMenu extends HeldMachineMenu<AssemblerBlockEntity> {
 
     public static final int REMAINDERS_X = PRODUCT_X + 18;
     /** Where the player's inventory starts: the gauges and the energy bar take a row each between the slots and it. */
-    public static final int INVENTORY_Y_WITH_FLUIDS = 96;
+    public static final int INVENTORY_Y = 96;
 
     /** Client side: the slots stand over a stub the menu's own sync fills. */
     public AssemblerMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buffer) {
@@ -42,12 +42,12 @@ public final class AssemblerMenu extends HeldMachineMenu<AssemblerBlockEntity> {
     private AssemblerMenu(int containerId, Inventory playerInventory, @Nullable AssemblerBlockEntity machine, BlockPos pos,
             ItemStacksResourceHandler inventory, ContainerData data) {
         super(Assemblers.MENU.get(), containerId, playerInventory, machine, pos, AssemblerSlots.LAYOUT, inventory, data,
-                INVENTORY_Y_WITH_FLUIDS);
+                INVENTORY_Y);
     }
 
     /** Where the player's inventory starts: lower for the gauges, and the screen is that much taller. */
     public int inventoryY() {
-        return INVENTORY_Y_WITH_FLUIDS;
+        return INVENTORY_Y;
     }
 
     /** Server side, over the machine's own inventory. */

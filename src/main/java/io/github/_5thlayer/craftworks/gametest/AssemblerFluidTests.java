@@ -136,9 +136,8 @@ final class AssemblerFluidTests {
         tests.test("an_assemblers_input_box_holds_4_crafts_of_its_ingredient_and_an_output_box_the_larger_of_100_mb_and_3_crafts_of_its_result", 20, AssemblerFluidTests::boxSizes);
         tests.test("a_recipe_with_one_fluid_result_on_a_three_output_assembler_gets_the_merged_boxes_and_pinned_it_does_not", 20, AssemblerFluidTests::mergedAndPinnedBoxes);
         tests.test("an_output_box_holds_3_crafts_worth_pinned_and_the_craft_stalls_past_it", 20, AssemblerFluidTests::outputBoxHoldsCraftsAndStalls);
-        tests.test("fill_recipe_on_tier_2_refuses_more_than_two_fluid_ingredients_three_fluid_results_and_more_than_1000_mb", 20, AssemblerFluidTests::refusals);
+        tests.test("fill_recipe_on_every_tier_refuses_more_than_two_fluid_ingredients_three_fluid_results_and_more_than_1000_mb", 20, AssemblerFluidTests::refusals);
         tests.test("a_recipe_with_a_fluid_result_is_held_by_every_tier", 20, AssemblerFluidTests::fluidResultsAreHeld);
-        tests.test("tier_1_holds_recipes_that_name_fluids_and_refuses_what_no_tier_has_the_boxes_for", 20, AssemblerFluidTests::tier1Holds);
         tests.test("a_tier_1_assembler_pulls_a_recipes_fluid_crafts_it_and_pushes_its_fluid_results", 40, AssemblerFluidTests::tier1Crafts);
         tests.test("a_fast_replace_between_any_two_tiers_keeps_the_boxes_the_held_recipe_and_the_connections", 20, AssemblerFluidTests::fastReplace);
         tests.test("breaking_an_assembler_voids_its_boxes", 20, AssemblerFluidTests::breaking);
@@ -997,25 +996,26 @@ final class AssemblerFluidTests {
 
     // -- Fill Recipe ----------------------------------------------------------------------------
 
+    /** Under the default categories, all three on every tier: what a tier refuses is what no tier has the boxes for. */
     private static void refusals(GameTestHelper helper) {
-        Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
-        HoldVerdict three = AssemblerMachineTests.request(assembler, THREE_FLUIDS);
-        HoldVerdict four = AssemblerMachineTests.request(assembler, FOUR_RESULTS);
-        HoldVerdict big = AssemblerMachineTests.request(assembler, BIG_FLUID);
-        helper.assertTrue(three == HoldVerdict.TOO_MANY_FLUIDS, "three fluid ingredients was " + three);
-        helper.assertTrue(four == HoldVerdict.TOO_MANY_FLUIDS, "four fluid results was " + four);
-        helper.assertTrue(big == HoldVerdict.FLUID_TOO_LARGE, "1,001 mB a craft was " + big);
-        helper.assertTrue(assembler.machine().heldRecipe().isEmpty(), "a refused recipe was held");
-        helper.assertTrue(assembler.player().heard.containsAll(List.of("craftworks.assembler.refused.too_many_fluids",
-                "craftworks.assembler.refused.fluid_too_large")), "the player was told " + assembler.player().heard);
-        // Two fluid ingredients, three fluid results and exactly the box's size are taken, whatever the category.
-        helper.assertTrue(AssemblerMachineTests.request(assembler, TWO_FLUIDS) == HoldVerdict.HELD, "two fluid ingredients were refused");
-        helper.assertTrue(AssemblerMachineTests.request(assembler, THREE_OUTPUTS) == HoldVerdict.HELD, "two fluids in and three out were refused");
-        helper.assertTrue(AssemblerMachineTests.request(assembler, FULL_BOXES) == HoldVerdict.HELD, "1,000 mB of two fluids in and out was refused");
-        helper.assertTrue(AssemblerMachineTests.request(assembler, WATER_CRAFT) == HoldVerdict.HELD, "one fluid ingredient was refused");
-        helper.assertTrue(AssemblerMachineTests.request(assembler, FULL_BOX) == HoldVerdict.HELD, "1,000 mB a craft was refused");
-        helper.assertTrue(AssemblerMachineTests.request(assembler, CRAFTING_FLUID) == HoldVerdict.HELD,
-                "a fluid ingredient in the crafting category was refused on tier 2");
+        for (AssemblerTier tier : AssemblerTier.values()) {
+            Placed assembler = AssemblerMachineTests.place(helper, tier);
+            HoldVerdict three = AssemblerMachineTests.request(assembler, THREE_FLUIDS);
+            HoldVerdict four = AssemblerMachineTests.request(assembler, FOUR_RESULTS);
+            HoldVerdict big = AssemblerMachineTests.request(assembler, BIG_FLUID);
+            helper.assertTrue(three == HoldVerdict.TOO_MANY_FLUIDS, tier + ": three fluid ingredients was " + three);
+            helper.assertTrue(four == HoldVerdict.TOO_MANY_FLUIDS, tier + ": four fluid results was " + four);
+            helper.assertTrue(big == HoldVerdict.FLUID_TOO_LARGE, tier + ": 1,001 mB a craft was " + big);
+            helper.assertTrue(assembler.machine().heldRecipe().isEmpty(), tier + ": a refused recipe was held");
+            helper.assertTrue(assembler.player().heard.containsAll(List.of("craftworks.assembler.refused.too_many_fluids",
+                    "craftworks.assembler.refused.fluid_too_large")), tier + ": the player was told " + assembler.player().heard);
+            // Two fluid ingredients, three fluid results and exactly the box's size are taken, whatever the category.
+            for (Identifier recipe : List.of(TWO_FLUIDS, THREE_OUTPUTS, FULL_BOXES, FULL, WATER_CRAFT, FULL_BOX, CRAFTING_FLUID)) {
+                HoldVerdict verdict = AssemblerMachineTests.request(assembler, recipe);
+                helper.assertTrue(verdict == HoldVerdict.HELD, tier + " answered " + recipe + " with " + verdict);
+            }
+            helper.destroyBlock(ORIGIN);
+        }
         helper.succeed();
     }
 
@@ -1029,22 +1029,6 @@ final class AssemblerFluidTests {
             }
             helper.destroyBlock(ORIGIN);
         }
-        helper.succeed();
-    }
-
-    /** Under the default categories, which are all three on every tier: a fluid in or out is no reason to refuse. */
-    private static void tier1Holds(GameTestHelper helper) {
-        Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
-        for (Identifier recipe : List.of(CRAFTING_FLUID, WATER_CRAFT, FLUID_RESULT, TWO_OUTPUTS, THREE_OUTPUTS, FULL)) {
-            HoldVerdict verdict = AssemblerMachineTests.request(assembler, recipe);
-            helper.assertTrue(verdict == HoldVerdict.HELD, "tier 1 answered " + recipe + " with " + verdict);
-            helper.assertTrue(assembler.machine().heldRecipe().equals(Optional.of(recipe)), "tier 1 did not hold " + recipe);
-        }
-        // What it still refuses is what no tier has the boxes for.
-        helper.assertTrue(AssemblerMachineTests.request(assembler, THREE_FLUIDS) == HoldVerdict.TOO_MANY_FLUIDS, "tier 1 took three fluid ingredients");
-        helper.assertTrue(AssemblerMachineTests.request(assembler, BIG_FLUID) == HoldVerdict.FLUID_TOO_LARGE, "tier 1 took 1,001 mB a craft");
-        helper.assertTrue(assembler.player().heard.containsAll(List.of("craftworks.assembler.refused.too_many_fluids",
-                "craftworks.assembler.refused.fluid_too_large")), "the player was told " + assembler.player().heard);
         helper.succeed();
     }
 
@@ -1152,14 +1136,14 @@ final class AssemblerFluidTests {
                 "the menu shows capacities " + menu.fluidCapacity(0) + ", " + menu.fluidCapacity(1) + ", " + menu.fluidCapacity(2) + ", "
                         + menu.fluidCapacity(3) + " and " + menu.fluidCapacity(4));
         // The screen is a row taller: the player's inventory stands 12 lower.
-        helper.assertTrue(menu.inventoryY() == AssemblerMenu.INVENTORY_Y_WITH_FLUIDS && menu.slots.get(AssemblerSlots.SIZE).y == 96,
+        helper.assertTrue(menu.inventoryY() == AssemblerMenu.INVENTORY_Y && menu.slots.get(AssemblerSlots.SIZE).y == 96,
                 tier + "'s inventory stands at " + menu.slots.get(AssemblerSlots.SIZE).y + ", not 96");
 
         // The client's menu, opened from the buffer the block writes, is the same on every tier.
         RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
         buffer.writeBlockPos(helper.absolutePos(ORIGIN));
         AssemblerMenu client = new AssemblerMenu(2, assembler.player().getInventory(), buffer);
-        helper.assertTrue(client.inventoryY() == AssemblerMenu.INVENTORY_Y_WITH_FLUIDS && client.slots.get(AssemblerSlots.SIZE).y == 96,
+        helper.assertTrue(client.inventoryY() == AssemblerMenu.INVENTORY_Y && client.slots.get(AssemblerSlots.SIZE).y == 96,
                 "the client's menu of a " + tier + " Assembler stands its inventory at " + client.slots.get(AssemblerSlots.SIZE).y);
     }
 

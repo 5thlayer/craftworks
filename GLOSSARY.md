@@ -65,8 +65,8 @@ _Avoid_: plannable, machine-only
 **Assembler**:
 A placed machine, in tiers 1 to 3, that makes its **Held recipe** over and over from the items and power
 it is given, whether the recipe makes items, fluids or both. Every tier also holds fluid: two input fluid
-boxes and three output fluid boxes, bound to the recipe's fluids by order. The tiers differ in speed, power and
-buffer only. Never the **Personal Assembler**, which always takes its full name.
+boxes and three output fluid boxes, bound to the recipe's fluids by order. The tiers differ in speed, power,
+buffer and art only. Never the **Personal Assembler**, which always takes its full name.
 _Avoid_: assembling machine, crafter, auto crafter, machine (alone), Chemical Plant, Oil Refinery (the two
 machines it replaced)
 
@@ -88,7 +88,7 @@ _Avoid_: fixed, locked (a **Locked** recipe is another thing)
 **Category**:
 The kind an Assembling recipe is, one of three names and no other: `crafting` (the default),
 `advanced-crafting` and `crafting-with-fluid`, the last for any recipe with a fluid in or out. Each tier of
-Assembler holds all three by default and the categories its server config lists, and Fill Recipe refuses a
+Assembler holds the categories its server config lists, all three by default, and Fill Recipe refuses a
 recipe outside them. The Personal Assembler ignores it: it is no machine, and plans through any Hand-craftable
 recipe whatever its category.
 _Avoid_: type (the recipe's `type` is its Minecraft recipe type), tag
