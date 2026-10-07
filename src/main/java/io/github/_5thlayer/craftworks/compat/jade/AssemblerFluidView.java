@@ -19,10 +19,10 @@ import snownee.jade.api.view.IServerExtensionProvider;
 import snownee.jade.api.view.ViewGroup;
 
 /**
- * A tier 2 or 3 Assembler's boxes in Jade, as Jade draws any tank: a bar of each box's fluid out of its volume,
+ * An Assembler's boxes in Jade, as Jade draws any tank: a bar of each box's fluid out of its volume,
  * empty while it holds none (#25, #40). The boxes the Held recipe binds a fluid to and any that holds some, inputs
  * then outputs. Its own provider, since the boxes' capability is on the Fluid Connections and not on the
- * Origin block entity Jade looks at. Tier 1 has no boxes, so no bars.
+ * Origin block entity Jade looks at.
  */
 final class AssemblerFluidView implements IServerExtensionProvider<FluidView.Data>, IClientExtensionProvider<FluidView.Data, FluidView> {
 

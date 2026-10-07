@@ -18,8 +18,6 @@ public enum HoldVerdict {
     NOT_ASSEMBLING("not_assembling"),
     /** The recipe's category is not one this tier holds, by the server config. */
     WRONG_CATEGORY("wrong_category"),
-    /** The recipe names a fluid, in or out, and the machine has no fluid boxes: Assembler 1's. */
-    HAS_FLUID("has_fluid"),
     /** The recipe has more fluid ingredients or results than the machine has input or output boxes. */
     TOO_MANY_FLUIDS("too_many_fluids"),
     /** The recipe needs more of a fluid a craft than an input box holds. */
@@ -42,53 +40,47 @@ public enum HoldVerdict {
      * passes, and {@link #locked} is the Lock source's answer. Read with a name, never by position:
      * {@code Checks.passing().fitsSlots(false)} is a recipe that fails only that.
      */
-    public record Checks(boolean resolves, boolean categoryHeld, boolean takesFluids, boolean fluidsHaveBoxes,
-            boolean fluidVolumeFits, boolean fitsSlots, boolean remaindersFit, boolean locked) {
+    public record Checks(boolean resolves, boolean categoryHeld, boolean fluidsHaveBoxes, boolean fluidVolumeFits,
+            boolean fitsSlots, boolean remaindersFit, boolean locked) {
 
-        /** A recipe that resolves, is in a category the tier holds, takes its fluids and fits, and is not Locked. */
+        /** A recipe that resolves, is in a category the tier holds, fits its fluids and the slots, and is not Locked. */
         public static Checks passing() {
-            return new Checks(true, true, true, true, true, true, true, false);
+            return new Checks(true, true, true, true, true, true, false);
         }
 
         public Checks resolves(boolean resolves) {
-            return new Checks(resolves, categoryHeld, takesFluids, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
+            return new Checks(resolves, categoryHeld, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
                     remaindersFit, locked);
         }
 
         public Checks categoryHeld(boolean categoryHeld) {
-            return new Checks(resolves, categoryHeld, takesFluids, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
-                    remaindersFit, locked);
-        }
-
-        /** Whether the tier takes the recipe's fluids at all: it names none, or the tier has fluid boxes. */
-        public Checks takesFluids(boolean takesFluids) {
-            return new Checks(resolves, categoryHeld, takesFluids, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
+            return new Checks(resolves, categoryHeld, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
                     remaindersFit, locked);
         }
 
         /** Whether the machine has a box for each of the recipe's fluid ingredients and each of its fluid results. */
         public Checks fluidsHaveBoxes(boolean fluidsHaveBoxes) {
-            return new Checks(resolves, categoryHeld, takesFluids, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
+            return new Checks(resolves, categoryHeld, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
                     remaindersFit, locked);
         }
 
         public Checks fluidVolumeFits(boolean fluidVolumeFits) {
-            return new Checks(resolves, categoryHeld, takesFluids, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
+            return new Checks(resolves, categoryHeld, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
                     remaindersFit, locked);
         }
 
         public Checks fitsSlots(boolean fitsSlots) {
-            return new Checks(resolves, categoryHeld, takesFluids, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
+            return new Checks(resolves, categoryHeld, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
                     remaindersFit, locked);
         }
 
         public Checks remaindersFit(boolean remaindersFit) {
-            return new Checks(resolves, categoryHeld, takesFluids, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
+            return new Checks(resolves, categoryHeld, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
                     remaindersFit, locked);
         }
 
         public Checks locked(boolean locked) {
-            return new Checks(resolves, categoryHeld, takesFluids, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
+            return new Checks(resolves, categoryHeld, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
                     remaindersFit, locked);
         }
     }
@@ -100,9 +92,6 @@ public enum HoldVerdict {
         }
         if (!checks.categoryHeld()) {
             return WRONG_CATEGORY;
-        }
-        if (!checks.takesFluids()) {
-            return HAS_FLUID;
         }
         if (!checks.fluidsHaveBoxes()) {
             return TOO_MANY_FLUIDS;

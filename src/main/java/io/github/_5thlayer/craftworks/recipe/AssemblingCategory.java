@@ -12,8 +12,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 
 /**
- * An Assembling recipe's category (GLOSSARY.md): the kinds of recipe the Assembler tiers are split by, which
- * decide the tiers that may hold it. Written in recipes and in the server config by its {@link #id}.
+ * An Assembling recipe's category (GLOSSARY.md): the kinds of recipe a server config may split the Assembler tiers
+ * by, which decide the tiers that may hold it. Written in recipes and in the server config by its {@link #id}.
  *
  * <p>No Minecraft game types, only DFU's codec, so a tier's defaults are unit-tested. The constants' order
  * is sent over the network, by {@link AssemblingRecipe}'s stream codec: new ones go at the end, none are

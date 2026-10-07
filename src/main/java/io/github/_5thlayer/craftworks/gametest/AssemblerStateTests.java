@@ -9,6 +9,7 @@ import io.github._5thlayer.craftworks.machine.AssemblerSlots;
 import io.github._5thlayer.craftworks.machine.MachineState;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.HeldRecipes;
+import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
 import java.util.List;
 
 import net.minecraft.core.Direction;
@@ -27,7 +28,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
 final class AssemblerStateTests {
 
     private static final Identifier CAKE = Identifier.parse("minecraft:cake");
-    private static final Identifier FLUID_RECIPE = Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "gametest/fluid_recipe");
+    private static final Identifier CATEGORY_FLUID = Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "gametest/category_fluid");
     private static final Identifier NOT_A_RECIPE = Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "gametest/not_a_recipe");
 
     private AssemblerStateTests() {
@@ -111,10 +112,12 @@ final class AssemblerStateTests {
     private static void cantRun(GameTestHelper helper) {
         AssemblerMachineTests.Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
         power(assembler);
-        // Not through Fill Recipe, which refuses both: a pack's reload or a changed recipe leaves them held. A fluid
-        // recipe is one tier 1 can't run; tiers 2 and 3 run any.
-        assembler.machine().setHeldRecipe(FLUID_RECIPE, assembler.player());
-        expect(helper, assembler, MachineState.CANT_RUN, false);
+        // Not through Fill Recipe, which refuses both: a pack's reload or a changed recipe leaves them held. A recipe
+        // in a category the tier's config no longer lists is one it can't run.
+        AssemblerMachineTests.withCategories(AssemblerTier.ONE, List.of(AssemblingCategory.CRAFTING), () -> {
+            assembler.machine().setHeldRecipe(CATEGORY_FLUID, assembler.player());
+            expect(helper, assembler, MachineState.CANT_RUN, false);
+        });
         assembler.machine().setHeldRecipe(NOT_A_RECIPE, assembler.player());
         expect(helper, assembler, MachineState.CANT_RUN, false);
         helper.succeed();

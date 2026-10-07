@@ -62,7 +62,7 @@ final class AssemblerFluidTests {
     /** Dirt and 250 mB of water make a clay ball; in {@code crafting-with-fluid}. */
     static final Identifier WATER_CRAFT = id("gametest/water_craft");
     private static final Identifier LAVA_CRAFT = id("gametest/lava_craft");
-    /** The same, in the default category, which tier 1 holds. */
+    /** The same, in the default category. */
     private static final Identifier CRAFTING_FLUID = id("gametest/crafting_fluid");
     private static final Identifier TWO_FLUIDS = id("gametest/two_fluids");
     private static final Identifier BIG_FLUID = id("gametest/big_fluid");
@@ -119,7 +119,7 @@ final class AssemblerFluidTests {
                     helper -> anyConnectionDoes(helper, facing));
         }
         tests.test("a_neighbour_that_no_connection_of_an_assembler_faces_is_neither_pulled_from_nor_pushed_to", 20, AssemblerFluidTests::onlyConnectionsAreUsed);
-        tests.test("tier_1_has_no_fluid_capability", 20, AssemblerFluidTests::tier1HasNone);
+        tests.test("tier_1_has_the_six_fluid_connections_while_it_holds_a_fluid_recipe", 20, AssemblerFluidTests::tier1HasTheConnections);
         tests.test("the_connections_come_and_go_with_a_fluid_in_or_out_of_the_held_recipe", 20, AssemblerFluidTests::connectionsComeAndGo);
         tests.test("a_pipe_that_asked_before_the_recipe_is_told_when_the_connection_appears", 20, AssemblerFluidTests::cachesAreTold);
         tests.test("an_assembler_crafts_two_fluids_and_an_item_into_an_item_and_a_fluid_fed_and_drained_through_its_fluid_connections", 40,
@@ -137,11 +137,12 @@ final class AssemblerFluidTests {
         tests.test("a_recipe_with_one_fluid_result_on_a_three_output_assembler_gets_the_merged_boxes_and_pinned_it_does_not", 20, AssemblerFluidTests::mergedAndPinnedBoxes);
         tests.test("an_output_box_holds_3_crafts_worth_pinned_and_the_craft_stalls_past_it", 20, AssemblerFluidTests::outputBoxHoldsCraftsAndStalls);
         tests.test("fill_recipe_on_tier_2_refuses_more_than_two_fluid_ingredients_three_fluid_results_and_more_than_1000_mb", 20, AssemblerFluidTests::refusals);
-        tests.test("a_recipe_with_a_fluid_result_is_held_by_tiers_2_and_3", 20, AssemblerFluidTests::fluidResultsAreHeld);
-        tests.test("tier_1_refuses_any_fluid_recipe", 20, AssemblerFluidTests::tier1Refuses);
-        tests.test("a_fast_replace_from_tier_2_to_3_keeps_the_boxes_and_one_to_tier_1_voids_them", 20, AssemblerFluidTests::fastReplace);
+        tests.test("a_recipe_with_a_fluid_result_is_held_by_every_tier", 20, AssemblerFluidTests::fluidResultsAreHeld);
+        tests.test("tier_1_holds_recipes_that_name_fluids_and_refuses_what_no_tier_has_the_boxes_for", 20, AssemblerFluidTests::tier1Holds);
+        tests.test("a_tier_1_assembler_pulls_a_recipes_fluid_crafts_it_and_pushes_its_fluid_results", 40, AssemblerFluidTests::tier1Crafts);
+        tests.test("a_fast_replace_between_any_two_tiers_keeps_the_boxes_the_held_recipe_and_the_connections", 20, AssemblerFluidTests::fastReplace);
         tests.test("breaking_an_assembler_voids_its_boxes", 20, AssemblerFluidTests::breaking);
-        tests.test("the_screen_of_tiers_2_and_3_has_a_gauge_over_each_synced_box_and_stands_lower", 20, AssemblerFluidTests::gauges);
+        tests.test("the_screen_of_every_tier_has_a_gauge_over_each_synced_box_and_stands_lower", 20, AssemblerFluidTests::gauges);
         tests.test("the_open_assemblers_boxes_cross_to_the_client", 20, AssemblerFluidTests::crossesToTheClient);
     }
 
@@ -563,20 +564,22 @@ final class AssemblerFluidTests {
         helper.succeed();
     }
 
-    private static void tier1HasNone(GameTestHelper helper) {
+    /** Tier 1's connections are the same six as any tier's, and come and go with a fluid in the Held recipe. */
+    private static void tier1HasTheConnections(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
+        helper.assertTrue(exposed(helper, assembler).isEmpty(), "tier 1 with no recipe answered a fluid lookup at " + exposed(helper, assembler));
         AssemblerMachineTests.hold(assembler, SAPLING);
-        helper.assertTrue(exposed(helper, assembler).isEmpty(), "tier 1 answered a fluid lookup at " + exposed(helper, assembler));
-        // Not through Fill Recipe, which refuses it: a swap or a reload can leave a fluid recipe held on tier 1.
+        helper.assertTrue(exposed(helper, assembler).isEmpty(), "tier 1 holding a recipe with no fluid answered a fluid lookup at " + exposed(helper, assembler));
+        helper.assertTrue(!connectionsShown(helper), "tier 1 shows connections with a recipe with no fluid");
+        Set<String> expected = connectionFaces(assembler.facing());
         for (Identifier recipe : List.of(WATER_CRAFT, FLUID_RESULT, TWO_OUTPUTS)) {
-            assembler.machine().setHeldRecipe(recipe, assembler.player());
-            helper.assertTrue(exposed(helper, assembler).isEmpty(),
-                    "tier 1 holding " + recipe + " answered a fluid lookup at " + exposed(helper, assembler));
+            AssemblerMachineTests.hold(assembler, recipe);
+            helper.assertTrue(exposed(helper, assembler).equals(expected),
+                    "tier 1 holding " + recipe + " answered a fluid lookup at " + exposed(helper, assembler) + ", not at " + expected);
+            helper.assertTrue(connectionsShown(helper), "tier 1 holding " + recipe + " shows no connections");
         }
-        TestTank.Entity water = tank(helper, beyond(assembler.facing()), Fluids.WATER, 5000);
-        tick(helper, assembler, 3);
-        helper.assertTrue(inTank(water) == 5000, "tier 1 pulled fluid");
-        helper.assertTrue(!connectionsShown(helper), "tier 1 shows connections");
+        AssemblerMachineTests.hold(assembler, SAPLING);
+        helper.assertTrue(exposed(helper, assembler).isEmpty() && !connectionsShown(helper), "tier 1 kept its connections after the recipe lost its fluid");
         helper.succeed();
     }
 
@@ -1017,7 +1020,7 @@ final class AssemblerFluidTests {
     }
 
     private static void fluidResultsAreHeld(GameTestHelper helper) {
-        for (AssemblerTier tier : List.of(AssemblerTier.TWO, AssemblerTier.THREE)) {
+        for (AssemblerTier tier : AssemblerTier.values()) {
             Placed assembler = AssemblerMachineTests.place(helper, tier);
             for (Identifier recipe : List.of(FLUID_RESULT, TWO_OUTPUTS)) {
                 HoldVerdict verdict = AssemblerMachineTests.request(assembler, recipe);
@@ -1029,17 +1032,44 @@ final class AssemblerFluidTests {
         helper.succeed();
     }
 
-    private static void tier1Refuses(GameTestHelper helper) {
+    /** Under the default categories, which are all three on every tier: a fluid in or out is no reason to refuse. */
+    private static void tier1Holds(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
-        HoldVerdict crafting = AssemblerMachineTests.request(assembler, CRAFTING_FLUID);
-        HoldVerdict category = AssemblerMachineTests.request(assembler, WATER_CRAFT);
-        HoldVerdict result = AssemblerMachineTests.request(assembler, FLUID_RESULT);
-        helper.assertTrue(crafting == HoldVerdict.HAS_FLUID, "tier 1 answered a fluid ingredient in a category it holds with " + crafting);
-        helper.assertTrue(category == HoldVerdict.WRONG_CATEGORY, "tier 1 answered a crafting-with-fluid recipe with " + category);
-        helper.assertTrue(result == HoldVerdict.HAS_FLUID, "tier 1 answered a fluid result in a category it holds with " + result);
-        helper.assertTrue(assembler.machine().heldRecipe().isEmpty(), "tier 1 held a fluid recipe");
-        helper.assertTrue(assembler.player().heard.contains("craftworks.assembler.refused.has_fluid"),
-                "the player was told " + assembler.player().heard);
+        for (Identifier recipe : List.of(CRAFTING_FLUID, WATER_CRAFT, FLUID_RESULT, TWO_OUTPUTS, THREE_OUTPUTS, FULL)) {
+            HoldVerdict verdict = AssemblerMachineTests.request(assembler, recipe);
+            helper.assertTrue(verdict == HoldVerdict.HELD, "tier 1 answered " + recipe + " with " + verdict);
+            helper.assertTrue(assembler.machine().heldRecipe().equals(Optional.of(recipe)), "tier 1 did not hold " + recipe);
+        }
+        // What it still refuses is what no tier has the boxes for.
+        helper.assertTrue(AssemblerMachineTests.request(assembler, THREE_FLUIDS) == HoldVerdict.TOO_MANY_FLUIDS, "tier 1 took three fluid ingredients");
+        helper.assertTrue(AssemblerMachineTests.request(assembler, BIG_FLUID) == HoldVerdict.FLUID_TOO_LARGE, "tier 1 took 1,001 mB a craft");
+        helper.assertTrue(assembler.player().heard.containsAll(List.of("craftworks.assembler.refused.too_many_fluids",
+                "craftworks.assembler.refused.fluid_too_large")), "the player was told " + assembler.player().heard);
+        helper.succeed();
+    }
+
+    /** Tier 1 at its own speed: water in through one connection, the gold ingot, and the nuggets and lava out. */
+    private static void tier1Crafts(GameTestHelper helper) {
+        Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
+        List<Connection> at = connections(assembler.facing());
+        TestTank.Entity water = source(helper, at.get(0), Fluids.WATER, 5000);
+        TestTank.Entity sink = drain(helper, at.get(1));
+        helper.assertTrue(AssemblerMachineTests.request(assembler, FLUID_RESULT) == HoldVerdict.HELD, "tier 1 did not hold a recipe with a fluid in and out");
+        helper.assertTrue(AssemblerMachineTests.insert(assembler, 0, Items.GOLD_INGOT, 1) == 1, "the gold did not go in");
+        SimpleEnergyHandler supply = AssemblerMachineTests.supply();
+        int ran = 0;
+        while (AssemblerMachineTests.count(assembler, AssemblerSlots.PRODUCT) == 0 && ran < 200) {
+            AssemblerMachineTests.feed(assembler, supply, 1000);
+            assembler.machine().serverTick(helper.getLevel());
+            ran++;
+        }
+        helper.assertTrue(ran == assembler.machine().craftDuration(), "it finished its craft after " + ran + " ticks, not " + assembler.machine().craftDuration());
+        helper.assertTrue(assembler.machine().inventory().getResource(AssemblerSlots.PRODUCT).getItem() == Items.GOLD_NUGGET
+                && AssemblerMachineTests.count(assembler, AssemblerSlots.PRODUCT) == 9, "the product slot did not hold 9 gold nuggets");
+        helper.assertTrue(amount(assembler, 0) == 750 && inTank(water) == 4000,
+                "the box holds " + amount(assembler, 0) + " mB and the tank " + inTank(water) + ", not 750 and 4000");
+        helper.assertTrue(drained(sink, Fluids.LAVA) == 50 && amount(assembler, 2) == 0,
+                "the drain took " + drained(sink, Fluids.LAVA) + " mB of lava, not 50, leaving " + amount(assembler, 2));
         helper.succeed();
     }
 
@@ -1063,17 +1093,20 @@ final class AssemblerFluidTests {
         helper.assertTrue(exposed(helper, new Placed(helper, assembler.player(), AssemblerTier.THREE, assembler.facing())).size() == 6,
                 "tier 3 did not keep its connections after the swap");
 
+        // Tier 1 has the same boxes: a swap to it keeps what they hold, the Held recipe and the connections.
         AssemblerMachineTests.swap(helper, assembler, AssemblerTier.ONE, ORIGIN);
         helper.assertTrue(machine.tier() == AssemblerTier.ONE, "the block entity did not follow to tier 1");
-        for (int box = 0; box < FluidLayout.ASSEMBLER.boxes(); box++) {
-            helper.assertTrue(amount(assembler, box) == 0, "a swap to tier 1 left " + amount(assembler, box) + " mB in box " + box);
-        }
+        helper.assertTrue(amount(assembler, 0) == 400 && box(assembler, 0).getFluid() == Fluids.WATER && amount(assembler, 1) == 100 && amount(assembler, 2) == 300,
+                "a swap from tier 3 to 1 left " + amount(assembler, 0) + ", " + amount(assembler, 1) + " and " + amount(assembler, 2) + " mB in the boxes");
         helper.assertTrue(machine.heldRecipe().equals(Optional.of(FULL)), "the swap to tier 1 lost the Held recipe");
-        helper.assertTrue(!connectionsShown(helper), "tier 1 shows connections the moment of the swap");
+        helper.assertTrue(connectionsShown(helper), "tier 1 did not show its connections the moment of the swap");
+        helper.assertTrue(exposed(helper, new Placed(helper, assembler.player(), AssemblerTier.ONE, assembler.facing())).size() == 6,
+                "tier 1 did not keep its connections after the swap");
 
-        // And back up: nothing comes back with the tier.
+        // And from tier 1 to 2, which boxes follow just the same.
         AssemblerMachineTests.swap(helper, assembler, AssemblerTier.TWO, ORIGIN);
-        helper.assertTrue(amount(assembler, 0) == 0 && amount(assembler, 2) == 0, "the boxes were not empty after a round trip through tier 1");
+        helper.assertTrue(amount(assembler, 0) == 400 && amount(assembler, 2) == 300, "the boxes changed in a round trip through tier 1");
+        helper.assertTrue(machine.heldRecipe().equals(Optional.of(FULL)), "the swap back to tier 2 lost the Held recipe");
         helper.succeed();
     }
 
@@ -1095,21 +1128,21 @@ final class AssemblerFluidTests {
     // -- the screen -----------------------------------------------------------------------------
 
     private static void gauges(GameTestHelper helper) {
-        Placed tier1 = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
-        AssemblerMenu one = menuOf(tier1);
-        helper.assertTrue(!one.hasFluidBoxes(), "tier 1's menu has a fluid box");
-        helper.assertTrue(one.inventoryY() == AssemblerMenu.INVENTORY_Y && one.slots.get(AssemblerSlots.SIZE).y == 84,
-                "tier 1's inventory stands at " + one.slots.get(AssemblerSlots.SIZE).y + ", not 84");
-        helper.destroyBlock(ORIGIN);
+        for (AssemblerTier tier : AssemblerTier.values()) {
+            gauges(helper, tier);
+            helper.destroyBlock(ORIGIN);
+        }
+        helper.succeed();
+    }
 
-        Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
+    private static void gauges(GameTestHelper helper, AssemblerTier tier) {
+        Placed assembler = AssemblerMachineTests.place(helper, tier);
         AssemblerMachineTests.hold(assembler, FULL);
         MachineFluids boxes = assembler.machine().fluids();
         boxes.set(0, new FluidStack(Fluids.WATER, 400));
         boxes.set(1, new FluidStack(Fluids.LAVA, 25));
         boxes.set(2, new FluidStack(Fluids.WATER, 1700));
         AssemblerMenu menu = menuOf(assembler);
-        helper.assertTrue(menu.hasFluidBoxes(), "tier 2's menu has no fluid box");
         helper.assertTrue(menu.fluid(0).getFluid() == Fluids.WATER && menu.fluid(0).getAmount() == 400, "the menu shows " + menu.fluid(0) + " in box 1");
         helper.assertTrue(menu.fluid(1).getFluid() == Fluids.LAVA && menu.fluid(1).getAmount() == 25, "the menu shows " + menu.fluid(1) + " in box 2");
         helper.assertTrue(menu.fluid(2).getAmount() == 1700 && menu.fluid(3).isEmpty() && menu.fluid(4).isEmpty(),
@@ -1120,19 +1153,26 @@ final class AssemblerFluidTests {
                         + menu.fluidCapacity(3) + " and " + menu.fluidCapacity(4));
         // The screen is a row taller: the player's inventory stands 12 lower.
         helper.assertTrue(menu.inventoryY() == AssemblerMenu.INVENTORY_Y_WITH_FLUIDS && menu.slots.get(AssemblerSlots.SIZE).y == 96,
-                "tier 2's inventory stands at " + menu.slots.get(AssemblerSlots.SIZE).y + ", not 96");
+                tier + "'s inventory stands at " + menu.slots.get(AssemblerSlots.SIZE).y + ", not 96");
 
-        // The client's menu, opened from the buffer the block writes, knows its tier from the block at its position.
+        // The client's menu, opened from the buffer the block writes, is the same on every tier.
         RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
         buffer.writeBlockPos(helper.absolutePos(ORIGIN));
         AssemblerMenu client = new AssemblerMenu(2, assembler.player().getInventory(), buffer);
-        helper.assertTrue(client.hasFluidBoxes(), "the client's menu of a tier 2 Assembler has no fluid box");
-        helper.assertTrue(client.slots.get(AssemblerSlots.SIZE).y == 96, "the client's menu of a tier 2 Assembler stands its inventory at " + client.slots.get(AssemblerSlots.SIZE).y);
-        helper.succeed();
+        helper.assertTrue(client.inventoryY() == AssemblerMenu.INVENTORY_Y_WITH_FLUIDS && client.slots.get(AssemblerSlots.SIZE).y == 96,
+                "the client's menu of a " + tier + " Assembler stands its inventory at " + client.slots.get(AssemblerSlots.SIZE).y);
     }
 
     private static void crossesToTheClient(GameTestHelper helper) {
-        Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.THREE);
+        for (AssemblerTier tier : AssemblerTier.values()) {
+            crossesToTheClient(helper, tier);
+            helper.destroyBlock(ORIGIN);
+        }
+        helper.succeed();
+    }
+
+    private static void crossesToTheClient(GameTestHelper helper, AssemblerTier tier) {
+        Placed assembler = AssemblerMachineTests.place(helper, tier);
         AssemblerMachineTests.hold(assembler, FULL);
         MachineFluids boxes = assembler.machine().fluids();
         boxes.set(0, new FluidStack(Fluids.WATER, 400));
@@ -1141,8 +1181,7 @@ final class AssemblerFluidTests {
         boxes.set(4, new FluidStack(Fluids.LAVA, 60));
 
         AssemblerMenu client = AssemblerMachineTests.openOnTheClient(helper, Assemblers.MENU.get(), AdvancedContainerSetDataPayload.TYPE);
-        helper.assertTrue(client.hasFluidBoxes(), "the client's menu of a tier 3 Assembler has no fluid box");
-        helper.assertTrue(client.fluid(0).getFluid() == Fluids.WATER && client.fluid(0).getAmount() == 400, "the screen shows " + client.fluid(0) + " in box 1");
+        helper.assertTrue(client.fluid(0).getFluid() == Fluids.WATER && client.fluid(0).getAmount() == 400, tier + "'s screen shows " + client.fluid(0) + " in box 1");
         helper.assertTrue(client.fluid(1).getFluid() == Fluids.LAVA && client.fluid(1).getAmount() == 25, "the screen shows " + client.fluid(1) + " in box 2");
         helper.assertTrue(client.fluid(2).getAmount() == 1700 && client.fluid(3).isEmpty() && client.fluid(4).getAmount() == 60,
                 "the screen shows " + client.fluid(2) + ", " + client.fluid(3) + " and " + client.fluid(4));
@@ -1150,7 +1189,6 @@ final class AssemblerFluidTests {
                         && client.fluidCapacity(3) == 100 && client.fluidCapacity(4) == 100,
                 "the screen shows capacities " + client.fluidCapacity(0) + ", " + client.fluidCapacity(1) + ", " + client.fluidCapacity(2) + ", "
                         + client.fluidCapacity(3) + " and " + client.fluidCapacity(4));
-        helper.succeed();
     }
 
     private static AssemblerMenu menuOf(Placed assembler) {

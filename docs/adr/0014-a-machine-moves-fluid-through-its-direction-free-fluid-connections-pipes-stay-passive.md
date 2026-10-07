@@ -43,3 +43,6 @@ The fluid box's size is superseded by ADR-0017.
 The Assembler's one fluid box, its two connections and its never pushing are superseded by ADR-0018 (#40): an
 Assembler of tier 2 or 3 has two input and three output boxes on six connections and pushes its fluid results out. The
 connections stay direction-free and the pipes passive.
+
+Tier 1 has the same fluid layout and connections, and a Fast Replace to it keeps the boxes, as ADR-0019 (#41)
+decides: tier 1 no longer has none and refuses a fluid recipe.

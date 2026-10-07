@@ -132,6 +132,11 @@ public final class CraftworksConfig {
         return SPEC.isLoaded() ? MACHINES.get(machine).buffer().get() : machine.defaultBuffer();
     }
 
+    /** The machine's settings, which a game test sets as a server's config would. */
+    public static MachineSettings settings(MachineDefaults machine) {
+        return MACHINES.get(machine);
+    }
+
     /** The recipe categories the machine holds; its defaults until a world's config is loaded. */
     public static List<AssemblingCategory> categories(MachineDefaults machine) {
         if (!SPEC.isLoaded()) return machine.defaultCategories();

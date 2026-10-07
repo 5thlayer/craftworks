@@ -32,7 +32,7 @@ import org.jspecify.annotations.Nullable;
  */
 public final class AssemblerBlock extends HorizontalDirectionalBlock implements EntityBlock {
 
-    /** Whether the Fluid Connections exist, so the casing wears its rings there. Never set on tier 1. */
+    /** Whether the Fluid Connections exist, so the casing wears its rings there. */
     public static final BooleanProperty FLUID_CONNECTIONS = BooleanProperty.create("fluid_connections");
 
     private final AssemblerTier tier;

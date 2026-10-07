@@ -117,6 +117,8 @@ tasks.named('runGameTestServer') {
     doFirst {
         gameTestReport.delete()
         gameTestReport.parentFile.mkdirs()
+        // The tests read the defaults: a config an earlier run wrote would keep the categories it listed then.
+        file('run/gametest/config/craftworks-server.toml').delete()
     }
     doLast {
         if (!gameTestReport.exists()) throw new GradleException("The game test server wrote no report at $gameTestReport")

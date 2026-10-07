@@ -15,31 +15,29 @@ import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
  * The Assembler's three tiers, each a block of its own, with the figures the server config starts from.
  *
  * <p>Speed divides a recipe's time into the ticks a craft takes; power is FE a tick while crafting, at
- * 1 FE = 100 J: 75, 150 and 375 kW. The categories are the recipe kinds a tier may hold, Factorio's: tier 1
- * takes {@code crafting} and {@code advanced-crafting}, and tiers 2 and 3 add {@code crafting-with-fluid}.
- * Tiers 2 and 3 have the fluid boxes and Fluid Connections of {@link FluidLayout#ASSEMBLER}, the Assembler's one
- * layout; tier 1 has none.
+ * 1 FE = 100 J: 75, 150 and 375 kW. The categories are the recipe kinds a tier may hold, and every tier holds all
+ * three, {@code crafting}, {@code advanced-crafting} and {@code crafting-with-fluid}, until the server config says
+ * otherwise. Every tier has the fluid boxes and Fluid Connections of {@link FluidLayout#ASSEMBLER}, the Assembler's
+ * one layout, so the tiers differ only in speed, power and buffer.
  * The rates are pure, so they are unit-tested.
  */
 public enum AssemblerTier implements MachineDefaults {
-    ONE("assembler_1", 0.5, 37.5, 50_000, false, List.of(CRAFTING, ADVANCED_CRAFTING)),
-    TWO("assembler_2", 0.75, 75.0, 50_000, true, List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID)),
-    THREE("assembler_3", 1.25, 187.5, 50_000, true, List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID));
+    ONE("assembler_1", 0.5, 37.5, 50_000, List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID)),
+    TWO("assembler_2", 0.75, 75.0, 50_000, List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID)),
+    THREE("assembler_3", 1.25, 187.5, 50_000, List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID));
 
     private final String blockName;
     private final double defaultSpeed;
     private final double defaultPower;
     private final int defaultBuffer;
-    private final boolean fluidBoxes;
     private final List<AssemblingCategory> defaultCategories;
 
     AssemblerTier(String blockName, double defaultSpeed, double defaultPower, int defaultBuffer,
-            boolean fluidBoxes, List<AssemblingCategory> defaultCategories) {
+            List<AssemblingCategory> defaultCategories) {
         this.blockName = blockName;
         this.defaultSpeed = defaultSpeed;
         this.defaultPower = defaultPower;
         this.defaultBuffer = defaultBuffer;
-        this.fluidBoxes = fluidBoxes;
         this.defaultCategories = defaultCategories;
     }
 
@@ -67,14 +65,6 @@ public enum AssemblerTier implements MachineDefaults {
     @Override
     public int defaultBuffer() {
         return defaultBuffer;
-    }
-
-    /**
-     * Whether this tier has the fluid boxes and Fluid Connections of {@link FluidLayout#ASSEMBLER}, and so its gauges:
-     * tiers 2 and 3 do, tier 1 does not.
-     */
-    public boolean hasFluidBoxes() {
-        return fluidBoxes;
     }
 
     /** The recipe categories this tier holds until the server config says otherwise. */

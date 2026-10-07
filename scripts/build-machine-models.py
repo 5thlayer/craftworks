@@ -81,7 +81,7 @@ def rings(sites):
 
 
 MODELS_TO_WRITE = {
-    # The Assemblers of tiers 2 and 3, 3x3: a connection on each of the three bottom-layer blocks of the two opposite
+    # Every Assembler tier, 3x3: a connection on each of the three bottom-layer blocks of the two opposite
     # edges, the edge it faces (north) and the other. The casings are hand-written and not made here.
     "assembler_connections": rings([(-1, -1, "north"), (0, -1, "north"), (1, -1, "north"),
                                     (-1, 1, "south"), (0, 1, "south"), (1, 1, "south")]),

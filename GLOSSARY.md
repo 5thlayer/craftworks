@@ -64,20 +64,20 @@ _Avoid_: plannable, machine-only
 
 **Assembler**:
 A placed machine, in tiers 1 to 3, that makes its **Held recipe** over and over from the items and power
-it is given, whether the recipe makes items, fluids or both. Tiers 2 and 3 also hold fluid: two input fluid
-boxes and three output fluid boxes, bound to the recipe's fluids by order. Tier 1 takes no recipe that names a
-fluid. Never the **Personal Assembler**, which always takes its full name.
+it is given, whether the recipe makes items, fluids or both. Every tier also holds fluid: two input fluid
+boxes and three output fluid boxes, bound to the recipe's fluids by order. The tiers differ in speed, power and
+buffer only. Never the **Personal Assembler**, which always takes its full name.
 _Avoid_: assembling machine, crafter, auto crafter, machine (alone), Chemical Plant, Oil Refinery (the two
 machines it replaced)
 
 **Fluid Connection**:
 A face of an **Assembler** where fluid reaches it, with no direction of its own: its role comes from the **Held
-recipe**, not from a fixed input or output. An Assembler of tier 2 or 3 has six, all three bottom-layer blocks
+recipe**, not from a fixed input or output. An Assembler of any tier has six, all three bottom-layer blocks
 along the edge it faces and along the opposite one, turning with it. They exist only while its Held recipe names
 a fluid in or out; each then pulls the fluid ingredients into their input boxes and pushes the fluid results out of
 the output boxes, and any connection serves any box. A recipe of several fluids needs a connection for each, as
 a pipe network carries one fluid. Pipeworks' pipes are passive (Pipeworks ADR-0110), so they never push into one,
-but another mod that does push can fill an input box through the connection. Tier 1 has none.
+but another mod that does push can fill an input box through the connection.
 _Avoid_: port, fluid port (Pipeworks' `FluidPort` type), input, output
 
 **Pinned**:
@@ -88,8 +88,9 @@ _Avoid_: fixed, locked (a **Locked** recipe is another thing)
 **Category**:
 The kind an Assembling recipe is, one of three names and no other: `crafting` (the default),
 `advanced-crafting` and `crafting-with-fluid`, the last for any recipe with a fluid in or out. Each tier of
-Assembler holds the categories its server config lists, and Fill Recipe refuses a recipe outside them. The
-Personal Assembler ignores it: it is no machine, and plans through any Hand-craftable recipe whatever its category.
+Assembler holds all three by default and the categories its server config lists, and Fill Recipe refuses a
+recipe outside them. The Personal Assembler ignores it: it is no machine, and plans through any Hand-craftable
+recipe whatever its category.
 _Avoid_: type (the recipe's `type` is its Minecraft recipe type), tag
 
 **Held recipe**:

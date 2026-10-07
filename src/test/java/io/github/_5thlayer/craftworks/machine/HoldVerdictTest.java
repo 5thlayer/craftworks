@@ -22,7 +22,7 @@ class HoldVerdictTest {
 
     @Test
     void aRecipeNothingNamesIsRefusedFirst() {
-        Checks everythingWrong = Checks.passing().resolves(false).categoryHeld(false).takesFluids(false)
+        Checks everythingWrong = Checks.passing().resolves(false).categoryHeld(false)
                 .fluidsHaveBoxes(false).fluidVolumeFits(false).fitsSlots(false).remaindersFit(false).locked(true);
         assertEquals(HoldVerdict.NOT_ASSEMBLING, HoldVerdict.of(everythingWrong));
     }
@@ -30,7 +30,6 @@ class HoldVerdictTest {
     @Test
     void aRecipeItCouldNeverRunIsRefusedBeforeItsLockIsAsked() {
         Checks locked = Checks.passing().locked(true);
-        assertEquals(HoldVerdict.HAS_FLUID, HoldVerdict.of(locked.takesFluids(false)));
         assertEquals(HoldVerdict.TOO_MANY_FLUIDS, HoldVerdict.of(locked.fluidsHaveBoxes(false)));
         assertEquals(HoldVerdict.FLUID_TOO_LARGE, HoldVerdict.of(locked.fluidVolumeFits(false)));
         assertEquals(HoldVerdict.TOO_MANY_INGREDIENTS, HoldVerdict.of(locked.fitsSlots(false)));
@@ -42,9 +41,8 @@ class HoldVerdictTest {
         Checks failing = Checks.passing().fitsSlots(false).fluidVolumeFits(false);
         assertEquals(HoldVerdict.FLUID_TOO_LARGE, HoldVerdict.of(failing));
         assertEquals(HoldVerdict.TOO_MANY_FLUIDS, HoldVerdict.of(failing.fluidsHaveBoxes(false)));
-        assertEquals(HoldVerdict.HAS_FLUID, HoldVerdict.of(failing.fluidsHaveBoxes(false).takesFluids(false)));
         assertEquals(HoldVerdict.WRONG_CATEGORY,
-                HoldVerdict.of(failing.takesFluids(false).categoryHeld(false)));
+                HoldVerdict.of(failing.fluidsHaveBoxes(false).categoryHeld(false)));
     }
 
     @Test
@@ -55,7 +53,7 @@ class HoldVerdictTest {
 
     @Test
     void aCategoryTheTierDoesNotHoldIsRefusedBeforeAnythingElseAboutTheRecipe() {
-        Checks wrongInEveryWay = Checks.passing().categoryHeld(false).takesFluids(false).fitsSlots(false).locked(true);
+        Checks wrongInEveryWay = Checks.passing().categoryHeld(false).fitsSlots(false).locked(true);
         HoldVerdict verdict = HoldVerdict.of(wrongInEveryWay);
         assertEquals(HoldVerdict.WRONG_CATEGORY, verdict);
         assertEquals("craftworks.assembler.refused.wrong_category", verdict.messageKey(MachineKind.ASSEMBLER));
