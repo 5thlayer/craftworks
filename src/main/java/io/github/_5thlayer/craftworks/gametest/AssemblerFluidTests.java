@@ -148,7 +148,7 @@ final class AssemblerFluidTests {
     // -- fixtures -------------------------------------------------------------------------------
 
     /** A Fluid Connection: the footprint block it is, and the way its face points. */
-    private record Connection(BlockPos block, Direction side) {
+    record Connection(BlockPos block, Direction side) {
 
         /** The block the face touches, where a neighbour stands. */
         BlockPos beyond() {
@@ -161,7 +161,7 @@ final class AssemblerFluidTests {
      * all three bottom-layer blocks along the edge it faces, left to right, then the three along the opposite edge.
      * The first three are on the facing side.
      */
-    private static List<Connection> connections(Direction facing) {
+    static List<Connection> connections(Direction facing) {
         List<Connection> found = new ArrayList<>();
         for (Direction side : List.of(facing, facing.getOpposite())) {
             for (int along = -1; along <= 1; along++) {

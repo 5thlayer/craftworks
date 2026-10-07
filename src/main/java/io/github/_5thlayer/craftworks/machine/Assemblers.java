@@ -204,6 +204,6 @@ public final class Assemblers {
         }
         BlockPos origin = part.footprint().standingOrigin(level, pos, state);
         return origin != null && level.getBlockEntity(origin) instanceof AssemblerBlockEntity machine
-                ? machine.fluidConnection(pos, side) : null;
+                ? machine.fluidPort().connection(pos, side) : null;
     }
 }

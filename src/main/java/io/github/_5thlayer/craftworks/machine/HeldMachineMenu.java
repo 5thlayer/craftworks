@@ -43,7 +43,7 @@ import org.jspecify.annotations.Nullable;
  * has no recipe manager to read the ingredients each slot is ghosted with. Progress, duration and energy ride
  * in the first data slots, and a machine's fluid boxes in those after ({@link #DATA_SHARED}).
  */
-public abstract class HeldMachineMenu<M extends HeldMachineBlockEntity> extends AbstractContainerMenu {
+public abstract class HeldMachineMenu<M extends AssemblerBlockEntity> extends AbstractContainerMenu {
 
     private static final int DATA_PROGRESS = 0;
     private static final int DATA_DURATION = 1;
@@ -103,7 +103,7 @@ public abstract class HeldMachineMenu<M extends HeldMachineBlockEntity> extends 
      * The server's data slots over {@code machine}: the shared ones, then {@code own} for each index from
      * {@link #DATA_SHARED} up to {@code count}.
      */
-    protected static ContainerData data(HeldMachineBlockEntity machine, int count, IntUnaryOperator own) {
+    protected static ContainerData data(AssemblerBlockEntity machine, int count, IntUnaryOperator own) {
         return new ContainerData() {
             @Override
             public int get(int index) {

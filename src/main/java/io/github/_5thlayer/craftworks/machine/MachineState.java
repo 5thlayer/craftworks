@@ -4,7 +4,7 @@
 package io.github._5thlayer.craftworks.machine;
 
 /**
- * What an Assembler is doing this tick, as {@link HeldMachineBlockEntity#state} reports it: the first of the
+ * What an Assembler is doing this tick, as {@link AssemblerBlockEntity#state} reports it: the first of the
  * checks its tick makes that it fails, in the order the tick makes them (#28).
  */
 public enum MachineState {

@@ -113,6 +113,7 @@ public final class CraftworksGameTests {
         AssemblerMachineTests.register(tests);
         AssemblingCategoryTests.register(tests);
         AssemblerFluidTests.register(tests);
+        AssemblerFluidPortTests.register(tests);
         CreativeEnergySourceTests.register(tests);
         CreativeFluidSourceTests.register(tests);
         CreativeTabTests.register(tests);

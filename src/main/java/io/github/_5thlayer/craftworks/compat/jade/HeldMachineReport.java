@@ -8,7 +8,7 @@ import java.util.Optional;
 
 import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.machine.MachineState;
-import io.github._5thlayer.craftworks.machine.HeldMachineBlockEntity;
+import io.github._5thlayer.craftworks.machine.AssemblerBlockEntity;
 import io.github._5thlayer.craftworks.machine.HeldRecipes;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.ChatFormatting;
@@ -31,7 +31,7 @@ import snownee.jade.api.view.ProgressView;
 
 /**
  * What the server tells Jade about an Assembler: its Held recipe, its {@link MachineState}
- * and how far its craft is. The state is the block entity's own ({@link HeldMachineBlockEntity#state}), worked out on the
+ * and how far its craft is. The state is the block entity's own ({@link AssemblerBlockEntity#state}), worked out on the
  * server where the checks are and never repeated here.
  *
  * <p>The {@link Client} draws it. They are apart so that a dedicated server never loads Jade's drawing.
@@ -66,7 +66,7 @@ class HeldMachineReport implements StreamServerDataProvider<BlockAccessor, HeldM
         if (!(accessor.getLevel() instanceof ServerLevel server)) {
             return null;
         }
-        HeldMachineBlockEntity machine = accessor.typedBlockEntity();
+        AssemblerBlockEntity machine = accessor.typedBlockEntity();
         Optional<Identifier> held = machine.heldRecipe();
         ItemStack product = held.flatMap(id -> HeldRecipes.find(server, id))
                 .map(recipe -> recipe.value().product())

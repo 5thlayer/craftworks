@@ -36,7 +36,7 @@ final class AssemblerFluidView implements IServerExtensionProvider<FluidView.Dat
             return List.of();
         }
         List<FluidView.Data> bars = new ArrayList<>();
-        for (int box : machine.boxesInUse()) {
+        for (int box : machine.fluidPort().boxesInUse()) {
             FluidStack contents = machine.fluids().contents(box);
             JadeFluidObject fluid = contents.isEmpty()
                     ? JadeFluidObject.empty()
