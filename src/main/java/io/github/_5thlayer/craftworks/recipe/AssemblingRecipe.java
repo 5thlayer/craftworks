@@ -46,7 +46,7 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
  * {@code fluid_results} is not. The first goes to an Assembler's product slot and the rest to its remainder
  * slot; the Personal Assembler plans only a recipe with exactly one (GLOSSARY.md, Hand-craftable).
  *
- * <p>{@code pinned_fluid_results} is false when omitted. A machine gives the first fluid result the boxes the
+ * <p>{@code pinned_fluid_results} is false when omitted. An Assembler gives the first fluid result the boxes the
  * recipe leaves unused unless the recipe is Pinned, which keeps each fluid result to its own output box
  * (GLOSSARY.md, Pinned).
  *

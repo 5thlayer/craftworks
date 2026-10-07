@@ -10,8 +10,6 @@ import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.compat.ConfiguredTabs;
 import io.github._5thlayer.craftworks.machine.MachineGhosts;
 import io.github._5thlayer.craftworks.machine.AssemblerTab;
-import io.github._5thlayer.craftworks.machine.AssemblerMenu;
-import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
@@ -89,10 +87,10 @@ public final class AssemblingJeiPlugin implements IModPlugin {
         ConfiguredTabs.workstations().forEach(item -> registration.addCraftingStation(TAB, new ItemStack(item)));
     }
 
-    /** With an Assembler open, the recipe's {@code +} sets its Held recipe (see {@link HeldMachineTransferHandler}). */
+    /** With an Assembler open, the recipe's {@code +} sets its Held recipe (see {@link AssemblerTransferHandler}). */
     @Override
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
-        registration.addRecipeTransferHandler(new HeldMachineTransferHandler<>(AssemblerMenu.class, Assemblers.MENU.get(), TAB), TAB);
+        registration.addRecipeTransferHandler(new AssemblerTransferHandler(TAB), TAB);
     }
 
     /** The Assembler screen's ghosts answer Recipe and Uses as a real stack does (see {@link #ghostAt}). */

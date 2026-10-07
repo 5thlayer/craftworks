@@ -18,7 +18,7 @@ public enum HoldVerdict {
     NOT_ASSEMBLING("not_assembling"),
     /** The recipe's category is not one this tier holds, by the server config. */
     WRONG_CATEGORY("wrong_category"),
-    /** The recipe has more fluid ingredients or results than the machine has input or output boxes. */
+    /** The recipe has more fluid ingredients or results than the Assembler has input or output boxes. */
     TOO_MANY_FLUIDS("too_many_fluids"),
     /** The recipe needs more of a fluid a craft than an input box holds. */
     FLUID_TOO_LARGE("fluid_too_large"),
@@ -58,7 +58,7 @@ public enum HoldVerdict {
                     remaindersFit, locked);
         }
 
-        /** Whether the machine has a box for each of the recipe's fluid ingredients and each of its fluid results. */
+        /** Whether the Assembler has a box for each of the recipe's fluid ingredients and each of its fluid results. */
         public Checks fluidsHaveBoxes(boolean fluidsHaveBoxes) {
             return new Checks(resolves, categoryHeld, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
                     remaindersFit, locked);

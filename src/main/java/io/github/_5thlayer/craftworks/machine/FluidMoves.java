@@ -17,8 +17,8 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
 import org.jspecify.annotations.Nullable;
 
 /**
- * What a machine's Fluid Connection does with the block it faces: look up its fluid handler, and move fluid
- * between it and a box in one transaction, simulated within and committed only if some moved. A machine pulls
+ * What an Assembler's Fluid Connection does with the block it faces: look up its fluid handler, and move fluid
+ * between it and a box in one transaction, simulated within and committed only if some moved. An Assembler pulls
  * its ingredients and pushes its results.
  */
 final class FluidMoves {
@@ -26,7 +26,7 @@ final class FluidMoves {
     private FluidMoves() {
     }
 
-    /** The fluid handler of the block at {@code neighbour}, on its face towards the machine, if it has one. */
+    /** The fluid handler of the block at {@code neighbour}, on its face towards the Assembler, if it has one. */
     static @Nullable ResourceHandler<FluidResource> across(ServerLevel server, BlockPos neighbour, Direction outward) {
         return server.getCapability(Capabilities.Fluid.BLOCK, neighbour, outward.getOpposite());
     }

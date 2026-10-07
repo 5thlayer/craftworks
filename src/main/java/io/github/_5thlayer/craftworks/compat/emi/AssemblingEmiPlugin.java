@@ -87,7 +87,7 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
             registry.addRecipe(new AssemblingEmiRecipe(tab, holder));
         }
         registry.addRecipeHandler(null, new PersonalAssemblerEmiHandler());
-        registry.addRecipeHandler(Assemblers.MENU.get(), new HeldMachineEmiHandler<>());
+        registry.addRecipeHandler(Assemblers.MENU.get(), new AssemblerEmiHandler());
         registry.addStackProvider(AssemblerScreen.class, AssemblingEmiPlugin::ghostAt);
         ConfiguredTabs.workstations().forEach(item -> registry.addWorkstation(tab, EmiStack.of(item)));
         AssemblingRecipeIds.onSync(AssemblingEmiPlugin::searchAgain);

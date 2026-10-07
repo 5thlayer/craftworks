@@ -37,7 +37,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
  */
 final class CreativeFluidSourceTests {
 
-    /** Away from the Assembler, for the tests that need no machine. */
+    /** Away from the Assembler, for the tests that need no Assembler. */
     private static final BlockPos SOURCE = new BlockPos(1, 1, 1);
 
     private CreativeFluidSourceTests() {

@@ -9,11 +9,11 @@ import dev.emi.emi.api.recipe.EmiPlayerInventory;
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.recipe.handler.EmiCraftContext;
 import dev.emi.emi.api.recipe.handler.EmiRecipeHandler;
+import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import io.github._5thlayer.craftworks.network.HoldRecipePacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
@@ -23,15 +23,15 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  *
  * <p>{@link EmiRecipeHandler} directly, as {@link PersonalAssemblerEmiHandler} is: holding a recipe takes
  * no items, so the button stays lit with an empty inventory. Every Assembling recipe gets it, Hand-craftable
- * or not and Locked or not; whether the open machine takes it, and for this player, is server truth, and the
+ * or not and Locked or not; whether the open Assembler takes it, and for this player, is server truth, and the
  * server refuses with a message rather than the button hiding the reason. It shows whichever category the open
  * tier holds (ADR-0016).
  */
-public final class HeldMachineEmiHandler<M extends AbstractContainerMenu> implements EmiRecipeHandler<M> {
+public final class AssemblerEmiHandler implements EmiRecipeHandler<AssemblerMenu> {
 
     /** Built here, not asked for: {@code EmiPlayerInventory.of} dispatches back to this method. */
     @Override
-    public EmiPlayerInventory getInventory(AbstractContainerScreen<M> screen) {
+    public EmiPlayerInventory getInventory(AbstractContainerScreen<AssemblerMenu> screen) {
         Player player = Minecraft.getInstance().player;
         return player == null ? new EmiPlayerInventory(List.of()) : new EmiPlayerInventory(player);
     }
@@ -42,19 +42,19 @@ public final class HeldMachineEmiHandler<M extends AbstractContainerMenu> implem
     }
 
     @Override
-    public boolean canCraft(EmiRecipe recipe, EmiCraftContext<M> context) {
+    public boolean canCraft(EmiRecipe recipe, EmiCraftContext<AssemblerMenu> context) {
         return true;
     }
 
     @Override
-    public List<ClientTooltipComponent> getTooltip(EmiRecipe recipe, EmiCraftContext<M> context) {
+    public List<ClientTooltipComponent> getTooltip(EmiRecipe recipe, EmiCraftContext<AssemblerMenu> context) {
         return List.of(ClientTooltipComponent.create(
                 Component.translatable("craftworks.assembler.fill_recipe").getVisualOrderText()));
     }
 
     /** Sends the recipe and hands the screen back to the Assembler, where the Held recipe is shown. */
     @Override
-    public boolean craft(EmiRecipe recipe, EmiCraftContext<M> context) {
+    public boolean craft(EmiRecipe recipe, EmiCraftContext<AssemblerMenu> context) {
         ClientPacketDistributor.sendToServer(new HoldRecipePacket(recipe.getId()));
         return true;
     }

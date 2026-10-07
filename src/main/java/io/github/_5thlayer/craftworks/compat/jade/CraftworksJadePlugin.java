@@ -20,7 +20,7 @@ import snownee.jade.api.WailaPlugin;
  * <p>Jade finds this by its annotation and loads it only when Jade is installed; nothing else in the Mod
  * names a Jade type, so the Mod loads without it.
  *
- * <p>Every block of a machine's footprint shows the same, with no code of ours: Groundworks' own Jade
+ * <p>Every block of an Assembler's footprint shows the same, with no code of ours: Groundworks' own Jade
  * plugin reads a part as its origin, whose block entity and energy are the Assembler's. The item list is
  * Jade's own, from the item capability.
  */
@@ -29,7 +29,7 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
 
     @Override
     public void register(IWailaCommonRegistration registration) {
-        registration.registerBlockDataProvider(HeldMachineReport.INSTANCE, AssemblerBlockEntity.class);
+        registration.registerBlockDataProvider(AssemblerReport.INSTANCE, AssemblerBlockEntity.class);
         registration.registerEnergyStorage(InfiniteEnergy.INSTANCE, CreativeEnergySourceBlockEntity.class);
         registration.registerFluidStorage(InfiniteFluid.INSTANCE, CreativeFluidSourceBlockEntity.class);
         registration.registerFluidStorage(AssemblerFluidView.INSTANCE, AssemblerBlockEntity.class);
@@ -37,7 +37,7 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
 
     @Override
     public void registerClient(IWailaClientRegistration registration) {
-        registration.registerBlockComponent(HeldMachineReport.Client.INSTANCE, AssemblerBlock.class);
+        registration.registerBlockComponent(AssemblerReport.Client.INSTANCE, AssemblerBlock.class);
         registration.registerEnergyStorageClient(InfiniteEnergy.INSTANCE);
         registration.registerFluidStorageClient(InfiniteFluid.INSTANCE);
         registration.registerFluidStorageClient(AssemblerFluidView.INSTANCE);

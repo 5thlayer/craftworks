@@ -7,8 +7,8 @@ import java.util.Locale;
 import java.util.Optional;
 
 import io.github._5thlayer.craftworks.Craftworks;
-import io.github._5thlayer.craftworks.machine.MachineState;
 import io.github._5thlayer.craftworks.machine.AssemblerBlockEntity;
+import io.github._5thlayer.craftworks.machine.MachineState;
 import io.github._5thlayer.craftworks.machine.HeldRecipes;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.ChatFormatting;
@@ -36,9 +36,9 @@ import snownee.jade.api.view.ProgressView;
  *
  * <p>The {@link Client} draws it. They are apart so that a dedicated server never loads Jade's drawing.
  */
-class HeldMachineReport implements StreamServerDataProvider<BlockAccessor, HeldMachineReport.Data> {
+class AssemblerReport implements StreamServerDataProvider<BlockAccessor, AssemblerReport.Data> {
 
-    static final HeldMachineReport INSTANCE = new HeldMachineReport();
+    static final AssemblerReport INSTANCE = new AssemblerReport();
 
     // Jade keys a player's on/off setting for this tooltip by it.
     private static final Identifier UID = Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "assembler");
@@ -66,14 +66,14 @@ class HeldMachineReport implements StreamServerDataProvider<BlockAccessor, HeldM
         if (!(accessor.getLevel() instanceof ServerLevel server)) {
             return null;
         }
-        AssemblerBlockEntity machine = accessor.typedBlockEntity();
-        Optional<Identifier> held = machine.heldRecipe();
+        AssemblerBlockEntity assembler = accessor.typedBlockEntity();
+        Optional<Identifier> held = assembler.heldRecipe();
         ItemStack product = held.flatMap(id -> HeldRecipes.find(server, id))
                 .map(recipe -> recipe.value().product())
                 .orElse(ItemStack.EMPTY);
-        int duration = machine.craftDuration();
-        float progress = duration == 0 ? 0 : Math.min(1, (float) machine.craftProgress() / duration);
-        return new Data(held, product, machine.state(), progress);
+        int duration = assembler.craftDuration();
+        float progress = duration == 0 ? 0 : Math.min(1, (float) assembler.craftProgress() / duration);
+        return new Data(held, product, assembler.state(), progress);
     }
 
     @Override
@@ -90,7 +90,7 @@ class HeldMachineReport implements StreamServerDataProvider<BlockAccessor, HeldM
      * Draws the report: the Held recipe's product, then its state, with a progress bar while it crafts. The
      * fluid boxes are Jade's own bars, from {@link AssemblerFluidView}.
      */
-    static final class Client extends HeldMachineReport implements IBlockComponentProvider {
+    static final class Client extends AssemblerReport implements IBlockComponentProvider {
 
         static final Client INSTANCE = new Client();
 

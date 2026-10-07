@@ -52,7 +52,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
     private static final int DATA_DURATION = 1;
     private static final int DATA_ENERGY = 2;
     private static final int DATA_ENERGY_CAPACITY = 3;
-    /** The data slots every machine's menu has; the fluid boxes' come after. */
+    /** The data slots before the fluid boxes': progress, duration, energy and its capacity. */
     private static final int DATA_SHARED = 4;
     /** Each box takes two: the fluid's registry id, then its amount. */
     private static final int DATA_BOXES = DATA_SHARED;
@@ -278,7 +278,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
     }
 
     /**
-     * The server asks the machine; the client asks the Held recipe it was sent through the same rule, so a
+     * The server asks the Assembler; the client asks the Held recipe it was sent through the same rule, so a
      * wrong item is refused in the hand rather than placed and put back by the sync.
      */
     private final class InputSlot extends ResourceHandlerSlot {

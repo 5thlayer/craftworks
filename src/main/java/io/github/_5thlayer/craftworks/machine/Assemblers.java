@@ -145,8 +145,8 @@ public final class Assemblers {
     }
 
     /**
-     * The origin draws the whole machine from its own position, and a face of its model off the origin's own
-     * cube is lit by the light there: an occluding origin holds none, and the machine renders dark.
+     * The origin draws the whole Assembler from its own position, and a face of its model off the origin's own
+     * cube is lit by the light there: an occluding origin holds none, and the Assembler renders dark.
      */
     static BlockBehaviour.Properties machine(BlockBehaviour.Properties properties) {
         return properties.strength(3.0f, 6.0f).sound(SoundType.METAL).pushReaction(PushReaction.BLOCK).noOcclusion();
@@ -194,7 +194,7 @@ public final class Assemblers {
     }
 
     /**
-     * What a part block answers to a fluid lookup: its machine's Fluid Connection if the block is one and the
+     * What a part block answers to a fluid lookup: its Assembler's Fluid Connection if the block is one and the
      * face is its own.
      */
     private static @Nullable ResourceHandler<FluidResource> fluidConnection(Level level, BlockPos pos, BlockState state,

@@ -76,9 +76,9 @@ final class TestTank {
     enum Mode {
         /** Anything inserts and extracts, as a tank of another mod's does. */
         BOTH,
-        /** Only extracts: a source, which a machine's outputs have no way into. */
+        /** Only extracts: a source, which an Assembler's outputs have no way into. */
         SOURCE,
-        /** Only inserts: a drain, which a machine's inputs have nothing to pull from. */
+        /** Only inserts: a drain, which an Assembler's inputs have nothing to pull from. */
         SINK
     }
 

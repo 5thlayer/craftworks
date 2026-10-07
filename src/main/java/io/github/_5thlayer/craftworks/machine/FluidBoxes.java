@@ -34,7 +34,7 @@ public final class FluidBoxes {
 
     /**
      * What an input box holds of an ingredient needing {@code perCraft} mB a craft: {@link #INPUT_CRAFTS}
-     * crafts' worth, never more than the box. A machine pulls into it up to this, and a pipe or mod that pushes
+     * crafts' worth, never more than the box. An Assembler pulls into it up to this, and a pipe or mod that pushes
      * is held to it too.
      */
     public static int inputLimit(int perCraft) {
@@ -44,10 +44,10 @@ public final class FluidBoxes {
     /**
      * The volume of each output box a recipe's fluid results go in, in order: the larger of that result's box
      * and {@link #OUTPUT_CRAFTS} crafts' worth of it. The first result also takes the {@link #OUTPUT_BOX} of
-     * each of the machine's {@code boxes} the recipe leaves unused, unless {@code pinned}. The Pack's
+     * each of the Assembler's {@code boxes} the recipe leaves unused, unless {@code pinned}. The Pack's
      * {@code OutputTankVolume}, with every box the same size.
      *
-     * @param boxes   the machine's output boxes
+     * @param boxes   the Assembler's output boxes
      * @param amounts the mB a craft makes of each fluid result, at most {@code boxes} of them
      */
     public static List<Integer> outputVolumes(int boxes, List<Integer> amounts, boolean pinned) {
