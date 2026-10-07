@@ -73,9 +73,8 @@ final class CreativeFluidSourceTests {
     private static void feedsAnAssembler(GameTestHelper helper, Direction side) {
         AssemblerMachineTests.Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         helper.assertTrue(side == assembler.facing() || side == assembler.facing().getOpposite(),
-                side + " is not on the Assembler's connection axis");
-        List<AssemblerFluidTests.Connection> connections = AssemblerFluidTests.connections(assembler.facing());
-        place(helper, connections.get(side == assembler.facing() ? 0 : 2).beyond(), Fluids.WATER);
+                side + " is neither the edge the Assembler faces nor the one opposite");
+        place(helper, AssemblerFluidTests.connections(assembler.facing()).firstOn(side).beyond(), Fluids.WATER);
         AssemblerMachineTests.hold(assembler, AssemblerFluidTests.WATER_CRAFT);
         AssemblerMachineTests.insert(assembler, 0, Items.DIRT, 2);
 

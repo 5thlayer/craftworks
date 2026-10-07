@@ -164,13 +164,25 @@ final class AssemblerFluidTests {
 
     /**
      * The six connections of an Assembler facing {@code facing}, as the issue gives them and not as the code does,
-     * spaced so no two of their pipes touch: the two ends of the bottom-layer edge it faces, left to right, the two
-     * ends of the opposite edge, then the centre of its left side and the centre of its right. The first two are on
-     * the facing side.
+     * spaced so no two of their pipes touch: the two ends of the bottom-layer edge it faces, the two ends of the
+     * opposite edge, and the centre of each side, named from the Assembler's own view.
      */
-    static List<Connection> connections(Direction facing) {
+    record Connections(Connection frontLeft, Connection frontRight, Connection backLeft, Connection backRight,
+                       Connection left, Connection right) {
+
+        List<Connection> all() {
+            return List.of(frontLeft, frontRight, backLeft, backRight, left, right);
+        }
+
+        /** The first connection on {@code side}, the left end of the edge when that edge is the front or the back. */
+        Connection firstOn(Direction side) {
+            return all().stream().filter(connection -> connection.side() == side).findFirst().orElseThrow();
+        }
+    }
+
+    static Connections connections(Direction facing) {
         Direction right = facing.getClockWise();
-        return List.of(
+        return new Connections(
                 new Connection(ORIGIN.relative(facing).relative(right, -1), facing),
                 new Connection(ORIGIN.relative(facing).relative(right, 1), facing),
                 new Connection(ORIGIN.relative(facing.getOpposite()).relative(right, -1), facing.getOpposite()),
@@ -179,9 +191,9 @@ final class AssemblerFluidTests {
                 new Connection(ORIGIN.relative(right, 1), right));
     }
 
-    /** The block the first connection faces: the left end of the edge the Assembler faces, where a lone tank or pipe goes. */
-    static BlockPos beyond(Direction facing) {
-        return connections(facing).get(0).beyond();
+    /** The block the first connection on the front faces: where a lone tank or pipe goes. */
+    static BlockPos beyondFirstConnection(Direction facing) {
+        return connections(facing).frontLeft().beyond();
     }
 
     private static TestTank.Entity tank(GameTestHelper helper, BlockPos at, Fluid fluid, int amount, TestTank.Mode mode) {
@@ -237,7 +249,7 @@ final class AssemblerFluidTests {
 
     private static void pullsAndCrafts(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
-        TestTank.Entity water = tank(helper, beyond(assembler.facing()), Fluids.WATER, 5000);
+        TestTank.Entity water = tank(helper, beyondFirstConnection(assembler.facing()), Fluids.WATER, 5000);
         AssemblerMachineTests.hold(assembler, WATER_CRAFT);
         AssemblerMachineTests.insert(assembler, 0, Items.DIRT, 2);
         helper.assertTrue(assembler.machine().state() == MachineState.MISSING_INGREDIENTS,
@@ -261,14 +273,14 @@ final class AssemblerFluidTests {
 
     private static void onlyTheHeldFluid(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
-        TestTank.Entity lava = tank(helper, beyond(assembler.facing()), Fluids.LAVA, 5000);
+        TestTank.Entity lava = tank(helper, beyondFirstConnection(assembler.facing()), Fluids.LAVA, 5000);
         AssemblerMachineTests.hold(assembler, WATER_CRAFT);
         tick(helper, assembler, 5);
         helper.assertTrue(amount(assembler, 0) == 0, "a neighbour holding lava filled the box with " + amount(assembler, 0) + " mB");
         helper.assertTrue(inTank(lava) == 5000, "the lava tank lost " + (5000 - inTank(lava)) + " mB");
 
         // And what the box does take it takes through the capability too: only the Held recipe's fluid.
-        ResourceHandler<FluidResource> face = fluid(assembler, connections(assembler.facing()).get(1));
+        ResourceHandler<FluidResource> face = fluid(assembler, connections(assembler.facing()).frontRight());
         helper.assertTrue(face != null, "no fluid capability at the connection");
         helper.assertTrue(insert(face, Fluids.LAVA, 100) == 0, "the box took lava, which the Held recipe doesn't use");
         helper.assertTrue(insert(face, Fluids.WATER, 100) == 100, "a mod that pushes could not fill the box with the Held recipe's fluid");
@@ -282,8 +294,8 @@ final class AssemblerFluidTests {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         Direction facing = assembler.facing();
         // The connections on the facing side are asked first.
-        TestTank.Entity water = tank(helper, beyond(facing), Fluids.WATER, 400);
-        TestTank.Entity lava = tank(helper, connections(facing).get(2).beyond(), Fluids.LAVA, 5000);
+        TestTank.Entity water = tank(helper, beyondFirstConnection(facing), Fluids.WATER, 400);
+        TestTank.Entity lava = tank(helper, connections(facing).backLeft().beyond(), Fluids.LAVA, 5000);
         AssemblerMachineTests.hold(assembler, WATER_OR_LAVA);
         AssemblerMachineTests.insert(assembler, 0, Items.DIRT, 1);
         tick(helper, assembler, 1);
@@ -312,7 +324,7 @@ final class AssemblerFluidTests {
 
     private static void stopsAtABoxFull(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
-        TestTank.Entity water = tank(helper, beyond(assembler.facing()), Fluids.WATER, 5000);
+        TestTank.Entity water = tank(helper, beyondFirstConnection(assembler.facing()), Fluids.WATER, 5000);
         AssemblerMachineTests.hold(assembler, WATER_CRAFT);
         // Unpowered: nothing spends the box, so it only fills.
         for (int tick = 0; tick < 5; tick++) {
@@ -327,7 +339,7 @@ final class AssemblerFluidTests {
     private static void stopsAtFourCrafts(GameTestHelper helper) {
         for (AssemblerTier tier : List.of(AssemblerTier.TWO, AssemblerTier.THREE)) {
             Placed assembler = AssemblerMachineTests.place(helper, tier);
-            TestTank.Entity water = tank(helper, beyond(assembler.facing()), Fluids.WATER, 5000);
+            TestTank.Entity water = tank(helper, beyondFirstConnection(assembler.facing()), Fluids.WATER, 5000);
             AssemblerMachineTests.hold(assembler, WATER_SMALL);
             helper.assertTrue(assembler.machine().fluids().capacity(0) == 40,
                     "a tier " + tier + " box holds " + assembler.machine().fluids().capacity(0) + " mB, not 40");
@@ -336,12 +348,12 @@ final class AssemblerFluidTests {
             }
             helper.assertTrue(amount(assembler, 0) == 40, "the box holds " + amount(assembler, 0) + " mB, not the 40 of 4 crafts of 10");
             helper.assertTrue(inTank(water) == 4960, "the tank gave " + (5000 - inTank(water)) + " mB, not 40");
-            ResourceHandler<FluidResource> face = fluid(assembler, connections(assembler.facing()).get(1));
+            ResourceHandler<FluidResource> face = fluid(assembler, connections(assembler.facing()).frontRight());
             helper.assertTrue(face != null && insert(face, Fluids.WATER, 500) == 0, "a mod that pushes filled a box already holding 4 crafts");
             assembler.machine().fluids().set(0, new FluidStack(Fluids.WATER, 15));
             helper.assertTrue(insert(face, Fluids.WATER, 500) == 25 && amount(assembler, 0) == 40,
                     "a mod that pushes took the box past 40 mB: " + amount(assembler, 0));
-            helper.setBlock(beyond(assembler.facing()), Blocks.AIR);
+            helper.setBlock(beyondFirstConnection(assembler.facing()), Blocks.AIR);
             helper.destroyBlock(ORIGIN);
         }
         helper.succeed();
@@ -356,7 +368,7 @@ final class AssemblerFluidTests {
         helper.assertTrue(boxes.capacity(0) == 40, "the box holds " + boxes.capacity(0));
         helper.assertTrue(boxes.displayCapacity(0) >= 1000, "the box displays " + boxes.displayCapacity(0) + " for 1000 mB");
         helper.assertTrue(amount(assembler, 0) == 1000, "an overfull box lost fluid");
-        ResourceHandler<FluidResource> face = fluid(assembler, connections(assembler.facing()).get(1));
+        ResourceHandler<FluidResource> face = fluid(assembler, connections(assembler.facing()).frontRight());
         helper.assertTrue(face != null && insert(face, Fluids.WATER, 100) == 0, "an overfull box took more");
         helper.succeed();
     }
@@ -502,7 +514,7 @@ final class AssemblerFluidTests {
     /** The faces that are connections for a facing, as {@link #exposed} spells them: the six sites of the bottom layer. */
     private static Set<String> connectionFaces(Direction facing) {
         Set<String> faces = new TreeSet<>();
-        for (Connection connection : connections(facing)) {
+        for (Connection connection : connections(facing).all()) {
             faces.add(connection.block().subtract(ORIGIN).toShortString() + " " + connection.side());
         }
         return faces;
@@ -517,12 +529,12 @@ final class AssemblerFluidTests {
         helper.assertTrue(exposed(helper, assembler).equals(expected),
                 "facing " + facing + " the fluid capability answered at " + exposed(helper, assembler) + ", not at " + expected);
         // On the bottom layer, and no two of their pipes touch, so each carries a network of its own.
-        for (Connection connection : connections(facing)) {
+        for (Connection connection : connections(facing).all()) {
             helper.assertTrue(connection.block().getY() == ORIGIN.getY(), "a connection is above the bottom layer: " + connection);
         }
-        helper.assertTrue(connections(facing).subList(0, 2).stream().allMatch(connection -> connection.side() == facing),
+        helper.assertTrue(List.of(connections(facing).frontLeft(), connections(facing).frontRight()).stream().allMatch(connection -> connection.side() == facing),
                 "the first two connections are not on the side it faces");
-        List<Connection> all = connections(facing);
+        List<Connection> all = connections(facing).all();
         for (int one = 0; one < all.size(); one++) {
             for (int other = one + 1; other < all.size(); other++) {
                 BlockPos gap = all.get(one).beyond().subtract(all.get(other).beyond());
@@ -552,10 +564,10 @@ final class AssemblerFluidTests {
      */
     private static void fiveNetworks(GameTestHelper helper, Direction facing) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.THREE, facing);
-        List<Connection> at = connections(facing);
-        TestTank.Entity water = source(helper, at.get(0), Fluids.WATER, 5000);
-        TestTank.Entity lava = source(helper, at.get(1), Fluids.LAVA, 5000);
-        List<TestTank.Entity> sinks = List.of(drain(helper, at.get(2)), drain(helper, at.get(4)), drain(helper, at.get(5)));
+        Connections at = connections(facing);
+        TestTank.Entity water = source(helper, at.frontLeft(), Fluids.WATER, 5000);
+        TestTank.Entity lava = source(helper, at.frontRight(), Fluids.LAVA, 5000);
+        List<TestTank.Entity> sinks = List.of(drain(helper, at.backLeft()), drain(helper, at.left()), drain(helper, at.right()));
         AssemblerMachineTests.hold(assembler, THREE_OUTPUTS);
 
         SimpleEnergyHandler supply = AssemblerMachineTests.supply();
@@ -576,7 +588,7 @@ final class AssemblerFluidTests {
     private static void anyConnectionDoes(GameTestHelper helper, Direction facing) {
         for (int index = 0; index < 6; index++) {
             Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO, facing);
-            Connection connection = connections(facing).get(index);
+            Connection connection = connections(facing).all().get(index);
             AssemblerMachineTests.hold(assembler, FULL);
             assembler.machine().fluids().set(2, new FluidStack(Fluids.WATER, 300));
             TestTank.Entity water = source(helper, connection, Fluids.WATER, 5000);
@@ -670,7 +682,7 @@ final class AssemblerFluidTests {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         Direction facing = assembler.facing();
         // The corner connection, which the Assembler had none at before the six.
-        Connection connection = connections(facing).get(0);
+        Connection connection = connections(facing).frontLeft();
         BlockCapabilityCache<ResourceHandler<FluidResource>, Direction> pipe =
                 BlockCapabilityCache.create(Capabilities.Fluid.BLOCK, helper.getLevel(), helper.absolutePos(connection.block()), connection.side());
         helper.assertTrue(pipe.getCapability() == null, "the cache saw a capability before any recipe");
@@ -691,10 +703,10 @@ final class AssemblerFluidTests {
     private static void craftsThroughItsConnections(GameTestHelper helper) {
         // Tier 3, whose Overload Limit lets 3 of the iron in.
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.THREE);
-        List<Connection> at = connections(assembler.facing());
-        TestTank.Entity water = source(helper, at.get(0), Fluids.WATER, 5000);
-        TestTank.Entity lava = source(helper, at.get(5), Fluids.LAVA, 5000);
-        TestTank.Entity sink = drain(helper, at.get(1));
+        Connections at = connections(assembler.facing());
+        TestTank.Entity water = source(helper, at.frontLeft(), Fluids.WATER, 5000);
+        TestTank.Entity lava = source(helper, at.right(), Fluids.LAVA, 5000);
+        TestTank.Entity sink = drain(helper, at.frontRight());
         AssemblerMachineTests.hold(assembler, FULL);
         helper.assertTrue(AssemblerMachineTests.insert(assembler, 0, Items.IRON_INGOT, 3) == 3, "the iron did not go in");
 
@@ -728,10 +740,10 @@ final class AssemblerFluidTests {
      */
     private static void craftsTwoIntoThree(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.THREE);
-        List<Connection> at = connections(assembler.facing());
-        TestTank.Entity water = source(helper, at.get(0), Fluids.WATER, 5000);
-        TestTank.Entity lava = source(helper, at.get(1), Fluids.LAVA, 5000);
-        List<TestTank.Entity> sinks = List.of(drain(helper, at.get(2)), drain(helper, at.get(3)), drain(helper, at.get(4)));
+        Connections at = connections(assembler.facing());
+        TestTank.Entity water = source(helper, at.frontLeft(), Fluids.WATER, 5000);
+        TestTank.Entity lava = source(helper, at.frontRight(), Fluids.LAVA, 5000);
+        List<TestTank.Entity> sinks = List.of(drain(helper, at.backLeft()), drain(helper, at.backRight()), drain(helper, at.left()));
         AssemblerMachineTests.hold(assembler, THREE_OUTPUTS);
 
         SimpleEnergyHandler supply = AssemblerMachineTests.supply();
@@ -763,9 +775,9 @@ final class AssemblerFluidTests {
      */
     private static void stallsOnAFullBox(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
-        List<Connection> at = connections(assembler.facing());
-        TestTank.Entity water = source(helper, at.get(0), Fluids.WATER, 8000);
-        source(helper, at.get(5), Fluids.LAVA, 8000);
+        Connections at = connections(assembler.facing());
+        TestTank.Entity water = source(helper, at.frontLeft(), Fluids.WATER, 8000);
+        source(helper, at.right(), Fluids.LAVA, 8000);
         AssemblerMachineTests.hold(assembler, FULL);
         SimpleEnergyHandler supply = AssemblerMachineTests.supply();
         for (int ran = 0; ran < 150; ran++) {
@@ -794,7 +806,7 @@ final class AssemblerFluidTests {
                         + ", water " + amount(assembler, 0));
 
         // A drain at a connection: the box empties through it, and the craft goes on.
-        TestTank.Entity sink = drain(helper, at.get(2));
+        TestTank.Entity sink = drain(helper, at.backLeft());
         for (int ran = 0; ran < 80 && AssemblerMachineTests.count(assembler, AssemblerSlots.PRODUCT) < 4; ran++) {
             if (AssemblerMachineTests.count(assembler, 0) == 0) {
                 AssemblerMachineTests.insert(assembler, 0, Items.IRON_INGOT, 1);
@@ -816,9 +828,9 @@ final class AssemblerFluidTests {
     private static void stallsOnEachFullBox(GameTestHelper helper) {
         for (int out = 0; out < 3; out++) {
             Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
-            List<Connection> at = connections(assembler.facing());
-            source(helper, at.get(0), Fluids.WATER, 8000);
-            source(helper, at.get(1), Fluids.LAVA, 8000);
+            Connections at = connections(assembler.facing());
+            source(helper, at.frontLeft(), Fluids.WATER, 8000);
+            source(helper, at.frontRight(), Fluids.LAVA, 8000);
             AssemblerMachineTests.hold(assembler, THREE_OUTPUTS);
             int box = FluidLayout.ASSEMBLER.outputBox(out);
             helper.assertTrue(assembler.machine().fluids().capacity(box) == OUTPUT_VOLUME[out],
@@ -841,25 +853,25 @@ final class AssemblerFluidTests {
                     "an Assembler with output box " + (out + 1) + " full went on: progress " + assembler.machine().craftProgress());
 
             // A drain at a connection: the box empties through it, and the craft goes on.
-            drain(helper, at.get(3));
+            drain(helper, at.backRight());
             for (int ran = 0; ran < 60 && assembler.machine().craftProgress() == 0; ran++) {
                 AssemblerMachineTests.feed(assembler, supply, 1000);
                 assembler.machine().serverTick(helper.getLevel());
             }
             helper.assertTrue(assembler.machine().craftProgress() > 0, "output box " + (out + 1) + " drained and the craft still did not go on");
             helper.destroyBlock(ORIGIN);
-            helper.setBlock(at.get(0).beyond(), Blocks.AIR);
-            helper.setBlock(at.get(1).beyond(), Blocks.AIR);
-            helper.setBlock(at.get(3).beyond(), Blocks.AIR);
+            helper.setBlock(at.frontLeft().beyond(), Blocks.AIR);
+            helper.setBlock(at.frontRight().beyond(), Blocks.AIR);
+            helper.setBlock(at.backRight().beyond(), Blocks.AIR);
         }
         helper.succeed();
     }
 
     private static void waitsOnAFullProduct(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
-        List<Connection> at = connections(assembler.facing());
-        source(helper, at.get(0), Fluids.WATER, 5000);
-        source(helper, at.get(5), Fluids.LAVA, 5000);
+        Connections at = connections(assembler.facing());
+        source(helper, at.frontLeft(), Fluids.WATER, 5000);
+        source(helper, at.right(), Fluids.LAVA, 5000);
         AssemblerMachineTests.hold(assembler, FULL);
         AssemblerMachineTests.insert(assembler, 0, Items.IRON_INGOT, 1);
         assembler.machine().inventory().set(AssemblerSlots.PRODUCT, ItemResource.of(Items.GOLD_INGOT), 64);
@@ -877,9 +889,9 @@ final class AssemblerFluidTests {
      */
     private static void fluidOnly(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
-        List<Connection> at = connections(assembler.facing());
-        TestTank.Entity water = source(helper, at.get(0), Fluids.WATER, 5000);
-        List<TestTank.Entity> sinks = List.of(drain(helper, at.get(1)), drain(helper, at.get(2)));
+        Connections at = connections(assembler.facing());
+        TestTank.Entity water = source(helper, at.frontLeft(), Fluids.WATER, 5000);
+        List<TestTank.Entity> sinks = List.of(drain(helper, at.frontRight()), drain(helper, at.backLeft()));
         AssemblerMachineTests.hold(assembler, TWO_OUTPUTS);
         helper.assertTrue(assembler.machine().state() != MachineState.CANT_RUN, "a recipe with no item could not run");
 
@@ -898,8 +910,8 @@ final class AssemblerFluidTests {
     /** A recipe with items and a fluid result: the items go where they always went, the fluid in its output box. */
     private static void fluidBesideItems(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
-        List<Connection> at = connections(assembler.facing());
-        source(helper, at.get(0), Fluids.WATER, 5000);
+        Connections at = connections(assembler.facing());
+        source(helper, at.frontLeft(), Fluids.WATER, 5000);
         AssemblerMachineTests.hold(assembler, FLUID_RESULT);
         helper.assertTrue(AssemblerMachineTests.insert(assembler, 0, Items.GOLD_INGOT, 1) == 1, "the gold did not go in");
         SimpleEnergyHandler supply = AssemblerMachineTests.supply();
@@ -917,21 +929,21 @@ final class AssemblerFluidTests {
 
     private static void pullsByOrder(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
-        List<Connection> at = connections(assembler.facing());
+        Connections at = connections(assembler.facing());
         AssemblerMachineTests.hold(assembler, FULL);
         // Lava first and alone: it goes to the box the recipe's second ingredient names, and water has none yet.
-        TestTank.Entity lava = source(helper, at.get(3), Fluids.LAVA, 5000);
+        TestTank.Entity lava = source(helper, at.backRight(), Fluids.LAVA, 5000);
         tick(helper, assembler, 1);
         helper.assertTrue(amount(assembler, 0) == 0 && box(assembler, 1).getFluid() == Fluids.LAVA && amount(assembler, 1) == 400,
                 "lava went to " + box(assembler, 0) + " and " + box(assembler, 1));
         helper.assertTrue(inTank(lava) == 4600, "the lava tank holds " + inTank(lava));
         // A fluid the recipe doesn't use is left where it is.
-        helper.setBlock(at.get(3).beyond(), Blocks.AIR);
-        TestTank.Entity other = source(helper, at.get(0), Fluids.FLOWING_LAVA, 5000);
+        helper.setBlock(at.backRight().beyond(), Blocks.AIR);
+        TestTank.Entity other = source(helper, at.frontLeft(), Fluids.FLOWING_LAVA, 5000);
         tick(helper, assembler, 1);
         helper.assertTrue(amount(assembler, 0) == 0 && inTank(other) == 5000, "a fluid the recipe doesn't use was pulled: " + box(assembler, 0));
-        helper.setBlock(at.get(0).beyond(), Blocks.AIR);
-        TestTank.Entity water = source(helper, at.get(0), Fluids.WATER, 5000);
+        helper.setBlock(at.frontLeft().beyond(), Blocks.AIR);
+        TestTank.Entity water = source(helper, at.frontLeft(), Fluids.WATER, 5000);
         tick(helper, assembler, 1);
         helper.assertTrue(box(assembler, 0).getFluid() == Fluids.WATER && amount(assembler, 0) == 800, "water went to " + box(assembler, 0));
         helper.assertTrue(inTank(water) == 4200, "the water tank holds " + inTank(water));
@@ -941,7 +953,7 @@ final class AssemblerFluidTests {
     private static void connectionFaces(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         AssemblerMachineTests.hold(assembler, FULL);
-        ResourceHandler<FluidResource> face = fluid(assembler, connections(assembler.facing()).get(1));
+        ResourceHandler<FluidResource> face = fluid(assembler, connections(assembler.facing()).frontRight());
         helper.assertTrue(face != null && face.size() == 5, "the connection shows " + (face == null ? "nothing" : face.size() + " boxes"));
         // A mod that pushes fills the input box the recipe's order names, and only with the fluid it takes there.
         helper.assertTrue(insert(face, Fluids.WATER, 150) == 150 && box(assembler, 0).getFluid() == Fluids.WATER, "water did not reach input box 1");
@@ -985,7 +997,7 @@ final class AssemblerFluidTests {
                 "three results sized the boxes at " + boxes.capacity(2) + ", " + boxes.capacity(3) + " and " + boxes.capacity(4));
         // The results bind by order, so each box takes only its own result.
         AssemblerMachineTests.hold(assembler, TWO_OUTPUTS);
-        ResourceHandler<FluidResource> face = fluid(assembler, connections(assembler.facing()).get(0));
+        ResourceHandler<FluidResource> face = fluid(assembler, connections(assembler.facing()).frontLeft());
         helper.assertTrue(extract(face, Fluids.WATER, 1) == 0, "an empty box gave water");
         boxes.set(2, new FluidStack(Fluids.WATER, 1200));
         boxes.set(3, new FluidStack(Fluids.LAVA, 300));
@@ -1025,7 +1037,7 @@ final class AssemblerFluidTests {
             int volume = recipe.equals(PINNED) ? 120 : 300;
             int made = volume / 40 * 40;
             Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
-            source(helper, connections(assembler.facing()).get(0), Fluids.WATER, 5000);
+            source(helper, connections(assembler.facing()).frontLeft(), Fluids.WATER, 5000);
             AssemblerMachineTests.hold(assembler, recipe);
             helper.assertTrue(assembler.machine().fluids().capacity(2) == volume,
                     recipe + " sizes output box 1 at " + assembler.machine().fluids().capacity(2) + " mB, not " + volume);
@@ -1042,7 +1054,7 @@ final class AssemblerFluidTests {
             helper.assertTrue(assembler.machine().energy() == energy && assembler.machine().craftProgress() == 0
                             && amount(assembler, 0) == inBox && amount(assembler, 2) == made,
                     recipe + " went on past a full box");
-            helper.setBlock(connections(assembler.facing()).get(0).beyond(), Blocks.AIR);
+            helper.setBlock(connections(assembler.facing()).frontLeft().beyond(), Blocks.AIR);
             helper.destroyBlock(ORIGIN);
         }
         helper.succeed();
@@ -1089,9 +1101,9 @@ final class AssemblerFluidTests {
     /** Tier 1 at its own speed: water in through one connection, the gold ingot, and the nuggets and lava out. */
     private static void tier1Crafts(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
-        List<Connection> at = connections(assembler.facing());
-        TestTank.Entity water = source(helper, at.get(0), Fluids.WATER, 5000);
-        TestTank.Entity sink = drain(helper, at.get(1));
+        Connections at = connections(assembler.facing());
+        TestTank.Entity water = source(helper, at.frontLeft(), Fluids.WATER, 5000);
+        TestTank.Entity sink = drain(helper, at.frontRight());
         helper.assertTrue(AssemblerMachineTests.request(assembler, FLUID_RESULT) == HoldVerdict.HELD, "tier 1 did not hold a recipe with a fluid in and out");
         helper.assertTrue(AssemblerMachineTests.insert(assembler, 0, Items.GOLD_INGOT, 1) == 1, "the gold did not go in");
         SimpleEnergyHandler supply = AssemblerMachineTests.supply();

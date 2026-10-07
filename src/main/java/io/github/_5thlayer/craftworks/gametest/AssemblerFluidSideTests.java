@@ -252,7 +252,7 @@ final class AssemblerFluidSideTests {
 
     private static void pulls(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
-        TestTank.Entity water = tank(helper, AssemblerFluidTests.beyond(assembler.facing()), Fluids.WATER, 5000, TestTank.Mode.BOTH);
+        TestTank.Entity water = tank(helper, AssemblerFluidTests.beyondFirstConnection(assembler.facing()), Fluids.WATER, 5000, TestTank.Mode.BOTH);
         AssemblerMachineTests.hold(assembler, WATER_CRAFT);
         AssemblerFluidSide fluidSide = assembler.machine().fluidSide();
 
@@ -267,7 +267,7 @@ final class AssemblerFluidSideTests {
 
     private static void pushes(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
-        TestTank.Entity drain = tank(helper, AssemblerFluidTests.beyond(assembler.facing()), Fluids.EMPTY, 0, TestTank.Mode.SINK);
+        TestTank.Entity drain = tank(helper, AssemblerFluidTests.beyondFirstConnection(assembler.facing()), Fluids.EMPTY, 0, TestTank.Mode.SINK);
         AssemblerMachineTests.hold(assembler, FLUID_RESULT);
         AssemblerFluidSide fluidSide = assembler.machine().fluidSide();
         AssemblingRecipe recipe = recipe(helper, FLUID_RESULT).orElseThrow();
@@ -290,13 +290,13 @@ final class AssemblerFluidSideTests {
         AssemblerFluidSide fluidSide = assembler.machine().fluidSide();
         BlockPos origin = helper.absolutePos(ORIGIN);
 
-        List<AssemblerFluidTests.Connection> connections = AssemblerFluidTests.connections(facing);
-        AssemblerFluidTests.Connection first = connections.get(0);
+        AssemblerFluidTests.Connections connections = AssemblerFluidTests.connections(facing);
+        AssemblerFluidTests.Connection first = connections.frontLeft();
         helper.assertTrue(fluidSide.connection(helper.absolutePos(first.block()), first.side()) == null,
                 "a connection answered while the Held recipe names no fluid");
         AssemblerMachineTests.hold(assembler, WATER_CRAFT);
         helper.assertTrue(fluidSide.hasConnections(), "a recipe that names a fluid left the fluid side with no connections");
-        for (AssemblerFluidTests.Connection connection : connections) {
+        for (AssemblerFluidTests.Connection connection : connections.all()) {
             BlockPos at = helper.absolutePos(connection.block());
             helper.assertTrue(fluidSide.connection(at, connection.side()) != null,
                     "no answer at the connection " + connection);
