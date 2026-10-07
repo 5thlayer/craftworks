@@ -17,7 +17,7 @@ import java.util.function.Predicate;
  *
  * <p>A recipe is Locked if any configured source or any registered hook says so. The Resolver never
  * knows why: a hook is a yes or a no to it. A reasoned lock may give a reason with its yes, and the
- * reasons are kept beside the predicate, by recipe id, for the Crafting Plan to show (CONTEXT.md). The
+ * reasons are kept beside the predicate, by recipe id, for the Crafting Plan to show (GLOSSARY.md). The
  * reason is text relayed to the player, never something the Assembler acts on.
  */
 public final class Locks {

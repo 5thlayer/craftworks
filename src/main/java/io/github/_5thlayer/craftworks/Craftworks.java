@@ -17,7 +17,7 @@ import net.neoforged.fml.config.ModConfig;
 
 /**
  * The Mod's common half. Its feature is the Personal Assembler, the player's own crafting planner
- * (CONTEXT.md).
+ * (GLOSSARY.md).
  */
 @Mod(Craftworks.MOD_ID)
 public final class Craftworks {

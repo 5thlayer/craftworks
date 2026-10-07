@@ -16,7 +16,7 @@ import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
 
-/** A recipe is Locked if any configured source or any hook says so (CONTEXT.md, Lock source). */
+/** A recipe is Locked if any configured source or any hook says so (GLOSSARY.md, Lock source). */
 class LocksTest {
 
     private static final Predicate<String> NONE = recipe -> false;

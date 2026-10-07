@@ -7,7 +7,7 @@ status: accepted, in part superseded by ADR-0004
 > **Imported from PlanetaryFactory ADR-0064**, unchanged apart from renumbering. Craftworks began as
 > PlanetaryFactory's `core/assembler/`. Issue numbers (`#n`) and ADRs cited as PlanetaryFactory
 > refer to adamico/planetary-factory. [ADR-0006](0006-craftworks-is-its-own-mod.md) records where
-> Craftworks departs from this decision; the glossary in `CONTEXT.md` has the current terms.
+> Craftworks departs from this decision; the glossary in `GLOSSARY.md` has the current terms.
 
 ADR-0001 put three steps between EMI's **Fill Recipe** and the queue: Select Amount, the Crafting
 Plan, and Start. That made the player commit to a count before seeing what it cost, and a single

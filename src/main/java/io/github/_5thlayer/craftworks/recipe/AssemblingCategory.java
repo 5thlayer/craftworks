@@ -11,7 +11,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 
 /**
- * An Assembling recipe's category (CONTEXT.md): the kinds of recipe Factorio's machines are split by, which
+ * An Assembling recipe's category (GLOSSARY.md): the kinds of recipe Factorio's machines are split by, which
  * decide the Assemblers that may hold it. Written in recipes and in the server config by its {@link #id}.
  *
  * <p>No Minecraft game types, only DFU's codec, so a tier's defaults are unit-tested. The constants' order
