@@ -21,7 +21,7 @@ import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
  * one layout, so the tiers differ only in speed, power, buffer and art.
  * The rates are pure, so they are unit-tested.
  */
-public enum AssemblerTier implements MachineDefaults {
+public enum AssemblerTier {
     ONE("assembler_1", 0.5, 37.5, 50_000, List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID)),
     TWO("assembler_2", 0.75, 75.0, 50_000, List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID)),
     THREE("assembler_3", 1.25, 187.5, 50_000, List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID));
@@ -41,7 +41,7 @@ public enum AssemblerTier implements MachineDefaults {
         this.defaultCategories = defaultCategories;
     }
 
-    @Override
+    /** The block's name, which names its section of the server config. */
     public String blockName() {
         return blockName;
     }
@@ -50,25 +50,22 @@ public enum AssemblerTier implements MachineDefaults {
         return blockName + "_part";
     }
 
-    @Override
+    /** A craft takes the recipe's time divided by this, in ticks. */
     public double defaultSpeed() {
         return defaultSpeed;
     }
 
     /** FE a tick while crafting. */
-    @Override
     public double defaultPower() {
         return defaultPower;
     }
 
     /** FE the energy buffer holds. */
-    @Override
     public int defaultBuffer() {
         return defaultBuffer;
     }
 
     /** The recipe categories this tier holds until the server config says otherwise. */
-    @Override
     public List<AssemblingCategory> defaultCategories() {
         return defaultCategories;
     }

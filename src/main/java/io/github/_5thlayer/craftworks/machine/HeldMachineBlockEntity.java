@@ -65,11 +65,11 @@ public abstract class HeldMachineBlockEntity extends BlockEntity implements Menu
     private final EnergyBuffer buffer = new EnergyBuffer();
     private final MachineItemFace items;
 
-    private final Function<BlockState, MachineDefaults> defaultsOf;
+    private final Function<BlockState, AssemblerTier> defaultsOf;
 
     /** {@code defaultsOf} reads the machine's figures from its block state: an Assembler's follow its tier, the others' are fixed. */
     protected HeldMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, MachineSlots slots,
-            Function<BlockState, MachineDefaults> defaultsOf) {
+            Function<BlockState, AssemblerTier> defaultsOf) {
         super(type, pos, state);
         this.defaultsOf = defaultsOf;
         inventory = new MachineInventory(slots, new MachineInventory.Owner() {
@@ -88,7 +88,7 @@ public abstract class HeldMachineBlockEntity extends BlockEntity implements Menu
     }
 
     /** The figures this machine starts from before the server config says otherwise. Read from the block state alone. */
-    protected MachineDefaults defaults() {
+    protected AssemblerTier defaults() {
         return defaultsOf.apply(getBlockState());
     }
 
@@ -297,7 +297,7 @@ public abstract class HeldMachineBlockEntity extends BlockEntity implements Menu
 
     /** The FE this tick of a craft of {@code duration} ticks costs: its share of the machine's price for the craft. */
     private int feThisTick(AssemblingRecipe recipe, int duration) {
-        MachineDefaults machine = defaults();
+        AssemblerTier machine = defaults();
         int price = CraftRates.fePerCraft(CraftworksConfig.power(machine), CraftworksConfig.speed(machine), recipe.time());
         return CraftRates.feForTick(Math.min(progress, duration - 1), duration, price);
     }

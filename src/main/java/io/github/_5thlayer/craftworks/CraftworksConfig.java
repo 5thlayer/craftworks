@@ -5,12 +5,11 @@ package io.github._5thlayer.craftworks;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
-import io.github._5thlayer.craftworks.machine.MachineDefaults;
 import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
 import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.common.ModConfigSpec;
@@ -39,13 +38,13 @@ public final class CraftworksConfig {
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> MOD_RECIPES_EXCLUDED;
 
-    /** One machine's figures, in the config's section for its block. */
+    /** One tier's figures, in the config's section for its block. */
     public record MachineSettings(ModConfigSpec.DoubleValue speed, ModConfigSpec.DoubleValue power,
             ModConfigSpec.IntValue buffer, ModConfigSpec.ConfigValue<List<? extends String>> categories) {
     }
 
     /** The figures of each Assembler tier, in the config's section for its block. */
-    private static final Map<MachineDefaults, MachineSettings> MACHINES = new LinkedHashMap<>();
+    private static final Map<AssemblerTier, MachineSettings> MACHINES = new EnumMap<>(AssemblerTier.class);
 
     static {
         var builder = new ModConfigSpec.Builder();
@@ -73,28 +72,28 @@ public final class CraftworksConfig {
                         value -> value instanceof String entry && (entry.contains(":")
                                 ? Identifier.tryParse(entry) != null
                                 : Identifier.isValidNamespace(entry)));
-        for (AssemblerTier machine : AssemblerTier.values()) {
-            builder.comment("The " + machine.blockName() + " block.").push(machine.blockName());
+        for (AssemblerTier tier : AssemblerTier.values()) {
+            builder.comment("The " + tier.blockName() + " block.").push(tier.blockName());
             ModConfigSpec.DoubleValue speed = builder
                     .comment("Crafting speed: a craft takes the recipe's time divided by this, in ticks.")
-                    .defineInRange("speed", machine.defaultSpeed(), 0.01, 1000.0);
+                    .defineInRange("speed", tier.defaultSpeed(), 0.01, 1000.0);
             ModConfigSpec.DoubleValue power = builder
                     .comment("FE a tick while crafting. A craft costs this times the ticks it takes, spread over them;",
                             "a tick it can't be paid in full makes no progress, and an idle machine draws nothing.")
-                    .defineInRange("power", machine.defaultPower(), 0.0, 1_000_000.0);
+                    .defineInRange("power", tier.defaultPower(), 0.0, 1_000_000.0);
             ModConfigSpec.IntValue buffer = builder
                     .comment("FE the energy buffer holds.")
-                    .defineInRange("buffer", machine.defaultBuffer(), 1, Integer.MAX_VALUE);
+                    .defineInRange("buffer", tier.defaultBuffer(), 1, Integer.MAX_VALUE);
             var categories = builder
                     .comment("The categories of Assembling recipe this machine can hold: "
                             + AssemblingCategory.ids() + ".",
                             "Fill Recipe refuses a recipe whose category is not listed.")
                     .defineListAllowEmpty("categories",
-                            machine.defaultCategories().stream().map(AssemblingCategory::id).toList(),
+                            tier.defaultCategories().stream().map(AssemblingCategory::id).toList(),
                             () -> AssemblingCategory.CRAFTING.id(),
                             AssemblingCategory::isId);
             builder.pop();
-            MACHINES.put(machine, new MachineSettings(speed, power, buffer, categories));
+            MACHINES.put(tier, new MachineSettings(speed, power, buffer, categories));
         }
         SPEC = builder.build();
     }
@@ -117,30 +116,30 @@ public final class CraftworksConfig {
         return SPEC.isLoaded() ? List.copyOf(MOD_RECIPES_EXCLUDED.get()) : List.of();
     }
 
-    /** The machine's crafting speed; its default until a world's config is loaded. */
-    public static double speed(MachineDefaults machine) {
-        return SPEC.isLoaded() ? MACHINES.get(machine).speed().get() : machine.defaultSpeed();
+    /** The tier's crafting speed; its default until a world's config is loaded. */
+    public static double speed(AssemblerTier tier) {
+        return SPEC.isLoaded() ? MACHINES.get(tier).speed().get() : tier.defaultSpeed();
     }
 
-    /** The machine's FE a tick while crafting; its default until a world's config is loaded. */
-    public static double power(MachineDefaults machine) {
-        return SPEC.isLoaded() ? MACHINES.get(machine).power().get() : machine.defaultPower();
+    /** The tier's FE a tick while crafting; its default until a world's config is loaded. */
+    public static double power(AssemblerTier tier) {
+        return SPEC.isLoaded() ? MACHINES.get(tier).power().get() : tier.defaultPower();
     }
 
-    /** The machine's energy buffer in FE; its default until a world's config is loaded. */
-    public static int buffer(MachineDefaults machine) {
-        return SPEC.isLoaded() ? MACHINES.get(machine).buffer().get() : machine.defaultBuffer();
+    /** The tier's energy buffer in FE; its default until a world's config is loaded. */
+    public static int buffer(AssemblerTier tier) {
+        return SPEC.isLoaded() ? MACHINES.get(tier).buffer().get() : tier.defaultBuffer();
     }
 
-    /** The machine's {@code categories} setting, which a game test sets as a server's config would. */
-    public static ModConfigSpec.ConfigValue<List<? extends String>> categoriesSetting(MachineDefaults machine) {
-        return MACHINES.get(machine).categories();
+    /** The tier's {@code categories} setting, which a game test sets as a server's config would. */
+    public static ModConfigSpec.ConfigValue<List<? extends String>> categoriesSetting(AssemblerTier tier) {
+        return MACHINES.get(tier).categories();
     }
 
-    /** The recipe categories the machine holds; its defaults until a world's config is loaded. */
-    public static List<AssemblingCategory> categories(MachineDefaults machine) {
-        if (!SPEC.isLoaded()) return machine.defaultCategories();
-        return MACHINES.get(machine).categories().get().stream()
+    /** The recipe categories the tier holds; its defaults until a world's config is loaded. */
+    public static List<AssemblingCategory> categories(AssemblerTier tier) {
+        if (!SPEC.isLoaded()) return tier.defaultCategories();
+        return MACHINES.get(tier).categories().get().stream()
                 .flatMap(name -> AssemblingCategory.byId(name).stream()).toList();
     }
 
