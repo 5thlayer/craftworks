@@ -65,3 +65,7 @@ names costs less than code that runs once.
 
 This supersedes ADR-0015, and amends ADR-0014 (an Assembler pushes fluid and has two input and three output
 boxes), ADR-0016 (one tab) and ADR-0017 (the one fluid machine is the Assembler).
+
+Tier 1 has the boxes too, and holds `crafting-with-fluid` by default, as ADR-0019 (#41) decides: every tier makes
+every Assembling recipe, and no tier refuses one for naming a fluid. "Tier 2 or 3" above is every tier, and the tiers
+differ in speed, power and buffer only.

@@ -43,6 +43,8 @@ final class AssemblingCategoryTests {
     private static final Identifier TWO_RESULTS = id("gametest/two_results");
     private static final Identifier CLASH = id("gametest/results_and_remainders_clash");
     private static final Identifier JOIN = id("gametest/results_and_remainders_join");
+    /** A config that leaves out the fluid category, as an existing world's may. */
+    private static final List<AssemblingCategory> WITHOUT_FLUID = List.of(AssemblingCategory.CRAFTING, AssemblingCategory.ADVANCED_CRAFTING);
 
     private AssemblingCategoryTests() {
     }
@@ -53,10 +55,10 @@ final class AssemblingCategoryTests {
 
     static void register(CraftworksGameTests.Registrar tests) {
         tests.test("the_codec_reads_category_and_results_and_refuses_an_empty_results_with_no_fluid", 20, AssemblingCategoryTests::codec);
-        tests.test("each_tiers_categories_default_to_factorios", 20, AssemblingCategoryTests::configDefaults);
-        tests.test("tier_1_refuses_a_crafting_with_fluid_recipe_at_fill_recipe", 20, AssemblingCategoryTests::tier1Refuses);
-        tests.test("tier_2_takes_a_crafting_with_fluid_recipe_at_fill_recipe", 20, AssemblingCategoryTests::tier2Takes);
-        tests.test("a_fluid_only_recipe_is_refused_by_category_at_tier_1", 20, AssemblingCategoryTests::fluidOnly);
+        tests.test("every_tier_holds_all_three_categories_by_default", 20, AssemblingCategoryTests::configDefaults);
+        tests.test("every_tier_takes_a_crafting_with_fluid_recipe_at_fill_recipe", 20, AssemblingCategoryTests::everyTierTakes);
+        tests.test("a_tier_whose_config_leaves_out_crafting_with_fluid_refuses_such_a_recipe_at_fill_recipe", 20, AssemblingCategoryTests::restrictedRefuses);
+        tests.test("a_fluid_only_recipe_is_refused_by_category_on_a_tier_whose_config_leaves_it_out", 20, AssemblingCategoryTests::fluidOnly);
         tests.test("a_fast_replace_to_a_tier_without_the_category_leaves_the_recipe_held_and_idle", 20, AssemblingCategoryTests::fastReplace);
         tests.test("a_craft_with_two_item_results_fills_the_product_and_remainder_slots", 20, AssemblingCategoryTests::twoResults);
         tests.test("an_extra_result_joins_the_remainders_and_a_different_one_is_refused", 20, AssemblingCategoryTests::extraResultsAndRemainders);
@@ -170,45 +172,56 @@ final class AssemblingCategoryTests {
     // -- categories -----------------------------------------------------------------------------
 
     private static void configDefaults(GameTestHelper helper) {
-        List<AssemblingCategory> tier1 = List.of(AssemblingCategory.CRAFTING, AssemblingCategory.ADVANCED_CRAFTING);
-        List<AssemblingCategory> more = List.of(AssemblingCategory.CRAFTING, AssemblingCategory.ADVANCED_CRAFTING,
+        List<AssemblingCategory> all = List.of(AssemblingCategory.CRAFTING, AssemblingCategory.ADVANCED_CRAFTING,
                 AssemblingCategory.CRAFTING_WITH_FLUID);
-        helper.assertTrue(CraftworksConfig.categories(AssemblerTier.ONE).equals(tier1),
-                "tier 1 takes " + CraftworksConfig.categories(AssemblerTier.ONE));
-        helper.assertTrue(CraftworksConfig.categories(AssemblerTier.TWO).equals(more),
-                "tier 2 takes " + CraftworksConfig.categories(AssemblerTier.TWO));
-        helper.assertTrue(CraftworksConfig.categories(AssemblerTier.THREE).equals(more),
-                "tier 3 takes " + CraftworksConfig.categories(AssemblerTier.THREE));
+        for (AssemblerTier tier : AssemblerTier.values()) {
+            helper.assertTrue(CraftworksConfig.categories(tier).equals(all), tier + " takes " + CraftworksConfig.categories(tier));
+        }
         helper.succeed();
     }
 
-    private static void tier1Refuses(GameTestHelper helper) {
-        Placed one = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
-        HoldVerdict refused = AssemblerMachineTests.request(one, CATEGORY_FLUID);
-        helper.assertTrue(refused == HoldVerdict.WRONG_CATEGORY, "tier 1 answered a crafting-with-fluid recipe with " + refused);
-        helper.assertTrue(one.machine().heldRecipe().isEmpty(), "a refused recipe was held");
-        helper.assertTrue(one.player().heard.contains("craftworks.assembler.refused.wrong_category"),
-                "the player was told " + one.player().heard);
-
+    private static void restrictedRefuses(GameTestHelper helper) {
+        AssemblerMachineTests.withCategories(AssemblerTier.ONE, WITHOUT_FLUID, () -> {
+            Placed one = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
+            HoldVerdict refused = AssemblerMachineTests.request(one, CATEGORY_FLUID);
+            helper.assertTrue(refused == HoldVerdict.WRONG_CATEGORY, "a tier 1 restricted to crafting answered a crafting-with-fluid recipe with " + refused);
+            helper.assertTrue(one.machine().heldRecipe().isEmpty(), "a refused recipe was held");
+            helper.assertTrue(one.player().heard.contains("craftworks.assembler.refused.wrong_category"),
+                    "the player was told " + one.player().heard);
+        });
         helper.succeed();
     }
 
-    /** Tier 2 takes the category; a fluid in the recipe is a separate refusal (#25). */
-    private static void tier2Takes(GameTestHelper helper) {
-        Placed two = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
-        HoldVerdict taken = AssemblerMachineTests.request(two, CATEGORY_FLUID);
-        helper.assertTrue(taken == HoldVerdict.HELD, "tier 2 answered a crafting-with-fluid recipe with " + taken);
+    /** The default config: each tier takes the category, and a fluid in the recipe is a separate refusal (#25). */
+    private static void everyTierTakes(GameTestHelper helper) {
+        for (AssemblerTier tier : AssemblerTier.values()) {
+            Placed assembler = AssemblerMachineTests.place(helper, tier);
+            HoldVerdict taken = AssemblerMachineTests.request(assembler, CATEGORY_FLUID);
+            helper.assertTrue(taken == HoldVerdict.HELD, tier + " answered a crafting-with-fluid recipe with " + taken);
+            helper.destroyBlock(AssemblerMachineTests.ORIGIN);
+        }
         helper.succeed();
     }
 
     private static void fluidOnly(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
-        HoldVerdict verdict = AssemblerMachineTests.request(assembler, FLUID_ONLY);
-        helper.assertTrue(verdict == HoldVerdict.WRONG_CATEGORY, "tier 1 answered a crafting-with-fluid recipe with no item result with " + verdict);
+        helper.assertTrue(AssemblerMachineTests.request(assembler, FLUID_ONLY) == HoldVerdict.HELD,
+                "tier 1 refused a crafting-with-fluid recipe with no item result by default");
+        helper.destroyBlock(AssemblerMachineTests.ORIGIN);
+        AssemblerMachineTests.withCategories(AssemblerTier.ONE, WITHOUT_FLUID, () -> {
+            Placed restricted = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
+            HoldVerdict verdict = AssemblerMachineTests.request(restricted, FLUID_ONLY);
+            helper.assertTrue(verdict == HoldVerdict.WRONG_CATEGORY, "tier 1 answered a crafting-with-fluid recipe with no item result with " + verdict);
+        });
         helper.succeed();
     }
 
     private static void fastReplace(GameTestHelper helper) {
+        AssemblerMachineTests.withCategories(AssemblerTier.ONE, WITHOUT_FLUID, () -> fastReplaceToRestrictedTier1(helper));
+        helper.succeed();
+    }
+
+    private static void fastReplaceToRestrictedTier1(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         helper.assertTrue(AssemblerMachineTests.request(assembler, CATEGORY_FLUID) == HoldVerdict.HELD, "tier 2 refused a crafting-with-fluid recipe");
         AssemblerMachineTests.insert(assembler, 0, Items.IRON_INGOT, 1);
@@ -224,7 +237,6 @@ final class AssemblingCategoryTests {
         }
         helper.assertTrue(AssemblerMachineTests.count(assembler, AssemblerSlots.PRODUCT) == 0, "tier 1 crafted a recipe outside its categories");
         helper.assertTrue(AssemblerMachineTests.count(assembler, 0) == 1, "tier 1 spent the input");
-        helper.succeed();
     }
 
     // -- results --------------------------------------------------------------------------------

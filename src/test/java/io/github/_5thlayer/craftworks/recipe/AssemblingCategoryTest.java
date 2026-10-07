@@ -60,12 +60,11 @@ class AssemblingCategoryTest {
     }
 
     @Test
-    void tier1TakesCraftingAndTiersTwoAndThreeAddFluid() {
-        assertEquals(List.of(AssemblingCategory.CRAFTING, AssemblingCategory.ADVANCED_CRAFTING),
-                AssemblerTier.ONE.defaultCategories());
-        List<AssemblingCategory> more = List.of(AssemblingCategory.CRAFTING, AssemblingCategory.ADVANCED_CRAFTING,
+    void everyTierHoldsAllThreeCategoriesByDefault() {
+        List<AssemblingCategory> all = List.of(AssemblingCategory.CRAFTING, AssemblingCategory.ADVANCED_CRAFTING,
                 AssemblingCategory.CRAFTING_WITH_FLUID);
-        assertEquals(more, AssemblerTier.TWO.defaultCategories());
-        assertEquals(more, AssemblerTier.THREE.defaultCategories());
+        assertEquals(all, AssemblerTier.ONE.defaultCategories());
+        assertEquals(all, AssemblerTier.TWO.defaultCategories());
+        assertEquals(all, AssemblerTier.THREE.defaultCategories());
     }
 }

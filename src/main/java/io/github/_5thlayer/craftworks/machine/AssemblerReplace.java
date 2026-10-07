@@ -48,11 +48,11 @@ final class AssemblerReplace implements ReplaceBuilder {
         for (int i = 0; i < positions.size(); i++) {
             blocks.add(new PlacementPlan.Placed(positions.get(i), footprint.stateAt(i, facing)));
         }
-        // The origin lands with the Fluid Connections' rings the old one had, if the new tier has any, so the ring
-        // and the capability change together; a tick later the block entity corrects it where the recipe says so.
+        // The origin lands with the Fluid Connections' rings the old one had, so the ring and the capability change
+        // together; a tick later the block entity corrects it where the recipe says so.
         BlockState oldOrigin = level.getBlockState(origin);
         BlockState newOrigin = blocks.getFirst().state();
-        if (oldOrigin.getValue(AssemblerBlock.FLUID_CONNECTIONS) && placing.tier().hasFluidBoxes()) {
+        if (oldOrigin.getValue(AssemblerBlock.FLUID_CONNECTIONS)) {
             blocks.set(0, new PlacementPlan.Placed(blocks.getFirst().pos(),
                     newOrigin.setValue(AssemblerBlock.FLUID_CONNECTIONS, true)));
         }

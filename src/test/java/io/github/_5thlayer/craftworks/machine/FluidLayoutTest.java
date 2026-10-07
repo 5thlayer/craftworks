@@ -58,11 +58,4 @@ class FluidLayoutTest {
                 .toList();
         assertTrue(turned.containsAll(ASSEMBLER.connections()) && ASSEMBLER.connections().containsAll(turned));
     }
-
-    @Test
-    void tiers2And3HaveTheFluidBoxesAndTier1None() {
-        assertFalse(AssemblerTier.ONE.hasFluidBoxes());
-        assertTrue(AssemblerTier.TWO.hasFluidBoxes());
-        assertTrue(AssemblerTier.THREE.hasFluidBoxes());
-    }
 }

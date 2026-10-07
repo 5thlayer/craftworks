@@ -43,7 +43,6 @@
   "craftworks.assembler.refused.wrong_category": "%s is in a recipe category this Assembler's tier can't make.",
   "craftworks.machine.fluid": "%s / %s mB",
   "craftworks.machine.fluid_empty": "No fluid",
-  "craftworks.assembler.refused.has_fluid": "%s names a fluid, and Assembler 1 takes none.",
   "craftworks.assembler.refused.too_many_fluids": "%s needs more fluids in or out than the Assembler's two input and three output boxes hold.",
   "craftworks.assembler.refused.fluid_too_large": "%s needs more than 1,000 mB of a fluid a craft, which is all an Assembler input box holds.",
   "craftworks.assembler.refused.remainders_dont_fit": "%s leaves more behind than the Assembler's one remainder slot holds.",

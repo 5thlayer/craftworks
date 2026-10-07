@@ -12,7 +12,7 @@ import net.minecraft.core.Direction;
  * Where a machine holds fluid, described: how many input and output fluid boxes it has and where its Fluid
  * Connections stand. The boxes ({@link MachineFluids}), the connections ({@link MachineFluidFace}), the gauges
  * ({@link FluidGaugeLayout}) and the recipes it may hold all read this and nothing machine-specific, so a layout
- * is one more instance: an Assembler of tier 2 or 3's is {@link #ASSEMBLER}.
+ * is one more instance: an Assembler's, of every tier, is {@link #ASSEMBLER}.
  *
  * <p>The boxes are numbered inputs first, then outputs; the Held recipe's {@code n}th fluid ingredient goes in
  * input box {@code n} and its {@code n}th fluid result in output box {@code n}.
@@ -67,7 +67,7 @@ public record FluidLayout(int fluidInputs, int fluidOutputs, List<Site> connecti
     }
 
     /**
-     * An Assembler of tier 2 or 3's: two input and three output boxes, and six connections, all three blocks of
+     * An Assembler's, of every tier: two input and three output boxes, and six connections, all three blocks of
      * the bottom layer along each of the two opposite edges of its 3x3, three on the side it faces and three on the
      * other. With six, a recipe of up to five fluids has a connection for
      * each, since a connection has no direction and each pipe network carries one fluid.

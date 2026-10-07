@@ -26,8 +26,7 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
  * resolved lazily because a block entity loads before the recipes do.
  *
  * <p>Every Assembling recipe is one, Hand-craftable or not, except the kinds this tier cannot run: one
- * whose category the tier's server config does not list, one that names a fluid, in or out, on tier 1 (which
- * has no fluid boxes), one with more fluid ingredients or results than the boxes of {@link FluidLayout#ASSEMBLER}
+ * whose category the tier's server config does not list, one with more fluid ingredients or results than the boxes of {@link FluidLayout#ASSEMBLER}
  * (two in, three out) or with more of a fluid a craft than an input box holds, one with more distinct
  * ingredients than the five input slots, and one whose remainders don't fit the one remainder slot.
  */
@@ -46,11 +45,6 @@ public final class HeldRecipes {
         @SuppressWarnings("unchecked")
         RecipeHolder<AssemblingRecipe> assembling = (RecipeHolder<AssemblingRecipe>) holder;
         return Optional.of(assembling);
-    }
-
-    /** Whether this tier takes the recipe's fluids: it names none, or the tier has fluid boxes. */
-    public static boolean takesFluids(AssemblerTier tier, AssemblingRecipe recipe) {
-        return (recipe.fluidIngredients().isEmpty() && recipe.fluidResults().isEmpty()) || tier.hasFluidBoxes();
     }
 
     /** Whether the recipe has no more fluid ingredients than the layout has input boxes and no more fluid results than output boxes. */
@@ -109,8 +103,8 @@ public final class HeldRecipes {
 
     /**
      * Whether an Assembler of any tier can run this recipe: its fluids fit the boxes of {@link
-     * FluidLayout#ASSEMBLER}, it fits the input slots, and its remainders fit. What a tier adds, its categories
-     * and whether it has fluid boxes at all, is asked of the tier ({@link #takesCategory}, {@link #takesFluids}).
+     * FluidLayout#ASSEMBLER}, it fits the input slots, and its remainders fit. What a tier adds, its categories,
+     * is asked of the tier ({@link #takesCategory}).
      */
     public static boolean canRun(AssemblingRecipe recipe) {
         return fluidsHaveBoxes(FluidLayout.ASSEMBLER, recipe) && fluidVolumeFits(recipe) && fitsSlots(recipe) && remaindersFit(recipe);
@@ -122,7 +116,6 @@ public final class HeldRecipes {
         Optional<AssemblingRecipe> recipe = find(player.level(), id).map(RecipeHolder::value);
         return HoldVerdict.of(recipe.map(found -> HoldVerdict.Checks.passing()
                 .categoryHeld(takesCategory(tier, found))
-                .takesFluids(takesFluids(tier, found))
                 .fluidsHaveBoxes(fluidsHaveBoxes(FluidLayout.ASSEMBLER, found))
                 .fluidVolumeFits(fluidVolumeFits(found))
                 .fitsSlots(fitsSlots(found))

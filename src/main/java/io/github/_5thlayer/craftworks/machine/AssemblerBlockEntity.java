@@ -32,14 +32,14 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * An Assembler's block entity, one type for all three tiers: a {@link HeldMachineBlockEntity} with seven item
- * slots (five inputs, the product and the remainders) and, on tiers 2 and 3, the input and output fluid boxes
- * ({@link MachineFluids}) of {@link FluidLayout#ASSEMBLER}.
+ * slots (five inputs, the product and the remainders) and the input and output fluid boxes
+ * ({@link MachineFluids}) of {@link FluidLayout#ASSEMBLER}, on every tier.
  *
  * <p>The Fluid Connections ({@link FluidLayout#connections}) exist only while the Held recipe runs here and
  * names a fluid, in or out. Each tick every connection pulls the Held recipe's fluid ingredients from the
  * block it faces, each into the box its order names, and after the craft pushes the fluid results out of their
  * boxes into it. The craft waits while an output box cannot hold what it makes. The boxes are kept over a reload
- * and a Fast Replace between tiers 2 and 3, and voided by a change of the Held recipe and by tier 1, which has none.
+ * and a Fast Replace between any two tiers, and voided by a change of the Held recipe.
  */
 public final class AssemblerBlockEntity extends HeldMachineBlockEntity {
 
@@ -109,18 +109,15 @@ public final class AssemblerBlockEntity extends HeldMachineBlockEntity {
 
     /**
      * Swapped for another tier by Fast Replace, which keeps this block entity: the buffer follows the new tier,
-     * and a tier with no fluid boxes voids what they held.
+     * and every tier has the same fluid boxes, so they keep what they held.
      */
     @Override
     public void setBlockState(BlockState state) {
         super.setBlockState(state);
         resizeBuffer();
-        if (!tierOf(state).hasFluidBoxes()) {
-            fluids.emptyAll();
-        }
     }
 
-    /** The fluid boxes, for the menu and the game tests. Nothing is in them on tier 1. */
+    /** The fluid boxes, for the menu and the game tests. */
     public MachineFluids fluids() {
         return fluids;
     }
@@ -155,12 +152,11 @@ public final class AssemblerBlockEntity extends HeldMachineBlockEntity {
 
     /**
      * The Held recipe if this Assembler can run it. Whether it can at all is worked out once per recipe
-     * instance; the category and the fluids are asked every time, since a Fast Replace or a config edit moves them.
+     * instance; the category is asked every time, since a Fast Replace or a config edit moves it.
      */
     @Override
     protected Optional<AssemblingRecipe> runnable(ServerLevel server) {
-        return held.runnable(server, HeldRecipes::canRun,
-                found -> HeldRecipes.takesCategory(tier(), found) && HeldRecipes.takesFluids(tier(), found));
+        return held.runnable(server, HeldRecipes::canRun, found -> HeldRecipes.takesCategory(tier(), found));
     }
 
     /** Whether the Fluid Connections exist: the Held recipe runs here and names a fluid, in or out. Server only. */

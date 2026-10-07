@@ -117,7 +117,7 @@ final class AssemblerGhostTests {
         // The panel, and the player's inventory below it.
         helper.assertTrue(at(menu, 0, 0, 0).isEmpty(), "the panel's corner has a ghost");
         helper.assertTrue(at(menu, 100, 20, 0).isEmpty(), "the head's name has a ghost");
-        helper.assertTrue(at(menu, 8, AssemblerMenu.INVENTORY_Y, 0).isEmpty(), "an inventory slot has a ghost");
+        helper.assertTrue(at(menu, 8, AssemblerMenu.INVENTORY_Y_WITH_FLUIDS, 0).isEmpty(), "an inventory slot has a ghost");
         helper.succeed();
     }
 
