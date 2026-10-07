@@ -63,6 +63,8 @@ public final class CraftworksGameTests {
             modBus.addListener(CraftworksGameTests::addGameTestPack);
             // The tests' own fluid-handler block, which a player's world never has.
             TestTank.register(modBus);
+            // And the fluids a five-fluid recipe needs beyond water and lava.
+            TestFluids.register(modBus);
         }
         if (Boolean.getBoolean(DEV_PACK)) {
             modBus.addListener(CraftworksGameTests::addDevPack);

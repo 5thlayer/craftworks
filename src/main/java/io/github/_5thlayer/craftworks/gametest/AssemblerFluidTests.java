@@ -3,7 +3,6 @@
 
 package io.github._5thlayer.craftworks.gametest;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -86,6 +85,8 @@ final class AssemblerFluidTests {
     private static final Identifier PINNED = id("gametest/assembler_pinned");
     private static final Identifier FULL_BOXES = id("gametest/assembler_full_boxes");
     private static final Identifier THREE_FLUIDS = id("gametest/assembler_three_fluids");
+    /** Water and a test acid, 100 mB each, make 30 mB of lava, 45 of a test brine and 55 of a test crude: five fluids. */
+    private static final Identifier FIVE_FLUIDS = id("gametest/assembler_five_fluids");
     private static final Identifier FOUR_RESULTS = id("gametest/assembler_four_results");
 
     private static final BlockPos ORIGIN = AssemblerMachineTests.ORIGIN;
@@ -559,29 +560,45 @@ final class AssemblerFluidTests {
     }
 
     /**
-     * Five of the six connections, each with a tank of its own and nothing closing a side between them: a recipe of two
-     * fluids in and three out, the five boxes, crafts with every fluid in its own network.
+     * Five of the six connections, each with a tank of its own and nothing closing a side between them: a recipe of
+     * five different fluids, two in and three out, crafts with every fluid in its own network. A connection serves
+     * any box, so which drain an output goes to is the Assembler's to choose; each drain is seeded with 1 mB of its own
+     * output, and a tank holding a fluid takes no other, so each ends with its own fluid and nothing else.
      */
     private static void fiveNetworks(GameTestHelper helper, Direction facing) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.THREE, facing);
         Connections at = connections(facing);
         TestTank.Entity water = source(helper, at.frontLeft(), Fluids.WATER, 5000);
-        TestTank.Entity lava = source(helper, at.frontRight(), Fluids.LAVA, 5000);
-        List<TestTank.Entity> sinks = List.of(drain(helper, at.backLeft()), drain(helper, at.left()), drain(helper, at.right()));
-        AssemblerMachineTests.hold(assembler, THREE_OUTPUTS);
+        TestTank.Entity acid = source(helper, at.frontRight(), TestFluids.ACID.get(), 5000);
+        TestTank.Entity lavaDrain = seededDrain(helper, at.backLeft(), Fluids.LAVA);
+        TestTank.Entity brineDrain = seededDrain(helper, at.backRight(), TestFluids.BRINE.get());
+        TestTank.Entity crudeDrain = seededDrain(helper, at.left(), TestFluids.CRUDE.get());
+        AssemblerMachineTests.hold(assembler, FIVE_FLUIDS);
 
         SimpleEnergyHandler supply = AssemblerMachineTests.supply();
-        for (int ran = 0; ran < 40 && inTank(sinks.get(0)) == 0; ran++) {
+        for (int ran = 0; ran < 40 && inTank(lavaDrain) < 31; ran++) {
             AssemblerMachineTests.feed(assembler, supply, 1000);
             assembler.machine().serverTick(helper.getLevel());
         }
         tick(helper, assembler, 2);
-        helper.assertTrue(inTank(water) < 5000 && inTank(lava) < 5000, "an input was not pulled: " + inTank(water) + " and " + inTank(lava) + " mB left");
-        helper.assertTrue(drained(sinks.get(0), Fluids.LAVA) == 30, "the drain beside the back holds " + sinks.get(0).tank.getResource(0) + " x " + inTank(sinks.get(0)));
-        // Any connection serves any box, so the 100 mB of water made in two boxes lands in the two water drains between them.
-        int waterOut = drained(sinks.get(1), Fluids.WATER) + drained(sinks.get(2), Fluids.WATER);
-        helper.assertTrue(waterOut == 100, "the two water drains hold " + waterOut + " mB, not the 100 made");
+        helper.assertTrue(inTank(water) < 5000 && inTank(acid) < 5000, "an input was not pulled: " + inTank(water) + " and " + inTank(acid) + " mB left");
+        for (Drained expected : List.of(new Drained(lavaDrain, Fluids.LAVA, 30), new Drained(brineDrain, TestFluids.BRINE.get(), 45),
+                new Drained(crudeDrain, TestFluids.CRUDE.get(), 55))) {
+            FluidResource held = expected.drain().tank.getResource(0);
+            helper.assertTrue(held.getFluid() == expected.fluid() && inTank(expected.drain()) == 1 + expected.amount(),
+                    "the drain of " + expected.fluid() + " holds " + held.getFluid() + " x " + inTank(expected.drain())
+                            + ", not " + (1 + expected.amount()) + " mB of its own");
+        }
         helper.succeed();
+    }
+
+    /** A drain and the one fluid, in the one amount, the recipe makes for it. */
+    private record Drained(TestTank.Entity drain, Fluid fluid, int amount) {
+    }
+
+    /** A drain that already holds 1 mB of {@code fluid}, so it takes that fluid and no other. */
+    private static TestTank.Entity seededDrain(GameTestHelper helper, Connection at, Fluid fluid) {
+        return tank(helper, at.beyond(), fluid, 1, TestTank.Mode.SINK);
     }
 
     /** Each of the six alone fills an input box from a source and drains an output box into a drain, then goes. */

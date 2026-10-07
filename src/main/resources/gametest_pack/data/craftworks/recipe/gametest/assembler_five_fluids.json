@@ -1,0 +1,16 @@
+{
+  "type": "craftworks:assembling",
+  "category": "crafting-with-fluid",
+  "ingredients": [],
+  "fluid_ingredients": [
+    { "ingredient": "minecraft:water", "amount": 100 },
+    { "ingredient": "craftworks:gametest_acid", "amount": 100 }
+  ],
+  "results": [],
+  "fluid_results": [
+    { "id": "minecraft:lava", "amount": 30 },
+    { "id": "craftworks:gametest_brine", "amount": 45 },
+    { "id": "craftworks:gametest_crude", "amount": 55 }
+  ],
+  "time": 20
+}
