@@ -4,7 +4,7 @@
 package io.github._5thlayer.craftworks.machine;
 
 /**
- * Whether a machine takes a recipe it was asked to hold, by Fill Recipe on its open screen.
+ * Whether an Assembler takes a recipe it was asked to hold, by Fill Recipe on its open screen.
  *
  * <p>One rule and one message rather than a button that silently does nothing. A recipe the Assembler
  * could never run is refused before its Lock is asked, so it is never reported as merely Locked. Locked
@@ -112,8 +112,8 @@ public enum HoldVerdict {
         return this == HELD;
     }
 
-    /** The lang key {@code machine} tells the player, or null when the recipe was held. */
-    public String messageKey(MachineKind machine) {
-        return refusal == null ? null : machine.langKey("refused." + refusal);
+    /** The lang key the Assembler tells the player, say {@code craftworks.assembler.refused.locked}, or null when the recipe was held. */
+    public String messageKey() {
+        return refusal == null ? null : "craftworks.assembler.refused." + refusal;
     }
 }

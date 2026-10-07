@@ -62,11 +62,6 @@ public final class AssemblerMenu extends HeldMachineMenu<AssemblerBlockEntity> {
     }
 
     @Override
-    protected MachineKind kind() {
-        return MachineKind.ASSEMBLER;
-    }
-
-    @Override
     protected HoldVerdict verdict(ServerPlayer player, Identifier id) {
         return HeldRecipes.verdict(player, machine.tier(), id);
     }

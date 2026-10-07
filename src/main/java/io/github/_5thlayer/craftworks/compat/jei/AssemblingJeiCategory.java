@@ -9,7 +9,7 @@ import java.util.function.Supplier;
 import com.google.common.base.Suppliers;
 import io.github._5thlayer.craftworks.compat.RecipeRow;
 import io.github._5thlayer.craftworks.compat.ConfiguredTabs;
-import io.github._5thlayer.craftworks.machine.MachineKind;
+import io.github._5thlayer.craftworks.machine.AssemblerTab;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
@@ -62,7 +62,7 @@ final class AssemblingJeiCategory implements IRecipeCategory<RecipeHolder<Assemb
 
     @Override
     public Component getTitle() {
-        return Component.translatable("jei.category.craftworks." + MachineKind.ASSEMBLER.tabName());
+        return Component.translatable("jei.category.craftworks." + AssemblerTab.NAME);
     }
 
     @Override

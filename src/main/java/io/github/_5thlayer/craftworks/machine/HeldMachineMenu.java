@@ -139,9 +139,6 @@ public abstract class HeldMachineMenu<M extends HeldMachineBlockEntity> extends 
         return amount <= 0 || fluid == Fluids.EMPTY ? FluidStack.EMPTY : new FluidStack(fluid, amount);
     }
 
-    /** Which machine this is, for the messages it sends. */
-    protected abstract MachineKind kind();
-
     /** Whether this machine takes {@code id} for {@code player}, asked once at Fill Recipe. */
     protected abstract HoldVerdict verdict(ServerPlayer player, Identifier id);
 
@@ -212,7 +209,7 @@ public abstract class HeldMachineMenu<M extends HeldMachineBlockEntity> extends 
         if (verdict.held()) {
             machine.setHeldRecipe(id, player);
         } else {
-            player.sendSystemMessage(Component.translatable(verdict.messageKey(kind()), HeldRecipes.name(player.level(), id)));
+            player.sendSystemMessage(Component.translatable(verdict.messageKey(), HeldRecipes.name(player.level(), id)));
         }
         return verdict;
     }

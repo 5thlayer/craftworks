@@ -9,7 +9,6 @@ import dev.emi.emi.api.recipe.EmiPlayerInventory;
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.recipe.handler.EmiCraftContext;
 import dev.emi.emi.api.recipe.handler.EmiRecipeHandler;
-import io.github._5thlayer.craftworks.machine.MachineKind;
 import io.github._5thlayer.craftworks.network.HoldRecipePacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -50,7 +49,7 @@ public final class HeldMachineEmiHandler<M extends AbstractContainerMenu> implem
     @Override
     public List<ClientTooltipComponent> getTooltip(EmiRecipe recipe, EmiCraftContext<M> context) {
         return List.of(ClientTooltipComponent.create(
-                Component.translatable(MachineKind.ASSEMBLER.langKey("fill_recipe")).getVisualOrderText()));
+                Component.translatable("craftworks.assembler.fill_recipe").getVisualOrderText()));
     }
 
     /** Sends the recipe and hands the screen back to the Assembler, where the Held recipe is shown. */

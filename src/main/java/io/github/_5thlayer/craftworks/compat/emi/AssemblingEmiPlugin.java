@@ -16,7 +16,7 @@ import io.github._5thlayer.craftworks.assembler.AssemblingRecipeIds;
 import io.github._5thlayer.craftworks.assembler.ReadyRecipeIds;
 import io.github._5thlayer.craftworks.compat.ConfiguredTabs;
 import io.github._5thlayer.craftworks.machine.Assemblers;
-import io.github._5thlayer.craftworks.machine.MachineKind;
+import io.github._5thlayer.craftworks.machine.AssemblerTab;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
 import io.github._5thlayer.craftworks.machine.client.HeldMachineScreen;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
@@ -26,7 +26,7 @@ import net.minecraft.resources.Identifier;
 
 /**
  * Puts {@code craftworks:assembling} in EMI, in one tab, {@code craftworks:assembler}, holding the recipes whose
- * category an Assembler tier holds (see {@link io.github._5thlayer.craftworks.machine.MachineTabs}). EMI has
+ * category an Assembler tier holds (see {@link AssemblerTab}). EMI has
  * never heard of the type, so without a category its recipes are in no viewer at all.
  *
  * <p>EMI finds this by its annotation and loads it only when EMI is installed; nothing else in the Mod
@@ -47,7 +47,7 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
 
     /** The Assembler's tab, {@code craftworks:assembler}, icon Assembler 1; built at registration, when the items exist. */
     private static EmiRecipeCategory category() {
-        return new EmiRecipeCategory(Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, MachineKind.ASSEMBLER.tabName()),
+        return new EmiRecipeCategory(Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, AssemblerTab.NAME),
                 EmiStack.of(ConfiguredTabs.icon()));
     }
 
@@ -84,7 +84,7 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
         EmiRecipeCategory tab = category();
         registry.addCategory(tab);
         var sorted = ConfiguredTabs.sortLogged("EMI", registry.getRecipeMap().byType(CraftworksRecipes.ASSEMBLING_TYPE.get()));
-        for (var holder : sorted.in(MachineKind.ASSEMBLER)) {
+        for (var holder : sorted.recipes()) {
             registry.addRecipe(new AssemblingEmiRecipe(tab, holder));
         }
         registry.addRecipeHandler(null, new PersonalAssemblerEmiHandler());

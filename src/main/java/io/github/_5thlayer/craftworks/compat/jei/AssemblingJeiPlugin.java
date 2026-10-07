@@ -9,7 +9,7 @@ import java.util.Optional;
 import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.compat.ConfiguredTabs;
 import io.github._5thlayer.craftworks.machine.MachineGhosts;
-import io.github._5thlayer.craftworks.machine.MachineKind;
+import io.github._5thlayer.craftworks.machine.AssemblerTab;
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
@@ -37,7 +37,7 @@ import net.neoforged.neoforge.common.NeoForge;
 
 /**
  * Puts {@code craftworks:assembling} in JEI, in one tab (ADR-0016), {@code craftworks:assembler}, holding the
- * recipes an Assembler tier's categories name (see {@link io.github._5thlayer.craftworks.machine.MachineTabs}),
+ * recipes an Assembler tier's categories name (see {@link AssemblerTab}),
  * read from the config as JEI builds its lists. It has a recipe button that queues on the Personal Assembler the
  * way EMI's Fill Recipe does (#12, ADR-0004).
  *
@@ -52,9 +52,9 @@ import net.neoforged.neoforge.common.NeoForge;
 @JeiPlugin
 public final class AssemblingJeiPlugin implements IModPlugin {
 
-    /** The Assembler's tab, {@code craftworks:} its {@link MachineKind#tabName()} (ADR-0016). */
+    /** The Assembler's tab, {@code craftworks:} its {@link AssemblerTab#NAME} (ADR-0016). */
     static final IRecipeHolderType<AssemblingRecipe> TAB =
-            IRecipeHolderType.create(Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, MachineKind.ASSEMBLER.tabName()));
+            IRecipeHolderType.create(Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, AssemblerTab.NAME));
 
     /** Whether the JEI category uid is the Assembler's tab. */
     static boolean isTab(Identifier uid) {
@@ -75,13 +75,13 @@ public final class AssemblingJeiPlugin implements IModPlugin {
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
         registration.addRecipeCategories(new AssemblingJeiCategory(registration.getJeiHelpers().getGuiHelper(),
-                () -> AssemblingJeiCategory.widthOf(ConfiguredTabs.sort(assemblingRecipes()).in(MachineKind.ASSEMBLER))));
+                () -> AssemblingJeiCategory.widthOf(ConfiguredTabs.sort(assemblingRecipes()).recipes())));
     }
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
         var sorted = ConfiguredTabs.sortLogged("JEI", assemblingRecipes());
-        registration.addRecipes(TAB, sorted.in(MachineKind.ASSEMBLER));
+        registration.addRecipes(TAB, sorted.recipes());
     }
 
     /** All three Assembler tiers are workstations of the tab. */

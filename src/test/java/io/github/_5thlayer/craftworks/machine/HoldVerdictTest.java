@@ -17,7 +17,7 @@ class HoldVerdictTest {
     void aRecipeItCanRunAndIsNotLockedIsHeld() {
         HoldVerdict verdict = HoldVerdict.of(Checks.passing());
         assertTrue(verdict.held());
-        assertNull(verdict.messageKey(MachineKind.ASSEMBLER));
+        assertNull(verdict.messageKey());
     }
 
     @Test
@@ -47,8 +47,8 @@ class HoldVerdictTest {
 
     @Test
     void aFluidRefusalCarriesItsOwnMessage() {
-        assertEquals("craftworks.assembler.refused.too_many_fluids", HoldVerdict.TOO_MANY_FLUIDS.messageKey(MachineKind.ASSEMBLER));
-        assertEquals("craftworks.assembler.refused.fluid_too_large", HoldVerdict.FLUID_TOO_LARGE.messageKey(MachineKind.ASSEMBLER));
+        assertEquals("craftworks.assembler.refused.too_many_fluids", HoldVerdict.TOO_MANY_FLUIDS.messageKey());
+        assertEquals("craftworks.assembler.refused.fluid_too_large", HoldVerdict.FLUID_TOO_LARGE.messageKey());
     }
 
     @Test
@@ -56,20 +56,20 @@ class HoldVerdictTest {
         Checks wrongInEveryWay = Checks.passing().categoryHeld(false).fitsSlots(false).locked(true);
         HoldVerdict verdict = HoldVerdict.of(wrongInEveryWay);
         assertEquals(HoldVerdict.WRONG_CATEGORY, verdict);
-        assertEquals("craftworks.assembler.refused.wrong_category", verdict.messageKey(MachineKind.ASSEMBLER));
+        assertEquals("craftworks.assembler.refused.wrong_category", verdict.messageKey());
     }
 
     @Test
     void aLockedRecipeIsRefusedWithAMessage() {
         HoldVerdict verdict = HoldVerdict.of(Checks.passing().locked(true));
         assertEquals(HoldVerdict.LOCKED, verdict);
-        assertEquals("craftworks.assembler.refused.locked", verdict.messageKey(MachineKind.ASSEMBLER));
+        assertEquals("craftworks.assembler.refused.locked", verdict.messageKey());
     }
 
     @Test
     void aRefusalIsToldInTheWordsOfTheMachineThatRefused() {
-        assertEquals("craftworks.assembler.refused.wrong_category", HoldVerdict.WRONG_CATEGORY.messageKey(MachineKind.ASSEMBLER));
-        assertEquals("craftworks.assembler.refused.locked", HoldVerdict.LOCKED.messageKey(MachineKind.ASSEMBLER));
-        assertNull(HoldVerdict.HELD.messageKey(MachineKind.ASSEMBLER));
+        assertEquals("craftworks.assembler.refused.wrong_category", HoldVerdict.WRONG_CATEGORY.messageKey());
+        assertEquals("craftworks.assembler.refused.locked", HoldVerdict.LOCKED.messageKey());
+        assertNull(HoldVerdict.HELD.messageKey());
     }
 }
