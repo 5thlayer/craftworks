@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+## 0.6.0
+
 - Assemblers take any Assembling recipe that names a fluid, in or out, on the fluid machinery the Chemical Plant and the Oil Refinery had: two input fluid boxes and three output fluid boxes, bound by order (a recipe's `n`th fluid ingredient goes in input box `n`, its `n`th fluid result in output box `n`) and sized as theirs were. Where they had one fluid box that took one ingredient and never made fluid, a recipe may now have up to two fluid ingredients and three fluid results, with or without items, in any category the tier holds. While the Held recipe names a fluid each Fluid Connection pulls the fluid ingredients into their boxes and pushes the fluid results out of theirs, and a craft waits while an output box can't hold what it makes. The first fluid result takes the room of the output boxes a recipe leaves unused unless it is Pinned, and an Assembler has three where the Chemical Plant had two, so a recipe with one fluid result holds at least 300 mB of it, where a Chemical Plant held 200. (#40)
 - Assembler 2 and 3 have six Fluid Connections where they had two: all three bottom-layer blocks along the edge they face and along the opposite one, the two edge centres they had and the four corners the Chemical Plant had, each a grey ring on the casing. A connection has no direction and a pipe network carries one fluid, so a recipe of five different fluids needs a connection for each. (#40)
 - Fill Recipe on an Assembler is refused for a recipe with more than two fluid ingredients or more than three fluid results, no longer for one with two fluid ingredients or a fluid result. The two messages say so. (#40)
