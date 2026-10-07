@@ -18,7 +18,7 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
 /**
- * JEI's {@code +} on an Assembling recipe with an Assembler or a Chemical Plant open (one handler for either menu): it sets the Held recipe and moves no
+ * JEI's {@code +} on an Assembling recipe with an Assembler open: it sets the Held recipe and moves no
  * items, as EMI's Fill Recipe does there. Always offered, whatever the inventory holds, and whether the
  * open machine takes the recipe for this player is the server's call, which answers in chat.
  */
@@ -28,7 +28,7 @@ final class HeldMachineTransferHandler<M extends AbstractContainerMenu> implemen
     private final MenuType<M> menuType;
     private final IRecipeType<RecipeHolder<AssemblingRecipe>> tab;
 
-    /** @param tab the machine's tab it is registered on: the one handler serves each of the two tabs */
+    /** @param tab the tab it is registered on */
     HeldMachineTransferHandler(Class<M> menuClass, MenuType<M> menuType, IRecipeType<RecipeHolder<AssemblingRecipe>> tab) {
         this.menuClass = menuClass;
         this.menuType = menuType;

@@ -633,7 +633,7 @@ final class AssemblerFluidTests {
      * a connection of its own.
      */
     private static void craftsThroughItsConnections(GameTestHelper helper) {
-        // Tier 3, whose Overload Limit lets 3 of the iron in, as the Chemical Plant's did.
+        // Tier 3, whose Overload Limit lets 3 of the iron in.
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.THREE);
         List<Connection> at = connections(assembler.facing());
         TestTank.Entity water = source(helper, at.get(0), Fluids.WATER, 5000);
@@ -667,8 +667,8 @@ final class AssemblerFluidTests {
     }
 
     /**
-     * Water at one connection, lava at another and a drain at each of three more: two fluids in and three out, the
-     * Oil Refinery's shape, on an Assembler's connections.
+     * Water at one connection, lava at another and a drain at each of three more: two fluids in and three out, as
+     * Factorio's basic oil processing is.
      */
     private static void craftsTwoIntoThree(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.THREE);
@@ -939,7 +939,7 @@ final class AssemblerFluidTests {
 
     /**
      * A recipe with one fluid result on an Assembler's three output boxes gets the two unused boxes' volume too, 300 mB
-     * where a Chemical Plant's two gave 200; Pinned, it doesn't.
+     * where two boxes would give 200; Pinned, it doesn't.
      */
     private static void mergedAndPinnedBoxes(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);

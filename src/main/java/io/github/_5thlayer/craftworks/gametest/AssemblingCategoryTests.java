@@ -62,6 +62,8 @@ final class AssemblingCategoryTests {
         tests.test("an_extra_result_joins_the_remainders_and_a_different_one_is_refused", 20, AssemblingCategoryTests::extraResultsAndRemainders);
         tests.test("a_recipe_with_two_item_results_is_not_hand_craftable", 20, AssemblingCategoryTests::notHandCraftable);
         tests.test("a_fluid_only_recipe_may_leave_out_its_empty_item_lists", 20, AssemblingCategoryTests::noItemLists);
+        tests.test("a_recipe_naming_a_removed_category_fails_to_load_and_points_to_crafting_with_fluid", 20,
+                AssemblingCategoryTests::removedCategories);
         tests.test("every_dev_pack_recipe_parses", 20, AssemblingCategoryTests::devPack);
     }
 
@@ -73,15 +75,28 @@ final class AssemblingCategoryTests {
         return CraftworksRecipes.ASSEMBLING_SERIALIZER.get().codec().codec().parse(ops, element);
     }
 
-    /** An Oil Refinery's recipe uses and makes only fluids: it names neither {@code ingredients} nor {@code results}. */
+    /** A recipe that uses and makes only fluids: it names neither {@code ingredients} nor {@code results}. */
     private static void noItemLists(GameTestHelper helper) {
-        AssemblingRecipe recipe = read(helper, "{ \"category\": \"oil-processing\", \"fluid_ingredients\": ["
+        AssemblingRecipe recipe = read(helper, "{ \"category\": \"crafting-with-fluid\", \"fluid_ingredients\": ["
                 + "{ \"ingredient\": \"minecraft:water\", \"amount\": 100 }], \"fluid_results\": ["
                 + "{ \"id\": \"minecraft:lava\", \"amount\": 30 }] }").getOrThrow();
         helper.assertTrue(recipe.ingredients().isEmpty() && recipe.results().isEmpty(),
                 "left out, ingredients and results read as " + recipe.ingredients() + " and " + recipe.results());
         helper.assertTrue(read(helper, "{ \"fluid_ingredients\": [{ \"ingredient\": \"minecraft:water\", \"amount\": 100 }] }")
                 .isError(), "a recipe that makes nothing, no item and no fluid, read as a recipe");
+        helper.succeed();
+    }
+
+    /** {@code chemistry} and {@code oil-processing} were removed in 0.6: a recipe naming either is refused, and the error says what to use. */
+    private static void removedCategories(GameTestHelper helper) {
+        for (String removed : List.of("chemistry", "oil-processing")) {
+            var result = read(helper, "{ \"category\": \"" + removed + "\", \"fluid_results\": ["
+                    + "{ \"id\": \"minecraft:lava\", \"amount\": 30 }] }");
+            helper.assertTrue(result.isError(), "a recipe naming the removed category " + removed + " read as a recipe");
+            String message = result.error().orElseThrow().message();
+            helper.assertTrue(message.contains("'" + removed + "'") && message.contains("crafting-with-fluid"),
+                    "the error for " + removed + " does not point to crafting-with-fluid: " + message);
+        }
         helper.succeed();
     }
 
@@ -189,7 +204,7 @@ final class AssemblingCategoryTests {
     private static void fluidOnly(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
         HoldVerdict verdict = AssemblerMachineTests.request(assembler, FLUID_ONLY);
-        helper.assertTrue(verdict == HoldVerdict.WRONG_CATEGORY, "tier 1 answered a chemistry recipe with no item result with " + verdict);
+        helper.assertTrue(verdict == HoldVerdict.WRONG_CATEGORY, "tier 1 answered a crafting-with-fluid recipe with no item result with " + verdict);
         helper.succeed();
     }
 

@@ -6,19 +6,15 @@ package io.github._5thlayer.craftworks.compat.emi;
 import dev.emi.emi.api.neoforge.NeoForgeEmiIngredient;
 import dev.emi.emi.api.neoforge.NeoForgeEmiStack;
 import dev.emi.emi.api.recipe.BasicEmiRecipe;
-import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.render.EmiTexture;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.WidgetHolder;
-import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.compat.RecipeRow;
-import io.github._5thlayer.craftworks.machine.MachineKind;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.crafting.RecipeHolder;
 
 /**
@@ -35,17 +31,9 @@ public class AssemblingEmiRecipe extends BasicEmiRecipe {
     private final Component categoryLine;
     private boolean measured;
 
-    /** The recipe's own id, which Fill Recipe and the Ready set name it by; EMI's id for the copy in the plant's tab may differ. */
-    private final Identifier recipeId;
-
-    /**
-     * @param tab the machine whose tab this is
-     * @param sharedWithAssembler the recipe is also in the Assembler's tab, which keeps its own id as EMI's: EMI
-     *     keys a recipe by id, so this copy's is {@code craftworks:<tab>/<namespace>/<path>}
-     */
-    public AssemblingEmiRecipe(EmiRecipeCategory category, MachineKind tab, RecipeHolder<AssemblingRecipe> holder, boolean sharedWithAssembler) {
-        super(category, sharedWithAssembler ? copyId(tab, holder.id().identifier()) : holder.id().identifier(), 0, 44);
-        this.recipeId = holder.id().identifier();
+    /** EMI keys the recipe by its own id, which Fill Recipe and the Ready set name it by. */
+    public AssemblingEmiRecipe(EmiRecipeCategory category, RecipeHolder<AssemblingRecipe> holder) {
+        super(category, holder.id().identifier(), 0, 44);
         AssemblingRecipe recipe = holder.value();
         this.time = recipe.time();
         this.secondsLine = Component.translatable("emi.craftworks.assembling.seconds", String.format("%.1f", time / 20F));
@@ -55,16 +43,6 @@ public class AssemblingEmiRecipe extends BasicEmiRecipe {
         recipe.results().forEach(result -> outputs.add(EmiStack.of(result.create())));
         recipe.fluidResults().forEach(result -> outputs.add(NeoForgeEmiStack.of(result.create())));
         this.width = RecipeRow.width(inputs.size(), outputs.size(), 0, 0);
-    }
-
-    /** EMI's id for the copy of {@code recipe} in {@code tab}'s, when the Assembler's tab has it under its own. */
-    private static Identifier copyId(MachineKind tab, Identifier recipe) {
-        return Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, tab.tabName() + "/" + recipe.getNamespace() + "/" + recipe.getPath());
-    }
-
-    /** The recipe's own id, whichever tab the recipe is drawn in; an EMI recipe of another mod's is its {@code getId}. */
-    public static Identifier recipeIdOf(EmiRecipe recipe) {
-        return recipe instanceof AssemblingEmiRecipe ours ? ours.recipeId : recipe.getId();
     }
 
     /**

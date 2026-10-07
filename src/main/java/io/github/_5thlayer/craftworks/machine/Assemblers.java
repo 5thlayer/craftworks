@@ -136,7 +136,6 @@ public final class Assemblers {
                     .icon(() -> new ItemStack(item(AssemblerTier.ONE).get()))
                     .displayItems((parameters, output) -> {
                         ITEM_BY_TIER.values().forEach(output::accept);
-                        FluidMachines.all().forEach(machine -> output.accept(machine.item().get()));
                         output.accept(CREATIVE_ENERGY_SOURCE_ITEM.get());
                         output.accept(CREATIVE_FLUID_SOURCE_ITEM.get());
                     })

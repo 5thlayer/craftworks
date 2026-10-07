@@ -69,9 +69,8 @@ public record FluidLayout(int fluidInputs, int fluidOutputs, List<Site> connecti
     /**
      * An Assembler of tier 2 or 3's: two input and three output boxes, and six connections, all three blocks of
      * the bottom layer along each of the two opposite edges of its 3x3, three on the side it faces and three on the
-     * other. The two at the edges' centres are the Assembler's own, as Factorio's assembling machine 2 has them;
-     * the four at the corners are the Chemical Plant's, and with them a recipe of up to five fluids has a connection
-     * for each, since a connection has no direction and each pipe network carries one fluid.
+     * other. With six, a recipe of up to five fluids has a connection for
+     * each, since a connection has no direction and each pipe network carries one fluid.
      */
     public static final FluidLayout ASSEMBLER = new FluidLayout(2, 3, List.of(
             new Site(1, -1, Face.AHEAD), new Site(1, 0, Face.AHEAD), new Site(1, 1, Face.AHEAD),

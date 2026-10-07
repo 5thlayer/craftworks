@@ -30,7 +30,7 @@ import snownee.jade.api.ui.JadeUI;
 import snownee.jade.api.view.ProgressView;
 
 /**
- * What the server tells Jade about an Assembler or a Chemical Plant: its Held recipe, its {@link MachineState}
+ * What the server tells Jade about an Assembler: its Held recipe, its {@link MachineState}
  * and how far its craft is. The state is the block entity's own ({@link HeldMachineBlockEntity#state}), worked out on the
  * server where the checks are and never repeated here.
  *
@@ -40,7 +40,7 @@ class HeldMachineReport implements StreamServerDataProvider<BlockAccessor, HeldM
 
     static final HeldMachineReport INSTANCE = new HeldMachineReport();
 
-    // Still "assembler", the Chemical Plant's too: Jade keys a player's on/off setting for this tooltip by it.
+    // Jade keys a player's on/off setting for this tooltip by it.
     private static final Identifier UID = Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "assembler");
 
     private static final StreamCodec<ByteBuf, MachineState> STATE_CODEC =
@@ -88,7 +88,7 @@ class HeldMachineReport implements StreamServerDataProvider<BlockAccessor, HeldM
 
     /**
      * Draws the report: the Held recipe's product, then its state, with a progress bar while it crafts. The
-     * fluid boxes are Jade's own bars, from {@link AssemblerFluidView} and {@link FluidMachineFluidView}.
+     * fluid boxes are Jade's own bars, from {@link AssemblerFluidView}.
      */
     static final class Client extends HeldMachineReport implements IBlockComponentProvider {
 

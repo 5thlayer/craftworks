@@ -46,14 +46,6 @@ class MachineSlotsTest {
     }
 
     @Test
-    void aChemicalPlantsThirdSlotIsItsProductNotAnInput() {
-        MachineSlots plant = FluidMachine.CHEMICAL_PLANT.slots();
-        assertEquals(Optional.of("sugar"), plant.ingredientFor(1, RECIPE));
-        assertFalse(plant.isInput(FluidMachine.CHEMICAL_PLANT.productSlot()));
-        assertEquals(Optional.empty(), plant.ingredientFor(2, List.of("a", "b", "c")));
-    }
-
-    @Test
     void thereAreFiveInputsAndTwoOutputs() {
         assertEquals(5, AssemblerSlots.INPUTS);
         assertEquals(7, AssemblerSlots.SIZE);

@@ -18,7 +18,7 @@ class FluidBoxesTest {
 
     @Test
     void anInputBoxHoldsFourCraftsOfItsIngredient() {
-        // concrete, plastic bar, lubricant, heavy oil cracking's water and heavy oil, basic oil processing's crude oil.
+        // Factorio's concrete, plastic bar, lubricant, heavy oil cracking's water and heavy oil, basic oil processing's crude oil.
         assertEquals(400, FluidBoxes.inputLimit(100));
         assertEquals(80, FluidBoxes.inputLimit(20));
         assertEquals(40, FluidBoxes.inputLimit(10));
@@ -40,7 +40,7 @@ class FluidBoxesTest {
 
     @Test
     void aSingleResultTakesTheBoxItsMachineLeavesUnusedAndGrowsToThreeCrafts() {
-        // The chemical plant: lubricant, sulfuric acid, heavy oil cracking, light oil cracking and the probes.
+        // On two output boxes, Factorio's chemical plant: lubricant, sulfuric acid, heavy oil cracking, light oil cracking and the probes.
         outputs(2, false, List.of(10), List.of(200));
         outputs(2, false, List.of(50), List.of(200));
         outputs(2, false, List.of(30), List.of(200));
@@ -56,14 +56,14 @@ class FluidBoxesTest {
 
     @Test
     void aPinnedRecipeKeepsItsFirstResultToItsOwnBox() {
-        // The oil refinery's basic oil processing.
+        // On three output boxes, Factorio's basic oil processing.
         outputs(3, true, List.of(45), List.of(135));
         outputs(3, true, List.of(20), List.of(100));
         outputs(3, false, List.of(45), List.of(300));
     }
 
     @Test
-    void theRefineryRecipesAreSizedAsThePackMeasuredThem() {
+    void recipesOnThreeOutputBoxesAreSizedAsThePackMeasuredThem() {
         outputs(3, false, List.of(25, 45, 55), List.of(100, 135, 165));
         outputs(3, false, List.of(90, 20, 10), List.of(270, 100, 100));
         outputs(3, false, List.of(20), List.of(300));

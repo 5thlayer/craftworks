@@ -1,9 +1,0 @@
-{
-  "type": "craftworks:assembling",
-  "category": "chemistry",
-  "ingredients": [],
-  "fluid_ingredients": [
-    { "ingredient": "minecraft:water", "amount": 1001 }
-  ],
-  "results": [ { "id": "minecraft:gold_ingot", "count": 1 } ]
-}

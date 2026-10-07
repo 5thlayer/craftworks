@@ -45,8 +45,8 @@ public final class ReadyCraftables {
         Set<String> already = new HashSet<>();
         for (EmiIngredient entry : listed) {
             if (entry instanceof EmiFavorite favorite && favorite.getRecipe() != null
-                    && AssemblingEmiRecipe.recipeIdOf(favorite.getRecipe()) != null) {
-                already.add(AssemblingEmiRecipe.recipeIdOf(favorite.getRecipe()).toString());
+                    && favorite.getRecipe().getId() != null) {
+                already.add(favorite.getRecipe().getId().toString());
             }
         }
         List<EmiIngredient> widened = new ArrayList<>(listed);

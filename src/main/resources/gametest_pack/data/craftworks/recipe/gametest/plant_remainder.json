@@ -1,8 +1,0 @@
-{
-  "type": "craftworks:assembling",
-  "category": "chemistry",
-  "ingredients": [
-    { "ingredient": "minecraft:milk_bucket", "count": 1 }
-  ],
-  "results": [ { "id": "minecraft:diamond", "count": 1 } ]
-}

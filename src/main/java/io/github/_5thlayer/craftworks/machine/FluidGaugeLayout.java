@@ -6,8 +6,8 @@ package io.github._5thlayer.craftworks.machine;
 /**
  * Where a machine's gauges stand across its screen, in one row: the input gauges, then the output gauges, the
  * boxes in order. They fill the panel's width from {@link #LEFT} to {@link #RIGHT}, with {@link #GAP} between the
- * gauges of a group and {@link #GROUP_GAP} between the inputs and the outputs, so a Chemical Plant's four are 36
- * wide at 8, 48, 92 and 132, and an Assembler's five (an Oil Refinery's too) 28 wide at 8, 40, 76, 108 and 140.
+ * gauges of a group and {@link #GROUP_GAP} between the inputs and the outputs, so an Assembler's five are 28
+ * wide at 8, 40, 76, 108 and 140.
  * Pure: no Minecraft types.
  */
 public record FluidGaugeLayout(int inputs, int outputs) {

@@ -12,8 +12,6 @@ import java.util.Map;
 import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.Assemblers;
-import io.github._5thlayer.craftworks.machine.FluidMachine;
-import io.github._5thlayer.craftworks.machine.FluidMachines;
 import io.github._5thlayer.craftworks.machine.MachineKind;
 import io.github._5thlayer.craftworks.machine.MachineTabs;
 import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
@@ -42,9 +40,6 @@ public final class ConfiguredTabs {
         Map<MachineKind, List<AssemblingCategory>> categories = new EnumMap<>(MachineKind.class);
         categories.put(MachineKind.ASSEMBLER, Arrays.stream(AssemblerTier.values())
                 .flatMap(tier -> CraftworksConfig.categories(tier).stream()).distinct().toList());
-        for (FluidMachine machine : FluidMachine.ALL) {
-            categories.put(machine.kind(), CraftworksConfig.categories(machine.defaults()));
-        }
         return MachineTabs.of(categories);
     }
 
@@ -67,16 +62,13 @@ public final class ConfiguredTabs {
         return sorted;
     }
 
-    /** The item a machine's tab shows: Assembler 1 for the Assembler's, the machine itself for a fluid machine's. */
-    public static Item icon(MachineKind machine) {
-        return machine == MachineKind.ASSEMBLER ? Assemblers.item(AssemblerTier.ONE).get() : FluidMachines.of(machine).item().get();
+    /** The item the Assembler's tab shows: Assembler 1. */
+    public static Item icon() {
+        return Assemblers.item(AssemblerTier.ONE).get();
     }
 
-    /** The workstations of a machine's tab, and of no other: every Assembler tier, or the fluid machine itself. */
-    public static List<Item> workstations(MachineKind machine) {
-        if (machine == MachineKind.ASSEMBLER) {
-            return Arrays.stream(AssemblerTier.values()).map(tier -> (Item) Assemblers.item(tier).get()).toList();
-        }
-        return List.of(FluidMachines.of(machine).item().get());
+    /** The workstations of the Assembler's tab: every Assembler tier. */
+    public static List<Item> workstations() {
+        return Arrays.stream(AssemblerTier.values()).map(tier -> (Item) Assemblers.item(tier).get()).toList();
     }
 }

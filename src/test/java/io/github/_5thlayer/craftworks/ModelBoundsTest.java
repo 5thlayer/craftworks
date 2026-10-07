@@ -4,7 +4,6 @@
 package io.github._5thlayer.craftworks;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -47,22 +46,6 @@ class ModelBoundsTest {
         }
         assertTrue(models > 0, "no models were found under " + MODELS.toAbsolutePath());
         assertEquals(List.of(), outside);
-    }
-
-    @Test
-    void aCompositeChildIsPlacedByWholeBlocks() throws IOException {
-        Path refinery = MODELS.resolve("block/oil_refinery.json");
-        try (Reader reader = Files.newBufferedReader(refinery)) {
-            JsonObject model = JsonParser.parseReader(reader).getAsJsonObject();
-            assertEquals("neoforge:composite", model.get("loader").getAsString());
-            JsonObject children = model.getAsJsonObject("children");
-            assertFalse(children.isEmpty());
-            for (var child : children.entrySet()) {
-                for (JsonElement blocks : child.getValue().getAsJsonObject().getAsJsonObject("transform").getAsJsonArray("translation")) {
-                    assertEquals(Math.rint(blocks.getAsDouble()), blocks.getAsDouble(), child.getKey() + " is not placed by whole blocks");
-                }
-            }
-        }
     }
 
     /** Looks at every {@code elements} list anywhere in the model, such as a composite's inline children. */

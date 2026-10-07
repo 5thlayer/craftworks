@@ -94,7 +94,8 @@ public final class CraftworksGameTests {
 
     /**
      * Recipes for trying the Assembler in the dev client, which vanilla's don't cover: a fluid ingredient
-     * ({@code dev/with_fluid}) and two item results ({@code dev/two_results}). In {@code dev_pack/} in the
+     * ({@code dev/with_fluid}), two fluids in with an item and a fluid out ({@code dev/two_fluids}), fluids only
+     * ({@code dev/fluid_only}) and two item results ({@code dev/two_results}). In {@code dev_pack/} in the
      * jar; only the {@code client} run sets {@value #DEV_PACK}, so no player's world sees them.
      */
     private static void addDevPack(AddPackFindersEvent event) {
@@ -112,8 +113,6 @@ public final class CraftworksGameTests {
         AssemblerMachineTests.register(tests);
         AssemblingCategoryTests.register(tests);
         AssemblerFluidTests.register(tests);
-        ChemicalPlantTests.register(tests);
-        OilRefineryTests.register(tests);
         CreativeEnergySourceTests.register(tests);
         CreativeFluidSourceTests.register(tests);
         CreativeTabTests.register(tests);

@@ -4,7 +4,7 @@
 package io.github._5thlayer.craftworks.machine;
 
 /**
- * A machine's rate, an Assembler's or the Chemical Plant's: how long a craft takes at its speed and what it costs in FE.
+ * A machine's rate, an Assembler's: how long a craft takes at its speed and what it costs in FE.
  *
  * <p>The recipe carries its time in ticks and nothing else; the Assembler divides by its speed. A tier's
  * power is not a whole number of FE a tick (37.5, 187.5), so energy is priced per craft, as power times

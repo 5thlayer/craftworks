@@ -60,12 +60,6 @@ class FluidLayoutTest {
     }
 
     @Test
-    void theChemicalPlantAndTheOilRefineryDescribeTheirOwnSitesThroughALayout() {
-        assertEquals(4, FluidMachine.CHEMICAL_PLANT.layout().connections().size());
-        assertEquals(5, FluidMachine.OIL_REFINERY.layout().connections().size());
-    }
-
-    @Test
     void tiers2And3HaveTheFluidBoxesAndTier1None() {
         assertFalse(AssemblerTier.ONE.hasFluidBoxes());
         assertTrue(AssemblerTier.TWO.hasFluidBoxes());
