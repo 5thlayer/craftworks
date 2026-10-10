@@ -35,6 +35,7 @@
   "block.craftworks.assembler_2": "Assembler 2",
   "block.craftworks.assembler_3": "Assembler 3",
   "itemGroup.craftworks": "Craftworks",
+  "block.craftworks.refiner": "Refiner",
   "block.craftworks.creative_energy_source": "Creative Energy Source",
   "block.craftworks.creative_fluid_source": "Creative Fluid Source",
   "craftworks.machine.energy": "%s / %s FE",
@@ -57,5 +58,6 @@
   "craftworks.jade.infinite_energy": "Infinite FE",
   "craftworks.jade.infinite_fluid": "%s, infinite",
   "craftworks.jade.no_fluid": "No fluid",
-  "config.jade.plugin_craftworks.assembler": "Assembler"
+  "config.jade.plugin_craftworks.assembler": "Assembler",
+  "config.jade.plugin_craftworks.refiner": "Refiner"
 }

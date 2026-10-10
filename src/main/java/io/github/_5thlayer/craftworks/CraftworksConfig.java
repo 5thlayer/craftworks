@@ -43,6 +43,22 @@ public final class CraftworksConfig {
             ModConfigSpec.IntValue buffer, ModConfigSpec.ConfigValue<List<? extends String>> categories) {
     }
 
+    /** The Refiner's figures, in the config's {@code refiner} section. */
+    public record RefinerSettings(ModConfigSpec.DoubleValue speed, ModConfigSpec.DoubleValue power,
+            ModConfigSpec.IntValue buffer) {
+    }
+
+    /** The Refiner's default crafting speed, Factorio's electric furnace's (ADR-0127). */
+    public static final double REFINER_SPEED = 2.0;
+
+    /** The Refiner's default FE a tick: Factorio's 180 kW at 1 FE = 100 J. */
+    public static final double REFINER_POWER = 90.0;
+
+    /** The Refiner's default buffer in FE: a little over two vanilla smelts' worth at the default speed and power. */
+    public static final int REFINER_BUFFER = 20_000;
+
+    private static final RefinerSettings REFINER;
+
     /** The figures of each Assembler tier, in the config's section for its block. */
     private static final Map<AssemblerTier, MachineSettings> MACHINES = new EnumMap<>(AssemblerTier.class);
 
@@ -95,6 +111,16 @@ public final class CraftworksConfig {
             builder.pop();
             MACHINES.put(tier, new MachineSettings(speed, power, buffer, categories));
         }
+        builder.comment("The refiner block.").push("refiner");
+        REFINER = new RefinerSettings(
+                builder.comment("Crafting speed: a smelt takes the recipe's cooking time divided by this, in ticks.")
+                        .defineInRange("speed", REFINER_SPEED, 0.01, 1000.0),
+                builder.comment("FE a tick while smelting. A smelt costs this times the ticks it takes, spread over them;",
+                                "a tick it can't be paid in full makes no progress, and an idle Refiner draws nothing.")
+                        .defineInRange("power", REFINER_POWER, 0.0, 1_000_000.0),
+                builder.comment("FE the energy buffer holds.")
+                        .defineInRange("buffer", REFINER_BUFFER, 1, Integer.MAX_VALUE));
+        builder.pop();
         SPEC = builder.build();
     }
 
@@ -129,6 +155,21 @@ public final class CraftworksConfig {
     /** The tier's energy buffer in FE; its default until a world's config is loaded. */
     public static int buffer(AssemblerTier tier) {
         return SPEC.isLoaded() ? MACHINES.get(tier).buffer().get() : tier.defaultBuffer();
+    }
+
+    /** The Refiner's crafting speed; its default until a world's config is loaded. */
+    public static double refinerSpeed() {
+        return SPEC.isLoaded() ? REFINER.speed().get() : REFINER_SPEED;
+    }
+
+    /** The Refiner's FE a tick while smelting; its default until a world's config is loaded. */
+    public static double refinerPower() {
+        return SPEC.isLoaded() ? REFINER.power().get() : REFINER_POWER;
+    }
+
+    /** The Refiner's energy buffer in FE; its default until a world's config is loaded. */
+    public static int refinerBuffer() {
+        return SPEC.isLoaded() ? REFINER.buffer().get() : REFINER_BUFFER;
     }
 
     /** The tier's {@code categories} setting, which a game test sets as a server's config would. */

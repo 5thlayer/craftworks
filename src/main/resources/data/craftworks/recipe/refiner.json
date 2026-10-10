@@ -1,0 +1,24 @@
+{
+  "type": "craftworks:assembling",
+  "ingredients": [
+    {
+      "ingredient": "minecraft:blast_furnace",
+      "count": 1
+    },
+    {
+      "ingredient": "minecraft:iron_ingot",
+      "count": 4
+    },
+    {
+      "ingredient": "minecraft:redstone",
+      "count": 5
+    }
+  ],
+  "results": [
+    {
+      "id": "craftworks:refiner",
+      "count": 1
+    }
+  ],
+  "time": 200
+}

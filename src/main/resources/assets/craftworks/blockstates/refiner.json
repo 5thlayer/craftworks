@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "facing=north,lit=false": { "model": "craftworks:block/refiner" },
+    "facing=east,lit=false": { "model": "craftworks:block/refiner", "y": 90 },
+    "facing=south,lit=false": { "model": "craftworks:block/refiner", "y": 180 },
+    "facing=west,lit=false": { "model": "craftworks:block/refiner", "y": 270 },
+    "facing=north,lit=true": { "model": "craftworks:block/refiner_on" },
+    "facing=east,lit=true": { "model": "craftworks:block/refiner_on", "y": 90 },
+    "facing=south,lit=true": { "model": "craftworks:block/refiner_on", "y": 180 },
+    "facing=west,lit=true": { "model": "craftworks:block/refiner_on", "y": 270 }
+  }
+}
