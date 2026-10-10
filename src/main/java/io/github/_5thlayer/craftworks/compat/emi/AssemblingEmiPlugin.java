@@ -7,6 +7,7 @@ import dev.emi.emi.api.EmiEntrypoint;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
+import dev.emi.emi.api.recipe.VanillaEmiRecipeCategories;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.stack.EmiStackInteraction;
 import dev.emi.emi.screen.EmiScreenManager;
@@ -16,6 +17,7 @@ import io.github._5thlayer.craftworks.assembler.AssemblingRecipeIds;
 import io.github._5thlayer.craftworks.assembler.ReadyRecipeIds;
 import io.github._5thlayer.craftworks.compat.ConfiguredTabs;
 import io.github._5thlayer.craftworks.machine.Assemblers;
+import io.github._5thlayer.craftworks.machine.Refiners;
 import io.github._5thlayer.craftworks.machine.AssemblerTab;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
@@ -90,6 +92,9 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
         registry.addRecipeHandler(Assemblers.MENU.get(), new AssemblerEmiHandler());
         registry.addStackProvider(AssemblerScreen.class, AssemblingEmiPlugin::ghostAt);
         ConfiguredTabs.workstations().forEach(item -> registry.addWorkstation(tab, EmiStack.of(item)));
+        // The Refiner smelts what vanilla's furnace and blast furnace do, so it is their tabs' workstation (ADR-0127).
+        registry.addWorkstation(VanillaEmiRecipeCategories.SMELTING, EmiStack.of(Refiners.ITEM.get()));
+        registry.addWorkstation(VanillaEmiRecipeCategories.BLASTING, EmiStack.of(Refiners.ITEM.get()));
         AssemblingRecipeIds.onSync(AssemblingEmiPlugin::searchAgain);
         ReadyRecipeIds.onChange(AssemblingEmiPlugin::craftablesAgain);
     }

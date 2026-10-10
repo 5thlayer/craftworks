@@ -6,6 +6,8 @@ package io.github._5thlayer.craftworks.compat.jade;
 import io.github._5thlayer.craftworks.machine.AssemblerBlock;
 import io.github._5thlayer.craftworks.machine.AssemblerBlockEntity;
 import io.github._5thlayer.craftworks.machine.CreativeEnergySourceBlockEntity;
+import io.github._5thlayer.craftworks.machine.RefinerBlock;
+import io.github._5thlayer.craftworks.machine.RefinerBlockEntity;
 import io.github._5thlayer.craftworks.machine.CreativeFluidSourceBlockEntity;
 import snownee.jade.api.IWailaClientRegistration;
 import snownee.jade.api.IWailaCommonRegistration;
@@ -13,7 +15,7 @@ import snownee.jade.api.IWailaPlugin;
 import snownee.jade.api.WailaPlugin;
 
 /**
- * Shows an Assembler's Held recipe, state and energy in Jade's tooltip, with the fluid boxes as
+ * Shows a Refiner's state and smelt (ADR-0127), and an Assembler's Held recipe, state and energy in Jade's tooltip, with the fluid boxes as
  * Jade's own fluid bars (#25, #26, #27, #40); the Creative Energy Source's energy as Infinite FE (#28); and the
  * Creative Fluid Source's fluid as, say, "Water, infinite" (#32).
  *
@@ -30,6 +32,7 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
     @Override
     public void register(IWailaCommonRegistration registration) {
         registration.registerBlockDataProvider(AssemblerReport.INSTANCE, AssemblerBlockEntity.class);
+        registration.registerBlockDataProvider(RefinerReport.INSTANCE, RefinerBlockEntity.class);
         registration.registerEnergyStorage(InfiniteEnergy.INSTANCE, CreativeEnergySourceBlockEntity.class);
         registration.registerFluidStorage(InfiniteFluid.INSTANCE, CreativeFluidSourceBlockEntity.class);
         registration.registerFluidStorage(AssemblerFluidView.INSTANCE, AssemblerBlockEntity.class);
@@ -38,6 +41,7 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
     @Override
     public void registerClient(IWailaClientRegistration registration) {
         registration.registerBlockComponent(AssemblerReport.Client.INSTANCE, AssemblerBlock.class);
+        registration.registerBlockComponent(RefinerReport.Client.INSTANCE, RefinerBlock.class);
         registration.registerEnergyStorageClient(InfiniteEnergy.INSTANCE);
         registration.registerFluidStorageClient(InfiniteFluid.INSTANCE);
         registration.registerFluidStorageClient(AssemblerFluidView.INSTANCE);

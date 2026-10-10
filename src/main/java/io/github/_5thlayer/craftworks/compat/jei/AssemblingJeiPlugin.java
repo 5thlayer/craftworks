@@ -9,6 +9,7 @@ import java.util.Optional;
 import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.compat.ConfiguredTabs;
 import io.github._5thlayer.craftworks.machine.MachineGhosts;
+import io.github._5thlayer.craftworks.machine.Refiners;
 import io.github._5thlayer.craftworks.machine.AssemblerTab;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
@@ -21,6 +22,7 @@ import mezz.jei.api.recipe.types.IRecipeHolderType;
 import mezz.jei.api.runtime.IClickableIngredient;
 import mezz.jei.api.registration.IAdvancedRegistration;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
+import mezz.jei.api.constants.RecipeTypes;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
@@ -85,6 +87,9 @@ public final class AssemblingJeiPlugin implements IModPlugin {
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
         ConfiguredTabs.workstations().forEach(item -> registration.addCraftingStation(TAB, new ItemStack(item)));
+        // The Refiner smelts what vanilla's furnace and blast furnace do, so it is their tabs' workstation (ADR-0127).
+        registration.addCraftingStation(RecipeTypes.SMELTING, new ItemStack(Refiners.ITEM.get()));
+        registration.addCraftingStation(RecipeTypes.BLASTING, new ItemStack(Refiners.ITEM.get()));
     }
 
     /** With an Assembler open, the recipe's {@code +} sets its Held recipe (see {@link AssemblerTransferHandler}). */
