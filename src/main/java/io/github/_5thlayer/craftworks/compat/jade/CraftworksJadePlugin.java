@@ -15,7 +15,7 @@ import snownee.jade.api.IWailaPlugin;
 import snownee.jade.api.WailaPlugin;
 
 /**
- * Shows a Refiner's state and smelt (ADR-0127), and an Assembler's Held recipe, state and energy in Jade's tooltip, with the fluid boxes as
+ * Shows a Refiner's state and smelt (ADR-0020), and an Assembler's Held recipe, state and energy in Jade's tooltip, with the fluid boxes as
  * Jade's own fluid bars (#25, #26, #27, #40); the Creative Energy Source's energy as Infinite FE (#28); and the
  * Creative Fluid Source's fluid as, say, "Water, infinite" (#32).
  *

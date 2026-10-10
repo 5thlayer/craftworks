@@ -48,7 +48,7 @@ public final class CraftworksConfig {
             ModConfigSpec.IntValue buffer) {
     }
 
-    /** The Refiner's default crafting speed, Factorio's electric furnace's (ADR-0127). */
+    /** The Refiner's default crafting speed, Factorio's electric furnace's (ADR-0020). */
     public static final double REFINER_SPEED = 2.0;
 
     /** The Refiner's default FE a tick: Factorio's 180 kW at 1 FE = 100 J. */

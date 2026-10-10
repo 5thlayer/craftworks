@@ -92,7 +92,7 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
         registry.addRecipeHandler(Assemblers.MENU.get(), new AssemblerEmiHandler());
         registry.addStackProvider(AssemblerScreen.class, AssemblingEmiPlugin::ghostAt);
         ConfiguredTabs.workstations().forEach(item -> registry.addWorkstation(tab, EmiStack.of(item)));
-        // The Refiner smelts what vanilla's furnace and blast furnace do, so it is their tabs' workstation (ADR-0127).
+        // The Refiner smelts what vanilla's furnace and blast furnace do, so it is their tabs' workstation (ADR-0020).
         registry.addWorkstation(VanillaEmiRecipeCategories.SMELTING, EmiStack.of(Refiners.ITEM.get()));
         registry.addWorkstation(VanillaEmiRecipeCategories.BLASTING, EmiStack.of(Refiners.ITEM.get()));
         AssemblingRecipeIds.onSync(AssemblingEmiPlugin::searchAgain);

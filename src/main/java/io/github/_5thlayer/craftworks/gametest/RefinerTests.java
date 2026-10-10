@@ -18,7 +18,10 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
@@ -47,6 +50,8 @@ final class RefinerTests {
         tests.test("a_refiner_blasts_an_input_that_has_both_a_smelting_and_a_blasting_recipe", 200, RefinerTests::blastingWins);
         tests.test("a_refiner_with_no_power_makes_no_progress_and_keeps_its_input", 60, RefinerTests::needsPower);
         tests.test("a_refiner_whose_output_is_full_draws_nothing_and_keeps_its_progress", 60, RefinerTests::backsUp);
+        tests.test("a_refiners_progress_resets_when_its_input_changes_to_a_different_recipe", 60, RefinerTests::resetsOnANewRecipe);
+        tests.test("a_refiners_progress_survives_a_save_and_load", 60, RefinerTests::survivesReload);
         tests.test("a_refiners_item_face_takes_only_what_it_smelts_up_to_the_overload_limit_and_gives_only_its_output", 20, RefinerTests::itemFace);
         tests.test("a_refiners_energy_face_takes_energy_and_gives_none_back", 20, RefinerTests::energyFace);
         tests.test("a_refiners_screen_places_a_full_stack_and_refuses_what_no_recipe_smelts", 20, RefinerTests::screen);
@@ -135,6 +140,41 @@ final class RefinerTests {
         });
     }
 
+    private static void resetsOnANewRecipe(GameTestHelper helper) {
+        RefinerBlockEntity refiner = place(helper);
+        load(refiner, Items.COBBLESTONE, 1);
+        charge(helper, 9000);
+        helper.runAfterDelay(15, () -> {
+            helper.assertTrue(refiner.smeltProgress() >= 10, "the cobblestone smelt had made only " + refiner.smeltProgress() + " ticks");
+            load(refiner, Items.RAW_IRON, 1);
+            helper.runAfterDelay(2, () -> {
+                helper.assertTrue(refiner.smeltProgress() <= 2,
+                        "a different recipe kept " + refiner.smeltProgress() + " ticks of the last one");
+                helper.succeed();
+            });
+        });
+    }
+
+    private static void survivesReload(GameTestHelper helper) {
+        RefinerBlockEntity refiner = place(helper);
+        load(refiner, Items.COBBLESTONE, 1);
+        charge(helper, 9000);
+        helper.runAfterDelay(15, () -> {
+            int progress = refiner.smeltProgress();
+            helper.assertTrue(progress > 0, "no progress to save");
+            TagValueOutput saved = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, helper.getLevel().registryAccess());
+            refiner.saveCustomOnly(saved);
+            RefinerBlockEntity loaded = new RefinerBlockEntity(helper.absolutePos(REFINER), helper.getBlockState(REFINER));
+            loaded.setLevel(helper.getLevel());
+            loaded.loadCustomOnly(TagValueInput.create(ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), saved.buildResult()));
+            helper.assertTrue(loaded.smeltProgress() == progress, "the Refiner read back " + loaded.smeltProgress() + " ticks, not " + progress);
+            helper.assertTrue(loaded.energy() == refiner.energy(), "the Refiner read back " + loaded.energy() + " FE, not " + refiner.energy());
+            helper.assertTrue(loaded.inventory().getResource(RefinerSlots.INPUT).equals(ItemResource.of(Items.COBBLESTONE)),
+                    "the Refiner read back a different input");
+            helper.succeed();
+        });
+    }
+
     /**
      * Every side is the same face. A slot-less insert and extract go through the face's own rules, so a pipe cannot
      * take the input mid-smelt or put anything in the output.
@@ -150,7 +190,6 @@ final class RefinerTests {
             try (Transaction tx = Transaction.openRoot()) {
                 helper.assertTrue(face.insert(ItemResource.of(Items.STICK), 64, tx) == 0, "a stick went in on " + side);
                 helper.assertTrue(face.insert(ItemResource.of(Items.COAL), 64, tx) == 0, "coal went in on " + side);
-                // Raw iron blasts in 50 ticks: 1.166 * 2 * 20 / 100 rounds up to 1, plus one, is two smelts' worth.
                 helper.assertTrue(face.insert(raw, 64, tx) == 2, "the Overload Limit let in another count of raw iron on " + side);
                 helper.assertTrue(face.insert(raw, 64, tx) == 0, "raw iron went in past the limit on " + side);
                 helper.assertTrue(face.insert(RefinerSlots.OUTPUT, ItemResource.of(Items.IRON_INGOT), 1, tx) == 0,

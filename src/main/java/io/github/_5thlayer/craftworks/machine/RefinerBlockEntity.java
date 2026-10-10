@@ -126,10 +126,37 @@ public final class RefinerBlockEntity extends BlockEntity implements MenuProvide
 
     // -- the smelt ------------------------------------------------------------------------------
 
-    public void serverTick(ServerLevel server) {
-        resizeBuffer();
+    /** The first check a tick would fail, or CRAFTING, with what the tick then needs. */
+    private record Check(MachineState state, @Nullable Identifier id, int duration, ItemStack result, int fe) {
+    }
+
+    private Check check(ServerLevel server) {
         Optional<RecipeHolder<? extends AbstractCookingRecipe>> found = recipe(server);
         if (found.isEmpty()) {
+            MachineState none = inventory.getResource(RefinerSlots.INPUT).isEmpty() ? MachineState.NO_RECIPE : MachineState.CANT_RUN;
+            return new Check(none, null, 0, ItemStack.EMPTY, 0);
+        }
+        AbstractCookingRecipe recipe = found.get().value();
+        Identifier id = found.get().id().identifier();
+        int duration = CraftRates.durationTicks(CraftworksConfig.refinerSpeed(), recipe.cookingTime());
+        ItemStack result = result(recipe);
+        try (Transaction probe = Transaction.openRoot()) {
+            MachineState stalled = finish(result, probe);
+            if (stalled != null) {
+                return new Check(stalled, id, duration, result, 0);
+            }
+        }
+        int fe = feThisTick(recipe, duration);
+        try (Transaction probe = Transaction.openRoot()) {
+            MachineState state = buffer.extract(fe, probe) == fe ? MachineState.CRAFTING : MachineState.NEEDS_POWER;
+            return new Check(state, id, duration, result, fe);
+        }
+    }
+
+    public void serverTick(ServerLevel server) {
+        resizeBuffer();
+        Check check = check(server);
+        if (check.id() == null) {
             if (progress != 0 || duration != 0) {
                 progress = 0;
                 duration = 0;
@@ -138,29 +165,20 @@ public final class RefinerBlockEntity extends BlockEntity implements MenuProvide
             setLit(false);
             return;
         }
-        Identifier id = found.get().id().identifier();
-        if (smelting != null && !smelting.equals(id)) {
+        if (smelting != null && !smelting.equals(check.id())) {
             progress = 0;
         }
-        smelting = id;
-        AbstractCookingRecipe recipe = found.get().value();
-        duration = CraftRates.durationTicks(CraftworksConfig.refinerSpeed(), recipe.cookingTime());
-        ItemStack result = result(recipe);
-        try (Transaction probe = Transaction.openRoot()) {
-            if (finish(result, probe) != null) {
-                setLit(false);
-                return;
-            }
+        smelting = check.id();
+        duration = check.duration();
+        if (check.state() != MachineState.CRAFTING) {
+            setLit(false);
+            return;
         }
-        int fe = feThisTick(recipe, duration);
         try (Transaction tx = Transaction.openRoot()) {
-            if (buffer.extract(fe, tx) != fe) {
-                setLit(false);
-                return;
-            }
+            buffer.extract(check.fe(), tx);
             int next = progress + 1;
             if (next >= duration) {
-                finish(result, tx);
+                finish(check.result(), tx);
                 next = 0;
             }
             tx.commit();
@@ -212,21 +230,7 @@ public final class RefinerBlockEntity extends BlockEntity implements MenuProvide
         if (!(level instanceof ServerLevel server)) {
             return MachineState.NO_RECIPE;
         }
-        Optional<RecipeHolder<? extends AbstractCookingRecipe>> found = recipe(server);
-        if (found.isEmpty()) {
-            return inventory.getResource(RefinerSlots.INPUT).isEmpty() ? MachineState.NO_RECIPE : MachineState.CANT_RUN;
-        }
-        AbstractCookingRecipe recipe = found.get().value();
-        try (Transaction probe = Transaction.openRoot()) {
-            MachineState stalled = finish(result(recipe), probe);
-            if (stalled != null) {
-                return stalled;
-            }
-        }
-        int fe = feThisTick(recipe, CraftRates.durationTicks(CraftworksConfig.refinerSpeed(), recipe.cookingTime()));
-        try (Transaction probe = Transaction.openRoot()) {
-            return buffer.extract(fe, probe) == fe ? MachineState.CRAFTING : MachineState.NEEDS_POWER;
-        }
+        return check(server).state();
     }
 
     /** Ticks into the smelt under way, for the screen's progress bar. */

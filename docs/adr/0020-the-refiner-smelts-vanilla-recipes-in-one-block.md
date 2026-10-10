@@ -24,12 +24,12 @@ or changes to an item another recipe smelts.
 
 **Considered: a copy of FactoryWorks' `GuardedResourceHandler`.** Core wrapped a vanilla container, whose slot-less
 insert and extract skipped the per-slot refusals, and needed the guard to put them back. `MachineItemFace` implements
-`ResourceHandler` itself, so the interface's slot-less insert and extract already loop through its per-slot rules; a
+`ResourceHandler` itself, so the interface's slot-less insert and extract already loop through its per-slot rules, so the Refiner needs no `GuardedResourceHandler` from libworks (5thlayer/libworks#8); a
 game test holds that a slot-less insert and extract cannot take the input or fill the output.
 
 **Considered: m:n smelting recipes as Assembling recipes in a smelting category.** It would let a pack write a Refiner
 recipe with several inputs or results. Nothing defines what the recipe would say or how the one-slot screen would show
-it, so it is left for a ticket that does; a pack that wants more than one-to-one has the Assembler.
+it, so it is left for a ticket that does (#47); a pack that wants more than one-to-one has the Assembler.
 
 **Considered: the Assemblers' 3x3 footprint.** Factorio's furnace is 3x3, but the art that came with it is a cube's
 and a footprint needs a model of its own (#22). One block it is; a footprint can replace it with a Fast Replace later.

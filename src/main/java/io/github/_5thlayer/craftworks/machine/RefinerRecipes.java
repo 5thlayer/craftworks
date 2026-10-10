@@ -15,7 +15,7 @@ import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.Level;
 
 /**
- * What the Refiner smelts: vanilla's smelting and blasting recipes and no type of its own (ADR-0127). An input
+ * What the Refiner smelts: vanilla's smelting and blasting recipes and no type of its own (ADR-0020). An input
  * that has both is blasted, so the Refiner's one speed gives the blast furnace's halved time where a recipe
  * offers it.
  */

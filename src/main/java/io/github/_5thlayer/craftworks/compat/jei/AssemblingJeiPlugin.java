@@ -87,7 +87,7 @@ public final class AssemblingJeiPlugin implements IModPlugin {
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
         ConfiguredTabs.workstations().forEach(item -> registration.addCraftingStation(TAB, new ItemStack(item)));
-        // The Refiner smelts what vanilla's furnace and blast furnace do, so it is their tabs' workstation (ADR-0127).
+        // The Refiner smelts what vanilla's furnace and blast furnace do, so it is their tabs' workstation (ADR-0020).
         registration.addCraftingStation(RecipeTypes.SMELTING, new ItemStack(Refiners.ITEM.get()));
         registration.addCraftingStation(RecipeTypes.BLASTING, new ItemStack(Refiners.ITEM.get()));
     }
