@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
@@ -60,7 +61,7 @@ public final class RefinerBlockEntity extends BlockEntity implements MenuProvide
         super(Refiners.BLOCK_ENTITY.get(), pos, state);
         inventory = new MachineInventory(RefinerSlots.LAYOUT, new MachineInventory.Owner() {
             @Override
-            public Optional<net.neoforged.neoforge.common.crafting.SizedIngredient> ingredientAt(int slot) {
+            public Optional<SizedIngredient> ingredientAt(int slot) {
                 return Optional.empty();
             }
 
@@ -151,7 +152,7 @@ public final class RefinerBlockEntity extends BlockEntity implements MenuProvide
                 return;
             }
         }
-        int fe = feThisTick(recipe);
+        int fe = feThisTick(recipe, duration);
         try (Transaction tx = Transaction.openRoot()) {
             if (buffer.extract(fe, tx) != fe) {
                 setLit(false);
@@ -178,9 +179,8 @@ public final class RefinerBlockEntity extends BlockEntity implements MenuProvide
         return recipe.assemble(new SingleRecipeInput(inventory.getResource(RefinerSlots.INPUT).toStack(1)));
     }
 
-    private int feThisTick(AbstractCookingRecipe recipe) {
-        double speed = CraftworksConfig.refinerSpeed();
-        int price = CraftRates.fePerCraft(CraftworksConfig.refinerPower(), speed, recipe.cookingTime());
+    private int feThisTick(AbstractCookingRecipe recipe, int duration) {
+        int price = CraftRates.fePerCraft(CraftworksConfig.refinerPower(), CraftworksConfig.refinerSpeed(), recipe.cookingTime());
         return CraftRates.feForTick(Math.min(progress, duration - 1), duration, price);
     }
 
@@ -223,9 +223,7 @@ public final class RefinerBlockEntity extends BlockEntity implements MenuProvide
                 return stalled;
             }
         }
-        int duration = CraftRates.durationTicks(CraftworksConfig.refinerSpeed(), recipe.cookingTime());
-        int fe = CraftRates.feForTick(Math.min(progress, duration - 1), duration, CraftRates.fePerCraft(
-                CraftworksConfig.refinerPower(), CraftworksConfig.refinerSpeed(), recipe.cookingTime()));
+        int fe = feThisTick(recipe, CraftRates.durationTicks(CraftworksConfig.refinerSpeed(), recipe.cookingTime()));
         try (Transaction probe = Transaction.openRoot()) {
             return buffer.extract(fe, probe) == fe ? MachineState.CRAFTING : MachineState.NEEDS_POWER;
         }
