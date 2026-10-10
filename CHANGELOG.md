@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- The Refiner (`craftworks:refiner`), Factorio's electric furnace, is a placed machine that smelts on FE and no fuel: an input and an output slot, a screen with a progress bar and the energy, and any vanilla smelting or blasting recipe, blasting where an input has both (raw iron takes the blast furnace's recipe). Its `refiner` section of `craftworks-server.toml` sets its `speed` (default 2, a smelt takes the recipe's cooking time over it, so 100 ticks for smelting and 50 for blasting), `power` (default 90 FE a tick) and `buffer` (default 20,000 FE). An item capability on every side lets pipes and hoppers insert only what a recipe smelts, up to two smelts' worth, and take out only the output. It is crafted by an Assembling recipe from a blast furnace, 4 iron ingots and 5 redstone, which a pack overrides at `craftworks:refiner`, and it is the workstation of the smelting and blasting tabs in EMI and JEI. Jade shows its state and progress. Its textures are stand-ins. (#46)
+
 ## 0.7.0
 
 - An Assembler's six Fluid Connections move: they stand on the ends of its front and back edges and the centres of its sides, where they were all three blocks of those two edges, so no two pipes laid beside them touch and a recipe of five fluids gets five separate networks. A pipe laid against the old centres of the front and back edges no longer connects. Nothing is saved with the connections, so no world needs migrating. (#45)

@@ -70,6 +70,13 @@ buffer and art only. Never the **Personal Assembler**, which always takes its fu
 _Avoid_: assembling machine, crafter, auto crafter, machine (alone), Chemical Plant, Oil Refinery (the two
 machines it replaced)
 
+**Refiner**:
+A placed machine, one block, that smelts what vanilla's furnace and blast furnace do, on FE and no fuel: an input
+slot and an output slot, no **Held recipe**. It takes any vanilla smelting or blasting recipe, blasting where an
+input has both, at the speed and power its server config sets. The Factorio electric furnace, taken from
+FactoryWorks Core (FactoryWorks ADR-0127); never an **Assembler**, which makes Assembling recipes.
+_Avoid_: Electric Furnace, furnace (alone), Oil Refinery (a machine Craftworks removed)
+
 **Fluid Connection**:
 A face of an **Assembler** where fluid reaches it, with no direction of its own: its role comes from the **Held
 recipe**, not from a fixed input or output. An Assembler of any tier has six on the bottom layer, spaced so no
