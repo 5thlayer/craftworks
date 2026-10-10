@@ -19,8 +19,8 @@ final class MachineItemFace implements ResourceHandler<ItemResource> {
         /** Whether input {@code slot} takes {@code resource} under the Held recipe. */
         boolean accepts(int slot, ItemResource resource);
 
-        /** How many more of its ingredient an insert may put in {@code slot}: the Overload Limit less what it holds. */
-        int overloadRoom(int slot);
+        /** How many more of {@code resource} an insert may put in {@code slot}: the Overload Limit less what it holds. */
+        int overloadRoom(int slot, ItemResource resource);
     }
 
     private final Gate machine;
@@ -61,7 +61,7 @@ final class MachineItemFace implements ResourceHandler<ItemResource> {
         if (!machine.accepts(index, resource)) {
             return 0;
         }
-        return inventory.insert(index, resource, Math.min(amount, machine.overloadRoom(index)), transaction);
+        return inventory.insert(index, resource, Math.min(amount, machine.overloadRoom(index, resource)), transaction);
     }
 
     @Override

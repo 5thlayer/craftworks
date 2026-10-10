@@ -244,7 +244,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
      * Overload Limit less what the slot holds. The menu's slots do not ask, so the hand is not held to it.
      */
     @Override
-    public int overloadRoom(int slot) {
+    public int overloadRoom(int slot, ItemResource resource) {
         return runnable()
                 .flatMap(recipe -> ingredientFor(slot, recipe)
                         .map(ingredient -> OverloadLimit.room(ingredient.count(), overloadCrafts(recipe),
