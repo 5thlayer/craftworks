@@ -35,6 +35,10 @@ final class PlaysAloneTests {
     private static final Pattern HASHED_TAG = Pattern.compile("\"#([a-z0-9_.-]+:[a-z0-9_./-]+)\"");
     private static final Pattern TAG_FIELD = Pattern.compile("\"tag\"\\s*:\\s*\"([a-z0-9_.-]+:[a-z0-9_./-]+)\"");
 
+    // A tag entry marked "required": false adds what a pack may fill and consumes nothing alone.
+    private static final Pattern OPTIONAL_ENTRY = Pattern.compile(
+            "\\{\\s*(\"id\"\\s*:\\s*\"#[^\"]+\"\\s*,\\s*\"required\"\\s*:\\s*false|\"required\"\\s*:\\s*false\\s*,\\s*\"id\"\\s*:\\s*\"#[^\"]+\")\\s*}");
+
     private PlaysAloneTests() {
     }
 
@@ -65,7 +69,7 @@ final class PlaysAloneTests {
                 }
                 try (Stream<Path> files = Files.walk(data)) {
                     for (Path file : files.filter(f -> f.toString().endsWith(".json")).toList()) {
-                        String json = Files.readString(file);
+                        String json = OPTIONAL_ENTRY.matcher(Files.readString(file)).replaceAll("");
                         for (Pattern named : List.of(HASHED_TAG, TAG_FIELD)) {
                             named.matcher(json).results().forEach(tag -> tags.add(Identifier.parse(tag.group(1))));
                         }
