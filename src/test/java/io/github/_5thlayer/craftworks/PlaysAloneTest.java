@@ -85,6 +85,13 @@ class PlaysAloneTest {
     }
 
     @Test
+    void anIdOfGearworksOrVoidworksIsReported(@TempDir Path resources) throws IOException {
+        write(resources.resolve("data/craftworks/recipe/x.json"), "{\"a\":\"gearworks:gear\",\"b\":\"voidworks:void_cell\"}");
+        assertEquals(List.of("data/craftworks/recipe/x.json names gearworks:gear", "data/craftworks/recipe/x.json names voidworks:void_cell"),
+                PlaysAlone.otherModulesIds(resources, Craftworks.MOD_ID));
+    }
+
+    @Test
     void theModsOwnIdsGroundworksAndTheSharedNamespacesAreAllowed(@TempDir Path resources) throws IOException {
         write(resources.resolve("data/craftworks/recipe/x.json"),
                 "{\"a\":\"minecraft:glass\",\"b\":\"#c:glass_blocks\",\"c\":\"groundworks:x\",\"d\":\"neoforge:y\",\"e\":\"craftworks:assembler_1\"}");

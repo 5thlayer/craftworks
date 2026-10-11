@@ -542,11 +542,9 @@ final class AssemblerMachineTests {
         helper.succeed();
     }
 
-    /** Craftworks plays alone (ADR-0127): no class of it names another Module's type. */
+    /** Craftworks plays alone (FactoryWorks ADR-0127): no class of it names another Module's type. */
     private static void namesNoOtherModulesType(GameTestHelper helper) {
-        // Built at run time, so this class doesn't contain the words it looks for.
-        List<String> names = List.of(String.join("", "belt", "works"), String.join("", "field", "works"),
-                String.join("", "wire", "works"), String.join("", "pipe", "works"), String.join("", "factory", "works"));
+        List<String> names = Stream.concat(OtherModules.NAMES.stream(), Stream.of(OtherModules.RETIRED_PACK)).toList();
         List<String> found = new ArrayList<>();
         int scanned = 0;
         try {

@@ -14,20 +14,24 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
-/** What a Module ships that stops it playing alone on Groundworks (ADR-0127), one scan per rule. */
+import io.github._5thlayer.craftworks.gametest.OtherModules;
+
+/** What a Module ships that stops it playing alone on Groundworks (FactoryWorks ADR-0127), one scan per rule. */
 final class PlaysAlone {
 
-    private static final Set<String> MODULES = Set.of("beltworks", "pipeworks", "wireworks", "craftworks", "fieldworks", "factoryworks");
+    private static final Set<String> NAMED_BY_NO_MODULE = Stream.concat(OtherModules.NAMES.stream(), Stream.of(OtherModules.RETIRED_PACK))
+            .collect(Collectors.toSet());
 
     private PlaysAlone() {
     }
 
     /** Each id in another Module's namespace that a file under {@code root} names, a structure's saved block ids included. */
     static List<String> otherModulesIds(Path root, String own) throws IOException {
-        String others = String.join("|", MODULES.stream().filter(ns -> isOtherModule(ns, own)).sorted().toList());
+        String others = String.join("|", NAMED_BY_NO_MODULE.stream().filter(ns -> isOtherModule(ns, own)).sorted().toList());
         // No word boundary before the namespace: in a structure's NBT a string's length byte can be a letter.
         Pattern ids = Pattern.compile("(" + others + "):[a-z0-9_./-]+");
         List<String> found = new ArrayList<>();
@@ -69,7 +73,7 @@ final class PlaysAlone {
     }
 
     private static boolean isOtherModule(String namespace, String own) {
-        return MODULES.contains(namespace) && !namespace.equals(own);
+        return NAMED_BY_NO_MODULE.contains(namespace) && !namespace.equals(own);
     }
 
     private static List<Path> files(Path root) throws IOException {
