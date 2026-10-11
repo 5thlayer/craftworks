@@ -27,7 +27,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * A plain fluid-handler block for the game tests: it holds one fluid in a tank and exposes it on every face
  * through NeoForge's fluid capability, as a tank or a pipe of another mod would. Registered only when the
- * game tests run ({@code craftworks.gametestPack}), so no player's world has the block.
+ * game tests run ({@code craftworks.gametest}), so no player's world has the block.
  */
 final class TestTank {
 

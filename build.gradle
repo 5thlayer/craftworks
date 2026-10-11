@@ -84,13 +84,10 @@ neoForge {
             if (providers.gradleProperty('devLockReason').isPresent()) {
                 systemProperty 'craftworks.devLockReason', providers.gradleProperty('devLockReason').get()
             }
-            // Recipes for trying the Assembler by hand (a fluid ingredient, two results), a datapack in the
-            // jar that only this run turns on.
-            systemProperty 'craftworks.devPack', 'true'
         }
         gameTestServer {
-            // The recipes only the game tests read, a datapack in the jar that only this run turns on.
-            systemProperty 'craftworks.gametestPack', 'true'
+            // Marks this run as the Mod's own, which is when it registers its test tank and fluids.
+            systemProperty 'craftworks.gametest', 'true'
         }
     }
 }

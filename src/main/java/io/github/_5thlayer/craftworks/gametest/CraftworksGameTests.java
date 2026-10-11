@@ -17,13 +17,9 @@ import net.minecraft.gametest.framework.GameTestInstance;
 import net.minecraft.gametest.framework.TestData;
 import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.repository.Pack;
-import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Rotation;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.event.AddPackFindersEvent;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -35,10 +31,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  */
 public final class CraftworksGameTests {
 
-    private static final String GAMETEST_PACK = "craftworks.gametestPack";
-
-    /** Set by the {@code client} run, which turns on {@code dev_pack/}. */
-    private static final String DEV_PACK = "craftworks.devPack";
+    /** Set by the Mod's own {@code gameTestServer} run, which registers the tests' own block and fluids. */
+    private static final String OWN_RUN = "craftworks.gametest";
 
     /** Set by a {@code -PwithKubeJS} run, which puts KubeJS and the sample script on the server. */
     private static final String KUBEJS_TESTS = "craftworks.kubejsTests";
@@ -59,15 +53,11 @@ public final class CraftworksGameTests {
         TEST_TYPES.register(modBus);
         // Posted only when game tests are enabled, so a production server never registers the tests.
         modBus.addListener(CraftworksGameTests::registerTests);
-        if (Boolean.getBoolean(GAMETEST_PACK)) {
-            modBus.addListener(CraftworksGameTests::addGameTestPack);
+        if (Boolean.getBoolean(OWN_RUN)) {
             // The tests' own fluid-handler block, which a player's world never has.
             TestTank.register(modBus);
             // And the fluids a five-fluid recipe needs beyond water and lava.
             TestFluids.register(modBus);
-        }
-        if (Boolean.getBoolean(DEV_PACK)) {
-            modBus.addListener(CraftworksGameTests::addDevPack);
         }
         registerDevLockReason();
     }
@@ -83,26 +73,6 @@ public final class CraftworksGameTests {
         LockHooks.registerReasoned((player, asked) -> asked.equals(locked)
                 ? LockHooks.Lock.because(Component.literal("Research: Dev Test"))
                 : Optional.empty());
-    }
-
-    /**
-     * The recipes only the game tests read, in {@code gametest_pack/} in the jar. Only the
-     * {@code gameTestServer} run sets {@value #GAMETEST_PACK}, so no dev or player world sees them.
-     */
-    private static void addGameTestPack(AddPackFindersEvent event) {
-        event.addPackFinders(id("gametest_pack"), PackType.SERVER_DATA, Component.literal("Craftworks game tests"),
-                PackSource.BUILT_IN, true, Pack.Position.TOP);
-    }
-
-    /**
-     * Recipes for trying the Assembler in the dev client, which vanilla's don't cover: a fluid ingredient
-     * ({@code dev/with_fluid}), two fluids in with an item and a fluid out ({@code dev/two_fluids}), fluids only
-     * ({@code dev/fluid_only}) and two item results ({@code dev/two_results}). In {@code dev_pack/} in the
-     * jar; only the {@code client} run sets {@value #DEV_PACK}, so no player's world sees them.
-     */
-    private static void addDevPack(AddPackFindersEvent event) {
-        event.addPackFinders(id("dev_pack"), PackType.SERVER_DATA, Component.literal("Craftworks dev recipes"),
-                PackSource.BUILT_IN, true, Pack.Position.TOP);
     }
 
     private static void registerTests(RegisterGameTestsEvent event) {

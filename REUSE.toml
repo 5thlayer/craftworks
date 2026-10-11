@@ -14,6 +14,8 @@ path = [
     "scripts/*.sh",
     "**/*.md",
     "src/main/resources/**/*.json",
+    "src/gametest/resources/**/*.json",
+    "src/gametest/resources/**/*.mcmeta",
     "src/main/resources/**/pack.mcmeta",
     "src/main/resources/**/*.nbt",
     "src/main/resources/**/*.png",
