@@ -17,8 +17,8 @@ libworks {
         range = '[0.5.5,0.6)'
     }
     // Optional to players, and on the dev client so a Fluid Connection can be tried against its pipes, which
-    // draw an arm toward one from 0.2.0 (Pipeworks #11). The Mod names no Pipeworks type: a pipe reaches a
-    // connection through the fluid capability alone, so a later Pipeworks can't break it.
+    // draw an arm toward one. The Mod names no Pipeworks type: a pipe reaches a connection through the fluid
+    // capability alone, so a later Pipeworks can't break it.
     upstream('pipeworks') {
         optional = true
         range = '[0.2.0,)'
@@ -72,9 +72,8 @@ def jade = 'maven.modrinth:jade:26.1.11+neoforge'
 def kubejs = 'dev.latvian.mods:kubejs-neoforge:26.1.2-8.0.3'
 def rhino = 'dev.latvian.mods:rhino:2101.2.7-build.85'
 
-// Mods on the dev client that the published jar does not depend on. The game tests run on a source set
-// of their own, with no code and the Mod's dependencies but not these, so they prove the Mod plays alone
-// on Groundworks (ADR-0127).
+// The game tests run on a source set of their own, with no code and the Mod's dependencies but not the dev
+// client's (localRuntime), so they prove the Mod plays alone on Groundworks (FactoryWorks ADR-0127).
 sourceSets {
     solo
 }
@@ -219,9 +218,10 @@ if (providers.gradleProperty('withResearchd').isPresent()) {
 // game tests read the same ones; the game tests then run the KubeJS tests too.
 if (providers.gradleProperty('withKubeJS').isPresent()) {
     dependencies {
-        // Its gif and web-server libraries ride inside its jar, and the gif one is on no maven here.
-        localRuntime(kubejs) { exclude group: 'com.github.rtyley'; exclude group: 'dev.latvian.apps' }
-        soloRuntimeOnly(kubejs) { exclude group: 'com.github.rtyley'; exclude group: 'dev.latvian.apps' }
+        ['localRuntime', 'soloRuntimeOnly'].each { configuration ->
+            // Its gif and web-server libraries ride inside its jar, and the gif one is on no maven here.
+            add(configuration, kubejs) { exclude group: 'com.github.rtyley'; exclude group: 'dev.latvian.apps' }
+        }
     }
     neoForge.runs.configureEach {
         systemProperty 'craftworks.kubejsTests', 'true'
