@@ -5,13 +5,14 @@ plugins {
 }
 
 // What the Mod requires of the other Libraries, each as a range whose lower bound is a released version:
-// the one compiled against and the one CI builds from its tag. neoforge.mods.toml names each as ${<name>_range}.
+// the one the Mod is built and run against and the one CI builds from its tag. neoforge.mods.toml names each as ${<name>_range}.
 libworks {
     // Craftworks' own tags are v<version>.
     tagPrefix = 'v'
     // Required, and never jar-in-jar: the Mod, Wireworks and the Pack share one Groundworks (FactoryWorks
     // ADR-0115). Capped below the next minor, 0.6, which moves when the Mod takes it.
     upstream('groundworks') {
+        // Groundworks' tags are v<version> too.
         tagPrefix = 'v'
         range = '[0.5.5,0.6)'
     }
@@ -23,9 +24,6 @@ libworks {
         range = '[0.2.0,)'
     }
 }
-
-// The game test server's own directory, apart from the dev client's.
-def gameTestDirectory = file('run/gametest')
 
 // EMI for 26.1: the unofficial port.
 def emi = 'curse.maven:emi-unofficial-port-1544558:8630349'
@@ -95,7 +93,7 @@ neoForge {
 tasks.named('runGameTestServer') {
     doFirst {
         // The tests read the defaults: a config an earlier run wrote would keep the categories it listed then.
-        new File(gameTestDirectory, 'config/craftworks-server.toml').delete()
+        neoForge.runs.gameTestServer.gameDirectory.file('config/craftworks-server.toml').get().asFile.delete()
     }
 }
 
