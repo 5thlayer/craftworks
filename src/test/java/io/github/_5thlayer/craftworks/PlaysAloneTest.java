@@ -25,12 +25,15 @@ class PlaysAloneTest {
 
     private static final Path CODE = Path.of("src/main/java");
     private static final Path RESOURCES = Path.of("src/main/resources");
+    // Generated before the tests run, as the main resources are, and shipped in the jar with them.
+    private static final Path VANILLA_PACK = Path.of("build/generated/vanillaPack");
     private static final Path TAG_CHECK = CODE.resolve("io/github/_5thlayer/craftworks/gametest/PlaysAloneTests.java");
 
     @Test
     void theShippedCodeAndResourcesNameNoOtherModulesId() throws IOException {
         assertEquals(List.of(), PlaysAlone.otherModulesIds(CODE));
         assertEquals(List.of(), PlaysAlone.otherModulesIds(RESOURCES));
+        assertEquals(List.of(), PlaysAlone.otherModulesIds(VANILLA_PACK));
     }
 
     @Test
