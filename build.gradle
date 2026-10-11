@@ -184,11 +184,22 @@ def generateVanillaPack = tasks.register('generateVanillaPack') {
 }
 sourceSets.main.resources.srcDir(files(vanillaPackDir).builtBy(generateVanillaPack))
 
-// Mods on the dev runs that the published jar does not depend on.
+// Mods the dev client loads alongside the Mod, to try it with them by hand. 26.1 has no per-run
+// classpath, so they go into the client's mods folder, which holds only what is listed here; the game
+// test server loads Groundworks and nothing else (ADR-0127).
 configurations {
+    clientMods { transitive = false }
+    // Opt-in (-PwithResearchd, -PwithKubeJS): the dev runs, game tests included, load them.
     localRuntime
     runtimeClasspath.extendsFrom localRuntime
 }
+
+def syncClientMods = tasks.register('syncClientMods', Sync) {
+    from configurations.clientMods
+    into layout.projectDirectory.dir('run/mods')
+}
+
+tasks.named('runClient') { dependsOn syncClientMods }
 
 // The Groundworks the Assemblers' footprint and Fast Replace are compiled against, and the least the Mod
 // accepts at load (neoforge.mods.toml, capped below the next minor, 0.6, which moves when the Mod takes
@@ -199,17 +210,17 @@ dependencies {
     // Required, and never jar-in-jar: the Mod, Wireworks and the Pack share one Groundworks (FactoryWorks ADR-0115).
     implementation groundworks
 
-    // Pipeworks is optional to players, and on every dev run so a Fluid Connection can be tried against its
+    // Pipeworks is optional to players, and on the dev client so a Fluid Connection can be tried against its
     // pipes. The Mod names no Pipeworks type: a pipe reaches a connection through the fluid capability alone.
-    localRuntime "io.github.5thlayer:pipeworks:$pipeworks_version"
+    clientMods "io.github.5thlayer:pipeworks:$pipeworks_version"
 
-    // EMI is optional to players, and on every dev run so its Assembling category can be looked at.
-    // -PwithJEI puts JEI on the dev runs in its place (#12): a pack ships one viewer, not both.
+    // EMI is optional to players, and on the dev client so its Assembling category can be looked at.
+    // -PwithJEI puts JEI on the dev client in its place (#12): a pack ships one viewer, not both.
     compileOnly 'curse.maven:emi-unofficial-port-1544558:8630349'
     if (providers.gradleProperty('withJEI').isPresent()) {
-        localRuntime "mezz.jei:jei-26.1.2-neoforge:$jei"
+        clientMods "mezz.jei:jei-26.1.2-neoforge:$jei"
     } else {
-        localRuntime 'curse.maven:emi-unofficial-port-1544558:8630349'
+        clientMods 'curse.maven:emi-unofficial-port-1544558:8630349'
     }
 
     // JEI is optional to players too (#12). Its API, which only its plugin (compat/jei) names.
@@ -221,10 +232,10 @@ dependencies {
     // keeps the planner core free of it. The version is the one Minecraft 26.1.2 ships.
     testImplementation 'com.mojang:datafixerupper:9.0.19'
 
-    // Jade is optional to players too (#28), and on every dev run so what it shows can be looked at. Its API,
+    // Jade is optional to players too (#28), and on the dev client so what it shows can be looked at. Its API,
     // which only its plugin (compat/jade) names.
     compileOnly jade
-    localRuntime jade
+    clientMods jade
 
     // KubeJS is optional to players (#11). Its jar and Rhino, which the plugin's event types extend.
     compileOnly(kubejs) { transitive = false }

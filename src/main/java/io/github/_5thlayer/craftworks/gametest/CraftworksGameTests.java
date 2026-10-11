@@ -110,6 +110,7 @@ public final class CraftworksGameTests {
         var environment = event.registerEnvironment(id("default"), new TestEnvironmentDefinition.AllOf(List.of()));
         var tests = new Registrar(event, environment);
         LoadTests.register(tests);
+        PlaysAloneTests.register(tests);
         AssemblingRecipeTests.register(tests);
         AssemblerTests.register(tests);
         AssemblerMachineTests.register(tests);
