@@ -98,10 +98,15 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
         return ghosts.at(mouseX, mouseY, Util.getMillis());
     }
 
-    /** Over a gauge, the fluid's name and how much of the box it fills. */
+    /** Over a ghost, its item's tooltip, as over a real stack; over a gauge, the fluid's name and how much of the box it fills. */
     @Override
     protected void extractTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         super.extractTooltip(graphics, mouseX, mouseY);
+        Optional<Ghost> ghost = ghostAt(mouseX, mouseY);
+        if (ghost.isPresent()) {
+            graphics.setTooltipForNextFrame(font, ghost.get().stack(), mouseX, mouseY);
+            return;
+        }
         for (int box = 0; box < FluidLayout.ASSEMBLER.boxes(); box++) {
             if (MachineScreens.overGauge(leftPos + gauges.x(box), topPos + GAUGE_Y, gauges.width(), mouseX, mouseY)) {
                 MachineScreens.fluidTooltip(graphics, font, menu.fluid(box), menu.fluidCapacity(box), mouseX, mouseY);
