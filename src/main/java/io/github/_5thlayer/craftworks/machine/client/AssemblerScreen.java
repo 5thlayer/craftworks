@@ -10,7 +10,6 @@ import io.github._5thlayer.craftworks.machine.FluidGaugeLayout;
 import io.github._5thlayer.craftworks.machine.FluidLayout;
 import io.github._5thlayer.craftworks.machine.MachineGhosts;
 import io.github._5thlayer.libworks.ghost.Ghost;
-import io.github._5thlayer.libworks.ghost.Ghosts;
 import io.github._5thlayer.libworks.ghost.client.GhostDraw;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -45,14 +44,14 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
     private final int barWidth;
 
     /** What the empty slots and the head show, and what EMI's and JEI's shortcuts ask of. */
-    private final Ghosts ghosts;
+    private final MachineGhosts.Screen ghosts;
 
     public AssemblerScreen(AssemblerMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title, 176, AssemblerMenu.INVENTORY_Y + 82);
         inventoryLabelY = AssemblerMenu.INVENTORY_Y - 11;
         barX = AssemblerMenu.INPUT_X + menu.layout().inputs() * 18 + 4;
         barWidth = AssemblerMenu.PRODUCT_X - 6 - barX;
-        ghosts = MachineGhosts.of(menu, () -> leftPos, () -> topPos);
+        ghosts = MachineGhosts.forAssembler(menu, () -> leftPos, () -> topPos);
     }
 
     @Override
@@ -78,10 +77,8 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
             }
         }
         // The slots' ghosts, over their recesses; the head draws its own product above.
-        for (Ghost ghost : ghosts.shown(Util.getMillis())) {
-            if (!MachineGhosts.isHead(ghost, leftPos, topPos)) {
-                GhostDraw.draw(graphics, font, ghost);
-            }
+        for (Ghost ghost : ghosts.slots().shown(Util.getMillis())) {
+            GhostDraw.draw(graphics, font, ghost);
         }
         int x = leftPos + barX;
         int y = topPos + AssemblerMenu.INPUT_Y;

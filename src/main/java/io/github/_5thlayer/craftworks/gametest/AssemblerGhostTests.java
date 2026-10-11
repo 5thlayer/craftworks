@@ -62,7 +62,7 @@ final class AssemblerGhostTests {
 
     /** What the screen asks: its ghosts, with its corner read each time. */
     private static Optional<Ghost> at(AssemblerMenu menu, int left, int top, int x, int y, long millis) {
-        return MachineGhosts.of(menu, () -> left, () -> top).at(x, y, millis);
+        return MachineGhosts.forAssembler(menu, () -> left, () -> top).at(x, y, millis);
     }
 
     private static int inputX(int slot) {

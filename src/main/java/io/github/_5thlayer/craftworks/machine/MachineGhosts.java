@@ -4,6 +4,7 @@
 package io.github._5thlayer.craftworks.machine;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.IntSupplier;
 
 import io.github._5thlayer.libworks.ghost.Ghost;
@@ -29,32 +30,41 @@ public final class MachineGhosts {
     }
 
     /**
+     * The ghosts of one Assembler screen, apart by registration: {@code slots} are drawn veiled, and {@code head}
+     * only answers the hit test, since the screen draws the head's product as the item itself.
+     */
+    public record Screen(Ghosts slots, Ghosts head) {
+
+        /** The ghost at ({@code mouseX}, {@code mouseY}) at {@code millis}, the head's first, or empty. */
+        public Optional<Ghost> at(double mouseX, double mouseY, long millis) {
+            Optional<Ghost> over = head.at(mouseX, mouseY, millis);
+            return over.isPresent() ? over : slots.at(mouseX, mouseY, millis);
+        }
+    }
+
+    /**
      * The ghosts of {@code menu}'s screen, whose panel's corner is ({@code left}, {@code top}), read each
      * time so they follow a resize. Empty slots with nothing to ghost, filled ones and every position with no
      * Held recipe have none.
      */
-    public static Ghosts of(AssemblerMenu menu, IntSupplier left, IntSupplier top) {
-        Ghosts ghosts = new Ghosts(left, top);
+    public static Screen forAssembler(AssemblerMenu menu, IntSupplier left, IntSupplier top) {
+        Ghosts slots = new Ghosts(left, top);
         MachineSlots layout = menu.layout();
         for (Slot slot : menu.slots) {
             if (slot.index >= layout.size()) {
                 break;
             }
             if (layout.isInput(slot.index)) {
-                ghosts.add(slot, () -> menu.held()
+                slots.add(slot, () -> menu.held()
                         .flatMap(held -> layout.ingredientFor(slot.index, held.ingredients()))
                         .map(Ghosts::of).orElse(List.of()));
             } else if (slot.index == layout.product()) {
-                ghosts.add(slot, () -> product(menu));
+                slots.add(slot, () -> product(menu));
             }
         }
-        ghosts.add(HEAD_X, HEAD_Y, () -> product(menu));
-        return ghosts;
-    }
-
-    /** Whether {@code ghost} is the head's icon, which the screen draws as the item itself, not veiled. */
-    public static boolean isHead(Ghost ghost, int left, int top) {
-        return ghost.x() == left + HEAD_X && ghost.y() == top + HEAD_Y;
+        Ghosts head = new Ghosts(left, top);
+        head.add(HEAD_X, HEAD_Y, () -> product(menu));
+        return new Screen(slots, head);
     }
 
     private static List<ItemStack> product(AssemblerMenu menu) {
