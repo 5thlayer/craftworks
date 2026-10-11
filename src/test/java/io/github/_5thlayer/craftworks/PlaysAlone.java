@@ -5,16 +5,14 @@ package io.github._5thlayer.craftworks;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
@@ -23,17 +21,20 @@ import io.github._5thlayer.craftworks.gametest.OtherModules;
 /** What a Module ships that stops it playing alone on Groundworks (FactoryWorks ADR-0127), one scan per rule. */
 final class PlaysAlone {
 
-    private static final Set<String> NAMED_BY_NO_MODULE = Stream.concat(OtherModules.NAMES.stream(), Stream.of(OtherModules.RETIRED_PACK))
-            .collect(Collectors.toSet());
+    private static final Pattern DEPENDENCY_MOD_ID = Pattern.compile("(?m)^\\s*modId\\s*=\\s*\"([^\"]+)\"");
+    private static final Pattern DEPENDENCY_TYPE = Pattern.compile("(?m)^\\s*type\\s*=\\s*\"([^\"]+)\"");
+
+    private static final Pattern TAG_READ = Pattern.compile("\\b([A-Z][A-Za-z0-9]*)?Tags(\\.(Items|Blocks|Fluids|EntityTypes|Biomes))?\\.[A-Z][A-Z0-9_]*\\b");
+    private static final Pattern TAG_CONSTANT = Pattern.compile("TagKey<[^>]*>\\s+([A-Z][A-Z0-9_]*)\\s*=");
+    private static final Pattern TAG_CREATED = Pattern.compile("\\b(TagKey|([A-Z][A-Za-z0-9]*)?Tags)\\.create\\(");
 
     private PlaysAlone() {
     }
 
     /** Each id in another Module's namespace that a file under {@code root} names, a structure's saved block ids included. */
-    static List<String> otherModulesIds(Path root, String own) throws IOException {
-        String others = String.join("|", NAMED_BY_NO_MODULE.stream().filter(ns -> isOtherModule(ns, own)).sorted().toList());
+    static List<String> otherModulesIds(Path root) throws IOException {
         // No word boundary before the namespace: in a structure's NBT a string's length byte can be a letter.
-        Pattern ids = Pattern.compile("(" + others + "):[a-z0-9_./-]+");
+        Pattern ids = Pattern.compile("(" + String.join("|", forbidden()) + "):[a-z0-9_./-]+");
         List<String> found = new ArrayList<>();
         for (Path file : files(root)) {
             Matcher id = ids.matcher(text(file));
@@ -45,7 +46,7 @@ final class PlaysAlone {
     }
 
     /** Each {@code data/<namespace>} or {@code assets/<namespace>} folder under {@code resources} that is another Module's. */
-    static List<String> otherModulesNamespaces(Path resources, String own) throws IOException {
+    static List<String> otherModulesNamespaces(Path resources) throws IOException {
         List<String> found = new ArrayList<>();
         for (String kind : List.of("assets", "data")) {
             Path dir = resources.resolve(kind);
@@ -53,27 +54,76 @@ final class PlaysAlone {
                 continue;
             }
             try (Stream<Path> namespaces = Files.list(dir)) {
-                namespaces.map(p -> p.getFileName().toString()).filter(ns -> isOtherModule(ns, own)).sorted()
+                namespaces.map(p -> p.getFileName().toString()).filter(forbidden()::contains).sorted()
                         .forEach(ns -> found.add(kind + "/" + ns));
             }
         }
         return found;
     }
 
-    /** Each source file outside the game tests that names a {@code TagKey}. */
-    static List<String> tagReads(Path code) throws IOException {
-        return files(code).stream().map(file -> relative(code, file)).filter(path -> !path.contains("/gametest/"))
-                .filter(path -> {
-                    try {
-                        return Files.readString(code.resolve(path)).contains("TagKey");
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                }).toList();
+    /** Each string in the Java source under {@code code} that is another Module's namespace, as an id built in code names it. */
+    static List<String> otherModulesNamespaceStrings(Path code) throws IOException {
+        Pattern namespaces = Pattern.compile("\"(" + String.join("|", forbidden()) + ")\"");
+        List<String> found = new ArrayList<>();
+        for (Path file : files(code)) {
+            if (!file.toString().endsWith(".java")) {
+                continue;
+            }
+            Matcher namespace = namespaces.matcher(Files.readString(file));
+            while (namespace.find()) {
+                found.add(relative(code, file) + " names " + namespace.group());
+            }
+        }
+        return found;
     }
 
-    private static boolean isOtherModule(String namespace, String own) {
-        return NAMED_BY_NO_MODULE.contains(namespace) && !namespace.equals(own);
+    /** Each other Module that the mods.toml under {@code resources} requires; an optional dependency is allowed. */
+    static List<String> otherModulesRequired(Path resources) throws IOException {
+        Path toml = resources.resolve("META-INF/neoforge.mods.toml");
+        List<String> found = new ArrayList<>();
+        if (!Files.isRegularFile(toml)) {
+            return found;
+        }
+        for (String block : Files.readString(toml).split("(?m)^(?=\\[)")) {
+            Matcher modId = DEPENDENCY_MOD_ID.matcher(block);
+            Matcher type = DEPENDENCY_TYPE.matcher(block);
+            // NeoForge reads a dependency with no type as required.
+            boolean required = !type.find() || type.group(1).equalsIgnoreCase("required");
+            if (block.startsWith("[[dependencies.") && modId.find() && forbidden().contains(modId.group(1)) && required) {
+                found.add(relative(resources, toml) + " requires " + modId.group(1));
+            }
+        }
+        return found;
+    }
+
+    /**
+     * Each tag the code under {@code code} reads or declares, outside its game tests, that the source of
+     * {@code check} does not name: a constant of a {@code ...Tags} class, a {@code TagKey} constant it
+     * declares, or a {@code TagKey} it creates where no constant can name it.
+     */
+    static List<String> tagsReadButUnchecked(Path code, Path check) throws IOException {
+        String checked = Files.readString(check);
+        List<String> found = new ArrayList<>();
+        for (Path file : files(code)) {
+            String path = relative(code, file);
+            if (!path.endsWith(".java") || path.contains("/gametest/")) {
+                continue;
+            }
+            String source = Files.readString(file);
+            String type = file.getFileName().toString().replace(".java", "");
+            TAG_READ.matcher(source).results().map(MatchResult::group).distinct()
+                    .filter(tag -> !checked.contains(tag)).forEach(tag -> found.add(path + " reads " + tag));
+            List<String> constants = TAG_CONSTANT.matcher(source).results().map(m -> type + "." + m.group(1)).toList();
+            constants.stream().filter(tag -> !checked.contains(tag)).forEach(tag -> found.add(path + " declares " + tag));
+            if (TAG_CREATED.matcher(source).results().count() > constants.size()) {
+                found.add(path + " creates a TagKey outside a constant");
+            }
+        }
+        return found.stream().sorted().toList();
+    }
+
+    private static List<String> forbidden() {
+        return Stream.concat(OtherModules.NAMES.stream(), Stream.of(OtherModules.RETIRED_PACK)).sorted().toList();
     }
 
     private static List<Path> files(Path root) throws IOException {
