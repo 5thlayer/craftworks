@@ -4,8 +4,6 @@
 package io.github._5thlayer.craftworks;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,64 +14,73 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * The mod plays alone on Groundworks (ADR-0127): its data names no other suite mod's id, ships none
- * in its namespace, and consumes no tag a vanilla item cannot fill.
+ * The Mod plays alone on Groundworks (ADR-0127): nothing it ships names another Module's id or holds
+ * data or assets in its namespace. The tags it consumes are checked in game, where they resolve.
  */
 class PlaysAloneTest {
 
-    private static final Path DATA = Path.of("src/main/resources/data");
+    private static final Path CODE = Path.of("src/main/java");
+    private static final Path RESOURCES = Path.of("src/main/resources");
 
     @Test
-    void theShippedDataPlaysAlone() throws IOException {
-        assertEquals(List.of(), PlaysAlone.violations(DATA, Craftworks.MOD_ID));
+    void theShippedCodeAndResourcesNameNoOtherModulesId() throws IOException {
+        assertEquals(List.of(), PlaysAlone.otherModulesIds(CODE, Craftworks.MOD_ID));
+        assertEquals(List.of(), PlaysAlone.otherModulesIds(RESOURCES, Craftworks.MOD_ID));
     }
 
     @Test
-    void aForeignNamespaceFolderIsReported(@TempDir Path data) throws IOException {
-        write(data.resolve("fieldworks/recipe/x.json"), "{}");
-        assertTrue(PlaysAlone.violations(data, Craftworks.MOD_ID).stream().anyMatch(v -> v.contains("fieldworks")));
+    void theShippedResourcesHoldNothingInAnotherModulesNamespace() throws IOException {
+        assertEquals(List.of(), PlaysAlone.otherModulesNamespaces(RESOURCES, Craftworks.MOD_ID));
     }
 
     @Test
-    void aForeignIdIsReported(@TempDir Path data) throws IOException {
-        write(data.resolve("craftworks/recipe/x.json"), "{\"result\":{\"id\":\"factoryworks:crude_oil\"}}");
-        assertTrue(PlaysAlone.violations(data, Craftworks.MOD_ID).stream().anyMatch(v -> v.contains("factoryworks:crude_oil")));
+    void aStringLiteralInTheCodeIsReported(@TempDir Path code) throws IOException {
+        write(code.resolve("a/Pipes.java"), "class Pipes { String pipe = \"pipeworks:pipe\"; }");
+        assertEquals(List.of("a/Pipes.java names pipeworks:pipe"), PlaysAlone.otherModulesIds(code, Craftworks.MOD_ID));
     }
 
     @Test
-    void aForeignTagIsReported(@TempDir Path data) throws IOException {
-        write(data.resolve("craftworks/recipe/x.json"), "{\"key\":{\"a\":\"#factoryworks:belts\"}}");
-        assertTrue(PlaysAlone.violations(data, Craftworks.MOD_ID).stream().anyMatch(v -> v.contains("factoryworks:belts")));
+    void anIdInAnAssetIsReported(@TempDir Path resources) throws IOException {
+        write(resources.resolve("assets/craftworks/models/block/x.json"), "{\"parent\":\"beltworks:block/belt\"}");
+        assertEquals(List.of("assets/craftworks/models/block/x.json names beltworks:block/belt"),
+                PlaysAlone.otherModulesIds(resources, Craftworks.MOD_ID));
     }
 
     @Test
-    void groundworksAndTheSharedNamespacesAreAllowed(@TempDir Path data) throws IOException {
-        write(data.resolve("groundworks/tags/item/dismantles.json"), "{}");
-        write(data.resolve("craftworks/recipe/x.json"),
-                "{\"a\":\"minecraft:glass\",\"b\":\"#c:glass_blocks\",\"c\":\"groundworks:x\",\"d\":\"neoforge:y\"}");
-        assertEquals(List.of(), PlaysAlone.violations(data, Craftworks.MOD_ID));
+    void anIdInTheModsTomlIsReported(@TempDir Path resources) throws IOException {
+        write(resources.resolve("META-INF/neoforge.mods.toml"), "description = \"fills wireworks:pole\"");
+        assertEquals(List.of("META-INF/neoforge.mods.toml names wireworks:pole"), PlaysAlone.otherModulesIds(resources, Craftworks.MOD_ID));
     }
 
     @Test
-    void anOwnTagWithoutAVanillaMemberIsReported(@TempDir Path data) throws IOException {
-        write(data.resolve("craftworks/tags/item/rods.json"), "{\"values\":[\"craftworks:rod\"]}");
-        write(data.resolve("craftworks/recipe/x.json"), "{\"key\":{\"a\":\"#craftworks:rods\"}}");
-        assertTrue(PlaysAlone.violations(data, Craftworks.MOD_ID).stream().anyMatch(v -> v.contains("craftworks:rods")));
+    void aTagOfAnotherModuleInARecipeIsReported(@TempDir Path resources) throws IOException {
+        write(resources.resolve("data/craftworks/recipe/x.json"), "{\"key\":{\"a\":\"#factoryworks:belts\"}}");
+        assertEquals(List.of("data/craftworks/recipe/x.json names factoryworks:belts"), PlaysAlone.otherModulesIds(resources, Craftworks.MOD_ID));
     }
 
     @Test
-    void anOwnTagReachesAVanillaMemberThroughAnotherTag(@TempDir Path data) throws IOException {
-        write(data.resolve("craftworks/tags/item/outer.json"), "{\"values\":[\"#craftworks:inner\"]}");
-        write(data.resolve("craftworks/tags/item/inner.json"), "{\"values\":[\"minecraft:stick\"]}");
-        write(data.resolve("craftworks/recipe/x.json"), "{\"key\":{\"a\":\"#craftworks:outer\"}}");
-        assertEquals(List.of(), PlaysAlone.violations(data, Craftworks.MOD_ID));
+    void anIdInAStructureIsReported(@TempDir Path resources) throws IOException {
+        Path nbt = resources.resolve("data/craftworks/structure/x.nbt");
+        Files.createDirectories(nbt.getParent());
+        try (var out = new java.util.zip.GZIPOutputStream(Files.newOutputStream(nbt))) {
+            out.write("\u0008\u0000\u0004Name\u0000\u000efieldworks:ore".getBytes(java.nio.charset.StandardCharsets.ISO_8859_1));
+        }
+        assertEquals(List.of("data/craftworks/structure/x.nbt names fieldworks:ore"), PlaysAlone.otherModulesIds(resources, Craftworks.MOD_ID));
     }
 
     @Test
-    void aCommonTagOutsideTheKnownDefaultsIsReported(@TempDir Path data) throws IOException {
-        write(data.resolve("craftworks/recipe/x.json"), "{\"key\":{\"a\":{\"tag\":\"c:gems/ruby\"}}}");
-        assertTrue(PlaysAlone.violations(data, Craftworks.MOD_ID).stream().anyMatch(v -> v.contains("c:gems/ruby")));
-        assertFalse(PlaysAlone.violations(data, Craftworks.MOD_ID).isEmpty());
+    void theModsOwnIdsGroundworksAndTheSharedNamespacesAreAllowed(@TempDir Path resources) throws IOException {
+        write(resources.resolve("data/craftworks/recipe/x.json"),
+                "{\"a\":\"minecraft:glass\",\"b\":\"#c:glass_blocks\",\"c\":\"groundworks:x\",\"d\":\"neoforge:y\",\"e\":\"craftworks:assembler_1\"}");
+        assertEquals(List.of(), PlaysAlone.otherModulesIds(resources, Craftworks.MOD_ID));
+    }
+
+    @Test
+    void aDataOrAssetFolderInAnotherModulesNamespaceIsReported(@TempDir Path resources) throws IOException {
+        write(resources.resolve("data/fieldworks/recipe/x.json"), "{}");
+        write(resources.resolve("assets/pipeworks/lang/en_us.json"), "{}");
+        write(resources.resolve("data/groundworks/tags/item/dismantles.json"), "{}");
+        assertEquals(List.of("assets/pipeworks", "data/fieldworks"), PlaysAlone.otherModulesNamespaces(resources, Craftworks.MOD_ID));
     }
 
     private static void write(Path file, String text) throws IOException {
