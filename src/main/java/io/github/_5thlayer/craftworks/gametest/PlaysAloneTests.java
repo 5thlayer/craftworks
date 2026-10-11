@@ -10,7 +10,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -22,11 +21,11 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.neoforged.fml.ModList;
 
-/** The Mod plays alone on Groundworks (ADR-0127). */
+/** The Mod plays alone on Groundworks (FactoryWorks ADR-0127). */
 final class PlaysAloneTests {
 
     /** libworks-runtime is nested in the Mod's jar. */
-    private static final Set<String> ALONE = Set.of("minecraft", "neoforge", "groundworks", "libworks", Craftworks.MOD_ID);
+    private static final Set<String> LOADED_ALONE = Set.of("minecraft", "neoforge", "groundworks", "libworks", Craftworks.MOD_ID);
 
     /** A -PwithKubeJS run puts KubeJS on the server for its own tests, with the mods it requires. */
     private static final Set<String> KUBEJS = Set.of("kubejs", "rhino", "betteradvancedtooltips");
@@ -46,7 +45,7 @@ final class PlaysAloneTests {
 
     private static void onlyGroundworks(GameTestHelper helper, boolean kubeJS) {
         List<String> extra = ModList.get().getMods().stream().map(m -> m.getModId())
-                .filter(id -> !ALONE.contains(id) && !(kubeJS && KUBEJS.contains(id))).toList();
+                .filter(id -> !LOADED_ALONE.contains(id) && !(kubeJS && KUBEJS.contains(id))).toList();
         helper.assertTrue(extra.isEmpty(), "the run loads " + extra + " beside Groundworks");
         helper.succeed();
     }
@@ -66,7 +65,10 @@ final class PlaysAloneTests {
                 }
                 try (Stream<Path> files = Files.walk(data)) {
                     for (Path file : files.filter(f -> f.toString().endsWith(".json")).toList()) {
-                        tags.addAll(tagsNamedIn(Files.readString(file)));
+                        String json = Files.readString(file);
+                        for (Pattern named : List.of(HASHED_TAG, TAG_FIELD)) {
+                            named.matcher(json).results().forEach(tag -> tags.add(Identifier.parse(tag.group(1))));
+                        }
                     }
                 }
             }
@@ -78,15 +80,6 @@ final class PlaysAloneTests {
                 .filter(tag -> registries.registries().noneMatch(registry -> fillsAlone(registry.value(), tag))).toList();
         helper.assertTrue(empty.isEmpty(), "these tags hold no entry of " + FILLS_ALONE + ": " + empty);
         helper.succeed();
-    }
-
-    private static Set<Identifier> tagsNamedIn(String json) {
-        Set<Identifier> tags = new TreeSet<>();
-        Matcher hashed = HASHED_TAG.matcher(json);
-        while (hashed.find()) tags.add(Identifier.parse(hashed.group(1)));
-        Matcher field = TAG_FIELD.matcher(json);
-        while (field.find()) tags.add(Identifier.parse(field.group(1)));
-        return tags;
     }
 
     private static <T> boolean fillsAlone(Registry<T> registry, Identifier tag) {
