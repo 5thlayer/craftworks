@@ -23,6 +23,9 @@ libworks {
         optional = true
         range = '[0.2.0,)'
     }
+    // Nested by jar-in-jar, so players install nothing more; FML loads the newest nested copy in range,
+    // which runs to the next minor. The Assembler's ghosts are its Ghosts (#52).
+    runtime = '0.1.1'
 }
 
 // EMI for 26.1: the unofficial port.
@@ -31,13 +34,14 @@ def emi = 'curse.maven:emi-unofficial-port-1544558:8630349'
 repositories {
     // EMI for 26.1 is an unofficial port, published on CurseForge only.
     maven { url = 'https://cursemaven.com' }
-    // Groundworks and Pipeworks, from the local maven only, where their releases publish them the moment
+    // Groundworks, Pipeworks and libworks-runtime, from the local maven only, where their releases publish them the moment
     // they are cut, with no site's review to wait on. CI builds their tags there first.
     exclusiveContent {
         forRepository { mavenLocal() }
         filter {
             includeModule 'io.github.5thlayer', 'groundworks'
             includeModule 'io.github.5thlayer', 'pipeworks'
+            includeModule 'io.github.5thlayer', 'libworks-runtime'
         }
     }
     // KubeJS and Rhino, its script engine.
