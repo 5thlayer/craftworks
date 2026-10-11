@@ -12,6 +12,8 @@ import io.github._5thlayer.craftworks.machine.HeldRecipeView;
 import io.github._5thlayer.craftworks.machine.AssemblerSlots;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.HeldRecipes;
+import io.github._5thlayer.libworks.ghost.Ghost;
+import io.github._5thlayer.libworks.ghost.Ghosts;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
@@ -54,8 +56,13 @@ final class AssemblerGhostTests {
         return menu;
     }
 
-    private static Optional<MachineGhosts.Ghost> at(AssemblerMenu menu, int x, int y, long millis) {
-        return MachineGhosts.at(menu, 0, 0, x, y, millis);
+    private static Optional<Ghost> at(AssemblerMenu menu, int x, int y, long millis) {
+        return at(menu, 0, 0, x, y, millis);
+    }
+
+    /** What the screen asks: its ghosts, with its corner read each time. */
+    private static Optional<Ghost> at(AssemblerMenu menu, int left, int top, int x, int y, long millis) {
+        return MachineGhosts.forAssembler(menu, () -> left, () -> top).at(x, y, millis);
     }
 
     private static int inputX(int slot) {
@@ -73,7 +80,7 @@ final class AssemblerGhostTests {
         helper.assertTrue(at(menu, inputX(0) + 16, INPUT_Y, 0).isEmpty(), "the pixel right of a slot has a ghost");
         helper.assertTrue(at(menu, inputX(0), INPUT_Y - 1, 0).isEmpty(), "the pixel above a slot has a ghost");
         // The screen's corner moves the slots.
-        expect(helper, MachineGhosts.at(menu, 10, 20, 10 + inputX(1), 20 + INPUT_Y, 0), Items.LIME_DYE, 1,
+        expect(helper, at(menu, 10, 20, 10 + inputX(1), 20 + INPUT_Y, 0), Items.LIME_DYE, 1,
                 10 + inputX(1), 20 + INPUT_Y);
         helper.succeed();
     }
@@ -87,7 +94,7 @@ final class AssemblerGhostTests {
         for (int n = 0; n < members.size() + 1; n++) {
             Item shown = members.get(n % members.size()).value();
             // Each member for a second, then round again, and the count is the recipe's whichever shows.
-            expect(helper, at(menu, inputX(0), INPUT_Y, n * MachineGhosts.CYCLE_MILLIS + 999), shown, 2, inputX(0), INPUT_Y);
+            expect(helper, at(menu, inputX(0), INPUT_Y, n * Ghosts.CYCLE_MILLIS + 999), shown, 2, inputX(0), INPUT_Y);
         }
         helper.succeed();
     }
@@ -131,7 +138,7 @@ final class AssemblerGhostTests {
         helper.succeed();
     }
 
-    private static void expect(GameTestHelper helper, Optional<MachineGhosts.Ghost> ghost, Item item, int count, int x, int y) {
+    private static void expect(GameTestHelper helper, Optional<Ghost> ghost, Item item, int count, int x, int y) {
         helper.assertTrue(ghost.isPresent(), "no ghost where " + item + " was expected");
         ItemStack stack = ghost.get().stack();
         helper.assertTrue(stack.is(item) && stack.getCount() == count, "the ghost is " + stack + ", not " + count + " " + item);

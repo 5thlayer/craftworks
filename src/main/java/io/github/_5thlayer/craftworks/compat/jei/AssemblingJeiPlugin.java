@@ -8,12 +8,12 @@ import java.util.Optional;
 
 import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.compat.ConfiguredTabs;
-import io.github._5thlayer.craftworks.machine.MachineGhosts;
 import io.github._5thlayer.craftworks.machine.Refiners;
 import io.github._5thlayer.craftworks.machine.AssemblerTab;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
+import io.github._5thlayer.libworks.ghost.Ghost;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.gui.builder.IClickableIngredientFactory;
@@ -120,7 +120,7 @@ public final class AssemblingJeiPlugin implements IModPlugin {
      * Uses ask about the item.
      */
     private static Optional<IClickableIngredient<ItemStack>> ghostAt(
-            IClickableIngredientFactory factory, Optional<MachineGhosts.Ghost> ghost) {
+            IClickableIngredientFactory factory, Optional<Ghost> ghost) {
         return ghost.flatMap(shown -> factory.createBuilder(shown.stack().copyWithCount(1)).buildWithArea(shown.x(), shown.y(), 16, 16));
     }
 

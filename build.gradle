@@ -1,30 +1,32 @@
+// ModDevGradle on Java 25, the game test server that names each test, the jar's licensing, ~/.m2-only
+// publishing and the release and upload tasks come from the libworks convention plugin (libworks ADR 0003).
 plugins {
-    id 'java-library'
-    id 'maven-publish'
-    id 'net.neoforged.moddev' version '2.0.147'
+    id 'io.github.5thlayer.libworks.module' version '0.2.0'
 }
 
-group = maven_group
-version = mod_version
-base.archivesName = archives_name
-
-java {
-    withSourcesJar()
-    toolchain.languageVersion = JavaLanguageVersion.of(25)
+// What the Mod requires of the other Libraries, each as a range whose lower bound is a released version:
+// the one the Mod is built and run against and the one CI builds from its tag. neoforge.mods.toml names each as ${<name>_range}.
+libworks {
+    // Craftworks' own tags are v<version>.
+    tagPrefix = 'v'
+    // Required, and never jar-in-jar: the Mod and the other mods on Groundworks share one copy (FactoryWorks
+    // ADR-0115). Capped below the next minor, 0.6, which moves when the Mod takes it.
+    upstream('groundworks') {
+        // Groundworks' tags are v<version> too.
+        tagPrefix = 'v'
+        range = '[0.5.5,0.6)'
+    }
+    // Optional to players, and on the dev client so a Fluid Connection can be tried against its pipes, which
+    // draw an arm toward one from 0.2.0 (Pipeworks #11). The Mod names no Pipeworks type: a pipe reaches a
+    // connection through the fluid capability alone, so a later Pipeworks can't break it.
+    upstream('pipeworks') {
+        optional = true
+        range = '[0.2.0,)'
+    }
+    // Nested by jar-in-jar, so players install nothing more; FML loads the newest nested copy in range,
+    // which runs to the next minor. The Assembler's ghosts are its Ghosts (#52).
+    runtime = '0.1.1'
 }
-
-tasks.withType(JavaCompile).configureEach {
-    options.release = 25
-}
-
-// The Minecraft version goes in the jar's name and not in the Mod's version: craftworks-26.1.2-0.1.0.jar.
-tasks.withType(Jar).configureEach {
-    archiveVersion = "$minecraft_version-$mod_version"
-}
-
-def gameTestReport = layout.buildDirectory.file('reports/gametest.xml').get().asFile
-// The game test server's own directory, apart from the dev client's.
-def gameTestDirectory = file('run/gametest')
 
 // EMI for 26.1: the unofficial port.
 def emi = 'curse.maven:emi-unofficial-port-1544558:8630349'
@@ -32,12 +34,14 @@ def emi = 'curse.maven:emi-unofficial-port-1544558:8630349'
 repositories {
     // EMI for 26.1 is an unofficial port, published on CurseForge only.
     maven { url = 'https://cursemaven.com' }
-    // Groundworks and Pipeworks, from the local maven only, where their releases publish them the moment
+    // Groundworks, Pipeworks and libworks-runtime, from the local maven only, where their releases publish them the moment
     // they are cut, with no site's review to wait on. CI builds their tags there first.
-    mavenLocal {
-        content {
+    exclusiveContent {
+        forRepository { mavenLocal() }
+        filter {
             includeModule 'io.github.5thlayer', 'groundworks'
             includeModule 'io.github.5thlayer', 'pipeworks'
+            includeModule 'io.github.5thlayer', 'libworks-runtime'
         }
     }
     // KubeJS and Rhino, its script engine.
@@ -68,67 +72,44 @@ def jade = 'maven.modrinth:jade:26.1.11+neoforge'
 def kubejs = 'dev.latvian.mods:kubejs-neoforge:26.1.2-8.0.3'
 def rhino = 'dev.latvian.mods:rhino:2101.2.7-build.85'
 
-neoForge {
-    version = neoforge_version
+// Mods on the dev client that the published jar does not depend on. The game tests run on a source set
+// of their own, with no code and the Mod's dependencies but not these, so they prove the Mod plays alone
+// on Groundworks (ADR-0127).
+sourceSets {
+    solo
+}
 
+configurations {
+    soloRuntimeOnly.extendsFrom implementation, runtimeOnly
+}
+
+neoForge {
     runs {
         // EMI's 26.1 port still carries @OnlyIn, and a dev run halts on a warning screen over it that
         // production never shows.
         configureEach {
             systemProperty 'neoforge.warnings.onlyin.hide', 'true'
         }
-        // The same player every launch, so a dev save keeps its inventory and position.
         client {
-            client()
-            programArguments.addAll '--username', 'Developer', '--uuid', '123456781234123412341234567890ab'
-            // -PquickPlay=<save> opens that save straight from launch (the skillworks:quicklaunch skill).
-            programArguments.addAll providers.gradleProperty('quickPlay').map { ['--quickPlaySingleplayer', it] }.orElse([])
             // -PdevLockReason=<recipe id> locks that recipe with a reason, to see one on the Crafting Plan (#18).
             if (providers.gradleProperty('devLockReason').isPresent()) {
                 systemProperty 'craftworks.devLockReason', providers.gradleProperty('devLockReason').get()
             }
-            // Recipes for trying the Assembler by hand (a fluid ingredient, two results), a datapack in the
-            // jar that only this run turns on.
-            systemProperty 'craftworks.devPack', 'true'
         }
-        // Runs the Mod's game tests headless and exits, non-zero if any fails. 26.1 has no
-        // namespace property, so the selector is what keeps vanilla's tests out.
-        // A directory of its own, so nothing the dev client loads or saves reaches it.
         gameTestServer {
-            type = 'gameTestServer'
-            gameDirectory = gameTestDirectory
-            programArguments.addAll '--tests', "${mod_id}:*", '--report', gameTestReport.absolutePath
-            // The recipes only the game tests read, a datapack in the jar that only this run turns on.
-            systemProperty 'craftworks.gametestPack', 'true'
+            sourceSet = sourceSets.solo
+            // Marks this run as the Mod's own, which is when it registers its test tank and fluids.
+            systemProperty 'craftworks.gametest', 'true'
         }
     }
 
-    mods {
-        "$mod_id" {
-            sourceSet sourceSets.main
-        }
-    }
+    addModdingDependenciesTo sourceSets.solo
 }
 
-// The server says only how many tests passed, so the report is read back to name them: a green
-// run that didn't run a test is no evidence for it. The report, not the exit code, decides, so a
-// failing run still names its tests; a server that crashes writes no report and fails here too.
-// The server writes the report but not its folder, which a clean checkout has yet to make.
 tasks.named('runGameTestServer') {
-    ignoreExitValue = true
     doFirst {
-        gameTestReport.delete()
-        gameTestReport.parentFile.mkdirs()
         // The tests read the defaults: a config an earlier run wrote would keep the categories it listed then.
-        new File(gameTestDirectory, 'config/craftworks-server.toml').delete()
-    }
-    doLast {
-        if (!gameTestReport.exists()) throw new GradleException("The game test server wrote no report at $gameTestReport")
-        def cases = new groovy.xml.XmlSlurper().parse(gameTestReport).'**'.findAll { it.name() == 'testcase' }
-        if (cases.isEmpty()) throw new GradleException('The game test server ran no tests')
-        cases.each { logger.lifecycle("${it.failure.size() ? 'FAILED' : 'passed'}  ${it.@name}") }
-        def failed = cases.count { it.failure.size() }
-        if (failed) throw new GradleException("$failed of ${cases.size()} game tests failed")
+        neoForge.runs.gameTestServer.gameDirectory.file('config/craftworks-server.toml').get().asFile.delete()
     }
 }
 
@@ -184,43 +165,14 @@ def generateVanillaPack = tasks.register('generateVanillaPack') {
 }
 sourceSets.main.resources.srcDir(files(vanillaPackDir).builtBy(generateVanillaPack))
 
-// Mods the dev client loads alongside the Mod, to try it with them by hand. 26.1 has no per-run
-// classpath, so they go into the client's mods folder, which holds only what is listed here; the game
-// test server loads Groundworks and nothing else (ADR-0127).
-configurations {
-    clientMods { transitive = false }
-    // Opt-in (-PwithResearchd, -PwithKubeJS): the dev runs, game tests included, load them.
-    localRuntime
-    runtimeClasspath.extendsFrom localRuntime
-}
-
-def syncClientMods = tasks.register('syncClientMods', Sync) {
-    from configurations.clientMods
-    into layout.projectDirectory.dir('run/mods')
-}
-
-tasks.named('runClient') { dependsOn syncClientMods }
-
-// The Groundworks the Assemblers' footprint and Fast Replace are compiled against, and the least the Mod
-// accepts at load (neoforge.mods.toml, capped below the next minor, 0.6, which moves when the Mod takes
-// it): groundworks_version in gradle.properties.
-def groundworks = "io.github.5thlayer:groundworks:$groundworks_version"
-
 dependencies {
-    // Required, and never jar-in-jar: the Mod, Wireworks and the Pack share one Groundworks (FactoryWorks ADR-0115).
-    implementation groundworks
-
-    // Pipeworks is optional to players, and on the dev client so a Fluid Connection can be tried against its
-    // pipes. The Mod names no Pipeworks type: a pipe reaches a connection through the fluid capability alone.
-    clientMods "io.github.5thlayer:pipeworks:$pipeworks_version"
-
     // EMI is optional to players, and on the dev client so its Assembling category can be looked at.
     // -PwithJEI puts JEI on the dev client in its place (#12): a pack ships one viewer, not both.
     compileOnly 'curse.maven:emi-unofficial-port-1544558:8630349'
     if (providers.gradleProperty('withJEI').isPresent()) {
-        clientMods "mezz.jei:jei-26.1.2-neoforge:$jei"
+        localRuntime "mezz.jei:jei-26.1.2-neoforge:$jei"
     } else {
-        clientMods 'curse.maven:emi-unofficial-port-1544558:8630349'
+        localRuntime 'curse.maven:emi-unofficial-port-1544558:8630349'
     }
 
     // JEI is optional to players too (#12). Its API, which only its plugin (compat/jei) names.
@@ -235,15 +187,11 @@ dependencies {
     // Jade is optional to players too (#28), and on the dev client so what it shows can be looked at. Its API,
     // which only its plugin (compat/jade) names.
     compileOnly jade
-    clientMods jade
+    localRuntime jade
 
     // KubeJS is optional to players (#11). Its jar and Rhino, which the plugin's event types extend.
     compileOnly(kubejs) { transitive = false }
     compileOnly(rhino) { transitive = false }
-
-    testImplementation platform('org.junit:junit-bom:5.10.2')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 // Researchd on the dev runs, only with -PwithResearchd, to try the researchd Lock source for real
@@ -262,6 +210,7 @@ if (providers.gradleProperty('withResearchd').isPresent()) {
     }
     dependencies {
         localRuntime 'com.portingdeadmods.researchd:researchd:1.3.4-26.1'
+        soloRuntimeOnly 'com.portingdeadmods.researchd:researchd:1.3.4-26.1'
     }
 }
 
@@ -272,6 +221,7 @@ if (providers.gradleProperty('withKubeJS').isPresent()) {
     dependencies {
         // Its gif and web-server libraries ride inside its jar, and the gif one is on no maven here.
         localRuntime(kubejs) { exclude group: 'com.github.rtyley'; exclude group: 'dev.latvian.apps' }
+        soloRuntimeOnly(kubejs) { exclude group: 'com.github.rtyley'; exclude group: 'dev.latvian.apps' }
     }
     neoForge.runs.configureEach {
         systemProperty 'craftworks.kubejsTests', 'true'
@@ -287,62 +237,4 @@ if (providers.gradleProperty('withKubeJS').isPresent()) {
     def toGameTests = copyKubeJSScripts('copyKubeJSScriptsToGameTests', 'run/gametest', ['kubejs', 'kubejs_gametest'])
     tasks.matching { it.name == 'runClient' }.configureEach { dependsOn toClient }
     tasks.matching { it.name == 'runGameTestServer' }.configureEach { dependsOn toGameTests }
-}
-
-test {
-    useJUnitPlatform()
-}
-
-// The jar is what players are handed, so it carries the MIT licence the Mod is under.
-def jarLicensing = ['LICENSE', 'LICENSES/MIT.txt']
-tasks.named('jar', Jar) {
-    from(rootDir) { include jarLicensing }
-}
-
-// Fails the build when the jar lost its licensing.
-def checkJarLicensing = tasks.register('checkJarLicensing') {
-    def jarFile = tasks.named('jar', Jar).flatMap { it.archiveFile }
-    inputs.file jarFile
-    doLast {
-        def names = new java.util.zip.ZipFile(jarFile.get().asFile).withCloseable { zip -> zip.entries()*.name as Set }
-        def missing = jarLicensing.findAll { !names.contains(it) }
-        if (missing) throw new GradleException("${jarFile.get().asFile.name} lacks its licensing: ${missing.join(', ')}")
-    }
-}
-tasks.named('check') { dependsOn checkJarLicensing }
-
-// neoforge.mods.toml names nothing of its own: it is filled from gradle.properties.
-def modProperties = [
-        mod_id: mod_id, mod_name: mod_name, mod_description: mod_description, version: mod_version,
-        minecraft_version: minecraft_version, neoforge_version: neoforge_version,
-        groundworks_version: groundworks_version, pipeworks_version: pipeworks_version,
-]
-processResources {
-    inputs.properties modProperties
-    filesMatching('META-INF/neoforge.mods.toml') {
-        expand modProperties
-    }
-}
-
-// Maven local only, which is where the Pack pins the Mod's jar (release-train).
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            artifactId = base.archivesName.get()
-            from components.java
-        }
-    }
-}
-
-// A version in the local maven repository never changes: the Pack pins it and compares its sha256, so
-// a fix is the next patch version (docs/agents/releases.md). Gradle's own mavenLocal() says where that
-// is, and it's removed again so nothing resolves from it.
-tasks.withType(PublishToMavenLocal).configureEach {
-    def local = repositories.mavenLocal()
-    repositories.remove(local)
-    def published = new File(local.url.path, "${maven_group.replace('.', '/')}/$archives_name/$mod_version")
-    doFirst {
-        if (published.exists()) throw new GradleException(
-                "$mod_name $mod_version is already in $published, and a published version never changes: bump mod_version")
-    }
 }

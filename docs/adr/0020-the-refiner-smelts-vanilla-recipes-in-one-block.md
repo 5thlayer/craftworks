@@ -27,9 +27,11 @@ insert and extract skipped the per-slot refusals, and needed the guard to put th
 `ResourceHandler` itself, so the interface's slot-less insert and extract already loop through its per-slot rules, so the Refiner needs no `GuardedResourceHandler` from libworks (5thlayer/libworks#8); a
 game test holds that a slot-less insert and extract cannot take the input or fill the output.
 
-**Considered: m:n smelting recipes as Assembling recipes in a smelting category.** It would let a pack write a Refiner
-recipe with several inputs or results. Nothing defines what the recipe would say or how the one-slot screen would show
-it, so it is left for a ticket that does (#47); a pack that wants more than one-to-one has the Assembler.
+**Considered, and rejected: m:n smelting recipes as Assembling recipes in a smelting category.** It would let a pack
+write a Refiner recipe with several inputs or results, as ADR-0127 promised. The pack it was promised to is gone, and
+no one else would write them: an Assembler already makes an Assembling recipe with several inputs or results, so a
+smelt of more than one-to-one is one of those. #47 is closed as wontfix, and the Refiner keeps its one input and one
+result.
 
 **Considered: the Assemblers' 3x3 footprint.** Factorio's furnace is 3x3, but the art that came with it is a cube's
 and a footprint needs a model of its own (#22). One block it is; a footprint can replace it with a Fast Replace later.

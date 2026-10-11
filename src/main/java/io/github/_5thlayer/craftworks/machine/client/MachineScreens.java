@@ -32,8 +32,6 @@ final class MachineScreens {
     private static final int SLOT_DARK = 0xFF373737;
     private static final int SLOT_LIGHT = 0xFFFFFFFF;
     private static final int ENERGY = 0xFFB8392B;
-    // Half the slot's own colour over a ghost, so it reads as a placeholder rather than an item.
-    private static final int GHOST_VEIL = 0x808B8B8B;
     private static final int FLUID_TILE = 16;
 
     static final int ENERGY_HEIGHT = 12;
@@ -90,15 +88,5 @@ final class MachineScreens {
                 fluid.isEmpty() ? Component.translatable("craftworks.machine.fluid_empty").withStyle(ChatFormatting.GRAY) : fluid.getHoverName(),
                 Component.translatable("craftworks.machine.fluid", number.format(fluid.getAmount()), number.format(capacity))
                         .withStyle(ChatFormatting.GRAY)), mouseX, mouseY);
-    }
-
-    /** A slot's ghost: the item it would take, veiled, with the count a craft needs when it is more than one. */
-    static void ghost(GuiGraphicsExtractor graphics, Font font, ItemStack ghost, int x, int y) {
-        graphics.item(ghost, x, y);
-        graphics.fill(x, y, x + 16, y + 16, GHOST_VEIL);
-        if (ghost.getCount() > 1) {
-            String count = Integer.toString(ghost.getCount());
-            graphics.text(font, count, x + 17 - font.width(count), y + 9, 0xFFFFFFFF, true);
-        }
     }
 }

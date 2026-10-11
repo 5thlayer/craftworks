@@ -13,7 +13,7 @@ import net.neoforged.fml.ModList;
 /** The Mod plays alone on Groundworks (ADR-0127): nothing else is loaded beside it. */
 final class PlaysAloneTests {
 
-    private static final Set<String> BASE = Set.of("minecraft", "neoforge", "groundworks", Craftworks.MOD_ID);
+    private static final Set<String> BASE = Set.of("minecraft", "neoforge", "groundworks", "libworks", Craftworks.MOD_ID);
 
     private PlaysAloneTests() {
     }
