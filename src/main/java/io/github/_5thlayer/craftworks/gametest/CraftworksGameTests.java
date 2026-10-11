@@ -30,7 +30,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 /**
  * The Mod's game tests, run by the {@code gameTestServer} Gradle run: the Minecraft-integration
  * seam, with a real player on a real server. Each test stands on the {@code gametest/platform}
- * structure, a stone floor that {@code scripts/build-gametest-structures.py} writes, and sets up
+ * structure, a stone floor that {@code sh ./gradlew buildGametestStructures} writes, and sets up
  * what it needs itself, so the setup is in the diff.
  */
 public final class CraftworksGameTests {

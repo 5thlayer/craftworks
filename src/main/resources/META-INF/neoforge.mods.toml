@@ -34,7 +34,7 @@ side = "BOTH"
 [[dependencies.${mod_id}]]
 modId = "groundworks"
 type = "required"
-versionRange = "[${groundworks_version},0.6)"
+versionRange = "${groundworks_range}"
 ordering = "NONE"
 side = "BOTH"
 
@@ -73,7 +73,7 @@ side = "BOTH"
 [[dependencies.${mod_id}]]
 modId = "pipeworks"
 type = "optional"
-versionRange = "[${pipeworks_version},)"
+versionRange = "${pipeworks_range}"
 ordering = "NONE"
 side = "BOTH"
 
