@@ -1,6 +1,6 @@
 ![Craftworks](https://raw.githubusercontent.com/5thlayer/craftworks/main/publish/craftworks-cover.png)
 
-Craftworks replaces the crafting grid with the **Personal Assembler**: ask for an item, and every intermediate is planned, the whole cost is taken up front, and the crafts run one after another over time while you keep playing.
+Craftworks is automated crafting in the spirit of Factorio. The **Personal Assembler** replaces the crafting grid: ask for an item, and every intermediate is planned, the whole cost is taken up front, and the crafts run one after another over time while you keep playing. Placed machines take over from there: three tiers of **Assembler**, each making one recipe on FE, with or without fluids, and the **Refiner**, an electric furnace.
 
 **NeoForge, Minecraft 26.1.2 only.** Craftworks is early work, so please report any issues you find on [GitHub](https://github.com/5thlayer/craftworks/issues).
 
