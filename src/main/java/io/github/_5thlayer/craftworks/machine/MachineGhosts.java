@@ -4,20 +4,20 @@
 package io.github._5thlayer.craftworks.machine;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.function.IntSupplier;
 
-import net.minecraft.core.Holder;
+import io.github._5thlayer.libworks.ghost.Ghost;
+import io.github._5thlayer.libworks.ghost.Ghosts;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.common.crafting.SizedIngredient;
 
 /**
- * Which ghost a machine's screen shows where: what an empty slot would take under the Held recipe (the
- * ingredient in the input slot that takes it, the product in its slot) and the product at the head of the
- * screen. The screen draws from this and the recipe viewers ask it what is under the mouse, so the member
- * a tag ingredient shows at a moment and where each ghost stands are worked out once. No client type, so
- * a game test reads it. Where a machine's own slots are is its menu's {@link MachineSlots}.
+ * What a machine's screen ghosts where: the positions of an Assembler's menu registered on a libworks
+ * {@link Ghosts}, each asking the Held recipe what it takes there (the ingredient in the input slot that takes
+ * it, the product in its slot) and the product at the head of the screen. The Held recipe is read each time
+ * a ghost is asked for, so the ghosts change with it. The cycling of a tag ingredient and the hit test are
+ * the helper's. No client type, so a game test reads it. Where a machine's own slots are is its menu's
+ * {@link MachineSlots}.
  */
 public final class MachineGhosts {
 
@@ -25,66 +25,39 @@ public final class MachineGhosts {
     public static final int HEAD_X = 8;
     public static final int HEAD_Y = 16;
 
-    /** How long a tag ingredient shows each of its members. */
-    public static final long CYCLE_MILLIS = 1000;
-
-    private static final int SIZE = 16;
-
     private MachineGhosts() {
     }
 
-    /** A ghost and where it is drawn, in the screen's coordinates; its count is the ingredient's, or the product's. */
-    public record Ghost(ItemStack stack, int x, int y) {
-    }
-
     /**
-     * The ghost at ({@code mouseX}, {@code mouseY}) on a panel whose corner is at ({@code left}, {@code top}),
-     * or empty over a filled slot, over an empty one with nothing to ghost, with no Held recipe, and over the
-     * rest of the panel. {@code millis} is the time that picks a tag ingredient's member.
+     * The ghosts of {@code menu}'s screen, whose panel's corner is ({@code left}, {@code top}), read each
+     * time so they follow a resize. Empty slots with nothing to ghost, filled ones and every position with no
+     * Held recipe have none.
      */
-    public static Optional<Ghost> at(AssemblerMenu menu, int left, int top, int mouseX, int mouseY, long millis) {
-        Optional<HeldRecipeView> held = menu.held();
+    public static Ghosts of(AssemblerMenu menu, IntSupplier left, IntSupplier top) {
+        Ghosts ghosts = new Ghosts(left, top);
         MachineSlots layout = menu.layout();
-        if (held.isEmpty()) {
-            return Optional.empty();
-        }
-        if (covers(left + HEAD_X, top + HEAD_Y, mouseX, mouseY)) {
-            return Optional.of(held.get().product()).filter(stack -> !stack.isEmpty())
-                    .map(stack -> new Ghost(stack, left + HEAD_X, top + HEAD_Y));
-        }
         for (Slot slot : menu.slots) {
             if (slot.index >= layout.size()) {
                 break;
             }
-            if (covers(left + slot.x, top + slot.y, mouseX, mouseY)) {
-                return in(slot, held.get(), layout, millis).map(stack -> new Ghost(stack, left + slot.x, top + slot.y));
+            if (layout.isInput(slot.index)) {
+                ghosts.add(slot, () -> menu.held()
+                        .flatMap(held -> layout.ingredientFor(slot.index, held.ingredients()))
+                        .map(Ghosts::of).orElse(List.of()));
+            } else if (slot.index == layout.product()) {
+                ghosts.add(slot, () -> product(menu));
             }
         }
-        return Optional.empty();
+        ghosts.add(HEAD_X, HEAD_Y, () -> product(menu));
+        return ghosts;
     }
 
-    /** What {@code slot} would take under the Held recipe, or empty when it holds something or takes nothing. */
-    private static Optional<ItemStack> in(Slot slot, HeldRecipeView held, MachineSlots layout, long millis) {
-        if (!slot.getItem().isEmpty()) {
-            return Optional.empty();
-        }
-        ItemStack ghost = ItemStack.EMPTY;
-        if (layout.isInput(slot.index)) {
-            Optional<SizedIngredient> sized = layout.ingredientFor(slot.index, held.ingredients());
-            if (sized.isPresent()) {
-                List<Holder<Item>> members = sized.get().ingredient().items().toList();
-                if (!members.isEmpty()) {
-                    int member = (int) (millis / CYCLE_MILLIS % members.size());
-                    ghost = new ItemStack(members.get(member), sized.get().count());
-                }
-            }
-        } else if (slot.index == layout.product()) {
-            ghost = held.product();
-        }
-        return ghost.isEmpty() ? Optional.empty() : Optional.of(ghost);
+    /** Whether {@code ghost} is the head's icon, which the screen draws as the item itself, not veiled. */
+    public static boolean isHead(Ghost ghost, int left, int top) {
+        return ghost.x() == left + HEAD_X && ghost.y() == top + HEAD_Y;
     }
 
-    private static boolean covers(int x, int y, int mouseX, int mouseY) {
-        return mouseX >= x && mouseX < x + SIZE && mouseY >= y && mouseY < y + SIZE;
+    private static List<ItemStack> product(AssemblerMenu menu) {
+        return menu.held().map(HeldRecipeView::product).filter(stack -> !stack.isEmpty()).map(List::of).orElse(List.of());
     }
 }

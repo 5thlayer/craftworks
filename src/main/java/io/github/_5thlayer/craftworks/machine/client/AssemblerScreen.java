@@ -9,6 +9,9 @@ import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import io.github._5thlayer.craftworks.machine.FluidGaugeLayout;
 import io.github._5thlayer.craftworks.machine.FluidLayout;
 import io.github._5thlayer.craftworks.machine.MachineGhosts;
+import io.github._5thlayer.libworks.ghost.Ghost;
+import io.github._5thlayer.libworks.ghost.Ghosts;
+import io.github._5thlayer.libworks.ghost.client.GhostDraw;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
@@ -41,11 +44,15 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
     private final int barX;
     private final int barWidth;
 
+    /** What the empty slots and the head show, and what EMI's and JEI's shortcuts ask of. */
+    private final Ghosts ghosts;
+
     public AssemblerScreen(AssemblerMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title, 176, AssemblerMenu.INVENTORY_Y + 82);
         inventoryLabelY = AssemblerMenu.INVENTORY_Y - 11;
         barX = AssemblerMenu.INPUT_X + menu.layout().inputs() * 18 + 4;
         barWidth = AssemblerMenu.PRODUCT_X - 6 - barX;
+        ghosts = MachineGhosts.of(menu, () -> leftPos, () -> topPos);
     }
 
     @Override
@@ -69,7 +76,12 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
             if (menu.layout().isInput(slot.index) && menu.isShort(slot.index)) {
                 graphics.fill(x, y, x + 16, y + 16, MachineScreens.SHORT);
             }
-            ghostAt(x, y).ifPresent(shown -> MachineScreens.ghost(graphics, font, shown.stack(), x, y));
+        }
+        // The slots' ghosts, over their recesses; the head draws its own product above.
+        for (Ghost ghost : ghosts.shown(Util.getMillis())) {
+            if (!MachineGhosts.isHead(ghost, leftPos, topPos)) {
+                GhostDraw.draw(graphics, font, ghost);
+            }
         }
         int x = leftPos + barX;
         int y = topPos + AssemblerMenu.INPUT_Y;
@@ -85,8 +97,8 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
      * The ghost under the mouse, or empty over a real stack, an empty slot with nothing to ghost, and the
      * rest of the panel: what the slots and the head show, and what EMI's and JEI's shortcuts ask of it.
      */
-    public Optional<MachineGhosts.Ghost> ghostAt(double mouseX, double mouseY) {
-        return MachineGhosts.at(menu, leftPos, topPos, (int) Math.floor(mouseX), (int) Math.floor(mouseY), Util.getMillis());
+    public Optional<Ghost> ghostAt(double mouseX, double mouseY) {
+        return ghosts.at(mouseX, mouseY, Util.getMillis());
     }
 
     /** Over a gauge, the fluid's name and how much of the box it fills. */
