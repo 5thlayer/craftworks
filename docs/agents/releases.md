@@ -1,8 +1,8 @@
 # Releases
 
-A release reaches the Pack (5thlayer/factoryworks) through the local maven repository (`~/.m2`) at a version of its own. The Pack pins that version and compares the jar's sha256. That only works if the jar published at a version is the one jar that version ever names.
+A release goes to the local maven repository (`~/.m2`), where the other 5thlayer mods resolve each other, and to Modrinth and CurseForge. A version is published once and its jar never changes, in `~/.m2` or on either site.
 
-Craftworks is a car in the `release-train` skill: it requires Groundworks (not bundled, never jar-in-jar, from `~/.m2` only) and not Beltworks, and the Pack pins its jar directly. `upstream('groundworks')` in `build.gradle` names it as a range, whose lower bound is the version compiled against, and CI builds that version's tag, `v<version>` in 5thlayer/groundworks, into its own `~/.m2` before the build, so a bump needs that tag pushed first, as the train pushes Groundworks before Craftworks. Pipeworks is an optional dependency, on every dev run and never bundled: `upstream('pipeworks') { optional = true }` names the range Craftworks accepts at load, with no upper bound since the Mod compiles against none of it, and CI builds its tag, `pipeworks-v<version>` in 5thlayer/pipeworks, into `~/.m2` the same way, so a bump of it needs that tag pushed first too. A released version is then uploaded to Modrinth and CurseForge from the maintainer's machine (below). CI builds and tests on every push but never publishes.
+Craftworks is a car in the `release-train` skill: it requires Groundworks (not bundled, never jar-in-jar, from `~/.m2` only) and not Beltworks. `upstream('groundworks')` in `build.gradle` names it as a range, whose lower bound is the version compiled against, and CI builds that version's tag, `v<version>` in 5thlayer/groundworks, into its own `~/.m2` before the build, so a bump needs that tag pushed first, as the train pushes Groundworks before Craftworks. Pipeworks is an optional dependency, on every dev run and never bundled: `upstream('pipeworks') { optional = true }` names the range Craftworks accepts at load, with no upper bound since the Mod compiles against none of it, and CI builds its tag, `pipeworks-v<version>` in 5thlayer/pipeworks, into `~/.m2` the same way, so a bump of it needs that tag pushed first too. A released version is then uploaded to Modrinth and CurseForge from the maintainer's machine (below). CI builds and tests on every push but never publishes.
 
 ## The changelog
 
@@ -17,7 +17,7 @@ Each change a player or pack author notices adds its line under `## Unreleased` 
 3. commits `chore: release <version>`, runs `publishToMavenLocal`, and tags `v<version>` with the jar's sha256
 4. with `-Pupload`, uploads the jar to Modrinth and CurseForge with the plugin's upload step (below). A failed upload leaves the local release and the tag in place; the script names the site that failed, and `sh ./gradlew upload -PreleaseVersion=<version> -Psite=<site>` retries it. Without `-Pupload` it stops after the tag and prints `sh ./gradlew upload -PreleaseVersion=<version>`, since an upload is public and for good and waits on the user's word; the release train runs it once the user says to push. Under `MAVEN_REPO_LOCAL`, a trial run, the upload is only a dry run.
 
-It pushes nothing to git, and ends by printing the push command. The Pack then moves its pin with `scripts/sync-local-jars.py craftworks=<version>`. To try the script out, set `MAVEN_REPO_LOCAL` to a scratch folder and run it in a throwaway clone: a version published to the real `~/.m2` is permanent.
+It pushes nothing to git, and ends by printing the push command. To try the script out, set `MAVEN_REPO_LOCAL` to a scratch folder and run it in a throwaway clone: a version published to the real `~/.m2` is permanent.
 
 ## Uploading to Modrinth and CurseForge
 

@@ -9,7 +9,7 @@ plugins {
 libworks {
     // Craftworks' own tags are v<version>.
     tagPrefix = 'v'
-    // Required, and never jar-in-jar: the Mod, Wireworks and the Pack share one Groundworks (FactoryWorks
+    // Required, and never jar-in-jar: the Mod and the other mods on Groundworks share one copy (FactoryWorks
     // ADR-0115). Capped below the next minor, 0.6, which moves when the Mod takes it.
     upstream('groundworks') {
         // Groundworks' tags are v<version> too.
