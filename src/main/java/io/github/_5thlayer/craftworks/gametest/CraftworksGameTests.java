@@ -79,8 +79,9 @@ public final class CraftworksGameTests {
         // Registered rather than borrowed, since the event hands out no lookup for vanilla's.
         var environment = event.registerEnvironment(id("default"), new TestEnvironmentDefinition.AllOf(List.of()));
         var tests = new Registrar(event, environment);
+        boolean kubeJS = Boolean.getBoolean(KUBEJS_TESTS);
         LoadTests.register(tests);
-        PlaysAloneTests.register(tests);
+        PlaysAloneTests.register(tests, kubeJS);
         AssemblingRecipeTests.register(tests);
         AssemblerTests.register(tests);
         AssemblerMachineTests.register(tests);
@@ -99,8 +100,9 @@ public final class CraftworksGameTests {
         CraftingPlanTests.register(tests);
         VanillaPackTests.register(tests);
         ModRecipesTests.register(tests);
-        NoChannelTests.register(tests);
-        if (Boolean.getBoolean(KUBEJS_TESTS)) KubeJSTests.register(tests);
+        // KubeJS sends the mock player a payload of its own at login, which throws before the Mod's are checked.
+        if (!kubeJS) NoChannelTests.register(tests);
+        if (kubeJS) KubeJSTests.register(tests);
         // Its own environment, so its own batch: it reloads the server's recipes, which no test running
         // beside it could stand.
         var reloading = event.registerEnvironment(id("reloads_recipes"), new TestEnvironmentDefinition.AllOf(List.of()));

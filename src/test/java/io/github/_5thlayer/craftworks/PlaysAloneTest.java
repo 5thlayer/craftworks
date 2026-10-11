@@ -33,6 +33,22 @@ class PlaysAloneTest {
         assertEquals(List.of(), PlaysAlone.otherModulesNamespaces(RESOURCES, Craftworks.MOD_ID));
     }
 
+    /**
+     * The game tests check the tags the Mod's data names. One the code reads must be added to them, as
+     * {@code PlaysAloneTests} reads only data, so the code reading any fails here until it is.
+     */
+    @Test
+    void theCodeReadsNoTag() throws IOException {
+        assertEquals(List.of(), PlaysAlone.tagReads(CODE));
+    }
+
+    @Test
+    void aTagTheCodeReadsIsReported(@TempDir Path code) throws IOException {
+        write(code.resolve("a/Fuel.java"), "class Fuel { static final TagKey<Item> FUEL = ItemTags.create(id(\"fuel\")); }");
+        write(code.resolve("a/gametest/Check.java"), "class Check { TagKey<Item> checked; }");
+        assertEquals(List.of("a/Fuel.java"), PlaysAlone.tagReads(code));
+    }
+
     @Test
     void aStringLiteralInTheCodeIsReported(@TempDir Path code) throws IOException {
         write(code.resolve("a/Pipes.java"), "class Pipes { String pipe = \"pipeworks:pipe\"; }");

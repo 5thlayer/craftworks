@@ -5,6 +5,7 @@ package io.github._5thlayer.craftworks;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,6 +54,18 @@ final class PlaysAlone {
             }
         }
         return found;
+    }
+
+    /** Each source file outside the game tests that names a {@code TagKey}. */
+    static List<String> tagReads(Path code) throws IOException {
+        return files(code).stream().map(file -> relative(code, file)).filter(path -> !path.contains("/gametest/"))
+                .filter(path -> {
+                    try {
+                        return Files.readString(code.resolve(path)).contains("TagKey");
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }).toList();
     }
 
     private static boolean isOtherModule(String namespace, String own) {
