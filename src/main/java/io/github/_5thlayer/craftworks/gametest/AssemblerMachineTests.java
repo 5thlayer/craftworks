@@ -129,7 +129,7 @@ final class AssemblerMachineTests {
         tests.test("the_open_assemblers_held_recipe_crosses_to_the_client", 20, AssemblerMachineTests::heldReachesTheClient);
         tests.test("the_assemblers_energy_above_a_short_crosses_to_the_client_whole", 20, AssemblerMachineTests::energyReachesTheClient);
         tests.test("each_tier_starts_from_its_default_speed_power_and_buffer", 20, AssemblerMachineTests::configDefaults);
-        tests.test("craftworks_names_no_other_suite_mods_type", 20, AssemblerMachineTests::namesNoSiblingType);
+        tests.test("craftworks_names_no_other_modules_type", 20, AssemblerMachineTests::namesNoOtherModulesType);
     }
 
     // -- the craft ------------------------------------------------------------------------------
@@ -542,8 +542,8 @@ final class AssemblerMachineTests {
         helper.succeed();
     }
 
-    /** Craftworks stands alone: no class of it names a type of a sibling mod or of the Pack. */
-    private static void namesNoSiblingType(GameTestHelper helper) {
+    /** Craftworks plays alone (ADR-0127): no class of it names another Module's type. */
+    private static void namesNoOtherModulesType(GameTestHelper helper) {
         // Built at run time, so this class doesn't contain the words it looks for.
         List<String> names = List.of(String.join("", "belt", "works"), String.join("", "field", "works"),
                 String.join("", "wire", "works"), String.join("", "pipe", "works"), String.join("", "factory", "works"));
@@ -573,7 +573,7 @@ final class AssemblerMachineTests {
             throw new UncheckedIOException(e);
         }
         helper.assertTrue(scanned > 50, "scanned only " + scanned + " classes, so the search looked in the wrong place");
-        helper.assertTrue(found.isEmpty(), "Craftworks names a sibling's type: " + found);
+        helper.assertTrue(found.isEmpty(), "Craftworks names another Module's type: " + found);
         helper.succeed();
     }
 
