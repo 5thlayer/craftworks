@@ -1,7 +1,7 @@
 // ModDevGradle on Java 25, the game test server that names each test, the jar's licensing, ~/.m2-only
 // publishing and the release and upload tasks come from the libworks convention plugin (libworks ADR 0003).
 plugins {
-    id 'io.github.5thlayer.libworks.module' version '0.1.1'
+    id 'io.github.5thlayer.libworks.module' version '0.1.2'
 }
 
 // What the Mod requires of the other Libraries, each as a range whose lower bound is a released version:
@@ -33,8 +33,9 @@ repositories {
     maven { url = 'https://cursemaven.com' }
     // Groundworks and Pipeworks, from the local maven only, where their releases publish them the moment
     // they are cut, with no site's review to wait on. CI builds their tags there first.
-    mavenLocal {
-        content {
+    exclusiveContent {
+        forRepository { mavenLocal() }
+        filter {
             includeModule 'io.github.5thlayer', 'groundworks'
             includeModule 'io.github.5thlayer', 'pipeworks'
         }
