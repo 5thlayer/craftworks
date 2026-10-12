@@ -24,7 +24,8 @@ libworks {
         range = '[0.2.0,)'
     }
     // Nested by jar-in-jar, so players install nothing more; FML loads the newest nested copy in range,
-    // which runs to the next minor. The Assembler's ghosts are its Ghosts (#52).
+    // which runs to the next minor. It draws the Assembler's ghosts (#52) and registers the Works tab
+    // (FactoryWorks ADR-0128, #48).
     runtime = '0.1.1'
 }
 

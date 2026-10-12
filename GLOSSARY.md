@@ -134,3 +134,8 @@ The item list and recipe screen through which the player asks the Personal Assem
 player cannot use Craftworks without one. It shows Assembling recipes in one tab, the Assembler's, holding the
 recipes whose **Category** any tier of Assembler holds; a category no tier holds is in no tab (ADR-0016).
 _Avoid_: item interface, recipe browser, JEI (for both)
+
+**Works tab**:
+The creative tab the suite's mods share, `libworks:works`, registered by libworks-runtime. Every Craftworks
+item shows there and in no other tab; Craftworks registers no tab of its own (FactoryWorks ADR-0128).
+_Avoid_: Craftworks tab, creative tab (alone)
