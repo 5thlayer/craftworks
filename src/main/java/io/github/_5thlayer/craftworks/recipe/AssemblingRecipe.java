@@ -43,12 +43,10 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
  *
  * <p>{@code category} names the recipe's kind, one of {@link AssemblingCategory}'s three, and decides which
  * Assemblers may hold it; omitted, it is {@code crafting}. {@code results} is a list of item stacks, empty only when
- * {@code fluid_results} is not. The first goes to an Assembler's product slot and the rest to its remainder
- * slot; the Personal Assembler plans only a recipe with exactly one (GLOSSARY.md, Hand-craftable).
+ * {@code fluid_results} is not. The first and the rest go to an Assembler's shared output slots; the Personal Assembler plans only a recipe with exactly one (GLOSSARY.md, Hand-craftable).
  *
- * <p>{@code pinned_fluid_results} is false when omitted. An Assembler gives the first fluid result the boxes the
- * recipe leaves unused unless the recipe is Pinned, which keeps each fluid result to its own output box
- * (GLOSSARY.md, Pinned).
+ * <p>A recipe file that still has {@code pinned_fluid_results}, which ADR-0021 removed, loads: the codec reads the
+ * fields it names and ignores the rest.
  *
  * <p>A result is a template, not a stack: {@code ItemStack.CODEC} refuses an item whose components
  * are not bound yet, which they are not during the datapack load that reads recipes.
@@ -58,7 +56,7 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 public record AssemblingRecipe(
         List<SizedIngredient> ingredients, List<ItemStackTemplate> results, int time, int priority,
         List<SizedFluidIngredient> fluidIngredients, List<FluidStackTemplate> fluidResults, boolean handCraftable,
-        AssemblingCategory category, boolean pinnedFluidResults) implements Recipe<RecipeInput> {
+        AssemblingCategory category) implements Recipe<RecipeInput> {
 
     public static final int DEFAULT_TIME = 10;
     public static final int DEFAULT_PRIORITY = 0;
@@ -79,7 +77,7 @@ public record AssemblingRecipe(
         return product();
     }
 
-    /** What an Assembler's product slot gets: the first result, or nothing for a recipe that makes only fluids. */
+    /** What an Assembler's outputs get first: the first result, or nothing for a recipe that makes only fluids. */
     public ItemStack product() {
         return productOf(results);
     }
@@ -98,7 +96,7 @@ public record AssemblingRecipe(
         return results.stream().findFirst();
     }
 
-    /** The results after the first, which an Assembler puts in its remainder slot. */
+    /** The results after the first, which an Assembler puts in its outputs after the product. */
     public List<ItemStackTemplate> extraResults() {
         return results.isEmpty() ? List.of() : results.subList(1, results.size());
     }
@@ -163,8 +161,7 @@ public record AssemblingRecipe(
                             .forGetter(AssemblingRecipe::fluidResults),
                     Codec.BOOL.optionalFieldOf("hand_craftable", true).forGetter(AssemblingRecipe::handCraftable),
                     AssemblingCategory.CODEC.optionalFieldOf("category", AssemblingCategory.CRAFTING)
-                            .forGetter(AssemblingRecipe::category),
-                    Codec.BOOL.optionalFieldOf("pinned_fluid_results", false).forGetter(AssemblingRecipe::pinnedFluidResults))
+                            .forGetter(AssemblingRecipe::category))
                     .apply(instance, AssemblingRecipe::new))
             .flatXmap(AssemblingRecipe::makesSomething, AssemblingRecipe::makesSomething);
 
@@ -187,6 +184,5 @@ public record AssemblingRecipe(
             FluidStackTemplate.STREAM_CODEC.apply(ByteBufCodecs.list()), AssemblingRecipe::fluidResults,
             ByteBufCodecs.BOOL, AssemblingRecipe::handCraftable,
             CATEGORY_STREAM_CODEC, AssemblingRecipe::category,
-            ByteBufCodecs.BOOL, AssemblingRecipe::pinnedFluidResults,
             AssemblingRecipe::new);
 }

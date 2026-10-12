@@ -34,15 +34,16 @@ import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The Assembler's menu: its five inputs in a row, then the product and the remainders, then the player's
- * inventory; the Held recipe and how far its craft is. No recipe is picked here and none cleared: the recipe
+ * The Assembler's menu: its five inputs in a row, its four shared outputs in a block of two by two with the drain
+ * and fill slots of tiers 2 and 3 in a column beside them, then the player's inventory; the Held recipe and how far its craft is. No recipe is picked here and none cleared: the recipe
  * viewer's Fill Recipe lands on {@link #request}, and the Held recipe is replaced, never removed.
  *
  * <p>The Held recipe crosses to the client as {@link HeldRecipeSyncPacket} when it changes, since the client
  * has no recipe manager to read the ingredients each slot is ghosted with. Progress, duration and energy ride
  * in the first data slots ({@link #DATA_SHARED}). Each fluid box (which fluid, by its registry id, and how much)
- * rides in data slots after them, with the volume of every box, which the Held recipe sizes; the inventory stands
- * lower to give the gauges a row.
+ * rides in data slots after them, with the volume of every box; the inventory stands lower to give the gauges a
+ * row. Whether the drain and fill slots are in use, which the tier decides, rides last: a tier-1 menu has the slots
+ * but they are inactive, drawn and clicked by nobody.
  */
 public final class AssemblerMenu extends AbstractContainerMenu {
 
@@ -59,12 +60,22 @@ public final class AssemblerMenu extends AbstractContainerMenu {
     private static final int DATA_CAPACITIES = DATA_SHARED + 2 * LAYOUT.boxes();
     /** What the Assembler is doing, a {@link MachineState} ordinal, for the screen's status line. */
     private static final int DATA_STATE = DATA_CAPACITIES + LAYOUT.boxes();
-    private static final int DATA_COUNT = DATA_STATE + 1;
+    /** 1 when the tier has a drain slot and a fill slot, else 0. */
+    private static final int DATA_CONTAINERS = DATA_STATE + 1;
+    private static final int DATA_COUNT = DATA_CONTAINERS + 1;
 
     public static final int INPUT_X = 8;
     public static final int INPUT_Y = 36;
-    public static final int PRODUCT_X = 134;
-    public static final int REMAINDERS_X = PRODUCT_X + 18;
+    /** The drain slot above the fill slot, in the column left of the outputs. */
+    public static final int CONTAINER_X = 116;
+    public static final int DRAIN_Y = 16;
+    public static final int FILL_Y = INPUT_Y;
+    /** The shared outputs, two by two: the product lands in the first, and the rest in any with room. */
+    public static final int OUTPUT_X = 134;
+    public static final int OUTPUT_Y = 16;
+    /** Between the outputs' rows, which stand on the head's row and the inputs'. */
+    public static final int OUTPUT_ROW = INPUT_Y - OUTPUT_Y;
+    public static final int OUTPUT_COLUMNS = 2;
     /**
      * One row of the panel: a bar or a gauge and the gap below it. Two less than the suite's other machines space
      * theirs, so the Assembler's three rows of gauges keep the panel 240 tall, which fits a 720-line window at GUI
@@ -97,8 +108,8 @@ public final class AssemblerMenu extends AbstractContainerMenu {
     }
 
     /**
-     * The inputs from {@link #INPUT_X}, the product at {@link #PRODUCT_X} and the remainders beside it, and the
-     * player's inventory from {@link #INVENTORY_Y} down. The client's {@code assembler} is null, and its slots stand
+     * The inputs from {@link #INPUT_X}, the outputs from {@link #OUTPUT_X}, the drain and fill slots at
+     * {@link #CONTAINER_X}, and the player's inventory from {@link #INVENTORY_Y} down. The client's {@code assembler} is null, and its slots stand
      * over a stub the menu's own sync fills.
      */
     private AssemblerMenu(int containerId, Inventory playerInventory, @Nullable AssemblerBlockEntity assembler, BlockPos pos,
@@ -112,9 +123,13 @@ public final class AssemblerMenu extends AbstractContainerMenu {
         for (int slot = 0; slot < SLOTS.inputs(); slot++) {
             addSlot(new InputSlot(inventory, modifier, slot, INPUT_X + slot * 18, INPUT_Y));
         }
-        for (int slot = SLOTS.product(); slot < SLOTS.size(); slot++) {
-            addSlot(new OutputSlot(inventory, modifier, slot, PRODUCT_X + (slot - SLOTS.product()) * 18, INPUT_Y));
+        for (int slot = SLOTS.product(); slot < SLOTS.product() + SLOTS.outputs(); slot++) {
+            int output = slot - SLOTS.product();
+            addSlot(new OutputSlot(inventory, modifier, slot,
+                    OUTPUT_X + output % OUTPUT_COLUMNS * 18, OUTPUT_Y + output / OUTPUT_COLUMNS * OUTPUT_ROW));
         }
+        addSlot(new ContainerSlot(inventory, modifier, AssemblerSlots.DRAIN, CONTAINER_X, DRAIN_Y));
+        addSlot(new ContainerSlot(inventory, modifier, AssemblerSlots.FILL, CONTAINER_X, FILL_Y));
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
                 addSlot(new Slot(playerInventory, column + row * 9 + 9, 8 + column * 18, INVENTORY_Y + row * 18));
@@ -146,7 +161,10 @@ public final class AssemblerMenu extends AbstractContainerMenu {
                 if (index < DATA_STATE) {
                     return assembler.fluids().displayCapacity(index - DATA_CAPACITIES);
                 }
-                return index == DATA_STATE ? assembler.state().ordinal() : 0;
+                if (index == DATA_STATE) {
+                    return assembler.state().ordinal();
+                }
+                return index == DATA_CONTAINERS && assembler.tier().hasContainerSlots() ? 1 : 0;
             }
 
             @Override
@@ -171,6 +189,11 @@ public final class AssemblerMenu extends AbstractContainerMenu {
         int amount = data.get(index + 1);
         Fluid fluid = BuiltInRegistries.FLUID.byId(data.get(index));
         return amount <= 0 || fluid == Fluids.EMPTY ? FluidStack.EMPTY : new FluidStack(fluid, amount);
+    }
+
+    /** Whether this tier has a drain slot and a fill slot: tiers 2 and 3. */
+    public boolean hasContainerSlots() {
+        return assembler != null ? assembler.tier().hasContainerSlots() : data.get(DATA_CONTAINERS) > 0;
     }
 
     /** Where the player's inventory starts, {@link #INVENTORY_Y}: below the gauges, the energy bar and the status line. */
@@ -277,8 +300,16 @@ public final class AssemblerMenu extends AbstractContainerMenu {
             if (!moveItemStackTo(stack, SLOTS.size(), slots.size(), true)) {
                 return ItemStack.EMPTY;
             }
-        } else if (!moveItemStackTo(stack, 0, SLOTS.inputs(), false)) {
-            return ItemStack.EMPTY;
+        } else {
+            // As the item face routes: an ingredient to its input first, then a filled container to the drain
+            // slot and an empty one to the fill slot, which each take only what they are for.
+            boolean moved = moveItemStackTo(stack, 0, SLOTS.inputs(), false);
+            if (!stack.isEmpty()) {
+                moved |= moveItemStackTo(stack, AssemblerSlots.DRAIN, SLOTS.size(), false);
+            }
+            if (!moved) {
+                return ItemStack.EMPTY;
+            }
         }
         if (stack.isEmpty()) {
             slot.set(ItemStack.EMPTY);
@@ -316,6 +347,27 @@ public final class AssemblerMenu extends AbstractContainerMenu {
             }
             return held.filter(recipe -> SLOTS.accepts(getSlotIndex(), recipe.ingredients(), stack,
                     (SizedIngredient sized, ItemStack item) -> sized.ingredient().test(item))).isPresent();
+        }
+    }
+
+    /**
+     * The drain slot takes a filled fluid container and the fill slot an empty one, in a tier that has them, and
+     * is not there in one that has not. The client and the server ask the same thing of the item itself: the
+     * Held recipe is not asked, so a container waits where the player put it until it can move.
+     */
+    private final class ContainerSlot extends ResourceHandlerSlot {
+        ContainerSlot(ResourceHandler<ItemResource> handler, IndexModifier<ItemResource> modifier, int index, int x, int y) {
+            super(handler, modifier, index, x, y);
+        }
+
+        @Override
+        public boolean isActive() {
+            return hasContainerSlots();
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            return hasContainerSlots() && AssemblerContainers.placeable(getSlotIndex(), stack);
         }
     }
 

@@ -33,8 +33,9 @@ class MachineSlotsTest {
 
     @Test
     void anOutputSlotIsNeverAnInput() {
-        assertEquals(Optional.empty(), ASSEMBLER.ingredientFor(AssemblerSlots.PRODUCT, List.of("a", "b", "c", "d", "e", "f", "g")));
-        assertFalse(ASSEMBLER.isInput(AssemblerSlots.REMAINDERS));
+        assertEquals(Optional.empty(), ASSEMBLER.ingredientFor(AssemblerSlots.OUTPUT, List.of("a", "b", "c", "d", "e", "f", "g")));
+        assertFalse(ASSEMBLER.isInput(AssemblerSlots.OUTPUT + 1));
+        assertFalse(ASSEMBLER.isInput(AssemblerSlots.DRAIN));
         assertTrue(ASSEMBLER.isInput(AssemblerSlots.INPUTS - 1));
     }
 
@@ -46,8 +47,46 @@ class MachineSlotsTest {
     }
 
     @Test
-    void thereAreFiveInputsAndTwoOutputs() {
+    void thereAreFiveInputsFourSharedOutputsAndADrainAndAFillSlot() {
         assertEquals(5, AssemblerSlots.INPUTS);
-        assertEquals(7, AssemblerSlots.SIZE);
+        assertEquals(4, AssemblerSlots.OUTPUTS);
+        assertEquals(11, AssemblerSlots.SIZE);
+        assertEquals(AssemblerSlots.SIZE - 2, AssemblerSlots.DRAIN);
+        assertEquals(AssemblerSlots.SIZE - 1, AssemblerSlots.FILL);
+    }
+
+    /** A save from before the shared outputs has the product in slot 5 and the remainders in 6: they are the first two outputs. */
+    @Test
+    void theOutputsStandWhereTheProductAndRemaindersDid() {
+        assertEquals(5, AssemblerSlots.OUTPUT);
+        assertEquals(AssemblerSlots.OUTPUT, ASSEMBLER.product());
+        assertTrue(ASSEMBLER.isOutput(5));
+        assertTrue(ASSEMBLER.isOutput(6));
+        assertTrue(ASSEMBLER.isOutput(8));
+        assertFalse(ASSEMBLER.isOutput(4));
+        assertFalse(ASSEMBLER.isOutput(AssemblerSlots.DRAIN));
+        assertFalse(ASSEMBLER.isOutput(AssemblerSlots.FILL));
+    }
+
+    @Test
+    void theContainerSlotsAreTheDrainAndTheFillSlotAlone() {
+        assertTrue(AssemblerSlots.isContainerSlot(AssemblerSlots.DRAIN));
+        assertTrue(AssemblerSlots.isContainerSlot(AssemblerSlots.FILL));
+        assertFalse(AssemblerSlots.isContainerSlot(AssemblerSlots.OUTPUT));
+        assertFalse(AssemblerSlots.isContainerSlot(0));
+    }
+
+    @Test
+    void aResultIsOfferedTheSlotsHoldingSomethingBeforeTheEmptyOnes() {
+        assertEquals(List.of(5, 6, 7, 8), ASSEMBLER.outputOrder(slot -> false));
+        assertEquals(List.of(6, 8, 5, 7), ASSEMBLER.outputOrder(slot -> slot == 6 || slot == 8));
+        assertEquals(List.of(5, 6, 7, 8), ASSEMBLER.outputOrder(slot -> true));
+    }
+
+    @Test
+    void theRefinerHasOneOutput() {
+        assertTrue(RefinerSlots.LAYOUT.isOutput(RefinerSlots.OUTPUT));
+        assertFalse(RefinerSlots.LAYOUT.isOutput(RefinerSlots.INPUT));
+        assertEquals(List.of(RefinerSlots.OUTPUT), RefinerSlots.LAYOUT.outputOrder(slot -> false));
     }
 }

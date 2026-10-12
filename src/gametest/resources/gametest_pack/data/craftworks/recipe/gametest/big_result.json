@@ -1,0 +1,11 @@
+{
+  "type": "craftworks:assembling",
+  "category": "crafting-with-fluid",
+  "ingredients": [
+    { "ingredient": "minecraft:dirt", "count": 1 }
+  ],
+  "results": [],
+  "fluid_results": [
+    { "id": "minecraft:lava", "amount": 2001 }
+  ]
+}

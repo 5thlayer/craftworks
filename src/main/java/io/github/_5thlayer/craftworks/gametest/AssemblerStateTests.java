@@ -39,8 +39,8 @@ final class AssemblerStateTests {
         tests.test("an_assembler_reports_crafting_with_its_inputs_room_and_power", 20, AssemblerStateTests::crafting);
         tests.test("an_assembler_reports_needs_power_when_the_buffer_cannot_pay_the_tick", 20, AssemblerStateTests::needsPower);
         tests.test("an_assembler_reports_missing_ingredients_when_an_input_holds_less_than_one_craft", 20, AssemblerStateTests::missingIngredients);
-        tests.test("an_assembler_reports_output_full_when_the_product_slot_cannot_take_a_craft", 20, AssemblerStateTests::productFull);
-        tests.test("an_assembler_reports_output_full_when_the_remainder_slot_cannot_take_a_craft", 20, AssemblerStateTests::remaindersFull);
+        tests.test("an_assembler_reports_output_full_when_the_outputs_cannot_take_a_craft", 20, AssemblerStateTests::productFull);
+        tests.test("an_assembler_reports_output_full_when_the_outputs_cannot_take_a_crafts_remainders", 20, AssemblerStateTests::remaindersFull);
         tests.test("an_assembler_reports_cant_run_for_a_held_recipe_it_cannot_run_or_that_is_gone", 20, AssemblerStateTests::cantRun);
     }
 
@@ -87,14 +87,16 @@ final class AssemblerStateTests {
         AssemblerMachineTests.Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.THREE);
         AssemblerMachineTests.hold(assembler, AssemblerTests.OAK_SAPLING);
         AssemblerMachineTests.insert(assembler, 0, Items.OAK_LOG, 2);
-        assembler.machine().inventory().set(AssemblerSlots.PRODUCT, ItemResource.of(Items.OAK_SAPLING), 64);
+        for (int slot = AssemblerSlots.OUTPUT; slot < AssemblerSlots.OUTPUT + AssemblerSlots.OUTPUTS; slot++) {
+            assembler.machine().inventory().set(slot, ItemResource.of(Items.OAK_SAPLING), 64);
+        }
         expect(helper, assembler, MachineState.OUTPUT_FULL, false);
         power(assembler);
         expect(helper, assembler, MachineState.OUTPUT_FULL, false);
         helper.succeed();
     }
 
-    /** Cake's buckets cannot join a stick in the remainder slot. */
+    /** The cake finds an empty output, but its buckets find none: the other three hold sticks. */
     private static void remaindersFull(GameTestHelper helper) {
         AssemblerMachineTests.Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.THREE);
         AssemblerMachineTests.hold(assembler, CAKE);
@@ -103,7 +105,9 @@ final class AssemblerStateTests {
             AssemblerMachineTests.insert(assembler, slot, bag.get(slot).ingredient().items().findFirst().orElseThrow().value(),
                     bag.get(slot).count());
         }
-        assembler.machine().inventory().set(AssemblerSlots.REMAINDERS, ItemResource.of(Items.STICK), 1);
+        for (int slot = AssemblerSlots.OUTPUT; slot < AssemblerSlots.OUTPUT + AssemblerSlots.OUTPUTS - 1; slot++) {
+            assembler.machine().inventory().set(slot, ItemResource.of(Items.STICK), 64);
+        }
         power(assembler);
         expect(helper, assembler, MachineState.OUTPUT_FULL, false);
         helper.succeed();

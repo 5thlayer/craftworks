@@ -20,11 +20,11 @@ public enum HoldVerdict {
     WRONG_CATEGORY("wrong_category"),
     /** The recipe has more fluid ingredients or results than the Assembler has input or output boxes. */
     TOO_MANY_FLUIDS("too_many_fluids"),
-    /** The recipe needs more of a fluid a craft than an input box holds. */
+    /** The recipe needs more of a fluid a craft, in or out, than a box holds. */
     FLUID_TOO_LARGE("fluid_too_large"),
     /** The recipe names more distinct ingredients than the Assembler has input slots. */
     TOO_MANY_INGREDIENTS("too_many_ingredients"),
-    /** One craft's remainders are two items, or more than a stack, so the one remainder slot can't take them. */
+    /** One craft's remainders are two items, or more than a stack, so the shared outputs' leftover rule refuses them. */
     REMAINDERS_DONT_FIT("remainders_dont_fit"),
     /** The Lock source says the recipe is Locked for the player pressing. */
     LOCKED("locked");

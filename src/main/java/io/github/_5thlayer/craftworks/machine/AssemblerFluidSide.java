@@ -16,7 +16,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.neoforged.neoforge.fluids.FluidStackTemplate;
 import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 import net.neoforged.neoforge.transfer.RangedResourceHandler;
 import net.neoforged.neoforge.transfer.ResourceHandler;
@@ -64,6 +63,8 @@ public final class AssemblerFluidSide {
     private final Host host;
     private final MachineFluids boxes;
     private final MachineFluidFace face;
+    /** The input boxes alone, which a drain slot pours into. */
+    private final ResourceHandler<FluidResource> inputs;
     /** The output boxes alone, which a connection pushes from. */
     private final ResourceHandler<FluidResource> outputs;
 
@@ -85,35 +86,24 @@ public final class AssemblerFluidSide {
                         .isPresent();
             }
 
-            /** 4 crafts' worth of the Held recipe's {@code n}th fluid ingredient, or a full box with none bound to it. */
-            @Override
-            public int inputCapacity(int n) {
-                return host.runnable().filter(recipe -> n < recipe.fluidIngredients().size())
-                        .map(recipe -> FluidBoxes.inputLimit(recipe.fluidIngredients().get(n).amount()))
-                        .orElse(FluidBoxes.INPUT_VOLUME);
-            }
-
-            /** What the Held recipe sizes output box {@code n} at, or the box's own 100 mB. */
-            @Override
-            public int outputCapacity(int n) {
-                return host.runnable().filter(recipe -> n < recipe.fluidResults().size())
-                        .map(recipe -> FluidBoxes.outputVolumes(LAYOUT.fluidOutputs(),
-                                recipe.fluidResults().stream().map(FluidStackTemplate::amount).toList(), recipe.pinnedFluidResults()).get(n))
-                        .orElse(FluidBoxes.OUTPUT_BOX);
-            }
-
             @Override
             public void changed() {
                 host.changed();
             }
         });
         face = new MachineFluidFace(LAYOUT, boxes);
+        inputs = RangedResourceHandler.of(boxes, 0, LAYOUT.fluidInputs());
         outputs = RangedResourceHandler.of(boxes, LAYOUT.fluidInputs(), LAYOUT.boxes());
     }
 
     /** The boxes, inputs first, for the menu and the game tests. */
     public MachineFluids boxes() {
         return boxes;
+    }
+
+    /** The input boxes alone: what a drain slot empties a container into, each fluid in the box bound to it. */
+    ResourceHandler<FluidResource> inputs() {
+        return inputs;
     }
 
     private Direction facing() {
@@ -280,7 +270,7 @@ public final class AssemblerFluidSide {
         }
         boxes.emptyAll();
         input.child(OLD_FLUID_KEY).ifPresent(old -> {
-            FluidStacksResourceHandler single = new FluidStacksResourceHandler(1, FluidBoxes.INPUT_VOLUME);
+            FluidStacksResourceHandler single = new FluidStacksResourceHandler(1, FluidBoxes.VOLUME);
             single.deserialize(old);
             boxes.set(0, single.getResource(0).toStack(single.getAmountAsInt(0)));
         });

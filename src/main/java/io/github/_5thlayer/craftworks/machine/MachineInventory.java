@@ -5,8 +5,10 @@ package io.github._5thlayer.craftworks.machine;
 
 import java.util.Optional;
 
+import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.ValueInput;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
@@ -42,6 +44,28 @@ final class MachineInventory extends ItemStacksResourceHandler {
 
     boolean isInput(int slot) {
         return slots.isInput(slot);
+    }
+
+    boolean isOutput(int slot) {
+        return slots.isOutput(slot);
+    }
+
+    /**
+     * Reads the saved slots, in order. A save from before the machine had its present slots has fewer, and the
+     * handler would take the saved length as its own: they are kept where they were and the rest are empty, so
+     * nothing is lost or moved (an Assembler's product and remainders from before its shared outputs read back as
+     * the first two of them).
+     */
+    @Override
+    public void deserialize(ValueInput input) {
+        super.deserialize(input);
+        if (size() != slots.size()) {
+            NonNullList<ItemStack> padded = NonNullList.withSize(slots.size(), ItemStack.EMPTY);
+            for (int slot = 0; slot < Math.min(size(), slots.size()); slot++) {
+                padded.set(slot, getResource(slot).toStack(getAmountAsInt(slot)));
+            }
+            setStacks(padded);
+        }
     }
 
     @Override

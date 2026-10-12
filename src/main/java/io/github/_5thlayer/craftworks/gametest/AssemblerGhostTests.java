@@ -42,7 +42,7 @@ final class AssemblerGhostTests {
         tests.test("an_empty_input_slot_has_the_ingredient_it_takes_as_its_ghost", 20, AssemblerGhostTests::inputs);
         tests.test("a_tag_ingredients_ghost_is_the_member_shown_at_that_moment", 20, AssemblerGhostTests::tagMember);
         tests.test("the_product_slot_and_the_head_have_the_product_as_their_ghost", 20, AssemblerGhostTests::product);
-        tests.test("no_ghost_over_a_filled_slot_an_unused_slot_the_remainders_or_the_panel", 20, AssemblerGhostTests::nothing);
+        tests.test("no_ghost_over_a_filled_slot_an_unused_slot_a_later_output_or_the_panel", 20, AssemblerGhostTests::nothing);
         tests.test("no_ghost_anywhere_with_no_held_recipe", 20, AssemblerGhostTests::noHeldRecipe);
     }
 
@@ -103,7 +103,7 @@ final class AssemblerGhostTests {
         AssemblerMachineTests.Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
         AssemblerMachineTests.hold(assembler, SLIME);
         AssemblerMenu menu = open(assembler, SLIME);
-        expect(helper, at(menu, AssemblerMenu.PRODUCT_X, INPUT_Y, 0), Items.SLIME_BALL, 4, AssemblerMenu.PRODUCT_X, INPUT_Y);
+        expect(helper, at(menu, AssemblerMenu.OUTPUT_X, AssemblerMenu.OUTPUT_Y, 0), Items.SLIME_BALL, 4, AssemblerMenu.OUTPUT_X, AssemblerMenu.OUTPUT_Y);
         expect(helper, at(menu, MachineGhosts.HEAD_X + 3, MachineGhosts.HEAD_Y + 3, 0), Items.SLIME_BALL, 4,
                 MachineGhosts.HEAD_X, MachineGhosts.HEAD_Y);
         helper.succeed();
@@ -115,12 +115,12 @@ final class AssemblerGhostTests {
         AssemblerMenu menu = open(assembler, SLIME);
         // A real stack answers for itself: the first input holds milk, and the product slot slime balls.
         AssemblerMachineTests.insert(assembler, 0, Items.MILK_BUCKET, 1);
-        assembler.machine().inventory().set(AssemblerSlots.PRODUCT, ItemResource.of(Items.SLIME_BALL), 1);
+        assembler.machine().inventory().set(AssemblerSlots.OUTPUT, ItemResource.of(Items.SLIME_BALL), 1);
         helper.assertTrue(at(menu, inputX(0), INPUT_Y, 0).isEmpty(), "a filled input has a ghost");
-        helper.assertTrue(at(menu, AssemblerMenu.PRODUCT_X, INPUT_Y, 0).isEmpty(), "a filled product slot has a ghost");
-        // The slime ball recipe takes two ingredients, so the third input takes nothing, and the remainders slot is never ghosted.
+        helper.assertTrue(at(menu, AssemblerMenu.OUTPUT_X, AssemblerMenu.OUTPUT_Y, 0).isEmpty(), "a filled product slot has a ghost");
+        // The slime ball recipe takes two ingredients, so the third input takes nothing, and the other outputs are never ghosted.
         helper.assertTrue(at(menu, inputX(2), INPUT_Y, 0).isEmpty(), "an unused input has a ghost");
-        helper.assertTrue(at(menu, AssemblerMenu.REMAINDERS_X, INPUT_Y, 0).isEmpty(), "the remainders slot has a ghost");
+        helper.assertTrue(at(menu, AssemblerMenu.OUTPUT_X + 18, AssemblerMenu.OUTPUT_Y, 0).isEmpty(), "the second output slot has a ghost");
         // The panel, and the player's inventory below it.
         helper.assertTrue(at(menu, 0, 0, 0).isEmpty(), "the panel's corner has a ghost");
         helper.assertTrue(at(menu, 100, 20, 0).isEmpty(), "the head's name has a ghost");
@@ -133,7 +133,7 @@ final class AssemblerGhostTests {
         ServerPlayer player = assembler.player();
         AssemblerMenu menu = (AssemblerMenu) assembler.machine().createMenu(1, player.getInventory(), player);
         helper.assertTrue(at(menu, inputX(0), INPUT_Y, 0).isEmpty(), "an input has a ghost with no Held recipe");
-        helper.assertTrue(at(menu, AssemblerMenu.PRODUCT_X, INPUT_Y, 0).isEmpty(), "the product slot has a ghost with no Held recipe");
+        helper.assertTrue(at(menu, AssemblerMenu.OUTPUT_X, AssemblerMenu.OUTPUT_Y, 0).isEmpty(), "the product slot has a ghost with no Held recipe");
         helper.assertTrue(at(menu, MachineGhosts.HEAD_X, MachineGhosts.HEAD_Y, 0).isEmpty(), "the head has a ghost with no Held recipe");
         helper.succeed();
     }

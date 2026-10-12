@@ -3,22 +3,38 @@
 
 package io.github._5thlayer.craftworks.machine;
 
-/** An Assembler's slots: five inputs, then the product and the remainders ({@link MachineSlots}). */
+/**
+ * An Assembler's slots ({@link MachineSlots}): five inputs, four shared outputs, then the drain and fill slots of
+ * tiers 2 and 3 (ADR-0021).
+ *
+ * <p>The outputs follow the inputs where the product and the remainders once did, so a save from before them
+ * keeps its product in the first output and its remainders in the second.
+ */
 public final class AssemblerSlots {
 
     /** The input slots; a Held recipe names at most this many distinct ingredients. */
     public static final int INPUTS = 5;
 
-    /** The product's slot, after the inputs. */
-    public static final int PRODUCT = INPUTS;
+    /** The shared output slots: the product, the ingredients' remainders and the containers all land in any with room. */
+    public static final int OUTPUTS = 4;
 
-    /** The ingredients' remainders' slot (cake's buckets, honey block's bottles). */
-    public static final int REMAINDERS = INPUTS + 1;
+    /** The first output slot, after the inputs. */
+    public static final int OUTPUT = INPUTS;
 
-    public static final int SIZE = INPUTS + 2;
+    /** The drain slot: a filled fluid container, poured into the input box bound to its fluid. */
+    public static final int DRAIN = OUTPUT + OUTPUTS;
 
-    public static final MachineSlots LAYOUT = new MachineSlots(SIZE, INPUTS, PRODUCT);
+    /** The fill slot: an empty fluid container, filled from the first output box with a whole container's worth. */
+    public static final int FILL = DRAIN + 1;
+
+    public static final int SIZE = FILL + 1;
+
+    public static final MachineSlots LAYOUT = new MachineSlots(SIZE, INPUTS, OUTPUT, OUTPUTS);
 
     private AssemblerSlots() {
+    }
+
+    public static boolean isContainerSlot(int slot) {
+        return slot == DRAIN || slot == FILL;
     }
 }

@@ -45,7 +45,7 @@ final class CreativeEnergySourceTests {
         // The world's own ticker runs both: nothing here feeds the Assembler.
         helper.succeedWhen(() -> {
             AssemblerBlockEntity machine = assembler.machine();
-            helper.assertTrue(machine.inventory().getAmountAsInt(AssemblerSlots.PRODUCT) == 1, "no sapling made yet");
+            helper.assertTrue(machine.inventory().getAmountAsInt(AssemblerSlots.OUTPUT) == 1, "no sapling made yet");
         });
     }
 

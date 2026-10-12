@@ -118,9 +118,9 @@ final class AssemblerMachineTests {
         tests.test("fill_recipe_refuses_more_than_five_ingredients_and_remainders_that_dont_fit", 20, AssemblerMachineTests::cannotRun);
         tests.test("an_assembler_holds_and_crafts_a_recipe_the_player_cannot_hand_craft", 20, AssemblerMachineTests::machineOnly);
         tests.test("breaking_an_assembler_drops_its_contents_and_the_item_keeps_its_held_recipe", 20, AssemblerMachineTests::breaking);
-        tests.test("a_cake_craft_puts_its_buckets_in_the_remainder_slot", 20, AssemblerMachineTests::cake);
-        tests.test("a_craft_waits_while_the_product_slot_is_full", 20, AssemblerMachineTests::waitsOnAFullProduct);
-        tests.test("a_craft_waits_while_the_remainder_slot_cannot_take_its_remainders", 20, AssemblerMachineTests::waitsOnRemainders);
+        tests.test("a_cake_craft_puts_its_buckets_in_the_outputs", 20, AssemblerMachineTests::cake);
+        tests.test("a_craft_waits_while_the_outputs_are_full", 20, AssemblerMachineTests::waitsOnAFullProduct);
+        tests.test("a_craft_waits_while_the_outputs_cannot_take_its_remainders", 20, AssemblerMachineTests::waitsOnRemainders);
         tests.test("changing_the_held_recipe_hands_the_inputs_back", 20, AssemblerMachineTests::changingHandsBack);
         tests.test("the_item_capability_is_on_every_face_of_every_block_and_only_the_outputs_extract", 20, AssemblerMachineTests::itemFaces);
         tests.test("inserts_are_filtered_to_the_held_recipe_and_capped_by_the_overload_limit", 20, AssemblerMachineTests::filteredAndCapped);
@@ -142,13 +142,13 @@ final class AssemblerMachineTests {
         SimpleEnergyHandler supply = supply();
         int inserted = 0;
         int ran = 0;
-        while (count(assembler, AssemblerSlots.PRODUCT) == 0 && ran < 100) {
+        while (count(assembler, AssemblerSlots.OUTPUT) == 0 && ran < 100) {
             inserted += feed(assembler, supply, 1000);
             assembler.machine().serverTick(helper.getLevel());
             ran++;
         }
         helper.assertTrue(ran == ticks, tier + " finished its craft after " + ran + " ticks, not " + ticks);
-        helper.assertTrue(assembler.machine().inventory().getResource(AssemblerSlots.PRODUCT).getItem() == Items.OAK_SAPLING,
+        helper.assertTrue(assembler.machine().inventory().getResource(AssemblerSlots.OUTPUT).getItem() == Items.OAK_SAPLING,
                 "the product was not a sapling");
         helper.assertTrue(count(assembler, 0) == 0, "the craft left " + count(assembler, 0) + " log(s)");
         int spent = inserted - assembler.machine().energy();
@@ -163,7 +163,7 @@ final class AssemblerMachineTests {
         insert(assembler, 0, Items.OAK_LOG, 2);
         SimpleEnergyHandler supply = supply();
         helper.onEachTick(() -> feed(assembler, supply, 1000));
-        helper.succeedWhen(() -> helper.assertTrue(count(assembler, AssemblerSlots.PRODUCT) == 1, "no sapling made yet"));
+        helper.succeedWhen(() -> helper.assertTrue(count(assembler, AssemblerSlots.OUTPUT) == 1, "no sapling made yet"));
     }
 
     private static void unpowered(GameTestHelper helper) {
@@ -182,7 +182,7 @@ final class AssemblerMachineTests {
         helper.runAtTickTime(110, () -> {
             helper.assertTrue(assembler.machine().craftProgress() == 0, "a tick it could not pay in full made progress");
             helper.assertTrue(assembler.machine().energy() == 1, "a tick it could not pay in full took the energy it had");
-            helper.assertTrue(count(assembler, 0) == 2 && count(assembler, AssemblerSlots.PRODUCT) == 0, "it spent its inputs");
+            helper.assertTrue(count(assembler, 0) == 2 && count(assembler, AssemblerSlots.OUTPUT) == 0, "it spent its inputs");
             helper.succeed();
         });
     }
@@ -226,7 +226,7 @@ final class AssemblerMachineTests {
             feed(assembler, supply, 1000);
             assembler.machine().serverTick(helper.getLevel());
         }
-        helper.assertTrue(count(assembler, AssemblerSlots.PRODUCT) == 1, "a held recipe stopped crafting once it was Locked");
+        helper.assertTrue(count(assembler, AssemblerSlots.OUTPUT) == 1, "a held recipe stopped crafting once it was Locked");
         helper.succeed();
     }
 
@@ -255,7 +255,7 @@ final class AssemblerMachineTests {
             feed(assembler, supply, 1000);
             assembler.machine().serverTick(helper.getLevel());
         }
-        helper.assertTrue(count(assembler, AssemblerSlots.PRODUCT) == 9, "an iron ingot made " + count(assembler, AssemblerSlots.PRODUCT) + " nuggets, not 9");
+        helper.assertTrue(count(assembler, AssemblerSlots.OUTPUT) == 9, "an iron ingot made " + count(assembler, AssemblerSlots.OUTPUT) + " nuggets, not 9");
         helper.succeed();
     }
 
@@ -265,7 +265,7 @@ final class AssemblerMachineTests {
         Placed assembler = place(helper, AssemblerTier.TWO);
         hold(assembler, SAPLING);
         insert(assembler, 0, Items.OAK_LOG, 4);
-        assembler.machine().inventory().set(AssemblerSlots.PRODUCT, ItemResource.of(Items.OAK_SAPLING), 3);
+        assembler.machine().inventory().set(AssemblerSlots.OUTPUT, ItemResource.of(Items.OAK_SAPLING), 3);
         feed(assembler, supply(), 1000);
         // A part, not the origin: the whole footprint goes, and the contents with it.
         BlockPos part = helper.absolutePos(ORIGIN.above().north().east());
@@ -300,15 +300,15 @@ final class AssemblerMachineTests {
                     "slot " + slot + " took " + count(assembler, slot) + " of " + firstItem(bag.get(slot)) + ", not " + bag.get(slot).count());
         }
         SimpleEnergyHandler supply = supply();
-        for (int tick = 0; tick < 8 && count(assembler, AssemblerSlots.PRODUCT) == 0; tick++) {
+        for (int tick = 0; tick < 8 && count(assembler, AssemblerSlots.OUTPUT) == 0; tick++) {
             feed(assembler, supply, 1000);
             assembler.machine().serverTick(helper.getLevel());
         }
-        helper.assertTrue(assembler.machine().inventory().getResource(AssemblerSlots.PRODUCT).getItem() == Items.CAKE, "no cake was made");
-        helper.assertTrue(assembler.machine().inventory().getResource(AssemblerSlots.REMAINDERS).getItem() == Items.BUCKET
-                        && count(assembler, AssemblerSlots.REMAINDERS) == 3,
-                "the remainder slot holds " + count(assembler, AssemblerSlots.REMAINDERS) + " of "
-                        + assembler.machine().inventory().getResource(AssemblerSlots.REMAINDERS).getItem() + ", not 3 buckets");
+        helper.assertTrue(assembler.machine().inventory().getResource(AssemblerSlots.OUTPUT).getItem() == Items.CAKE, "no cake was made");
+        helper.assertTrue(assembler.machine().inventory().getResource((AssemblerSlots.OUTPUT + 1)).getItem() == Items.BUCKET
+                        && count(assembler, (AssemblerSlots.OUTPUT + 1)) == 3,
+                "the remainder slot holds " + count(assembler, (AssemblerSlots.OUTPUT + 1)) + " of "
+                        + assembler.machine().inventory().getResource((AssemblerSlots.OUTPUT + 1)).getItem() + ", not 3 buckets");
         helper.succeed();
     }
 
@@ -320,11 +320,18 @@ final class AssemblerMachineTests {
         Placed assembler = place(helper, AssemblerTier.THREE);
         hold(assembler, SAPLING);
         insert(assembler, 0, Items.OAK_LOG, 2);
-        assembler.machine().inventory().set(AssemblerSlots.PRODUCT, ItemResource.of(Items.OAK_SAPLING), 64);
+        fillOutputs(assembler, 0, AssemblerSlots.OUTPUTS, Items.OAK_SAPLING);
         expectWaiting(helper, assembler);
     }
 
-    /** Cake's buckets cannot join a stick in the remainder slot, so the cake isn't started. */
+    /** The first {@code from} up to {@code to} output slots, a full stack of {@code item} each. */
+    static void fillOutputs(Placed assembler, int from, int to, Item item) {
+        for (int output = from; output < to; output++) {
+            assembler.machine().inventory().set(AssemblerSlots.OUTPUT + output, ItemResource.of(item), 64);
+        }
+    }
+
+    /** The cake finds an empty output but its buckets find none, since the others hold sticks: the cake isn't started. */
     private static void waitsOnRemainders(GameTestHelper helper) {
         Placed assembler = place(helper, AssemblerTier.THREE);
         hold(assembler, CAKE);
@@ -332,7 +339,7 @@ final class AssemblerMachineTests {
         for (int slot = 0; slot < bag.size(); slot++) {
             insert(assembler, slot, firstItem(bag.get(slot)), bag.get(slot).count());
         }
-        assembler.machine().inventory().set(AssemblerSlots.REMAINDERS, ItemResource.of(Items.STICK), 1);
+        fillOutputs(assembler, 0, AssemblerSlots.OUTPUTS - 1, Items.STICK);
         expectWaiting(helper, assembler);
         helper.assertTrue(count(assembler, 0) == 3, "the milk buckets were spent");
     }
@@ -341,15 +348,24 @@ final class AssemblerMachineTests {
     private static void expectWaiting(GameTestHelper helper, Placed assembler) {
         SimpleEnergyHandler supply = supply();
         int inserted = 0;
+        int before = outputTotal(assembler);
         for (int tick = 0; tick < 30; tick++) {
             inserted += feed(assembler, supply, 1000);
             assembler.machine().serverTick(helper.getLevel());
         }
         helper.assertTrue(assembler.machine().craftProgress() == 0, "a craft that could not be placed made progress");
         helper.assertTrue(assembler.machine().energy() == inserted, "a craft that could not be placed drew power");
-        helper.assertTrue(count(assembler, AssemblerSlots.PRODUCT) <= 64 && count(assembler, AssemblerSlots.REMAINDERS) <= 1,
-                "a craft that could not be placed put something in an output");
+        helper.assertTrue(outputTotal(assembler) == before, "a craft that could not be placed put something in an output");
         helper.succeed();
+    }
+
+    /** Every item in the shared outputs. */
+    static int outputTotal(Placed assembler) {
+        int total = 0;
+        for (int output = 0; output < AssemblerSlots.OUTPUTS; output++) {
+            total += count(assembler, AssemblerSlots.OUTPUT + output);
+        }
+        return total;
     }
 
     private static void changingHandsBack(GameTestHelper helper) {
@@ -389,15 +405,15 @@ final class AssemblerMachineTests {
 
         ResourceHandler<ItemResource> face = assembler.items(Direction.NORTH);
         assembler.machine().inventory().set(0, ItemResource.of(Items.OAK_LOG), 2);
-        assembler.machine().inventory().set(AssemblerSlots.PRODUCT, ItemResource.of(Items.OAK_SAPLING), 4);
-        assembler.machine().inventory().set(AssemblerSlots.REMAINDERS, ItemResource.of(Items.BUCKET), 2);
+        assembler.machine().inventory().set(AssemblerSlots.OUTPUT, ItemResource.of(Items.OAK_SAPLING), 4);
+        assembler.machine().inventory().set((AssemblerSlots.OUTPUT + 1), ItemResource.of(Items.BUCKET), 2);
         try (Transaction tx = Transaction.openRoot()) {
             helper.assertTrue(face.extract(0, ItemResource.of(Items.OAK_LOG), 2, tx) == 0, "an input extracted");
-            helper.assertTrue(face.extract(AssemblerSlots.PRODUCT, ItemResource.of(Items.OAK_SAPLING), 4, tx) == 4, "the product did not extract");
-            helper.assertTrue(face.extract(AssemblerSlots.REMAINDERS, ItemResource.of(Items.BUCKET), 2, tx) == 2, "the remainders did not extract");
-            helper.assertTrue(face.insert(AssemblerSlots.PRODUCT, ItemResource.of(Items.OAK_SAPLING), 1, tx) == 0, "an output took an insert");
+            helper.assertTrue(face.extract(AssemblerSlots.OUTPUT, ItemResource.of(Items.OAK_SAPLING), 4, tx) == 4, "the product did not extract");
+            helper.assertTrue(face.extract((AssemblerSlots.OUTPUT + 1), ItemResource.of(Items.BUCKET), 2, tx) == 2, "the remainders did not extract");
+            helper.assertTrue(face.insert(AssemblerSlots.OUTPUT, ItemResource.of(Items.OAK_SAPLING), 1, tx) == 0, "an output took an insert");
         }
-        helper.assertTrue(count(assembler, AssemblerSlots.PRODUCT) == 4, "a simulated extract moved items");
+        helper.assertTrue(count(assembler, AssemblerSlots.OUTPUT) == 4, "a simulated extract moved items");
         helper.succeed();
     }
 

@@ -26,7 +26,7 @@ public record HeldRecipeView(Identifier id, List<SizedIngredient> ingredients, L
             ItemStackTemplate.STREAM_CODEC.apply(ByteBufCodecs.list()), HeldRecipeView::results,
             HeldRecipeView::new);
 
-    /** The first result, the one the product slot gets; empty for a recipe that makes only fluids. */
+    /** The first result, the one the outputs get first; empty for a recipe that makes only fluids. */
     public ItemStack product() {
         return AssemblingRecipe.productOf(results);
     }

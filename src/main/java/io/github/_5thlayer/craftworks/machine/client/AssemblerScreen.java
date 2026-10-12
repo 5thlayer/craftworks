@@ -3,9 +3,11 @@
 
 package io.github._5thlayer.craftworks.machine.client;
 
+import java.util.List;
 import java.util.Optional;
 
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
+import io.github._5thlayer.craftworks.machine.AssemblerSlots;
 import io.github._5thlayer.craftworks.machine.FluidGaugeLayout;
 import io.github._5thlayer.craftworks.machine.FluidLayout;
 import io.github._5thlayer.craftworks.machine.MachineGhosts;
@@ -22,8 +24,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 
 /**
- * The Assembler's screen: the Held recipe at its head as its product's icon and name, its five inputs, the
- * product and the remainders, then rows laid out as the suite's other machines lay theirs (#55): how far the craft
+ * The Assembler's screen: the Held recipe at its head as its product's icon and name, its five inputs, its four
+ * shared outputs and, on tiers 2 and 3, the drain and fill slots in a column beside them, then rows laid out as the suite's other machines lay theirs (#55): how far the craft
  * is, a gauge for each fluid box (the inputs down the left and the outputs down the right, as
  * {@link FluidGaugeLayout} lays them), the energy in the buffer and what the Assembler is doing. A stand-in drawn
  * from fills with libworks-runtime's {@link MachineDraw}.
@@ -101,7 +103,7 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
     }
 
     /**
-     * Over a ghost, its item's tooltip, as over a real stack; over a gauge, the fluid's name and how much of the box it
+     * Over a ghost, its item's tooltip, as over a real stack; over an empty drain or fill slot, what it takes; over a gauge, the fluid's name and how much of the box it
      * fills; over a bar or a line cut short, the whole of it.
      */
     @Override
@@ -110,6 +112,13 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
         Optional<Ghost> ghost = ghostAt(mouseX, mouseY);
         if (ghost.isPresent()) {
             GhostDraw.tooltip(graphics, font, ghost.get(), mouseX, mouseY);
+            return;
+        }
+        if (hoveredSlot != null && hoveredSlot.isActive() && !hoveredSlot.hasItem()
+                && AssemblerSlots.isContainerSlot(hoveredSlot.getContainerSlot())) {
+            graphics.setComponentTooltipForNextFrame(font, List.of(Component.translatable(
+                    hoveredSlot.getContainerSlot() == AssemblerSlots.DRAIN ? "craftworks.machine.drain_slot" : "craftworks.machine.fill_slot")),
+                    mouseX, mouseY);
             return;
         }
         int x = mouseX - leftPos;
@@ -134,8 +143,9 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
         return AssemblerMenu.GAUGES_Y + gauges.row(box) * AssemblerMenu.ROW;
     }
 
+    /** The name's room: up to the drain and fill slots' column, or the outputs where the tier has none. */
     private int headWidth() {
-        return imageWidth - MachineDraw.MARGIN - HEAD_TEXT_X;
+        return (menu.hasContainerSlots() ? AssemblerMenu.CONTAINER_X : AssemblerMenu.OUTPUT_X) - LABEL_PADDING - HEAD_TEXT_X;
     }
 
     private int stateWidth() {

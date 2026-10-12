@@ -10,7 +10,7 @@ public final class RefinerSlots {
     public static final int OUTPUT = 1;
     public static final int SIZE = 2;
 
-    public static final MachineSlots LAYOUT = new MachineSlots(SIZE, 1, OUTPUT);
+    public static final MachineSlots LAYOUT = new MachineSlots(SIZE, 1, OUTPUT, 1);
 
     private RefinerSlots() {
     }

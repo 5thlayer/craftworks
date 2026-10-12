@@ -3,11 +3,14 @@
 
 package io.github._5thlayer.craftworks.machine;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import com.mojang.logging.LogUtils;
 import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
+import io.github._5thlayer.libworks.machine.FluidContainers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponentMap;
@@ -27,6 +30,7 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
@@ -36,8 +40,8 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
 /**
- * An Assembler's block entity, one type for all three tiers: the Held recipe, seven item slots (five inputs, the
- * product and the remainders), an energy buffer and the craft under way. Its fluid boxes and Fluid Connections
+ * An Assembler's block entity, one type for all three tiers: the Held recipe, eleven item slots (five inputs, four
+ * shared outputs, and the drain and fill slots that tiers 2 and 3 use), an energy buffer and the craft under way. Its fluid boxes and Fluid Connections
  * are its {@link AssemblerFluidSide}, which it owns.
  *
  * <p>The Held recipe is an id, resolved when asked and never on load, when the recipes may not be there. It
@@ -48,8 +52,10 @@ import org.slf4j.Logger;
  * and on the last take the inputs and place the outputs, committing only if all of it went. Everything that
  * would stall it is asked first, in a probe that aborts, so a blocked Assembler draws nothing, starts nothing and
  * voids nothing. Progress is held across a stall: the inputs are only taken on the last tick, and the energy
- * already paid is the craft's. Changing the Held recipe resets it. The craft waits while an output fluid box
- * cannot hold what it makes.
+ * already paid is the craft's. Changing the Held recipe resets it. The craft waits while the shared outputs cannot
+ * hold its product and remainders, or an output fluid box cannot hold what it makes. Tiers 2 and 3 also move a
+ * container a tick between their drain and fill slots, their fluid boxes and the shared outputs
+ * ({@link AssemblerContainers}).
  */
 public final class AssemblerBlockEntity extends BlockEntity implements MenuProvider, MachineItemFace.Gate {
 
@@ -117,7 +123,9 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
 
     /**
      * Swapped for another tier by Fast Replace, which keeps this block entity: the buffer follows the new tier,
-     * and every tier has the same fluid boxes, so they keep what they held.
+     * and every tier has the same fluid boxes and item slots, so they keep what they held. A container left in
+     * the drain or fill slot of a tier that has neither waits there, out of sight, until a tier that has them is
+     * put back, and drops with the rest if the Assembler is broken.
      */
     @Override
     public void setBlockState(BlockState state) {
@@ -227,11 +235,20 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
 
     // -- input ----------------------------------------------------------------------------------
 
-    /** Whether input {@code slot} takes {@code resource}: false off the server, which alone resolves the Held recipe. */
+    /**
+     * Whether {@code slot} takes {@code resource} through the item face: false off the server, which alone
+     * resolves the Held recipe. An input takes its ingredient. A container slot takes a container only if it is
+     * no ingredient an input has room for, so an item the Held recipe names goes to its input first (cake's milk
+     * buckets), and only one that can move: a filled one some input box takes the fluid of to the drain slot, an
+     * empty one a fluid result can fill to the fill slot, so nothing a hopper brings jams a slot.
+     */
     @Override
     public boolean accepts(int slot, ItemResource resource) {
         if (resource.isEmpty()) {
             return false;
+        }
+        if (AssemblerSlots.isContainerSlot(slot)) {
+            return takesContainer(slot, resource.toStack(1));
         }
         return runnable()
                 .flatMap(recipe -> ingredientFor(slot, recipe))
@@ -239,12 +256,44 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
                 .isPresent();
     }
 
+    private boolean takesContainer(int slot, ItemStack container) {
+        if (!tier().hasContainerSlots()) {
+            return false;
+        }
+        Optional<AssemblingRecipe> recipe = runnable();
+        if (recipe.isEmpty() || ingredientHasRoom(ItemResource.of(container))) {
+            return false;
+        }
+        return slot == AssemblerSlots.DRAIN
+                ? FluidContainers.holds(container, fluidSide.boxes()::takesAnyInput)
+                : recipe.get().fluidResults().stream().anyMatch(made -> FluidContainers.takes(container, FluidResource.of(made)));
+    }
+
+    /**
+     * Whether an input slot takes {@code resource} as the Held recipe's ingredient and has room for one more: under
+     * the Overload Limit, and in the slot itself, which a bucket fills at far fewer than the limit.
+     */
+    private boolean ingredientHasRoom(ItemResource resource) {
+        for (int slot = 0; slot < AssemblerSlots.INPUTS; slot++) {
+            ItemResource held = inventory.getResource(slot);
+            if (accepts(slot, resource) && (held.isEmpty() || held.equals(resource)) && overloadRoom(slot, resource) > 0
+                    && inventory.getCapacityAsLong(slot, resource) > inventory.getAmountAsInt(slot)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * How many more of its ingredient an insert through the item capability may put in {@code slot}: the
-     * Overload Limit less what the slot holds. The menu's slots do not ask, so the hand is not held to it.
+     * Overload Limit less what the slot holds. The menu's slots do not ask, so the hand is not held to it. A
+     * container slot is held to the stack only, which its inventory does.
      */
     @Override
     public int overloadRoom(int slot, ItemResource resource) {
+        if (AssemblerSlots.isContainerSlot(slot)) {
+            return Integer.MAX_VALUE;
+        }
         return runnable()
                 .flatMap(recipe -> ingredientFor(slot, recipe)
                         .map(ingredient -> OverloadLimit.room(ingredient.count(), overloadCrafts(recipe),
@@ -268,7 +317,14 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         }
         AssemblingRecipe recipe = resolved.get();
         fluidSide.pull(server, recipe);
+        boolean containers = tier().hasContainerSlots();
+        if (containers) {
+            AssemblerContainers.drain(inventory, fluidSide);
+        }
         craft(recipe);
+        if (containers) {
+            AssemblerContainers.fill(inventory, fluidSide);
+        }
         fluidSide.push(server);
     }
 
@@ -339,8 +395,8 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
 
     /**
      * Takes one craft's inputs, the {@code n}th fluid ingredient from input box {@code n} and the {@code n}th
-     * item ingredient from the {@code n}th slot, and places its first item result in the product slot and, in the
-     * remainder slot, the ingredients' remainders and its further item results, and each fluid result in the
+     * item ingredient from the {@code n}th slot, and places its first item result, its further item results and the
+     * ingredients' remainders, in that order, in any shared output slot with room, and each fluid result in the
      * output box its order names. Returns null if it all went, and otherwise what stopped it:
      * {@link MachineState#MISSING_INGREDIENTS} or {@link MachineState#OUTPUT_FULL}. Never part of a craft: the
      * caller aborts the transaction on a stop.
@@ -350,28 +406,53 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         if (stopped != null) {
             return stopped;
         }
-        stopped = takeItems(recipe, tx);
+        List<Leftover> remainders = new ArrayList<>();
+        stopped = takeItems(recipe, tx, remainders);
         if (stopped != null) {
             return stopped;
         }
+        ItemStackTemplate product = recipe.productTemplate().orElse(null);
+        if (product != null && !place(ItemResource.of(product), product.count(), tx)) {
+            return MachineState.OUTPUT_FULL;
+        }
         for (ItemStackTemplate extra : recipe.extraResults()) {
-            if (inventory.insert(AssemblerSlots.REMAINDERS, ItemResource.of(extra), extra.count(), tx) != extra.count()) {
+            if (!place(ItemResource.of(extra), extra.count(), tx)) {
                 return MachineState.OUTPUT_FULL;
             }
         }
-        ItemStackTemplate product = recipe.productTemplate().orElse(null);
-        if (product != null
-                && inventory.insert(AssemblerSlots.PRODUCT, ItemResource.of(product), product.count(), tx) != product.count()) {
-            return MachineState.OUTPUT_FULL;
+        for (Leftover leftover : remainders) {
+            if (!place(leftover.resource(), leftover.count(), tx)) {
+                return MachineState.OUTPUT_FULL;
+            }
         }
         return fluidSide.place(recipe, tx);
     }
 
+    /** An ingredient's remainder, owed to the outputs. */
+    private record Leftover(ItemResource resource, int count) {
+    }
+
     /**
-     * Takes the {@code n}th item ingredient from the {@code n}th input slot, placing each one's remainder.
-     * Returns null if they all went, and otherwise what stopped it.
+     * Puts {@code count} of {@code resource} in the shared outputs, in whichever slots have room, a slot holding
+     * something before an empty one so a stack grows first; whether all of it went.
      */
-    private @Nullable MachineState takeItems(AssemblingRecipe recipe, TransactionContext tx) {
+    private boolean place(ItemResource resource, int count, TransactionContext tx) {
+        int placed = 0;
+        for (int slot : inventory.slots().outputOrder(output -> inventory.getAmountAsInt(output) > 0)) {
+            placed += inventory.insert(slot, resource, count - placed, tx);
+            if (placed == count) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Takes the {@code n}th item ingredient from the {@code n}th input slot, noting each one's remainder in
+     * {@code remainders}: cake's buckets, honey block's bottles. Returns null if they all went, and otherwise
+     * what stopped it.
+     */
+    private @Nullable MachineState takeItems(AssemblingRecipe recipe, TransactionContext tx, List<Leftover> remainders) {
         for (int slot = 0; slot < recipe.ingredients().size(); slot++) {
             SizedIngredient sized = recipe.ingredients().get(slot);
             ItemResource resource = inventory.getResource(slot);
@@ -379,22 +460,12 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
                     || inventory.extract(slot, resource, sized.count(), tx) != sized.count()) {
                 return MachineState.MISSING_INGREDIENTS;
             }
-            MachineState stopped = placeRemainder(resource, sized.count(), tx);
-            if (stopped != null) {
-                return stopped;
+            ItemStackTemplate remainder = resource.getItem().getCraftingRemainder(resource.toStack(1));
+            if (remainder != null) {
+                remainders.add(new Leftover(ItemResource.of(remainder), remainder.count() * sized.count()));
             }
         }
         return null;
-    }
-
-    /** An ingredient's remainder goes in the remainder slot: cake's buckets, honey block's bottles. */
-    private @Nullable MachineState placeRemainder(ItemResource resource, int count, TransactionContext tx) {
-        ItemStackTemplate remainder = resource.getItem().getCraftingRemainder(resource.toStack(1));
-        if (remainder == null) {
-            return null;
-        }
-        int owed = remainder.count() * count;
-        return inventory.insert(AssemblerSlots.REMAINDERS, ItemResource.of(remainder), owed, tx) == owed ? null : MachineState.OUTPUT_FULL;
     }
 
     /** Ticks into the craft under way, for the screen's progress bar. */

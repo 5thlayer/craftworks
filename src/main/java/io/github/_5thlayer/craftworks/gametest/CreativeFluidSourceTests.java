@@ -80,15 +80,15 @@ final class CreativeFluidSourceTests {
 
         SimpleEnergyHandler supply = AssemblerMachineTests.supply();
         int ran = 0;
-        while (AssemblerMachineTests.count(assembler, AssemblerSlots.PRODUCT) == 0 && ran < 100) {
+        while (AssemblerMachineTests.count(assembler, AssemblerSlots.OUTPUT) == 0 && ran < 100) {
             AssemblerMachineTests.feed(assembler, supply, 1000);
             assembler.machine().serverTick(helper.getLevel());
             ran++;
         }
-        helper.assertTrue(assembler.machine().inventory().getResource(AssemblerSlots.PRODUCT).getItem() == Items.CLAY_BALL,
+        helper.assertTrue(assembler.machine().inventory().getResource(AssemblerSlots.OUTPUT).getItem() == Items.CLAY_BALL,
                 "no clay ball after " + ran + " ticks");
-        helper.assertTrue(assembler.machine().fluids().contents(0).getAmount() == 750,
-                "the box holds " + assembler.machine().fluids().contents(0) + ", not the 1000 mB of water it filled to less the 250 spent");
+        helper.assertTrue(assembler.machine().fluids().contents(0).getAmount() == 1750,
+                "the box holds " + assembler.machine().fluids().contents(0) + ", not the 2000 mB of water it filled to less the 250 spent");
         helper.succeed();
     }
 

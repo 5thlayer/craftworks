@@ -143,20 +143,13 @@ final class AssemblerFluidSideTests {
     }
 
     private static void sizesBoxes(GameTestHelper helper) {
-        MachineFluids small = fluidSide(helper, WATER_SMALL).boxes();
-        helper.assertTrue(small.capacity(0) == FluidBoxes.inputLimit(10) && small.capacity(0) == 40,
-                "an input box under a recipe of 10 mB holds " + small.capacity(0) + " mB, not 4 crafts' worth, 40");
-        helper.assertTrue(small.capacity(1) == FluidBoxes.INPUT_VOLUME,
-                "an input box with no ingredient bound to it holds " + small.capacity(1) + " mB, not a full box");
-
-        MachineFluids full = fluidSide(helper, FULL).boxes();
-        helper.assertTrue(full.capacity(0) == FluidBoxes.inputLimit(200), "input box 1 holds " + full.capacity(0) + " mB under 200 a craft");
-        int merged = FluidBoxes.outputVolumes(LAYOUT.fluidOutputs(), List.of(600), false).get(0);
-        helper.assertTrue(full.capacity(2) == merged, "output box 1 holds " + full.capacity(2) + " mB, not the " + merged + " the recipe sizes it at");
-
-        MachineFluids none = fluidSide(helper, null).boxes();
-        helper.assertTrue(none.capacity(0) == FluidBoxes.INPUT_VOLUME && none.capacity(2) == FluidBoxes.OUTPUT_BOX,
-                "with no Held recipe the boxes hold " + none.capacity(0) + " and " + none.capacity(2) + " mB, not their own volumes");
+        for (Identifier recipe : java.util.Arrays.asList(WATER_SMALL, FULL, null)) {
+            MachineFluids boxes = fluidSide(helper, recipe).boxes();
+            for (int box = 0; box < LAYOUT.boxes(); box++) {
+                helper.assertTrue(boxes.capacity(box) == 2000 && boxes.capacity(box) == FluidBoxes.VOLUME,
+                        "box " + box + " under " + recipe + " holds " + boxes.capacity(box) + " mB, not a flat 2,000");
+            }
+        }
         helper.succeed();
     }
 
@@ -257,11 +250,11 @@ final class AssemblerFluidSideTests {
         AssemblerFluidSide fluidSide = assembler.machine().fluidSide();
 
         fluidSide.pull(helper.getLevel(), recipe(helper, WATER_CRAFT).orElseThrow());
-        helper.assertTrue(fluidSide.boxes().contents(0).getFluid() == Fluids.WATER && fluidSide.boxes().contents(0).getAmount() == 1000,
-                "one pull put " + fluidSide.boxes().contents(0) + " in the box, not its 1000 mB of room");
-        helper.assertTrue(water.tank.getAmountAsInt(0) == 4000, "the tank holds " + water.tank.getAmountAsInt(0) + " mB, not 4000");
+        helper.assertTrue(fluidSide.boxes().contents(0).getFluid() == Fluids.WATER && fluidSide.boxes().contents(0).getAmount() == 2000,
+                "one pull put " + fluidSide.boxes().contents(0) + " in the box, not its 2000 mB of room");
+        helper.assertTrue(water.tank.getAmountAsInt(0) == 3000, "the tank holds " + water.tank.getAmountAsInt(0) + " mB, not 3000");
         fluidSide.pull(helper.getLevel(), recipe(helper, WATER_CRAFT).orElseThrow());
-        helper.assertTrue(water.tank.getAmountAsInt(0) == 4000, "a pull into a full box took more from the tank");
+        helper.assertTrue(water.tank.getAmountAsInt(0) == 3000, "a pull into a full box took more from the tank");
         helper.succeed();
     }
 

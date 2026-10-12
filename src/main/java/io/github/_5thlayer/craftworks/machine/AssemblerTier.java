@@ -41,6 +41,11 @@ public enum AssemblerTier {
         this.defaultCategories = defaultCategories;
     }
 
+    /** Whether the tier has a drain slot and a fill slot (ADR-0021): tiers 2 and 3. */
+    public boolean hasContainerSlots() {
+        return this != ONE;
+    }
+
     /** The block's name, which names its section of the server config. */
     public String blockName() {
         return blockName;

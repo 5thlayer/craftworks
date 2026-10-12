@@ -40,7 +40,7 @@ final class AssemblingRecipeTests {
         tests.test("an_ingredient_carries_its_remainder", 20, AssemblingRecipeTests::remainder);
         tests.test("machine_only_and_fluid_recipes_are_never_planned", 20, AssemblingRecipeTests::machineOnly);
         tests.test("assembling_recipes_load_placeable_and_unlockable", 20, AssemblingRecipeTests::placeable);
-        tests.test("pinned_fluid_results_is_false_unless_set_and_survives_the_wire", 20, AssemblingRecipeTests::pinned);
+        tests.test("a_recipe_that_still_has_pinned_fluid_results_loads", 20, AssemblingRecipeTests::pinned);
     }
 
     /**
@@ -148,33 +148,28 @@ final class AssemblingRecipeTests {
         helper.succeed();
     }
 
+    /** A pack recipe written before ADR-0021 still has {@code pinned_fluid_results}: it loads, the field read by nobody. */
     private static void pinned(GameTestHelper helper) {
         var byType = helper.getLevel().getServer().getRecipeManager().recipeMap()
                 .byType(CraftworksRecipes.ASSEMBLING_TYPE.get());
-        io.github._5thlayer.craftworks.recipe.AssemblingRecipe pinned = null;
-        io.github._5thlayer.craftworks.recipe.AssemblingRecipe unpinned = null;
+        io.github._5thlayer.craftworks.recipe.AssemblingRecipe legacy = null;
         for (var holder : byType) {
-            String id = holder.id().identifier().toString();
-            if (id.equals("craftworks:gametest/assembler_pinned")) pinned = holder.value();
-            if (id.equals("craftworks:gametest/assembler_one_result")) unpinned = holder.value();
+            if (holder.id().identifier().toString().equals("craftworks:gametest/assembler_legacy_pinned")) legacy = holder.value();
         }
-        if (pinned == null || unpinned == null) {
-            helper.fail("the recipe manager holds neither or only one of the pinned and unpinned assembler recipes");
+        if (legacy == null) {
+            helper.fail("the recipe that still has pinned_fluid_results did not load");
             return;
         }
-        if (!pinned.pinnedFluidResults() || unpinned.pinnedFluidResults()) {
-            helper.fail("pinned_fluid_results reads wrong: assembler_pinned " + pinned.pinnedFluidResults() + ", assembler_one_result "
-                    + unpinned.pinnedFluidResults() + "; true, and false where the file leaves it out");
+        if (legacy.fluidResults().size() != 1 || legacy.fluidResults().getFirst().amount() != 40 || legacy.time() != 20) {
+            helper.fail("the recipe that still has pinned_fluid_results read wrong: " + legacy);
             return;
         }
         var codec = CraftworksRecipes.ASSEMBLING_SERIALIZER.get().streamCodec();
-        for (var recipe : List.of(pinned, unpinned)) {
-            RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
-            codec.encode(buffer, recipe);
-            if (codec.decode(buffer).pinnedFluidResults() != recipe.pinnedFluidResults()) {
-                helper.fail("pinned_fluid_results did not survive the stream codec on " + recipe);
-                return;
-            }
+        RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        codec.encode(buffer, legacy);
+        if (!codec.decode(buffer).equals(legacy)) {
+            helper.fail("the recipe that still has pinned_fluid_results did not survive the stream codec");
+            return;
         }
         helper.succeed();
     }

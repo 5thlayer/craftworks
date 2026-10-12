@@ -11,11 +11,9 @@ import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
  * A machine's fluid boxes: its input boxes, then its output boxes, as its {@link FluidLayout} counts them. The Held recipe's {@code n}th
  * fluid ingredient goes in input box {@code n} and its {@code n}th fluid result in output box {@code n}.
  *
- * <p>An input box holds the {@link FluidBoxes} rule's 4 crafts' worth of the ingredient bound to it, an output
- * box the larger of 100 mB and 3 crafts' worth of the result bound to it, the first result taking the boxes
- * the recipe leaves unused unless the recipe is Pinned; with no Held recipe, or nothing bound to it, a box
- * holds its own volume. What may go in is the machine's to say: an input takes the ingredient bound to it, an output
- * the result bound to it, so the machine's own craft, a pipe that pushes and its own pull meet the same filter.
+ * <p>Every box holds {@link FluidBoxes#VOLUME} mB. What may go in is the machine's to say: an input takes the
+ * ingredient bound to it, an output the result bound to it, so the machine's own craft, a pipe that pushes and
+ * its own pull meet the same filter.
  */
 public final class MachineFluids extends FluidStacksResourceHandler {
 
@@ -28,12 +26,6 @@ public final class MachineFluids extends FluidStacksResourceHandler {
         /** Whether output box {@code n} takes {@code resource}: it is the Held recipe's {@code n}th fluid result. */
         boolean makesOutput(int n, FluidResource resource);
 
-        /** What input box {@code n} holds under the Held recipe, in mB. */
-        int inputCapacity(int n);
-
-        /** What output box {@code n} holds under the Held recipe, in mB. */
-        int outputCapacity(int n);
-
         void changed();
     }
 
@@ -41,7 +33,7 @@ public final class MachineFluids extends FluidStacksResourceHandler {
     private final Owner owner;
 
     MachineFluids(FluidLayout layout, Owner owner) {
-        super(layout.boxes(), FluidBoxes.INPUT_VOLUME);
+        super(layout.boxes(), FluidBoxes.VOLUME);
         this.layout = layout;
         this.owner = owner;
     }
@@ -56,22 +48,27 @@ public final class MachineFluids extends FluidStacksResourceHandler {
         set(box, FluidResource.of(contents), contents.getAmount());
     }
 
-    /** What box {@code box} holds at most, in mB, as the Held recipe sizes it. */
+    /** What box {@code box} holds at most, in mB: {@link FluidBoxes#VOLUME}. */
     public int capacity(int box) {
-        return layout.isInput(box) ? owner.inputCapacity(layout.binding(box)) : owner.outputCapacity(layout.binding(box));
+        return FluidBoxes.VOLUME;
+    }
+
+    /** Whether some input box takes {@code resource}: it is a fluid ingredient of the Held recipe. */
+    public boolean takesAnyInput(FluidResource resource) {
+        for (int box = 0; box < layout.fluidInputs(); box++) {
+            if (isValid(box, resource)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
      * What box {@code box} reports as its volume for display, in mB: its capacity, or what it holds if that is
-     * more, as a box saved under older rules can. Only a display reads this; an overfull box takes nothing more in.
+     * more, as a box saved under older rules can (an output box once grew past 2,000 mB). Only a display reads this; an overfull box takes nothing more in.
      */
     public int displayCapacity(int box) {
         return Math.max(capacity(box), getAmountAsInt(box));
-    }
-
-    @Override
-    protected int getCapacity(int index, FluidResource resource) {
-        return capacity(index);
     }
 
     @Override
