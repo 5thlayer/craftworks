@@ -4,6 +4,7 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- Every Craftworks item shows in the suite's shared **Works** creative tab (`libworks:works`), registered by the libworks-runtime Craftworks already nests, and the Craftworks tab `craftworks:craftworks` and its lang key `itemGroup.craftworks` are gone. No item shows in any other tab. (#48)
 - The recipes only Craftworks' own test and dev runs read, `craftworks:gametest/*` and `craftworks:dev/*`, no longer ship in the jar. Nothing outside those runs ever turned them on.
 - Craftworks nests libworks-runtime 0.1.1 by jar-in-jar, so a pack installs nothing more, and the Assembler's ghosts (what its empty slots take, under the Held recipe) are drawn and found by its `Ghosts`. They look and answer EMI and JEI as before, and hovering one, or the product at the head, shows its item's tooltip, as the Harvester's do. (#52)
 - The description in the mods list names the Assemblers and the Refiner beside the Personal Assembler.
