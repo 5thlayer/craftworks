@@ -20,7 +20,7 @@ public enum MachineState {
     CANT_RUN,
     /** An input slot holds less than one craft of its ingredient. */
     MISSING_INGREDIENTS,
-    /** An output cannot take a craft's result: the product slot, the remainder slot or a fluid output box. */
+    /** An output cannot take a craft's result: the shared outputs or a fluid output box. */
     OUTPUT_FULL,
     /** The buffer cannot pay this tick's FE. */
     NEEDS_POWER,

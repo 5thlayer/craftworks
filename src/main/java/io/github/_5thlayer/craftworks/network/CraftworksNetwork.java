@@ -20,7 +20,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 public final class CraftworksNetwork {
 
     /** Bumped when a payload's shape changes; clients on the old shape are refused, not confused. */
-    private static final String VERSION = "6";
+    private static final String VERSION = "7";
 
     private CraftworksNetwork() {
     }

@@ -14,6 +14,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
+import org.jspecify.annotations.Nullable;
 
 /**
  * What a machine's screen ghosts where: the positions of an Assembler's menu registered on a libworks
@@ -54,7 +55,6 @@ public final class MachineGhosts {
     public static Screen forAssembler(AssemblerMenu menu, IntSupplier left, IntSupplier top) {
         Ghosts slots = new Ghosts(left, top);
         MachineSlots layout = menu.layout();
-        Supplier<List<ItemStack>> empties = Ghosts.cached(AssemblerContainers::emptyContainers);
         for (Slot slot : menu.slots) {
             if (slot.index >= layout.size()) {
                 break;
@@ -66,9 +66,9 @@ public final class MachineGhosts {
             } else if (slot.index == layout.firstOutput()) {
                 slots.add(slot, () -> product(menu));
             } else if (slot.index == AssemblerSlots.DRAIN) {
-                slots.add(slot, drainCandidates(menu, empties));
+                slots.add(slot, drainCandidates(menu));
             } else if (slot.index == AssemblerSlots.FILL) {
-                slots.add(slot, empties);
+                slots.add(slot, AssemblerContainers::emptyContainers);
             }
         }
         Ghosts head = new Ghosts(left, top);
@@ -81,9 +81,9 @@ public final class MachineGhosts {
      * each empty one ({@code empties}), a fluid with no container in the loaded mods skipped. Worked out again only
      * when the Held recipe changes.
      */
-    private static Supplier<List<ItemStack>> drainCandidates(AssemblerMenu menu, Supplier<List<ItemStack>> empties) {
+    private static Supplier<List<ItemStack>> drainCandidates(AssemblerMenu menu) {
         return new Supplier<>() {
-            private HeldRecipeView forRecipe;
+            private @Nullable HeldRecipeView forRecipe;
             private List<ItemStack> candidates = List.of();
 
             @Override
@@ -94,7 +94,7 @@ public final class MachineGhosts {
                 }
                 if (held != forRecipe) {
                     forRecipe = held;
-                    candidates = AssemblerContainers.filledForms(empties.get(), fluidsOf(held));
+                    candidates = AssemblerContainers.filledForms(AssemblerContainers.emptyContainers(), fluidsOf(held));
                 }
                 return candidates;
             }

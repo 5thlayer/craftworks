@@ -34,7 +34,7 @@ class MachineSlotsTest {
     @Test
     void anOutputSlotIsNeverAnInput() {
         assertEquals(Optional.empty(), ASSEMBLER.ingredientFor(AssemblerSlots.OUTPUT, List.of("a", "b", "c", "d", "e", "f", "g")));
-        assertFalse(ASSEMBLER.isInput(AssemblerSlots.OUTPUT + 1));
+        assertFalse(ASSEMBLER.isInput(AssemblerSlots.output(1)));
         assertFalse(ASSEMBLER.isInput(AssemblerSlots.DRAIN));
         assertTrue(ASSEMBLER.isInput(AssemblerSlots.INPUTS - 1));
     }

@@ -140,7 +140,7 @@ final class AssemblerFluidTests {
         tests.test("a_fluid_result_comes_with_the_items_a_recipe_makes", 40, AssemblerFluidTests::fluidBesideItems);
         tests.test("an_assembler_pulls_each_fluid_into_the_input_box_its_order_names_and_nothing_else", 20, AssemblerFluidTests::pullsByOrder);
         tests.test("an_assemblers_connection_fills_an_input_box_and_drains_an_output_box_and_does_neither_the_other_way", 20, AssemblerFluidTests::connectionFaces);
-        tests.test("every_fluid_box_of_an_assembler_holds_a_flat_2000_mb_and_each_takes_only_the_fluid_bound_to_it", 20, AssemblerFluidTests::boxSizes);
+        tests.test("each_output_box_of_an_assembler_gives_out_only_the_fluid_bound_to_it", 20, AssemblerFluidTests::boxesBindByOrder);
         tests.test("a_recipe_with_one_fluid_result_does_not_take_the_unused_boxes_and_the_craft_stalls_past_a_full_box", 20, AssemblerFluidTests::stallsWithOnlyItsOwnBoxFull);
         tests.test("fill_recipe_on_every_tier_refuses_more_than_two_fluid_ingredients_three_fluid_results_and_more_than_2000_mb_of_a_fluid", 20, AssemblerFluidTests::refusals);
         tests.test("a_recipe_with_a_fluid_result_is_held_by_every_tier", 20, AssemblerFluidTests::fluidResultsAreHeld);
@@ -363,7 +363,6 @@ final class AssemblerFluidTests {
         AssemblerMachineTests.hold(assembler, WATER_SMALL);
         MachineFluids boxes = assembler.machine().fluids();
         boxes.set(0, new FluidStack(Fluids.WATER, 2500));
-        helper.assertTrue(boxes.capacity() == FluidBoxes.VOLUME, "the box holds " + boxes.capacity());
         helper.assertTrue(boxes.displayCapacity(0) >= 2500, "the box displays " + boxes.displayCapacity(0) + " for 2500 mB");
         helper.assertTrue(amount(assembler, 0) == 2500, "an overfull box lost fluid");
         ResourceHandler<FluidResource> face = fluid(assembler, connections(assembler.facing()).frontRight());
@@ -468,8 +467,8 @@ final class AssemblerFluidTests {
         wide.set(0, FluidResource.of(Fluids.WATER), 2500);
         wide.serialize(overfull.child("fluid"));
         AssemblerBlockEntity big = load(helper, overfull);
-        helper.assertTrue(big.fluids().capacity() == 2000 && big.fluids().contents(0).getAmount() == 2500 && big.fluids().displayCapacity(0) >= 2500,
-                "an old box of 2500 mB under a 2000 mB rule read back as " + big.fluids().contents(0) + " of " + big.fluids().capacity());
+        helper.assertTrue(big.fluids().contents(0).getAmount() == 2500 && big.fluids().displayCapacity(0) >= 2500,
+                "an old box of 2500 mB under a 2000 mB rule read back as " + big.fluids().contents(0) + " of " + FluidBoxes.VOLUME);
 
         // An old save of an empty box, and one with no box at all, read back empty.
         TagValueOutput empty = output(helper);
@@ -983,18 +982,11 @@ final class AssemblerFluidTests {
         helper.succeed();
     }
 
-    // -- the boxes' sizes -----------------------------------------------------------------------
+    // -- the boxes -----------------------------------------------------------------------
 
-    private static void boxSizes(GameTestHelper helper) {
+    private static void boxesBindByOrder(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         MachineFluids boxes = assembler.machine().fluids();
-        // A box holds the same 2,000 mB with no Held recipe and under any recipe, whatever it makes or needs.
-        List<Optional<Identifier>> recipes = List.of(Optional.empty(), Optional.of(FULL), Optional.of(TWO_OUTPUTS),
-                Optional.of(FULL_BOXES), Optional.of(THREE_OUTPUTS), Optional.of(ONE_RESULT));
-        for (Optional<Identifier> recipe : recipes) {
-            recipe.ifPresent(held -> AssemblerMachineTests.hold(assembler, held));
-            helper.assertTrue(boxes.capacity() == FluidBoxes.VOLUME, "the boxes hold " + boxes.capacity() + " mB under " + recipe + ", not 2000");
-        }
         // The results bind by order, so each box takes only its own result.
         AssemblerMachineTests.hold(assembler, TWO_OUTPUTS);
         ResourceHandler<FluidResource> face = fluid(assembler, connections(assembler.facing()).frontLeft());

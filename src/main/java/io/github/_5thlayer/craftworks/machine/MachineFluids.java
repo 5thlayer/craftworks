@@ -48,11 +48,6 @@ public final class MachineFluids extends FluidStacksResourceHandler {
         set(box, FluidResource.of(contents), contents.getAmount());
     }
 
-    /** What box {@code box} holds at most, in mB: {@link FluidBoxes#VOLUME}. */
-    public int capacity() {
-        return FluidBoxes.VOLUME;
-    }
-
     /** Whether some input box takes {@code resource}: it is a fluid ingredient of the Held recipe. */
     public boolean takesAnyInput(FluidResource resource) {
         for (int box = 0; box < layout.fluidInputs(); box++) {
@@ -68,7 +63,7 @@ public final class MachineFluids extends FluidStacksResourceHandler {
      * more, as a box saved under older rules can (an output box once grew past 2,000 mB). Only a display reads this; an overfull box takes nothing more in.
      */
     public int displayCapacity(int box) {
-        return Math.max(capacity(), getAmountAsInt(box));
+        return Math.max(FluidBoxes.VOLUME, getAmountAsInt(box));
     }
 
     @Override

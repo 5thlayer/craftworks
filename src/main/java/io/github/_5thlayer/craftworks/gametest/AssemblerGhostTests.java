@@ -35,10 +35,19 @@ final class AssemblerGhostTests {
     // Milk and lime dye for four slime balls, in the game tests' pack.
     private static final Identifier SLIME = Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "gametest/slime_ball");
 
+    /** 100 mB of water make 400 mB of water and 100 mB of lava: its one fluid ingredient is water. */
+    private static final Identifier TWO_OUTPUTS = id("gametest/assembler_two_outputs");
+    /** A dirt and water or lava make a clay ball: two fluids that fill a container. */
+    private static final Identifier WATER_OR_LAVA = id("gametest/water_or_lava");
+
     // The panel's corner is taken as (0, 0), so a slot's own x and y are the point over it.
     private static final int INPUT_Y = AssemblerMenu.INPUT_Y;
 
     private AssemblerGhostTests() {
+    }
+
+    private static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, path);
     }
 
     static void register(CraftworksGameTests.Registrar tests) {
@@ -143,9 +152,6 @@ final class AssemblerGhostTests {
         helper.assertTrue(at(menu, MachineGhosts.HEAD_X, MachineGhosts.HEAD_Y, 0).isEmpty(), "the head has a ghost with no Held recipe");
         helper.succeed();
     }
-
-    private static final Identifier TWO_OUTPUTS = Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "gametest/assembler_two_outputs");
-    private static final Identifier WATER_OR_LAVA = Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "gametest/water_or_lava");
 
     /** The drain and fill slots of a tier 2 Assembler, and not of a tier 1's. */
     private static void containerSlots(GameTestHelper helper) {

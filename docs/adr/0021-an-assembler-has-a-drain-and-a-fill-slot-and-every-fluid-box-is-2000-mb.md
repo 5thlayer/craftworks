@@ -20,7 +20,7 @@ mB seldom fitted whole. Craftworks is also no longer held to the Pack's Factorio
 The two **container slots** stand under the input gauges, apart from the outputs, which they would otherwise read as
 part of. Their ghosts, drawn while the slot is empty and the hover tooltip those give, are the fill slot's every empty
 fluid container in the loaded mods (each item whose fluid item handler, on a fresh stack, is empty and takes some
-fluid, scanned once on the client) and the drain slot's each fluid of the Held recipe's fluid ingredients as a filled
+fluid, scanned once for the game) and the drain slot's each fluid of the Held recipe's fluid ingredients as a filled
 form of each of those, a fluid with no container skipped. The client learns the fluids from the Held recipe it is
 sent.
 
@@ -67,5 +67,6 @@ makes no fluid, would sit in a slot for good and jam it; the item face takes a c
 recipe with fluid results sized by the old rules now has 2,000 mB boxes, and a recipe needing more than 2,000 mB of
 one fluid a craft is refused. A save keeps its fluid, though a box above 2,000 mB, which the old output sizing could
 make, keeps what it holds. An Assembler swapped from tier 2 or 3 to tier 1 hands any container in its drain or fill
-slot back to the nearest player, as Fast Replace hands back the old item, into their inventory or at their feet (and
-else drops it there), since tier 1 has no slot to show it in.
+slot back to the player who swapped it (Fast Replace tells each block it places who placed it), as it hands back the old
+item, into their inventory or at their feet, and drops it at the Assembler when there is no player, since tier 1 has no
+slot to show it in.

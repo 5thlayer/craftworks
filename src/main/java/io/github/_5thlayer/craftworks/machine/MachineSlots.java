@@ -19,7 +19,7 @@ import java.util.function.ToIntFunction;
  * @param size    the machine's slots, before the player's in its menu
  * @param inputs  the input slots; a Held recipe names at most this many distinct ingredients
  * @param firstOutput the first output slot, where the product lands first
- * @param outputs the output slots, from {@code product}: every one takes anything the machine makes and extracts
+ * @param outputs the output slots, from {@code firstOutput}: every one takes anything the machine makes and extracts
  */
 public record MachineSlots(int size, int inputs, int firstOutput, int outputs) {
 

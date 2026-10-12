@@ -46,8 +46,6 @@ final class AssemblerFluidSideTests {
     private static final Identifier WATER_CRAFT = AssemblerFluidTests.WATER_CRAFT;
     /** Iron and 200 mB of water and 100 mB of lava make a gold ingot and 600 mB of water. */
     private static final Identifier FULL = id("gametest/assembler_full");
-    /** One dirt and 10 mB of water make a clay ball. */
-    private static final Identifier WATER_SMALL = id("gametest/water_small");
     /** A gold ingot and 250 mB of water make 9 gold nuggets and 50 mB of lava. */
     private static final Identifier FLUID_RESULT = id("gametest/fluid_recipe");
 
@@ -63,7 +61,6 @@ final class AssemblerFluidSideTests {
 
     static void register(CraftworksGameTests.Registrar tests) {
         tests.test("a_fluid_side_takes_into_each_box_only_the_fluid_its_order_names", 20, AssemblerFluidSideTests::takesByOrder);
-        tests.test("a_fluid_side_sizes_a_box_by_its_recipe_and_gives_a_full_box_with_none", 20, AssemblerFluidSideTests::sizesBoxes);
         tests.test("a_fluid_side_shows_the_boxes_its_recipe_binds_and_any_that_holds_fluid", 20, AssemblerFluidSideTests::boxesInUse);
         tests.test("a_fluid_side_takes_a_crafts_fluid_and_places_its_results_or_says_what_stopped_it", 20, AssemblerFluidSideTests::takesAndPlaces);
         tests.test("a_fluid_side_saves_its_boxes_as_fluids_and_reads_an_old_fluid", 20, AssemblerFluidSideTests::saves);
@@ -142,17 +139,6 @@ final class AssemblerFluidSideTests {
         helper.succeed();
     }
 
-    /** Every box holds a flat 2,000 mB, under a recipe of 10 mB a craft, one of hundreds, and none. */
-    private static void sizesBoxes(GameTestHelper helper) {
-        List<Optional<Identifier>> recipes = List.of(Optional.of(WATER_SMALL), Optional.of(FULL), Optional.empty());
-        for (Optional<Identifier> recipe : recipes) {
-            MachineFluids boxes = fluidSide(helper, recipe.orElse(null)).boxes();
-            helper.assertTrue(boxes.capacity() == FluidBoxes.VOLUME && FluidBoxes.VOLUME == 2000,
-                    "the boxes under " + recipe + " hold " + boxes.capacity() + " mB, not a flat 2,000");
-        }
-        helper.succeed();
-    }
-
     private static void boxesInUse(GameTestHelper helper) {
         AssemblerFluidSide fluidSide = fluidSide(helper, WATER_CRAFT);
         helper.assertTrue(fluidSide.boxesInUse().equals(List.of(0)), "a recipe with one fluid in shows " + fluidSide.boxesInUse() + ", not [0]");
@@ -198,7 +184,7 @@ final class AssemblerFluidSideTests {
         }
         helper.assertTrue(boxes.contents(2).getFluid() == Fluids.WATER && boxes.contents(2).getAmount() == 600,
                 "the result is " + boxes.contents(2) + " in output box 1, not 600 mB of water");
-        boxes.set(2, new FluidStack(Fluids.WATER, boxes.capacity() - 10));
+        boxes.set(2, new FluidStack(Fluids.WATER, FluidBoxes.VOLUME - 10));
         try (Transaction tx = Transaction.openRoot()) {
             helper.assertTrue(fluidSide.place(recipe, tx) == MachineState.OUTPUT_FULL, "a place into a box with room for 10 mB of 600 was not stopped");
         }

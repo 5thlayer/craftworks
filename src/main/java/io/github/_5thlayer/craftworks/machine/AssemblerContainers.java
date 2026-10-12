@@ -75,19 +75,30 @@ public final class AssemblerContainers {
     /** More than any container holds, for a tank to fill one from. */
     private static final int PLENTY = Integer.MAX_VALUE / 2;
 
+    /** Scanned on first use, once for the game: the registries are final by the time a screen opens. */
+    private static final class EmptyContainers {
+        static final List<ItemStack> ALL = scan();
+
+        private static List<ItemStack> scan() {
+            List<FluidResource> sources = BuiltInRegistries.FLUID.stream()
+                    .filter(fluid -> fluid != Fluids.EMPTY && fluid.isSource(fluid.defaultFluidState())).map(FluidResource::of).toList();
+            List<ItemStack> found = new ArrayList<>();
+            for (var item : BuiltInRegistries.ITEM) {
+                ItemStack stack = new ItemStack(item);
+                if (!stack.isEmpty() && sources.stream().anyMatch(fluid -> FluidContainers.takes(stack, fluid))) {
+                    found.add(stack);
+                }
+            }
+            return List.copyOf(found);
+        }
+    }
+
     /**
      * Every empty fluid container in the loaded mods: each item whose fluid item handler, on a fresh stack, is empty
-     * and takes some fluid. The fill slot's ghosts. Scans the registries, so ask it once and keep it.
+     * and takes some fluid. The fill slot's ghosts. Scanned once, on first use.
      */
     public static List<ItemStack> emptyContainers() {
-        List<ItemStack> found = new ArrayList<>();
-        for (var item : BuiltInRegistries.ITEM) {
-            ItemStack stack = new ItemStack(item);
-            if (!stack.isEmpty() && isEmptyContainer(stack) && BuiltInRegistries.FLUID.stream().anyMatch(fluid -> filled(stack, fluid) != null)) {
-                found.add(stack);
-            }
-        }
-        return found;
+        return EmptyContainers.ALL;
     }
 
     /** What {@code fluid} fills each of {@code empties} into, one stack each, skipping a container that cannot hold it. */

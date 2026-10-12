@@ -8,7 +8,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
@@ -84,6 +86,19 @@ public final class AssemblerBlock extends HorizontalDirectionalBlock implements 
             player.openMenu(machine, buffer -> buffer.writeBlockPos(pos));
         }
         return InteractionResult.SUCCESS;
+    }
+
+    /**
+     * Fast Replace tells every block it places who placed it, after the swap and while the contents are still in
+     * their slots. The origin of an Assembler swapped down to a tier without a drain and a fill slot gives that
+     * player what is in them.
+     */
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (level.getBlockEntity(pos) instanceof AssemblerBlockEntity machine) {
+            machine.handBackContainers(placer instanceof Player player ? player : null);
+        }
     }
 
     /** Going takes the footprint's parts with it. */

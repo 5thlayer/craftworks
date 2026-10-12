@@ -12,17 +12,18 @@ import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import io.github._5thlayer.craftworks.machine.AssemblerSlots;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.Assemblers;
-import io.github._5thlayer.craftworks.machine.HeldRecipes;
 import io.github._5thlayer.craftworks.machine.FluidLayout;
+import io.github._5thlayer.craftworks.machine.HeldRecipes;
 import io.github._5thlayer.craftworks.machine.MachineFluids;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -30,6 +31,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
+import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.network.payload.AdvancedContainerSetDataPayload;
 import net.neoforged.neoforge.transfer.ResourceHandler;
@@ -80,7 +82,8 @@ final class AssemblerContainerTests {
         tests.test("shift_click_routes_as_the_item_face_does", 20, AssemblerContainerTests::shiftClick);
         tests.test("a_craft_places_its_product_and_remainders_in_any_output_with_room_and_stacks_first", 20, AssemblerContainerTests::sharedOutputs);
         tests.test("a_save_with_a_product_and_remainders_slot_loads_them_as_the_first_two_outputs", 20, AssemblerContainerTests::oldSave);
-        tests.test("a_fast_replace_keeps_the_drain_and_fill_slots", 20, AssemblerContainerTests::fastReplace);
+        tests.test("a_fast_replace_keeps_the_drain_and_fill_slots_and_hands_them_back_to_the_player_who_swapped_down_to_tier_1", 20, AssemblerContainerTests::fastReplace);
+        tests.test("a_swap_with_no_player_drops_the_containers_a_tier_without_the_slots_cannot_show", 20, AssemblerContainerTests::swapWithoutAPlayer);
     }
 
     // -- fixtures -------------------------------------------------------------------------------
@@ -274,6 +277,11 @@ final class AssemblerContainerTests {
         helper.assertTrue(count(assembler, AssemblerSlots.DRAIN) == 1 && count(assembler, AssemblerSlots.FILL) == 1
                         && boxes(assembler).contents(OUTPUT_BOXES_START).getAmount() == 1500,
                 "a tier 1 Assembler moved a container: " + describe(assembler));
+        // A state change that is no swap, the connections' ring going out with a recipe of no fluid, moves no container.
+        AssemblerMachineTests.hold(assembler, SAPLING);
+        AssemblerFluidTests.tick(helper, assembler, 2);
+        helper.assertTrue(count(assembler, AssemblerSlots.DRAIN) == 1 && count(assembler, AssemblerSlots.FILL) == 1,
+                "the connections' ring going out took a container from a slot of tier 1: " + describe(assembler));
         helper.succeed();
     }
 
@@ -508,7 +516,10 @@ final class AssemblerContainerTests {
         helper.succeed();
     }
 
-    /** Up a tier or down to another that has the slots, the containers stay; down to tier 1 they are handed back. */
+    /**
+     * Up a tier or down to another that has the slots, the containers stay; down to tier 1 they go to the player
+     * who swapped, and to no other near. A state change that is no swap moves nothing.
+     */
     private static void fastReplace(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         AssemblerMachineTests.hold(assembler, TWO_OUTPUTS);
@@ -523,29 +534,41 @@ final class AssemblerContainerTests {
                         && count(assembler, AssemblerSlots.output(3)) == 5,
                 "the swap to tier 3 lost the slots: " + describe(assembler));
 
-        // Down to tier 1 there are no such slots: the two containers come out, to the player or at their feet.
+        // Down to tier 1 there are no such slots: the two containers go to the player who swapped, though another
+        // player stands closer to the Assembler.
+        FakePlayer bystander = new AssemblerMachineTests.FakeBuilder(helper);
+        bystander.setPos(helper.absoluteVec(ORIGIN.getCenter()));
         AssemblerMachineTests.swap(helper, assembler, AssemblerTier.ONE, ORIGIN);
         helper.assertTrue(count(assembler, AssemblerSlots.DRAIN) == 0 && count(assembler, AssemblerSlots.FILL) == 0,
                 "the swap to tier 1 left a container in a slot nobody sees: " + describe(assembler));
         helper.assertTrue(count(assembler, AssemblerSlots.output(3)) == 5, "the swap to tier 1 touched an output");
-        helper.assertTrue(handedBack(helper, assembler, Items.LAVA_BUCKET) == 1 && handedBack(helper, assembler, Items.BUCKET) == 1,
-                "the player was not handed the two containers back: " + handedBack(helper, assembler, Items.LAVA_BUCKET) + " lava bucket(s), "
-                        + handedBack(helper, assembler, Items.BUCKET) + " bucket(s)");
+        helper.assertTrue(held(assembler.player(), Items.LAVA_BUCKET) == 1 && held(assembler.player(), Items.BUCKET) == 1,
+                "the player who swapped was not handed the two containers: " + held(assembler.player(), Items.LAVA_BUCKET) + " lava bucket(s), "
+                        + held(assembler.player(), Items.BUCKET) + " bucket(s)");
+        helper.assertTrue(held(bystander, Items.LAVA_BUCKET) == 0 && held(bystander, Items.BUCKET) == 0, "a player who did not swap was handed a container");
+        helper.assertTrue(helper.getEntities(EntityType.ITEM).isEmpty(), "a container was dropped though the player had room");
         helper.assertTrue(Optional.of(TWO_OUTPUTS).equals(machine.heldRecipe()), "the swaps lost the Held recipe");
         helper.succeed();
     }
 
-    /** How many of {@code item} the player holds or has dropped at the Assembler. */
-    private static int handedBack(GameTestHelper helper, Placed assembler, Item item) {
+    /** With no player to give them to, a swap's containers drop at the Assembler. */
+    private static void swapWithoutAPlayer(GameTestHelper helper) {
+        Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
+        set(assembler, AssemblerSlots.DRAIN, Items.WATER_BUCKET, 1);
+        BlockPos at = helper.absolutePos(ORIGIN);
+        helper.getBlockState(ORIGIN).getBlock().setPlacedBy(helper.getLevel(), at, helper.getBlockState(ORIGIN), null, ItemStack.EMPTY);
+        helper.assertTrue(count(assembler, AssemblerSlots.DRAIN) == 0, "the container stayed in a slot tier 1 doesn't show");
+        helper.assertTrue(helper.getEntities(EntityType.ITEM).stream().anyMatch(dropped -> dropped.getItem().is(Items.WATER_BUCKET)),
+                "the container was not dropped at the Assembler");
+        helper.succeed();
+    }
+
+    /** How many of {@code item} the player holds. */
+    private static int held(Player player, Item item) {
         int total = 0;
-        for (ItemStack stack : assembler.player().getInventory().getNonEquipmentItems()) {
+        for (ItemStack stack : player.getInventory().getNonEquipmentItems()) {
             if (stack.is(item)) {
                 total += stack.getCount();
-            }
-        }
-        for (var dropped : helper.getEntities(EntityType.ITEM)) {
-            if (dropped.getItem().is(item)) {
-                total += dropped.getItem().getCount();
             }
         }
         return total;
