@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- Where Pipeworks is installed beside Craftworks, it must be 0.3.1 or later.
+
 ## 0.9.1
 
 - Assembler 1 has the **drain slot** and the **fill slot** too, like Assemblers 2 and 3 (#57): every tier takes fluid in and out by bucket, and a swap between tiers keeps what is in them.
