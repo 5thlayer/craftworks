@@ -182,7 +182,7 @@ public final class AssemblerFluidSide {
         for (Connection connection : connections()) {
             ResourceHandler<FluidResource> neighbour = null;
             for (int box = 0; box < recipe.fluidIngredients().size(); box++) {
-                int room = boxes.capacity(box) - boxes.getAmountAsInt(box);
+                int room = boxes.capacity() - boxes.getAmountAsInt(box);
                 if (room <= 0) {
                     continue;
                 }

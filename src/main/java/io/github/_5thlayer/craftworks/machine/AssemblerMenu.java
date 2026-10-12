@@ -34,8 +34,8 @@ import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The Assembler's menu: its five inputs in a row, its four shared outputs in a block of two by two with the drain
- * and fill slots of tiers 2 and 3 in a column beside them, then the player's inventory; the Held recipe and how far its craft is. No recipe is picked here and none cleared: the recipe
+ * The Assembler's menu: its five inputs in a row, its four shared outputs in a block of two by two, the drain and
+ * fill slots of tiers 2 and 3 in the free cell under the input gauges, then the player's inventory; the Held recipe and how far its craft is. No recipe is picked here and none cleared: the recipe
  * viewer's Fill Recipe lands on {@link #request}, and the Held recipe is replaced, never removed.
  *
  * <p>The Held recipe crosses to the client as {@link HeldRecipeSyncPacket} when it changes, since the client
@@ -66,10 +66,6 @@ public final class AssemblerMenu extends AbstractContainerMenu {
 
     public static final int INPUT_X = 8;
     public static final int INPUT_Y = 36;
-    /** The drain slot above the fill slot, in the column left of the outputs. */
-    public static final int CONTAINER_X = 116;
-    public static final int DRAIN_Y = 16;
-    public static final int FILL_Y = INPUT_Y;
     /** The shared outputs, two by two: the product lands in the first, and the rest in any with room. */
     public static final int OUTPUT_X = 134;
     public static final int OUTPUT_Y = 16;
@@ -87,6 +83,13 @@ public final class AssemblerMenu extends AbstractContainerMenu {
     public static final int GAUGES_Y = PROGRESS_Y + ROW;
     public static final int ENERGY_Y = GAUGES_Y + FluidGaugeLayout.of(LAYOUT).rows() * ROW;
     public static final int STATUS_Y = ENERGY_Y + ROW;
+    /**
+     * The drain and fill slots stand in the cell the input gauges leave free at the foot of their column, the drain
+     * where the input gauges end and the fill beside it, a little above the row so the slots clear the energy bar.
+     */
+    public static final int CONTAINER_Y = GAUGES_Y + LAYOUT.fluidInputs() * ROW - 2;
+    public static final int DRAIN_X = FluidGaugeLayout.LEFT;
+    public static final int FILL_X = DRAIN_X + 18;
     /** Where the player's inventory starts, its label clear of the status line above it, as the Harvester's is. */
     public static final int INVENTORY_Y = STATUS_Y + 22;
 
@@ -109,7 +112,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
 
     /**
      * The inputs from {@link #INPUT_X}, the outputs from {@link #OUTPUT_X}, the drain and fill slots at
-     * {@link #CONTAINER_X}, and the player's inventory from {@link #INVENTORY_Y} down. The client's {@code assembler} is null, and its slots stand
+     * {@link #DRAIN_X} and {@link #FILL_X}, and the player's inventory from {@link #INVENTORY_Y} down. The client's {@code assembler} is null, and its slots stand
      * over a stub the menu's own sync fills.
      */
     private AssemblerMenu(int containerId, Inventory playerInventory, @Nullable AssemblerBlockEntity assembler, BlockPos pos,
@@ -123,13 +126,13 @@ public final class AssemblerMenu extends AbstractContainerMenu {
         for (int slot = 0; slot < SLOTS.inputs(); slot++) {
             addSlot(new InputSlot(inventory, modifier, slot, INPUT_X + slot * 18, INPUT_Y));
         }
-        for (int slot = SLOTS.product(); slot < SLOTS.product() + SLOTS.outputs(); slot++) {
-            int output = slot - SLOTS.product();
+        for (int slot = SLOTS.firstOutput(); slot < SLOTS.firstOutput() + SLOTS.outputs(); slot++) {
+            int output = slot - SLOTS.firstOutput();
             addSlot(new OutputSlot(inventory, modifier, slot,
                     OUTPUT_X + output % OUTPUT_COLUMNS * 18, OUTPUT_Y + output / OUTPUT_COLUMNS * OUTPUT_ROW));
         }
-        addSlot(new ContainerSlot(inventory, modifier, AssemblerSlots.DRAIN, CONTAINER_X, DRAIN_Y));
-        addSlot(new ContainerSlot(inventory, modifier, AssemblerSlots.FILL, CONTAINER_X, FILL_Y));
+        addSlot(new ContainerSlot(inventory, modifier, AssemblerSlots.DRAIN, DRAIN_X, CONTAINER_Y));
+        addSlot(new ContainerSlot(inventory, modifier, AssemblerSlots.FILL, FILL_X, CONTAINER_Y));
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
                 addSlot(new Slot(playerInventory, column + row * 9 + 9, 8 + column * 18, INVENTORY_Y + row * 18));
@@ -244,7 +247,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
         return fluidAt(DATA_SHARED + 2 * box);
     }
 
-    /** What box {@code box} holds at most, in mB, as the Held recipe sizes it and the server last told it. */
+    /** What box {@code box} holds at most, in mB, as the server last told it. */
     public int fluidCapacity(int box) {
         return data.get(DATA_CAPACITIES + box);
     }
@@ -264,7 +267,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
             if (!Objects.equals(sent, now)) {
                 sent = now;
                 Optional<HeldRecipeView> view = now.flatMap(id -> HeldRecipes.find(level, id)
-                        .map(holder -> new HeldRecipeView(id, holder.value().ingredients(), holder.value().results())));
+                        .map(holder -> new HeldRecipeView(id, holder.value().ingredients(), holder.value().fluidIngredients(), holder.value().results())));
                 CraftworksNetwork.sendToPlayer(server, new HeldRecipeSyncPacket(containerId, view));
             }
         }

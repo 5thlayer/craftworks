@@ -6,16 +6,20 @@ package io.github._5thlayer.craftworks.machine;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 
 import io.github._5thlayer.libworks.ghost.Ghost;
 import io.github._5thlayer.libworks.ghost.Ghosts;
+import net.minecraft.core.Holder;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
 
 /**
  * What a machine's screen ghosts where: the positions of an Assembler's menu registered on a libworks
  * {@link Ghosts}, each asking the Held recipe what it takes there (the ingredient in the input slot that takes
- * it, the product in its slot) and the product at the head of the screen. The Held recipe is read each time
+ * it, the product in its slot), the fluid containers of the drain and fill slots, and the product at the head of
+ * the screen. The Held recipe is read each time
  * a ghost is asked for, so the ghosts change with it. The cycling of a tag ingredient and the hit test are
  * the helper's. No client type, so a game test reads it. Where a machine's own slots are is its menu's
  * {@link MachineSlots}.
@@ -50,6 +54,7 @@ public final class MachineGhosts {
     public static Screen forAssembler(AssemblerMenu menu, IntSupplier left, IntSupplier top) {
         Ghosts slots = new Ghosts(left, top);
         MachineSlots layout = menu.layout();
+        Supplier<List<ItemStack>> empties = Ghosts.cached(AssemblerContainers::emptyContainers);
         for (Slot slot : menu.slots) {
             if (slot.index >= layout.size()) {
                 break;
@@ -58,13 +63,46 @@ public final class MachineGhosts {
                 slots.add(slot, () -> menu.held()
                         .flatMap(held -> layout.ingredientFor(slot.index, held.ingredients()))
                         .map(Ghosts::of).orElse(List.of()));
-            } else if (slot.index == layout.product()) {
+            } else if (slot.index == layout.firstOutput()) {
                 slots.add(slot, () -> product(menu));
+            } else if (slot.index == AssemblerSlots.DRAIN) {
+                slots.add(slot, drainCandidates(menu, empties));
+            } else if (slot.index == AssemblerSlots.FILL) {
+                slots.add(slot, empties);
             }
         }
         Ghosts head = new Ghosts(left, top);
         head.add(HEAD_X, HEAD_Y, () -> product(menu));
         return new Screen(slots, head);
+    }
+
+    /**
+     * The drain slot's candidates: each fluid the Held recipe's fluid ingredients take, as a filled container of
+     * each empty one ({@code empties}), a fluid with no container in the loaded mods skipped. Worked out again only
+     * when the Held recipe changes.
+     */
+    private static Supplier<List<ItemStack>> drainCandidates(AssemblerMenu menu, Supplier<List<ItemStack>> empties) {
+        return new Supplier<>() {
+            private HeldRecipeView forRecipe;
+            private List<ItemStack> candidates = List.of();
+
+            @Override
+            public List<ItemStack> get() {
+                HeldRecipeView held = menu.held().orElse(null);
+                if (held == null) {
+                    return List.of();
+                }
+                if (held != forRecipe) {
+                    forRecipe = held;
+                    candidates = AssemblerContainers.filledForms(empties.get(), fluidsOf(held));
+                }
+                return candidates;
+            }
+        };
+    }
+
+    private static List<Fluid> fluidsOf(HeldRecipeView held) {
+        return held.fluidIngredients().stream().flatMap(sized -> sized.ingredient().fluids().stream()).map(Holder::value).distinct().toList();
     }
 
     private static List<ItemStack> product(AssemblerMenu menu) {

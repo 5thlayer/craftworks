@@ -246,8 +246,8 @@ final class AssemblingCategoryTests {
         AssemblerMachineTests.hold(assembler, TWO_RESULTS);
         AssemblerMachineTests.insert(assembler, 0, Items.IRON_INGOT, 1);
         run(helper, assembler, 20);
-        helper.assertTrue(stack(assembler, AssemblerSlots.OUTPUT, Items.GOLD_NUGGET, 3), "the product slot holds " + describe(assembler, AssemblerSlots.OUTPUT));
-        helper.assertTrue(stack(assembler, (AssemblerSlots.OUTPUT + 1), Items.STICK, 2), "the remainder slot holds " + describe(assembler, (AssemblerSlots.OUTPUT + 1)));
+        helper.assertTrue(stack(assembler, AssemblerSlots.OUTPUT, Items.GOLD_NUGGET, 3), "the first output holds " + describe(assembler, AssemblerSlots.OUTPUT));
+        helper.assertTrue(stack(assembler, AssemblerSlots.output(1), Items.STICK, 2), "the second output holds " + describe(assembler, AssemblerSlots.output(1)));
         helper.succeed();
     }
 
@@ -261,9 +261,9 @@ final class AssemblingCategoryTests {
         AssemblerMachineTests.hold(assembler, JOIN);
         AssemblerMachineTests.insert(assembler, 0, Items.MILK_BUCKET, 1);
         run(helper, assembler, 20);
-        helper.assertTrue(stack(assembler, AssemblerSlots.OUTPUT, Items.SLIME_BALL, 2), "the product slot holds " + describe(assembler, AssemblerSlots.OUTPUT));
-        helper.assertTrue(stack(assembler, (AssemblerSlots.OUTPUT + 1), Items.BUCKET, 2),
-                "the extra bucket and the milk's own did not share the remainder slot: " + describe(assembler, (AssemblerSlots.OUTPUT + 1)));
+        helper.assertTrue(stack(assembler, AssemblerSlots.OUTPUT, Items.SLIME_BALL, 2), "the first output holds " + describe(assembler, AssemblerSlots.OUTPUT));
+        helper.assertTrue(stack(assembler, AssemblerSlots.output(1), Items.BUCKET, 2),
+                "the extra bucket and the milk's own did not share the second output: " + describe(assembler, AssemblerSlots.output(1)));
         helper.succeed();
     }
 

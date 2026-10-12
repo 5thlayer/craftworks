@@ -16,6 +16,7 @@ import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import io.github._5thlayer.craftworks.machine.AssemblerSlots;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.Assemblers;
+import io.github._5thlayer.craftworks.machine.FluidBoxes;
 import io.github._5thlayer.craftworks.machine.FluidLayout;
 import io.github._5thlayer.craftworks.machine.HoldVerdict;
 import io.github._5thlayer.craftworks.machine.MachineFluids;
@@ -92,8 +93,6 @@ final class AssemblerFluidTests {
 
     private static final BlockPos ORIGIN = AssemblerMachineTests.ORIGIN;
     private static final List<Direction> FACINGS = List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST);
-    /** What each output box holds when full: a flat 2,000 mB, whatever the recipe. */
-    private static final int[] OUTPUT_VOLUME = {2000, 2000, 2000};
     private static final Fluid[] OUTPUT_FLUID = {Fluids.LAVA, Fluids.WATER, Fluids.WATER};
 
     private AssemblerFluidTests() {
@@ -110,7 +109,7 @@ final class AssemblerFluidTests {
                 AssemblerFluidTests::multiFluidIngredient);
         tests.test("it_stops_at_2000_mb", 20, AssemblerFluidTests::stopsAtABoxFull);
         tests.test("an_assembler_box_holding_more_than_its_capacity_keeps_its_fluid_displays_at_least_that_and_takes_no_more", 20, AssemblerFluidTests::overfullBoxIsKept);
-        tests.test("a_tier_2_or_3_assembler_pulls_its_box_to_2000_mb_and_a_pipe_that_pushes_is_held_to_it", 20, AssemblerFluidTests::stopsAtFourCrafts);
+        tests.test("a_tier_2_or_3_assembler_pulls_its_box_to_the_brim_and_a_pipe_that_pushes_is_held_to_it", 20, AssemblerFluidTests::pullsTheBoxToTheBrim);
         tests.test("changing_the_held_recipe_voids_the_five_boxes", 20, AssemblerFluidTests::voidsOnChange);
         tests.test("the_five_fluid_boxes_survive_a_save_and_reload_and_only_fluids_is_written", 20, AssemblerFluidTests::survivesReload);
         tests.test("an_old_save_with_one_fluid_box_loads_into_input_box_1_and_fluids_wins_over_it", 20, AssemblerFluidTests::oldFormatMigrates);
@@ -136,13 +135,13 @@ final class AssemblerFluidTests {
                 AssemblerFluidTests::craftsTwoIntoThree);
         tests.test("an_assembler_stalls_with_an_output_box_full_and_goes_on_once_it_is_drained", 200, AssemblerFluidTests::stallsOnAFullBox);
         tests.test("an_assembler_stalls_on_each_full_output_box_and_goes_on_once_it_is_drained", 100, AssemblerFluidTests::stallsOnEachFullBox);
-        tests.test("an_assembler_waits_while_the_outputs_are_full_and_makes_no_fluid", 20, AssemblerFluidTests::waitsOnAFullProduct);
+        tests.test("an_assembler_waits_while_the_outputs_are_full_and_makes_no_fluid", 20, AssemblerFluidTests::waitsOnFullOutputs);
         tests.test("a_recipe_with_no_item_at_all_crafts_fluid_into_fluid_and_pushes_both_results_out", 40, AssemblerFluidTests::fluidOnly);
         tests.test("a_fluid_result_comes_with_the_items_a_recipe_makes", 40, AssemblerFluidTests::fluidBesideItems);
         tests.test("an_assembler_pulls_each_fluid_into_the_input_box_its_order_names_and_nothing_else", 20, AssemblerFluidTests::pullsByOrder);
         tests.test("an_assemblers_connection_fills_an_input_box_and_drains_an_output_box_and_does_neither_the_other_way", 20, AssemblerFluidTests::connectionFaces);
         tests.test("every_fluid_box_of_an_assembler_holds_a_flat_2000_mb_and_each_takes_only_the_fluid_bound_to_it", 20, AssemblerFluidTests::boxSizes);
-        tests.test("a_recipe_with_one_fluid_result_does_not_take_the_unused_boxes_and_the_craft_stalls_past_a_full_box", 20, AssemblerFluidTests::outputBoxHoldsCraftsAndStalls);
+        tests.test("a_recipe_with_one_fluid_result_does_not_take_the_unused_boxes_and_the_craft_stalls_past_a_full_box", 20, AssemblerFluidTests::stallsWithOnlyItsOwnBoxFull);
         tests.test("fill_recipe_on_every_tier_refuses_more_than_two_fluid_ingredients_three_fluid_results_and_more_than_2000_mb_of_a_fluid", 20, AssemblerFluidTests::refusals);
         tests.test("a_recipe_with_a_fluid_result_is_held_by_every_tier", 20, AssemblerFluidTests::fluidResultsAreHeld);
         tests.test("a_tier_1_assembler_pulls_a_recipes_fluid_crafts_it_and_pushes_its_fluid_results", 40, AssemblerFluidTests::tier1Crafts);
@@ -336,14 +335,12 @@ final class AssemblerFluidTests {
         helper.succeed();
     }
 
-    /** 10 mB a craft: the box fills to its 2,000 mB on either tier, whatever the speed, and a mod that pushes is held to it too. */
-    private static void stopsAtFourCrafts(GameTestHelper helper) {
+    /** 10 mB a craft: the box is pulled to the brim on either tier, whatever the speed, and a mod that pushes is held to it too. */
+    private static void pullsTheBoxToTheBrim(GameTestHelper helper) {
         for (AssemblerTier tier : List.of(AssemblerTier.TWO, AssemblerTier.THREE)) {
             Placed assembler = AssemblerMachineTests.place(helper, tier);
             TestTank.Entity water = tank(helper, beyondFirstConnection(assembler.facing()), Fluids.WATER, 5000);
             AssemblerMachineTests.hold(assembler, WATER_SMALL);
-            helper.assertTrue(assembler.machine().fluids().capacity(0) == 2000,
-                    "a tier " + tier + " box holds " + assembler.machine().fluids().capacity(0) + " mB, not 2000");
             for (int tick = 0; tick < 5; tick++) {
                 assembler.machine().serverTick(helper.getLevel());
             }
@@ -366,7 +363,7 @@ final class AssemblerFluidTests {
         AssemblerMachineTests.hold(assembler, WATER_SMALL);
         MachineFluids boxes = assembler.machine().fluids();
         boxes.set(0, new FluidStack(Fluids.WATER, 2500));
-        helper.assertTrue(boxes.capacity(0) == 2000, "the box holds " + boxes.capacity(0));
+        helper.assertTrue(boxes.capacity() == FluidBoxes.VOLUME, "the box holds " + boxes.capacity());
         helper.assertTrue(boxes.displayCapacity(0) >= 2500, "the box displays " + boxes.displayCapacity(0) + " for 2500 mB");
         helper.assertTrue(amount(assembler, 0) == 2500, "an overfull box lost fluid");
         ResourceHandler<FluidResource> face = fluid(assembler, connections(assembler.facing()).frontRight());
@@ -471,8 +468,8 @@ final class AssemblerFluidTests {
         wide.set(0, FluidResource.of(Fluids.WATER), 2500);
         wide.serialize(overfull.child("fluid"));
         AssemblerBlockEntity big = load(helper, overfull);
-        helper.assertTrue(big.fluids().capacity(0) == 2000 && big.fluids().contents(0).getAmount() == 2500 && big.fluids().displayCapacity(0) >= 2500,
-                "an old box of 2500 mB under a 2000 mB rule read back as " + big.fluids().contents(0) + " of " + big.fluids().capacity(0));
+        helper.assertTrue(big.fluids().capacity() == 2000 && big.fluids().contents(0).getAmount() == 2500 && big.fluids().displayCapacity(0) >= 2500,
+                "an old box of 2500 mB under a 2000 mB rule read back as " + big.fluids().contents(0) + " of " + big.fluids().capacity());
 
         // An old save of an empty box, and one with no box at all, read back empty.
         TagValueOutput empty = output(helper);
@@ -851,9 +848,7 @@ final class AssemblerFluidTests {
             source(helper, at.frontRight(), Fluids.LAVA, 8000);
             AssemblerMachineTests.hold(assembler, THREE_OUTPUTS);
             int box = FluidLayout.ASSEMBLER.outputBox(out);
-            helper.assertTrue(assembler.machine().fluids().capacity(box) == OUTPUT_VOLUME[out],
-                    "output box " + (out + 1) + " holds " + assembler.machine().fluids().capacity(box) + " mB, not " + OUTPUT_VOLUME[out]);
-            assembler.machine().fluids().set(box, new FluidStack(OUTPUT_FLUID[out], OUTPUT_VOLUME[out]));
+            assembler.machine().fluids().set(box, new FluidStack(OUTPUT_FLUID[out], FluidBoxes.VOLUME));
 
             SimpleEnergyHandler supply = AssemblerMachineTests.supply();
             AssemblerMachineTests.feed(assembler, supply, 1000);
@@ -867,7 +862,7 @@ final class AssemblerFluidTests {
             helper.assertTrue(assembler.machine().state() == MachineState.OUTPUT_FULL,
                     "an Assembler with output box " + (out + 1) + " full reported " + assembler.machine().state());
             helper.assertTrue(assembler.machine().energy() == energy && assembler.machine().craftProgress() == 0
-                            && amount(assembler, 0) == water && amount(assembler, 1) == lava && amount(assembler, box) == OUTPUT_VOLUME[out],
+                            && amount(assembler, 0) == water && amount(assembler, 1) == lava && amount(assembler, box) == FluidBoxes.VOLUME,
                     "an Assembler with output box " + (out + 1) + " full went on: progress " + assembler.machine().craftProgress());
 
             // A drain at a connection: the box empties through it, and the craft goes on.
@@ -885,7 +880,7 @@ final class AssemblerFluidTests {
         helper.succeed();
     }
 
-    private static void waitsOnAFullProduct(GameTestHelper helper) {
+    private static void waitsOnFullOutputs(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         Connections at = connections(assembler.facing());
         source(helper, at.frontLeft(), Fluids.WATER, 5000);
@@ -939,7 +934,7 @@ final class AssemblerFluidTests {
         }
         helper.assertTrue(assembler.machine().inventory().getResource(AssemblerSlots.OUTPUT).getItem() == Items.GOLD_NUGGET
                 && AssemblerMachineTests.count(assembler, AssemblerSlots.OUTPUT) == 9,
-                "the product slot holds " + assembler.machine().inventory().getResource(AssemblerSlots.OUTPUT) + " x " + AssemblerMachineTests.count(assembler, AssemblerSlots.OUTPUT));
+                "the first output holds " + assembler.machine().inventory().getResource(AssemblerSlots.OUTPUT) + " x " + AssemblerMachineTests.count(assembler, AssemblerSlots.OUTPUT));
         helper.assertTrue(box(assembler, 2).getFluid() == Fluids.LAVA && amount(assembler, 2) == 50, "output box 1 holds " + box(assembler, 2));
         helper.assertTrue(amount(assembler, 0) == 1750, "input box 1 holds " + amount(assembler, 0) + " mB, not the 2000 it filled to less the 250 spent");
         helper.succeed();
@@ -993,14 +988,12 @@ final class AssemblerFluidTests {
     private static void boxSizes(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         MachineFluids boxes = assembler.machine().fluids();
-        // Every box holds a flat 2,000 mB, with no Held recipe and under any recipe, whatever it makes or needs.
-        for (Identifier recipe : java.util.Arrays.asList(null, FULL, TWO_OUTPUTS, FULL_BOXES, THREE_OUTPUTS, ONE_RESULT)) {
-            if (recipe != null) {
-                AssemblerMachineTests.hold(assembler, recipe);
-            }
-            for (int box = 0; box < 5; box++) {
-                helper.assertTrue(boxes.capacity(box) == 2000, "box " + box + " holds " + boxes.capacity(box) + " mB under " + recipe + ", not 2000");
-            }
+        // A box holds the same 2,000 mB with no Held recipe and under any recipe, whatever it makes or needs.
+        List<Optional<Identifier>> recipes = List.of(Optional.empty(), Optional.of(FULL), Optional.of(TWO_OUTPUTS),
+                Optional.of(FULL_BOXES), Optional.of(THREE_OUTPUTS), Optional.of(ONE_RESULT));
+        for (Optional<Identifier> recipe : recipes) {
+            recipe.ifPresent(held -> AssemblerMachineTests.hold(assembler, held));
+            helper.assertTrue(boxes.capacity() == FluidBoxes.VOLUME, "the boxes hold " + boxes.capacity() + " mB under " + recipe + ", not 2000");
         }
         // The results bind by order, so each box takes only its own result.
         AssemblerMachineTests.hold(assembler, TWO_OUTPUTS);
@@ -1017,12 +1010,10 @@ final class AssemblerFluidTests {
      * no way out and the box at 1,950 mB, one more craft fits and the next waits there: no energy drawn, no
      * progress made, no input taken.
      */
-    private static void outputBoxHoldsCraftsAndStalls(GameTestHelper helper) {
+    private static void stallsWithOnlyItsOwnBoxFull(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         source(helper, connections(assembler.facing()).frontLeft(), Fluids.WATER, 5000);
         AssemblerMachineTests.hold(assembler, ONE_RESULT);
-        helper.assertTrue(assembler.machine().fluids().capacity(2) == 2000 && assembler.machine().fluids().capacity(3) == 2000,
-                "the output boxes hold " + assembler.machine().fluids().capacity(2) + " and " + assembler.machine().fluids().capacity(3) + " mB, not 2000 each");
         helper.assertTrue(assembler.machine().fluids().isValid(3, FluidResource.of(Fluids.LAVA)) == false,
                 "an output box with no result bound to it took the first result's lava");
         assembler.machine().fluids().set(2, new FluidStack(Fluids.LAVA, 1950));
@@ -1100,7 +1091,7 @@ final class AssemblerFluidTests {
         }
         helper.assertTrue(ran == assembler.machine().craftDuration(), "it finished its craft after " + ran + " ticks, not " + assembler.machine().craftDuration());
         helper.assertTrue(assembler.machine().inventory().getResource(AssemblerSlots.OUTPUT).getItem() == Items.GOLD_NUGGET
-                && AssemblerMachineTests.count(assembler, AssemblerSlots.OUTPUT) == 9, "the product slot did not hold 9 gold nuggets");
+                && AssemblerMachineTests.count(assembler, AssemblerSlots.OUTPUT) == 9, "the first output did not hold 9 gold nuggets");
         helper.assertTrue(amount(assembler, 0) == 1750 && inTank(water) == 3000,
                 "the box holds " + amount(assembler, 0) + " mB and the tank " + inTank(water) + ", not 1750 and 3000");
         helper.assertTrue(drained(sink, Fluids.LAVA) == 50 && amount(assembler, 2) == 0,

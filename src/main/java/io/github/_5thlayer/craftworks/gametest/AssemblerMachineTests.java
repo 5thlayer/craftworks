@@ -305,10 +305,10 @@ final class AssemblerMachineTests {
             assembler.machine().serverTick(helper.getLevel());
         }
         helper.assertTrue(assembler.machine().inventory().getResource(AssemblerSlots.OUTPUT).getItem() == Items.CAKE, "no cake was made");
-        helper.assertTrue(assembler.machine().inventory().getResource((AssemblerSlots.OUTPUT + 1)).getItem() == Items.BUCKET
-                        && count(assembler, (AssemblerSlots.OUTPUT + 1)) == 3,
-                "the remainder slot holds " + count(assembler, (AssemblerSlots.OUTPUT + 1)) + " of "
-                        + assembler.machine().inventory().getResource((AssemblerSlots.OUTPUT + 1)).getItem() + ", not 3 buckets");
+        helper.assertTrue(assembler.machine().inventory().getResource(AssemblerSlots.output(1)).getItem() == Items.BUCKET
+                        && count(assembler, AssemblerSlots.output(1)) == 3,
+                "the second output holds " + count(assembler, AssemblerSlots.output(1)) + " of "
+                        + assembler.machine().inventory().getResource(AssemblerSlots.output(1)).getItem() + ", not 3 buckets");
         helper.succeed();
     }
 
@@ -327,7 +327,7 @@ final class AssemblerMachineTests {
     /** The first {@code from} up to {@code to} output slots, a full stack of {@code item} each. */
     static void fillOutputs(Placed assembler, int from, int to, Item item) {
         for (int output = from; output < to; output++) {
-            assembler.machine().inventory().set(AssemblerSlots.OUTPUT + output, ItemResource.of(item), 64);
+            assembler.machine().inventory().set(AssemblerSlots.output(output), ItemResource.of(item), 64);
         }
     }
 
@@ -363,7 +363,7 @@ final class AssemblerMachineTests {
     static int outputTotal(Placed assembler) {
         int total = 0;
         for (int output = 0; output < AssemblerSlots.OUTPUTS; output++) {
-            total += count(assembler, AssemblerSlots.OUTPUT + output);
+            total += count(assembler, AssemblerSlots.output(output));
         }
         return total;
     }
@@ -406,11 +406,11 @@ final class AssemblerMachineTests {
         ResourceHandler<ItemResource> face = assembler.items(Direction.NORTH);
         assembler.machine().inventory().set(0, ItemResource.of(Items.OAK_LOG), 2);
         assembler.machine().inventory().set(AssemblerSlots.OUTPUT, ItemResource.of(Items.OAK_SAPLING), 4);
-        assembler.machine().inventory().set((AssemblerSlots.OUTPUT + 1), ItemResource.of(Items.BUCKET), 2);
+        assembler.machine().inventory().set(AssemblerSlots.output(1), ItemResource.of(Items.BUCKET), 2);
         try (Transaction tx = Transaction.openRoot()) {
             helper.assertTrue(face.extract(0, ItemResource.of(Items.OAK_LOG), 2, tx) == 0, "an input extracted");
-            helper.assertTrue(face.extract(AssemblerSlots.OUTPUT, ItemResource.of(Items.OAK_SAPLING), 4, tx) == 4, "the product did not extract");
-            helper.assertTrue(face.extract((AssemblerSlots.OUTPUT + 1), ItemResource.of(Items.BUCKET), 2, tx) == 2, "the remainders did not extract");
+            helper.assertTrue(face.extract(AssemblerSlots.OUTPUT, ItemResource.of(Items.OAK_SAPLING), 4, tx) == 4, "the first output did not extract");
+            helper.assertTrue(face.extract(AssemblerSlots.output(1), ItemResource.of(Items.BUCKET), 2, tx) == 2, "the second output did not extract");
             helper.assertTrue(face.insert(AssemblerSlots.OUTPUT, ItemResource.of(Items.OAK_SAPLING), 1, tx) == 0, "an output took an insert");
         }
         helper.assertTrue(count(assembler, AssemblerSlots.OUTPUT) == 4, "a simulated extract moved items");
@@ -502,7 +502,7 @@ final class AssemblerMachineTests {
         Placed assembler = place(helper, AssemblerTier.ONE);
         hold(assembler, SAPLING);
         var recipe = HeldRecipes.find(helper.getLevel(), SAPLING).orElseThrow().value();
-        HeldRecipeView sent = new HeldRecipeView(SAPLING, recipe.ingredients(), recipe.results());
+        HeldRecipeView sent = new HeldRecipeView(SAPLING, recipe.ingredients(), recipe.fluidIngredients(), recipe.results());
         HeldRecipeSyncPacket read = crossed(helper, HeldRecipeSyncPacket.STREAM_CODEC, new HeldRecipeSyncPacket(7, Optional.of(sent)));
         HeldRecipeView held = read.held().orElseThrow();
         helper.assertTrue(read.containerId() == 7 && held.id().equals(SAPLING), "the packet read back as " + read);

@@ -34,6 +34,11 @@ public final class AssemblerSlots {
     private AssemblerSlots() {
     }
 
+    /** The {@code n}th output slot, from 0. */
+    public static int output(int n) {
+        return OUTPUT + n;
+    }
+
     public static boolean isContainerSlot(int slot) {
         return slot == DRAIN || slot == FILL;
     }

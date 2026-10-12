@@ -66,7 +66,7 @@ _Avoid_: plannable, machine-only
 A placed machine, in tiers 1 to 3, that makes its **Held recipe** over and over from the items and power
 it is given, whether the recipe makes items, fluids or both. Every tier also holds fluid: two input fluid
 boxes and three output fluid boxes of 2,000 mB each, bound to the recipe's fluids by order. It has five input
-slots and four shared output slots, where the product, the ingredients' remainders and any container land in any slot
+slots and four **Shared output**s, where the product, the ingredients' remainders and any container land in any slot
 with room; tiers 2 and 3 add a **Drain slot** and a **Fill slot**. The tiers differ in speed, power, buffer, art and
 those two slots only. Never the **Personal Assembler**, which always takes its full name.
 _Avoid_: assembling machine, crafter, auto crafter, machine (alone), Chemical Plant, Oil Refinery (the two
@@ -90,17 +90,28 @@ a pipe network carries one fluid. Pipeworks' pipes are passive (Pipeworks ADR-01
 but another mod that does push can fill an input box through the connection.
 _Avoid_: port, fluid port (Pipeworks' `FluidPort` type), input, output
 
+**Shared output**:
+One of an **Assembler**'s four output slots, every tier. The product, the further results, the ingredients'
+remainders and every emptied or filled container land in any of them with room, a slot already holding the item
+before an empty one, and only they extract. A craft waits while its product and remainders do not all fit. Where the
+product slot and the remainders slot once were; an older save's two read back as the first two.
+_Avoid_: product slot, remainder slot, output buffer (Fieldworks' word)
+
+**Container slot**:
+A **Drain slot** or a **Fill slot**: the two slots of an **Assembler** of tier 2 or 3 that take a fluid container,
+under the input gauges. Tier 1 has none, and a container left in one by a swap down to tier 1 is handed back.
+_Avoid_: bucket slot, fluid slot
+
 **Drain slot**:
 A slot of an **Assembler** of tier 2 or 3 that takes a filled fluid container, any item with NeoForge's fluid item
-capability, and pours it into the input fluid box bound to its fluid. The emptied container goes to the shared
-outputs. A container moves whole or not at all, and waits in the slot while the box has no room or the outputs have
-none. Fieldworks' sense (Fieldworks ADR 0004). Tier 1 has none.
+capability, and pours it into the input fluid box bound to its fluid. The emptied container goes to the **Shared output**s. A container moves whole or not at all, and waits in the slot while the box has no room or the outputs have
+none. Its ghosts are the Held recipe's fluids as filled containers. Fieldworks' sense (Fieldworks ADR 0004). Tier 1 has none.
 _Avoid_: input tank slot, bucket slot, fluid input slot
 
 **Fill slot**:
 A slot of an **Assembler** of tier 2 or 3 that takes an empty fluid container and fills it from the first output
-fluid box, in order, that holds a whole container's worth. The filled container goes to the shared outputs. A
-container moves whole or not at all, and waits in the slot until one does. Fieldworks' sense. Tier 1 has none.
+fluid box, in order, that holds a whole container's worth. The filled container goes to a **Shared output**. A
+container moves whole or not at all, and waits in the slot until one does. Its ghosts are every empty fluid container. Fieldworks' sense. Tier 1 has none.
 _Avoid_: output tank slot, bucket slot, fluid output slot
 
 **Category**:

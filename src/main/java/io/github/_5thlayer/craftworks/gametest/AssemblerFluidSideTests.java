@@ -142,13 +142,13 @@ final class AssemblerFluidSideTests {
         helper.succeed();
     }
 
+    /** Every box holds a flat 2,000 mB, under a recipe of 10 mB a craft, one of hundreds, and none. */
     private static void sizesBoxes(GameTestHelper helper) {
-        for (Identifier recipe : java.util.Arrays.asList(WATER_SMALL, FULL, null)) {
-            MachineFluids boxes = fluidSide(helper, recipe).boxes();
-            for (int box = 0; box < LAYOUT.boxes(); box++) {
-                helper.assertTrue(boxes.capacity(box) == 2000 && boxes.capacity(box) == FluidBoxes.VOLUME,
-                        "box " + box + " under " + recipe + " holds " + boxes.capacity(box) + " mB, not a flat 2,000");
-            }
+        List<Optional<Identifier>> recipes = List.of(Optional.of(WATER_SMALL), Optional.of(FULL), Optional.empty());
+        for (Optional<Identifier> recipe : recipes) {
+            MachineFluids boxes = fluidSide(helper, recipe.orElse(null)).boxes();
+            helper.assertTrue(boxes.capacity() == FluidBoxes.VOLUME && FluidBoxes.VOLUME == 2000,
+                    "the boxes under " + recipe + " hold " + boxes.capacity() + " mB, not a flat 2,000");
         }
         helper.succeed();
     }
@@ -198,7 +198,7 @@ final class AssemblerFluidSideTests {
         }
         helper.assertTrue(boxes.contents(2).getFluid() == Fluids.WATER && boxes.contents(2).getAmount() == 600,
                 "the result is " + boxes.contents(2) + " in output box 1, not 600 mB of water");
-        boxes.set(2, new FluidStack(Fluids.WATER, boxes.capacity(2) - 10));
+        boxes.set(2, new FluidStack(Fluids.WATER, boxes.capacity() - 10));
         try (Transaction tx = Transaction.openRoot()) {
             helper.assertTrue(fluidSide.place(recipe, tx) == MachineState.OUTPUT_FULL, "a place into a box with room for 10 mB of 600 was not stopped");
         }

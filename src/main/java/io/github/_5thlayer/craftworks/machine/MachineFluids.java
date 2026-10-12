@@ -49,7 +49,7 @@ public final class MachineFluids extends FluidStacksResourceHandler {
     }
 
     /** What box {@code box} holds at most, in mB: {@link FluidBoxes#VOLUME}. */
-    public int capacity(int box) {
+    public int capacity() {
         return FluidBoxes.VOLUME;
     }
 
@@ -68,7 +68,7 @@ public final class MachineFluids extends FluidStacksResourceHandler {
      * more, as a box saved under older rules can (an output box once grew past 2,000 mB). Only a display reads this; an overfull box takes nothing more in.
      */
     public int displayCapacity(int box) {
-        return Math.max(capacity(box), getAmountAsInt(box));
+        return Math.max(capacity(), getAmountAsInt(box));
     }
 
     @Override

@@ -3,6 +3,7 @@
 
 package io.github._5thlayer.craftworks.machine;
 
+import java.util.List;
 import java.util.Optional;
 
 import net.minecraft.core.NonNullList;
@@ -48,6 +49,11 @@ final class MachineInventory extends ItemStacksResourceHandler {
 
     boolean isOutput(int slot) {
         return slots.isOutput(slot);
+    }
+
+    /** The output slots in the order a result is offered them: those holding something first, then the empty ones. */
+    List<Integer> outputOrder() {
+        return slots.outputOrder(slot -> getAmountAsInt(slot) > 0);
     }
 
     /**

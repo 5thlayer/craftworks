@@ -150,16 +150,14 @@ final class AssemblingRecipeTests {
 
     /** A pack recipe written before ADR-0021 still has {@code pinned_fluid_results}: it loads, the field read by nobody. */
     private static void pinned(GameTestHelper helper) {
-        var byType = helper.getLevel().getServer().getRecipeManager().recipeMap()
-                .byType(CraftworksRecipes.ASSEMBLING_TYPE.get());
-        io.github._5thlayer.craftworks.recipe.AssemblingRecipe legacy = null;
-        for (var holder : byType) {
-            if (holder.id().identifier().toString().equals("craftworks:gametest/assembler_legacy_pinned")) legacy = holder.value();
-        }
-        if (legacy == null) {
+        var found = helper.getLevel().getServer().getRecipeManager().recipeMap().byType(CraftworksRecipes.ASSEMBLING_TYPE.get()).stream()
+                .filter(holder -> holder.id().identifier().toString().equals("craftworks:gametest/assembler_legacy_pinned"))
+                .findFirst();
+        if (found.isEmpty()) {
             helper.fail("the recipe that still has pinned_fluid_results did not load");
             return;
         }
+        var legacy = found.get().value();
         if (legacy.fluidResults().size() != 1 || legacy.fluidResults().getFirst().amount() != 40 || legacy.time() != 20) {
             helper.fail("the recipe that still has pinned_fluid_results read wrong: " + legacy);
             return;

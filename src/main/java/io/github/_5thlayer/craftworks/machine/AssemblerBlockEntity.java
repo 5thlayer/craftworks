@@ -10,7 +10,6 @@ import java.util.Optional;
 import com.mojang.logging.LogUtils;
 import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
-import io.github._5thlayer.libworks.machine.FluidContainers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponentMap;
@@ -123,14 +122,43 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
 
     /**
      * Swapped for another tier by Fast Replace, which keeps this block entity: the buffer follows the new tier,
-     * and every tier has the same fluid boxes and item slots, so they keep what they held. A container left in
-     * the drain or fill slot of a tier that has neither waits there, out of sight, until a tier that has them is
-     * put back, and drops with the rest if the Assembler is broken.
+     * and every tier has the same fluid boxes and item slots, so they keep what they held. A container in the
+     * drain or fill slot of a tier that has neither is handed back ({@link #handBackContainers}).
      */
     @Override
     public void setBlockState(BlockState state) {
         super.setBlockState(state);
         resizeBuffer();
+        handBackContainers();
+    }
+
+    /** How far from the Assembler the player a swap hands containers back to may stand, in blocks. */
+    private static final double HAND_BACK_RANGE = 8;
+
+    /**
+     * Hands the containers in the drain and fill slots back to the player who swapped this Assembler to a tier
+     * without those slots, as Fast Replace hands back the old item: to the nearest player in reach, into their
+     * inventory or at their feet if it is full, and else dropped here. A player is not part of the swap this
+     * sees, so the nearest stands for them.
+     */
+    private void handBackContainers() {
+        if (!(level instanceof ServerLevel server) || tier().hasContainerSlots()) {
+            return;
+        }
+        Player nearest = server.getNearestPlayer(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5,
+                HAND_BACK_RANGE, false);
+        for (int slot : new int[] {AssemblerSlots.DRAIN, AssemblerSlots.FILL}) {
+            ItemStack stack = inventory.getResource(slot).toStack(inventory.getAmountAsInt(slot));
+            if (stack.isEmpty()) {
+                continue;
+            }
+            inventory.set(slot, ItemResource.EMPTY, 0);
+            if (nearest != null) {
+                nearest.getInventory().placeItemBackInInventory(stack);
+            } else {
+                Containers.dropItemStack(server, worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5, stack);
+            }
+        }
     }
 
     /** The item slots, inputs first, for the menu and the game tests. */
@@ -264,9 +292,8 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         if (recipe.isEmpty() || ingredientHasRoom(ItemResource.of(container))) {
             return false;
         }
-        return slot == AssemblerSlots.DRAIN
-                ? FluidContainers.holds(container, fluidSide.boxes()::takesAnyInput)
-                : recipe.get().fluidResults().stream().anyMatch(made -> FluidContainers.takes(container, FluidResource.of(made)));
+        return AssemblerContainers.routable(slot, container, fluidSide.boxes()::takesAnyInput,
+                recipe.get().fluidResults().stream().map(FluidResource::of).toList());
     }
 
     /**
@@ -438,7 +465,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
      */
     private boolean place(ItemResource resource, int count, TransactionContext tx) {
         int placed = 0;
-        for (int slot : inventory.slots().outputOrder(output -> inventory.getAmountAsInt(output) > 0)) {
+        for (int slot : inventory.outputOrder()) {
             placed += inventory.insert(slot, resource, count - placed, tx);
             if (placed == count) {
                 return true;

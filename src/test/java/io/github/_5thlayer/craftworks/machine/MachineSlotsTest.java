@@ -59,7 +59,7 @@ class MachineSlotsTest {
     @Test
     void theOutputsStandWhereTheProductAndRemaindersDid() {
         assertEquals(5, AssemblerSlots.OUTPUT);
-        assertEquals(AssemblerSlots.OUTPUT, ASSEMBLER.product());
+        assertEquals(AssemblerSlots.OUTPUT, ASSEMBLER.firstOutput());
         assertTrue(ASSEMBLER.isOutput(5));
         assertTrue(ASSEMBLER.isOutput(6));
         assertTrue(ASSEMBLER.isOutput(8));

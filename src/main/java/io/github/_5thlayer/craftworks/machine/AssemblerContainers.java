@@ -3,15 +3,22 @@
 
 package io.github._5thlayer.craftworks.machine;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 import io.github._5thlayer.libworks.machine.FluidContainers;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.transfer.RangedResourceHandler;
 import net.neoforged.neoforge.transfer.ResourceHandlerUtil;
 import net.neoforged.neoforge.transfer.access.ItemAccess;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import org.jspecify.annotations.Nullable;
 
@@ -22,7 +29,7 @@ import org.jspecify.annotations.Nullable;
  * outputs. The move is libworks-runtime's {@link FluidContainers}, whole or not at all, a container that cannot
  * move waiting in its slot; this picks the output slot it goes to. Each call moves at most one container.
  */
-final class AssemblerContainers {
+public final class AssemblerContainers {
 
     private AssemblerContainers() {
     }
@@ -33,7 +40,7 @@ final class AssemblerContainers {
     }
 
     /** Whether {@code stack} is a fluid container holding none: what the fill slot takes by hand. */
-    static boolean isEmpty(ItemStack stack) {
+    static boolean isEmptyContainer(ItemStack stack) {
         if (stack.isEmpty()) {
             return false;
         }
@@ -45,9 +52,66 @@ final class AssemblerContainers {
     static boolean placeable(int slot, ItemStack stack) {
         return switch (slot) {
             case AssemblerSlots.DRAIN -> isFilled(stack);
-            case AssemblerSlots.FILL -> isEmpty(stack);
+            case AssemblerSlots.FILL -> isEmptyContainer(stack);
             default -> false;
         };
+    }
+
+    /**
+     * Whether the item face puts {@code container} in container slot {@code slot}, which takes only a container that
+     * can move: in the drain slot a filled one whose fluid {@code inputTakes}, in the fill slot an empty one that
+     * can be filled with one of the fluids the Held recipe {@code makes}.
+     */
+    static boolean routable(int slot, ItemStack container, Predicate<FluidResource> inputTakes, List<FluidResource> makes) {
+        return switch (slot) {
+            case AssemblerSlots.DRAIN -> FluidContainers.holds(container, inputTakes);
+            case AssemblerSlots.FILL -> makes.stream().anyMatch(fluid -> FluidContainers.takes(container, fluid));
+            default -> false;
+        };
+    }
+
+    // -- what the slots show --------------------------------------------------------------------
+
+    /** More than any container holds, for a tank to fill one from. */
+    private static final int PLENTY = Integer.MAX_VALUE / 2;
+
+    /**
+     * Every empty fluid container in the loaded mods: each item whose fluid item handler, on a fresh stack, is empty
+     * and takes some fluid. The fill slot's ghosts. Scans the registries, so ask it once and keep it.
+     */
+    public static List<ItemStack> emptyContainers() {
+        List<ItemStack> found = new ArrayList<>();
+        for (var item : BuiltInRegistries.ITEM) {
+            ItemStack stack = new ItemStack(item);
+            if (!stack.isEmpty() && isEmptyContainer(stack) && BuiltInRegistries.FLUID.stream().anyMatch(fluid -> filled(stack, fluid) != null)) {
+                found.add(stack);
+            }
+        }
+        return found;
+    }
+
+    /** What {@code fluid} fills each of {@code empties} into, one stack each, skipping a container that cannot hold it. */
+    public static List<ItemStack> filledForms(List<ItemStack> empties, List<Fluid> fluids) {
+        List<ItemStack> forms = new ArrayList<>();
+        for (Fluid fluid : fluids) {
+            for (ItemStack empty : empties) {
+                ItemStack form = filled(empty, fluid);
+                if (form != null && forms.stream().noneMatch(known -> ItemStack.isSameItemSameComponents(known, form))) {
+                    forms.add(form);
+                }
+            }
+        }
+        return forms;
+    }
+
+    private static @Nullable ItemStack filled(ItemStack empty, Fluid fluid) {
+        if (fluid.isSame(Fluids.EMPTY) || !fluid.isSource(fluid.defaultFluidState())) {
+            return null;
+        }
+        FluidStacksResourceHandler tank = new FluidStacksResourceHandler(1, PLENTY);
+        tank.set(0, FluidResource.of(fluid), PLENTY);
+        ItemStack form = FluidContainers.fill(empty, ItemStack.EMPTY, tank, FluidResource.of(fluid));
+        return form == null || form.isEmpty() ? null : form;
     }
 
     /** Pours the container in the drain slot into the input box bound to its fluid; whether one went. */
@@ -82,7 +146,7 @@ final class AssemblerContainers {
         if (container.isEmpty()) {
             return false;
         }
-        for (int slot : inventory.slots().outputOrder(output -> inventory.getAmountAsInt(output) > 0)) {
+        for (int slot : inventory.outputOrder()) {
             ItemStack after = move.apply(container, stack(inventory, slot));
             if (after != null) {
                 inventory.set(slot, ItemResource.of(after), after.getCount());

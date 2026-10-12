@@ -17,7 +17,6 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
-import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 /**
@@ -87,9 +86,7 @@ final class AssemblerStateTests {
         AssemblerMachineTests.Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.THREE);
         AssemblerMachineTests.hold(assembler, AssemblerTests.OAK_SAPLING);
         AssemblerMachineTests.insert(assembler, 0, Items.OAK_LOG, 2);
-        for (int slot = AssemblerSlots.OUTPUT; slot < AssemblerSlots.OUTPUT + AssemblerSlots.OUTPUTS; slot++) {
-            assembler.machine().inventory().set(slot, ItemResource.of(Items.OAK_SAPLING), 64);
-        }
+        AssemblerMachineTests.fillOutputs(assembler, 0, AssemblerSlots.OUTPUTS, Items.OAK_SAPLING);
         expect(helper, assembler, MachineState.OUTPUT_FULL, false);
         power(assembler);
         expect(helper, assembler, MachineState.OUTPUT_FULL, false);
@@ -105,9 +102,7 @@ final class AssemblerStateTests {
             AssemblerMachineTests.insert(assembler, slot, bag.get(slot).ingredient().items().findFirst().orElseThrow().value(),
                     bag.get(slot).count());
         }
-        for (int slot = AssemblerSlots.OUTPUT; slot < AssemblerSlots.OUTPUT + AssemblerSlots.OUTPUTS - 1; slot++) {
-            assembler.machine().inventory().set(slot, ItemResource.of(Items.STICK), 64);
-        }
+        AssemblerMachineTests.fillOutputs(assembler, 0, AssemblerSlots.OUTPUTS - 1, Items.STICK);
         power(assembler);
         expect(helper, assembler, MachineState.OUTPUT_FULL, false);
         helper.succeed();

@@ -17,6 +17,13 @@ mB seldom fitted whole. Craftworks is also no longer held to the Pack's Factorio
 - A **fill slot** takes any empty fluid container and fills it from the first output box, in order, that holds a whole
   container's worth.
 
+The two **container slots** stand under the input gauges, apart from the outputs, which they would otherwise read as
+part of. Their ghosts, drawn while the slot is empty and the hover tooltip those give, are the fill slot's every empty
+fluid container in the loaded mods (each item whose fluid item handler, on a fresh stack, is empty and takes some
+fluid, scanned once on the client) and the drain slot's each fluid of the Held recipe's fluid ingredients as a filled
+form of each of those, a fluid with no container skipped. The client learns the fluids from the Held recipe it is
+sent.
+
 A container moves whole or not at all and waits in its slot while it can't, because the box has no room, or lacks the
 fluid, or the outputs have no room for what it becomes. The move is libworks-runtime's `FluidContainers`, run once a
 tick for each slot.
@@ -43,7 +50,8 @@ ADR-0017's sizing and ADR-0015's before it:
 recipe names as an ingredient goes to its input slot first (cake's milk buckets stay ingredients); only one an input
 has no room for, or no input takes, goes on. A filled container whose fluid some input box takes goes to the drain
 slot, and an empty one a fluid result of the Held recipe can fill goes to the fill slot. Everything extracts from the
-shared outputs, and from nothing else. A hand may put any filled container in the drain slot and any empty one in the
+shared outputs, and from nothing else. The item face is picky on purpose: a hopper stuck with a container no slot can use is worse than one that does not
+bring it. A hand may put any filled container in the drain slot and any empty one in the
 fill slot, whatever the Held recipe, and shift-click routes as the item face does.
 
 **Considered: one container slot, as Fieldworks first thought.** A stack of buckets waiting for room in a box blocks
@@ -58,5 +66,6 @@ makes no fluid, would sit in a slot for good and jam it; the item face takes a c
 **Consequences.** This breaks a pack author's recipes and a player's screen (ADR-0008, libworks ADR 0001), so the next release is a minor. A pack author's
 recipe with fluid results sized by the old rules now has 2,000 mB boxes, and a recipe needing more than 2,000 mB of
 one fluid a craft is refused. A save keeps its fluid, though a box above 2,000 mB, which the old output sizing could
-make, keeps what it holds. An Assembler swapped from tier 2 or 3 to tier 1 keeps any container in its drain or fill
-slot, out of sight and idle, and drops it if broken.
+make, keeps what it holds. An Assembler swapped from tier 2 or 3 to tier 1 hands any container in its drain or fill
+slot back to the nearest player, as Fast Replace hands back the old item, into their inventory or at their feet (and
+else drops it there), since tier 1 has no slot to show it in.

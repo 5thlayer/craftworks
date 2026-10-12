@@ -13,12 +13,14 @@ import io.github._5thlayer.craftworks.machine.AssemblerSlots;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.HeldRecipes;
+import io.github._5thlayer.craftworks.machine.FluidLayout;
 import io.github._5thlayer.craftworks.machine.MachineFluids;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
@@ -52,7 +54,8 @@ final class AssemblerContainerTests {
     private static final Identifier SAPLING = AssemblerTests.OAK_SAPLING;
 
     private static final BlockPos ORIGIN = AssemblerMachineTests.ORIGIN;
-    private static final int OUTPUT_BOXES_START = 2;
+    /** The first output fluid box, after the inputs. */
+    private static final int OUTPUT_BOXES_START = FluidLayout.ASSEMBLER.fluidInputs();
 
     private AssemblerContainerTests() {
     }
@@ -97,8 +100,8 @@ final class AssemblerContainerTests {
     private static int outputs(Placed assembler, Item item) {
         int total = 0;
         for (int output = 0; output < AssemblerSlots.OUTPUTS; output++) {
-            if (item(assembler, AssemblerSlots.OUTPUT + output) == item) {
-                total += count(assembler, AssemblerSlots.OUTPUT + output);
+            if (item(assembler, AssemblerSlots.output(output)) == item) {
+                total += count(assembler, AssemblerSlots.output(output));
             }
         }
         return total;
@@ -167,11 +170,11 @@ final class AssemblerContainerTests {
         helper.assertTrue(count(assembler, AssemblerSlots.DRAIN) == 1 && boxes(assembler).contents(0).isEmpty(),
                 "a bucket drained with nowhere for the empty one to go: the box holds " + boxes(assembler).contents(0));
         // Room in the last output: it goes there, and a bucket already in the outputs is grown before an empty slot is taken.
-        set(assembler, AssemblerSlots.OUTPUT + 2, Items.BUCKET, 3);
+        set(assembler, AssemblerSlots.output(2), Items.BUCKET, 3);
         AssemblerFluidTests.tick(helper, assembler, 1);
-        helper.assertTrue(count(assembler, AssemblerSlots.DRAIN) == 0 && count(assembler, AssemblerSlots.OUTPUT + 2) == 4
-                        && item(assembler, AssemblerSlots.OUTPUT + 2) == Items.BUCKET,
-                "the emptied bucket stacked to " + count(assembler, AssemblerSlots.OUTPUT + 2) + " of " + item(assembler, AssemblerSlots.OUTPUT + 2) + ", not 4 buckets");
+        helper.assertTrue(count(assembler, AssemblerSlots.DRAIN) == 0 && count(assembler, AssemblerSlots.output(2)) == 4
+                        && item(assembler, AssemblerSlots.output(2)) == Items.BUCKET,
+                "the emptied bucket stacked to " + count(assembler, AssemblerSlots.output(2)) + " of " + item(assembler, AssemblerSlots.output(2)) + ", not 4 buckets");
         helper.succeed();
     }
 
@@ -225,9 +228,9 @@ final class AssemblerContainerTests {
         AssemblerFluidTests.tick(helper, assembler, 5);
         helper.assertTrue(count(assembler, AssemblerSlots.FILL) == 1 && boxes(assembler).contents(OUTPUT_BOXES_START).getAmount() == 1900,
                 "a bucket was filled with nowhere for it to go: " + describe(assembler));
-        assembler.machine().inventory().set(AssemblerSlots.OUTPUT + 3, ItemResource.EMPTY, 0);
+        assembler.machine().inventory().set(AssemblerSlots.output(3), ItemResource.EMPTY, 0);
         AssemblerFluidTests.tick(helper, assembler, 1);
-        helper.assertTrue(count(assembler, AssemblerSlots.FILL) == 0 && item(assembler, AssemblerSlots.OUTPUT + 3) == Items.WATER_BUCKET,
+        helper.assertTrue(count(assembler, AssemblerSlots.FILL) == 0 && item(assembler, AssemblerSlots.output(3)) == Items.WATER_BUCKET,
                 "with room, the bucket was not filled: " + describe(assembler));
         helper.succeed();
     }
@@ -236,7 +239,7 @@ final class AssemblerContainerTests {
         StringBuilder text = new StringBuilder("drain ").append(assembler.machine().inventory().getResource(AssemblerSlots.DRAIN).getItem())
                 .append(", fill ").append(count(assembler, AssemblerSlots.FILL)).append(" of ").append(item(assembler, AssemblerSlots.FILL));
         for (int output = 0; output < AssemblerSlots.OUTPUTS; output++) {
-            text.append(", out ").append(count(assembler, AssemblerSlots.OUTPUT + output)).append(" of ").append(item(assembler, AssemblerSlots.OUTPUT + output));
+            text.append(", out ").append(count(assembler, AssemblerSlots.output(output))).append(" of ").append(item(assembler, AssemblerSlots.output(output)));
         }
         for (int box = 0; box < 5; box++) {
             text.append(", box ").append(boxes(assembler).contents(box));
@@ -263,7 +266,7 @@ final class AssemblerContainerTests {
         helper.assertTrue(tryInsertAnywhere(face, Items.WATER_BUCKET, 1) == 0 && tryInsertAnywhere(face, Items.BUCKET, 1) == 0,
                 "an insert with no slot named put a container in a tier 1 Assembler");
 
-        // Whatever sits in the slots, perhaps from a tier above, waits there untouched.
+        // Whatever is put in the slots by hand waits there untouched: a tier 1 tick moves no container.
         set(assembler, AssemblerSlots.DRAIN, Items.WATER_BUCKET, 1);
         boxes(assembler).set(OUTPUT_BOXES_START, new FluidStack(Fluids.WATER, 1500));
         set(assembler, AssemblerSlots.FILL, Items.BUCKET, 1);
@@ -282,8 +285,8 @@ final class AssemblerContainerTests {
         Slot drain = menu.getSlot(AssemblerSlots.DRAIN);
         Slot fill = menu.getSlot(AssemblerSlots.FILL);
         helper.assertTrue(menu.hasContainerSlots() && drain.isActive() && fill.isActive(), "a tier 2 menu has no container slots");
-        helper.assertTrue(drain.x == AssemblerMenu.CONTAINER_X && drain.y == AssemblerMenu.DRAIN_Y
-                        && fill.x == AssemblerMenu.CONTAINER_X && fill.y == AssemblerMenu.FILL_Y,
+        helper.assertTrue(drain.x == AssemblerMenu.DRAIN_X && drain.y == AssemblerMenu.CONTAINER_Y
+                        && fill.x == AssemblerMenu.FILL_X && fill.y == AssemblerMenu.CONTAINER_Y,
                 "the container slots stand at " + drain.x + "," + drain.y + " and " + fill.x + "," + fill.y);
         // A hand may put any filled container in the drain slot and any empty one in the fill slot, whatever the recipe.
         helper.assertTrue(drain.mayPlace(new ItemStack(Items.WATER_BUCKET)) && drain.mayPlace(new ItemStack(Items.LAVA_BUCKET)),
@@ -293,7 +296,7 @@ final class AssemblerContainerTests {
         helper.assertTrue(fill.mayPlace(new ItemStack(Items.BUCKET)) && !fill.mayPlace(new ItemStack(Items.WATER_BUCKET)) && !fill.mayPlace(new ItemStack(Items.DIRT)),
                 "the fill slot took the wrong thing");
         for (int output = 0; output < AssemblerSlots.OUTPUTS; output++) {
-            helper.assertTrue(!menu.getSlot(AssemblerSlots.OUTPUT + output).mayPlace(new ItemStack(Items.BUCKET)), "output " + output + " took an item from a hand");
+            helper.assertTrue(!menu.getSlot(AssemblerSlots.output(output)).mayPlace(new ItemStack(Items.BUCKET)), "output " + output + " took an item from a hand");
         }
 
         // What the client builds from the open screen's data agrees: tier 2 has the slots, tier 1 has not.
@@ -393,11 +396,11 @@ final class AssemblerContainerTests {
         ResourceHandler<ItemResource> face = assembler.items(Direction.SOUTH);
         set(assembler, AssemblerSlots.DRAIN, Items.WATER_BUCKET, 1);
         set(assembler, AssemblerSlots.FILL, Items.BUCKET, 1);
-        set(assembler, AssemblerSlots.OUTPUT + 3, Items.BUCKET, 2);
+        set(assembler, AssemblerSlots.output(3), Items.BUCKET, 2);
         try (Transaction tx = Transaction.openRoot()) {
             helper.assertTrue(face.extract(AssemblerSlots.DRAIN, ItemResource.of(Items.WATER_BUCKET), 1, tx) == 0, "the drain slot extracted");
             helper.assertTrue(face.extract(AssemblerSlots.FILL, ItemResource.of(Items.BUCKET), 1, tx) == 0, "the fill slot extracted");
-            helper.assertTrue(face.extract(AssemblerSlots.OUTPUT + 3, ItemResource.of(Items.BUCKET), 2, tx) == 2, "the last output did not extract");
+            helper.assertTrue(face.extract(AssemblerSlots.output(3), ItemResource.of(Items.BUCKET), 2, tx) == 2, "the last output did not extract");
         }
         // With no slot named, as a hopper asks: the two empty buckets in the outputs, and not the one in the fill slot.
         try (Transaction tx = Transaction.openRoot()) {
@@ -448,10 +451,10 @@ final class AssemblerContainerTests {
         AssemblerMachineTests.hold(assembler, SAPLING);
         // Output 1 holds sticks, output 2 is empty, output 3 holds saplings: the product stacks onto its own first.
         set(assembler, AssemblerSlots.OUTPUT, Items.STICK, 64);
-        set(assembler, AssemblerSlots.OUTPUT + 2, Items.OAK_SAPLING, 3);
+        set(assembler, AssemblerSlots.output(2), Items.OAK_SAPLING, 3);
         AssemblerMachineTests.insert(assembler, 0, Items.OAK_LOG, 2);
         AssemblerFluidTests.tick(helper, assembler, 20);
-        helper.assertTrue(count(assembler, AssemblerSlots.OUTPUT + 2) == 4 && count(assembler, AssemblerSlots.OUTPUT + 1) == 0,
+        helper.assertTrue(count(assembler, AssemblerSlots.output(2)) == 4 && count(assembler, AssemblerSlots.output(1)) == 0,
                 "the product did not stack onto its own slot: " + describe(assembler));
 
         // Cake: the product and the three empty buckets take two outputs, the buckets stacking in one.
@@ -487,9 +490,9 @@ final class AssemblerContainerTests {
         helper.assertTrue(inventory.getResource(0).getItem() == Items.OAK_LOG && inventory.getAmountAsInt(0) == 6, "the old input was lost or moved");
         helper.assertTrue(inventory.getResource(AssemblerSlots.OUTPUT).getItem() == Items.OAK_SAPLING && inventory.getAmountAsInt(AssemblerSlots.OUTPUT) == 12,
                 "the old product is not in the first output");
-        helper.assertTrue(inventory.getResource(AssemblerSlots.OUTPUT + 1).getItem() == Items.BUCKET && inventory.getAmountAsInt(AssemblerSlots.OUTPUT + 1) == 9,
+        helper.assertTrue(inventory.getResource(AssemblerSlots.output(1)).getItem() == Items.BUCKET && inventory.getAmountAsInt(AssemblerSlots.output(1)) == 9,
                 "the old remainders are not in the second output");
-        for (int slot = AssemblerSlots.OUTPUT + 2; slot < AssemblerSlots.SIZE; slot++) {
+        for (int slot = AssemblerSlots.output(2); slot < AssemblerSlots.SIZE; slot++) {
             helper.assertTrue(inventory.getAmountAsInt(slot) == 0, "slot " + slot + " read back holding something");
         }
 
@@ -505,23 +508,46 @@ final class AssemblerContainerTests {
         helper.succeed();
     }
 
+    /** Up a tier or down to another that has the slots, the containers stay; down to tier 1 they are handed back. */
     private static void fastReplace(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         AssemblerMachineTests.hold(assembler, TWO_OUTPUTS);
         set(assembler, AssemblerSlots.DRAIN, Items.LAVA_BUCKET, 1);
         set(assembler, AssemblerSlots.FILL, Items.BUCKET, 1);
-        set(assembler, AssemblerSlots.OUTPUT + 3, Items.STICK, 5);
+        set(assembler, AssemblerSlots.output(3), Items.STICK, 5);
         AssemblerBlockEntity machine = assembler.machine();
 
         AssemblerMachineTests.swap(helper, assembler, AssemblerTier.THREE, ORIGIN);
         helper.assertTrue(helper.getBlockEntity(ORIGIN, AssemblerBlockEntity.class) == machine, "the swap replaced the block entity");
         helper.assertTrue(item(assembler, AssemblerSlots.DRAIN) == Items.LAVA_BUCKET && item(assembler, AssemblerSlots.FILL) == Items.BUCKET
-                        && count(assembler, AssemblerSlots.OUTPUT + 3) == 5,
+                        && count(assembler, AssemblerSlots.output(3)) == 5,
                 "the swap to tier 3 lost the slots: " + describe(assembler));
+
+        // Down to tier 1 there are no such slots: the two containers come out, to the player or at their feet.
         AssemblerMachineTests.swap(helper, assembler, AssemblerTier.ONE, ORIGIN);
-        helper.assertTrue(item(assembler, AssemblerSlots.DRAIN) == Items.LAVA_BUCKET && item(assembler, AssemblerSlots.FILL) == Items.BUCKET,
-                "the swap to tier 1 lost the slots: " + describe(assembler));
+        helper.assertTrue(count(assembler, AssemblerSlots.DRAIN) == 0 && count(assembler, AssemblerSlots.FILL) == 0,
+                "the swap to tier 1 left a container in a slot nobody sees: " + describe(assembler));
+        helper.assertTrue(count(assembler, AssemblerSlots.output(3)) == 5, "the swap to tier 1 touched an output");
+        helper.assertTrue(handedBack(helper, assembler, Items.LAVA_BUCKET) == 1 && handedBack(helper, assembler, Items.BUCKET) == 1,
+                "the player was not handed the two containers back: " + handedBack(helper, assembler, Items.LAVA_BUCKET) + " lava bucket(s), "
+                        + handedBack(helper, assembler, Items.BUCKET) + " bucket(s)");
         helper.assertTrue(Optional.of(TWO_OUTPUTS).equals(machine.heldRecipe()), "the swaps lost the Held recipe");
         helper.succeed();
+    }
+
+    /** How many of {@code item} the player holds or has dropped at the Assembler. */
+    private static int handedBack(GameTestHelper helper, Placed assembler, Item item) {
+        int total = 0;
+        for (ItemStack stack : assembler.player().getInventory().getNonEquipmentItems()) {
+            if (stack.is(item)) {
+                total += stack.getCount();
+            }
+        }
+        for (var dropped : helper.getEntities(EntityType.ITEM)) {
+            if (dropped.getItem().is(item)) {
+                total += dropped.getItem().getCount();
+            }
+        }
+        return total;
     }
 }

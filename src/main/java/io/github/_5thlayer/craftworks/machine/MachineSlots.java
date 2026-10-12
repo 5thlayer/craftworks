@@ -13,18 +13,18 @@ import java.util.function.ToIntFunction;
 /**
  * A machine's item slots, and which Held recipe ingredient each input slot takes: the {@code n}th ingredient
  * goes in the {@code n}th input, and a slot the recipe doesn't use takes nothing. The inputs come first, then
- * the outputs, the product's slot first among them, and whatever else the machine keeps. The item face, the menu's slots and the screen's
+ * the outputs, and whatever else the machine keeps. The item face, the menu's slots and the screen's
  * ghosts all read this, so they cannot disagree. Generic, so it is tested without Minecraft.
  *
  * @param size    the machine's slots, before the player's in its menu
  * @param inputs  the input slots; a Held recipe names at most this many distinct ingredients
- * @param product the product's slot, the first of the outputs
+ * @param firstOutput the first output slot, where the product lands first
  * @param outputs the output slots, from {@code product}: every one takes anything the machine makes and extracts
  */
-public record MachineSlots(int size, int inputs, int product, int outputs) {
+public record MachineSlots(int size, int inputs, int firstOutput, int outputs) {
 
     public boolean isOutput(int slot) {
-        return slot >= product && slot < product + outputs;
+        return slot >= firstOutput && slot < firstOutput + outputs;
     }
 
     /**
@@ -33,12 +33,12 @@ public record MachineSlots(int size, int inputs, int product, int outputs) {
      */
     public List<Integer> outputOrder(IntPredicate occupied) {
         List<Integer> order = new ArrayList<>(outputs);
-        for (int slot = product; slot < product + outputs; slot++) {
+        for (int slot = firstOutput; slot < firstOutput + outputs; slot++) {
             if (occupied.test(slot)) {
                 order.add(slot);
             }
         }
-        for (int slot = product; slot < product + outputs; slot++) {
+        for (int slot = firstOutput; slot < firstOutput + outputs; slot++) {
             if (!occupied.test(slot)) {
                 order.add(slot);
             }

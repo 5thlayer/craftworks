@@ -9,18 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-/** The fluid box rule (#57, ADR-0021): every box is a flat 2,000 mB, so a bucket always swaps whole. */
+/** The fluid box rule (#57, ADR-0021): a craft is refused if it needs more of a fluid than a flat 2,000 mB box holds. */
 class FluidBoxesTest {
-
-    @Test
-    void everyBoxHoldsTwoThousand() {
-        assertEquals(2_000, FluidBoxes.VOLUME);
-    }
-
-    @Test
-    void aBucketAlwaysSwapsWhole() {
-        assertEquals(0, FluidBoxes.VOLUME % 1_000);
-    }
 
     @Test
     void aCraftNeedingNoMoreThanABoxFits() {

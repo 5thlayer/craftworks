@@ -56,6 +56,6 @@ class RefinerRatesTest {
         assertEquals(2, RefinerSlots.LAYOUT.size());
         assertEquals(true, RefinerSlots.LAYOUT.isInput(RefinerSlots.INPUT));
         assertEquals(false, RefinerSlots.LAYOUT.isInput(RefinerSlots.OUTPUT));
-        assertEquals(RefinerSlots.OUTPUT, RefinerSlots.LAYOUT.product());
+        assertEquals(RefinerSlots.OUTPUT, RefinerSlots.LAYOUT.firstOutput());
     }
 }
