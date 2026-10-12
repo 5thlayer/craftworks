@@ -2,9 +2,9 @@
   "parent": "minecraft:block/orientable_with_bottom",
   "textures": {
     "front": "craftworks:block/refiner/front_off",
-    "side": "craftworks:block/refiner/side",
-    "top": "craftworks:block/refiner/top",
-    "bottom": "craftworks:block/refiner/bottom",
-    "particle": "craftworks:block/refiner/side"
+    "side": "craftworks:block/plating/inset",
+    "top": "craftworks:block/plating/vent",
+    "bottom": "craftworks:block/plating/plain",
+    "particle": "craftworks:block/plating/inset"
   }
 }

@@ -1,10 +1,10 @@
 {
   "ambientocclusion": false,
   "textures": {
-    "plating": "craftworks:block/assembler/plating",
-    "inset": "craftworks:block/assembler/plating_inset",
-    "brace": "craftworks:block/assembler/plating_brace",
-    "vent": "craftworks:block/assembler/plating_vent",
+    "plating": "craftworks:block/plating/plain",
+    "inset": "craftworks:block/plating/inset",
+    "brace": "craftworks:block/plating/brace",
+    "vent": "craftworks:block/plating/vent",
     "front": "craftworks:block/assembler/front",
     "band": "craftworks:block/assembler/band_1",
     "band_vertical": "craftworks:block/assembler/band_1_vertical",

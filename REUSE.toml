@@ -28,11 +28,26 @@ path = [
 SPDX-FileCopyrightText = "2026 5thlayer"
 SPDX-License-Identifier = "MIT"
 
-# Malcolm Riley's unused textures: the Assemblers' casings, copied unmodified (NOTICE).
+# Malcolm Riley's unused textures: the machine plating and the Assemblers' casings, copied
+# unmodified, the lit smelter's animation, and the unmodified copies the Refiner's front is built
+# from (NOTICE).
 [[annotations]]
-path = ["src/main/resources/assets/craftworks/textures/block/assembler/*.png"]
+path = [
+    "data/art/*.png",
+    "data/art/*.png.mcmeta",
+    "src/main/resources/assets/craftworks/textures/block/plating/*.png",
+    "src/main/resources/assets/craftworks/textures/block/assembler/*.png",
+    "src/main/resources/assets/craftworks/textures/block/refiner/front_on.png.mcmeta",
+]
 precedence = "override"
 SPDX-FileCopyrightText = "Malcolm Riley"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# The Refiner's front, built from Malcolm Riley's smelter by scripts/build-textures.py (NOTICE).
+[[annotations]]
+path = ["src/main/resources/assets/craftworks/textures/block/refiner/front_*.png"]
+precedence = "override"
+SPDX-FileCopyrightText = ["Malcolm Riley", "2026 5thlayer"]
 SPDX-License-Identifier = "CC-BY-4.0"
 
 # The Gradle wrapper is Gradle's.

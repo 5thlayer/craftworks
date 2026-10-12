@@ -109,15 +109,15 @@ def casing(tier):
                     faces["north"] = _face("#front")
                 elements.append({"from": [16 * x, 16 * y, 16 * z], "to": [16 * x + 16, 16 * y + 16, 16 * z + 16],
                                  "faces": faces})
-    folder = "craftworks:block/assembler/"
+    plating, assembler = "craftworks:block/plating/", "craftworks:block/assembler/"
     textures = {
-        "plating": folder + "plating",
-        "inset": folder + "plating_inset",
-        "brace": folder + "plating_brace",
-        "vent": folder + "plating_vent",
-        "front": folder + "front",
-        "band": folder + "band_%d" % tier,
-        "band_vertical": folder + "band_%d_vertical" % tier,
+        "plating": plating + "plain",
+        "inset": plating + "inset",
+        "brace": plating + "brace",
+        "vent": plating + "vent",
+        "front": assembler + "front",
+        "band": assembler + "band_%d" % tier,
+        "band_vertical": assembler + "band_%d_vertical" % tier,
     }
     return _group(elements, textures, False, textures["band"])
 
