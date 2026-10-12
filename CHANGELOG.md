@@ -4,7 +4,7 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
-- The Assemblers have real art in place of the stand-in: plated casings from Malcolm Riley's unused textures (CC BY 4.0, credited in `NOTICE`), with a band round the top and across the roof in each tier's colour, grey, yellow or cyan, and a crafting grid on the front at eye height. The casing now turns with the Assembler's facing. (#22)
+- The Assemblers have real art in place of the stand-in: plated casings from Malcolm Riley's unused textures (CC BY 4.0, credited in `NOTICE`), with a band round the top and across the roof in each tier's colour, light grey, yellow or cyan, and a crafting grid on the front at eye height. The casing now turns with the Assembler's facing. (#22)
 - The Assembler's and the Refiner's screens and Jade tooltips are drawn by libworks-runtime's shared machine look, the same as the other mods' machines: a fluid gauge, too narrow for its amount, shows none at any fill, and its tooltip says "Empty" where it said "No fluid": the keys `craftworks.machine.fluid` and `craftworks.machine.fluid_empty` are gone for libworks-runtime's `libworks.machine.fluid` and `libworks.machine.fluid_empty`. (#54)
 - Every Craftworks item shows in the suite's shared **Works** creative tab (`libworks:works`), registered by the libworks-runtime Craftworks already nests, and the Craftworks tab `craftworks:craftworks` and its lang key `itemGroup.craftworks` are gone. No item shows in any other tab. (#48)
 - The recipes only Craftworks' own test and dev runs read, `craftworks:gametest/*` and `craftworks:dev/*`, no longer ship in the jar. Nothing outside those runs ever turned them on.

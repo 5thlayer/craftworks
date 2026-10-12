@@ -18,8 +18,8 @@ Source:  https://github.com/malcolmriley/unused-textures
            plating_brace.png        blocks/space-plating-square.png
            plating_vent.png         blocks/space-plating-vent.png
            front.png                blocks/device_workbench_top.png
-           band_1.png               blocks/space-plating-stripe-gray-horizontal-undamaged.png
-           band_1_vertical.png      blocks/space-plating-stripe-gray-vertical-undamaged.png
+           band_1.png               blocks/space-plating-stripe-light-gray-horizontal-undamaged.png
+           band_1_vertical.png      blocks/space-plating-stripe-light-gray-vertical-undamaged.png
            band_2.png               blocks/space-plating-stripe-yellow-horizontal-undamaged.png
            band_2_vertical.png      blocks/space-plating-stripe-yellow-vertical-undamaged.png
            band_3.png               blocks/space-plating-stripe-cyan-horizontal-undamaged.png
