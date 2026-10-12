@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted, its sizing superseded by ADR-0021
 ---
 
 # Fluid boxes follow the Pack's Factorio rules, on one fluid machine each machine describes
@@ -46,3 +46,5 @@ Craftworks. ADR-0015's sizing paragraph is superseded; its connections stand.
 The one fluid machine is now the Assembler (ADR-0018, #40): the Chemical Plant and the Oil Refinery are removed, and an Assembler of tier 2 or 3 has the two input and three output boxes, sized by these rules, of `FluidLayout.ASSEMBLER`. The rules themselves stand.
 
 Every tier of Assembler has those boxes since ADR-0019 (#41), tier 1 included; the rules stand.
+
+The sizing, the input and output boxes' figures and `pinned_fluid_results`, is superseded by ADR-0021 (#57): every box is a flat 2,000 mB. The one fluid machine and its record stand.

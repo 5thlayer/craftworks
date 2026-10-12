@@ -39,7 +39,7 @@ the Held recipe voids all four boxes. A recipe with more than two fluid ingredie
 of an ingredient a craft, more than two item ingredients, more than one item result or an ingredient that leaves a
 remainder is refused at Fill Recipe, since the plant has two input slots, one product slot and no remainder slot.
 
-The output box sizing above is superseded by ADR-0017.
+The output box sizing above is superseded by ADR-0017, and that by ADR-0021.
 
 The Chemical Plant is superseded by ADR-0018: it is removed, and an Assembler of tier 2 or 3 pushes its fluid results out
 of the same direction-free connections, with the rule for what an input or an output box accepts kept.

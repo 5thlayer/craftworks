@@ -4,6 +4,11 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- Assembler 2 and 3 have a **drain slot** and a **fill slot**, so fluid moves in and out by bucket or by any item with NeoForge's fluid item capability, with no pipe mod (#57). A filled container in the drain slot is poured into the input box bound to its fluid; an empty one in the fill slot is filled from the first output box that holds a whole container's worth. A container moves whole or not at all, and waits in its slot while it can't. A hopper or pipe on any face of any block of the Assembler puts an ingredient in its input slot first, then a filled container in the drain slot and an empty one in the fill slot, and takes only from the outputs. Assembler 1 has neither slot.
+- The Assemblers have four **shared output slots** where they had a product slot and a remainders slot: the product, the ingredients' remainders, and the emptied and filled containers land in any slot with room, and a craft waits while its product and remainders don't fit. A world saved earlier keeps its product and remainders in the first two. (#57)
+- Every Assembler fluid box, input and output, holds a flat 2,000 mB, filled to the brim by the machine's pull and by pipes, so a bucket always swaps whole. The 4-crafts pull limit, the 3-crafts output sizing and the output boxes' 100 mB are gone. A recipe that needs more than 2,000 mB of one fluid, in or out, in a craft is refused. (#57)
+- **Pack authors:** `pinned_fluid_results` on an Assembling recipe is removed (and `pinned_fluid_results` in KubeJS), along with the first result's taking the output boxes a recipe leaves unused. A recipe that still has the field loads; it is ignored. (#57)
+
 ## 0.8.0
 
 - The Assembler's and the Refiner's screens are laid out as the other mods' machines are (#55): labelled bars for the craft's or smelt's progress and for the energy, the Assembler's fluid boxes as wide gauges that show their amount, inputs down the left and outputs down the right, and a status line saying what the machine is doing, such as "Needs power". Both screens are taller, the Assembler's to 240, and the Refiner's input and output stand at the panel's two sides.

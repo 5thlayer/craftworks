@@ -72,6 +72,8 @@ names costs less than code that runs once.
   its `chemistry` and `oil-processing` recipes and tier config to `crafting-with-fluid`, replaces any use of the
   two machines, and sets `pinned_fluid_results` where it relied on the refinery's box layout.
 
+The first fluid result's taking the unused boxes, and the Pinned recipe, are gone with ADR-0021 (#57).
+
 This supersedes ADR-0015, and amends ADR-0014 (an Assembler pushes fluid and has two input and three output
 boxes), ADR-0016 (one tab) and ADR-0017 (the one fluid machine is the Assembler).
 
