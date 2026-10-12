@@ -57,14 +57,23 @@ public final class AssemblerMenu extends AbstractContainerMenu {
     private static final int DATA_SHARED = 4;
     /** Each box takes two: the fluid's registry id, then its amount. */
     private static final int DATA_CAPACITIES = DATA_SHARED + 2 * LAYOUT.boxes();
-    private static final int DATA_COUNT = DATA_CAPACITIES + LAYOUT.boxes();
+    /** What the Assembler is doing, a {@link MachineState} ordinal, for the screen's status line. */
+    private static final int DATA_STATE = DATA_CAPACITIES + LAYOUT.boxes();
+    private static final int DATA_COUNT = DATA_STATE + 1;
 
     public static final int INPUT_X = 8;
     public static final int INPUT_Y = 36;
     public static final int PRODUCT_X = 134;
     public static final int REMAINDERS_X = PRODUCT_X + 18;
     /** Where the player's inventory starts: the gauges and the energy bar take a row each between the slots and it. */
-    public static final int INVENTORY_Y = 96;
+    /** One row of the panel: a bar or a gauge and the gap below it, as the suite's other machines space theirs. */
+    public static final int ROW = 18;
+    public static final int PROGRESS_Y = 58;
+    /** The gauges' top row; they run down in two columns ({@link FluidGaugeLayout}). */
+    public static final int GAUGES_Y = PROGRESS_Y + ROW;
+    public static final int ENERGY_Y = GAUGES_Y + FluidGaugeLayout.of(LAYOUT).rows() * ROW;
+    public static final int STATUS_Y = ENERGY_Y + ROW;
+    public static final int INVENTORY_Y = STATUS_Y + 14;
 
     private final @Nullable AssemblerBlockEntity assembler;
     private final BlockPos pos;
@@ -130,7 +139,10 @@ public final class AssemblerMenu extends AbstractContainerMenu {
                 if (index < DATA_CAPACITIES) {
                     return fluidData(assembler.fluids().contents((index - DATA_SHARED) / 2), (index - DATA_SHARED) % 2);
                 }
-                return index < DATA_COUNT ? assembler.fluids().displayCapacity(index - DATA_CAPACITIES) : 0;
+                if (index < DATA_STATE) {
+                    return assembler.fluids().displayCapacity(index - DATA_CAPACITIES);
+                }
+                return index == DATA_STATE ? assembler.state().ordinal() : 0;
             }
 
             @Override
@@ -189,6 +201,11 @@ public final class AssemblerMenu extends AbstractContainerMenu {
 
     public int energy() {
         return data.get(DATA_ENERGY);
+    }
+
+    /** What the Assembler is doing, as the server last sent it. */
+    public MachineState state() {
+        return MachineState.of(data.get(DATA_STATE));
     }
 
     public int energyCapacity() {

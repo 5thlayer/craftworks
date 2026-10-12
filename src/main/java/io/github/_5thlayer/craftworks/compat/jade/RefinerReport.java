@@ -3,7 +3,6 @@
 
 package io.github._5thlayer.craftworks.compat.jade;
 
-import java.util.Locale;
 
 import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.machine.MachineState;
@@ -81,7 +80,7 @@ final class RefinerReport {
         }
 
         private static Component stateText(MachineState state) {
-            return Component.translatable("craftworks.jade.state." + state.name().toLowerCase(Locale.ROOT));
+            return Component.translatable(state.langKey());
         }
     }
 }

@@ -29,13 +29,19 @@ public final class RefinerMenu extends AbstractContainerMenu {
     private static final int DATA_DURATION = 1;
     private static final int DATA_ENERGY = 2;
     private static final int DATA_ENERGY_CAPACITY = 3;
-    private static final int DATA_COUNT = 4;
+    /** What the Refiner is doing, a {@link MachineState} ordinal, for the screen's status line. */
+    private static final int DATA_STATE = 4;
+    private static final int DATA_COUNT = 5;
 
-    public static final int INPUT_X = 56;
-    public static final int OUTPUT_X = 116;
-    public static final int SLOT_Y = 34;
-    public static final int ENERGY_Y = 58;
-    public static final int INVENTORY_Y = 84;
+    public static final int INPUT_X = 8;
+    public static final int OUTPUT_X = 152;
+    public static final int SLOT_Y = 20;
+    /** One row of the panel: a bar and the gap below it, as the suite's other machines space theirs. */
+    public static final int ROW = 18;
+    public static final int PROGRESS_Y = SLOT_Y + 22;
+    public static final int ENERGY_Y = PROGRESS_Y + ROW;
+    public static final int STATUS_Y = ENERGY_Y + ROW;
+    public static final int INVENTORY_Y = STATUS_Y + 14;
 
     private final @Nullable RefinerBlockEntity refiner;
     private final BlockPos pos;
@@ -79,6 +85,7 @@ public final class RefinerMenu extends AbstractContainerMenu {
                     case DATA_DURATION -> refiner.smeltDuration();
                     case DATA_ENERGY -> refiner.energy();
                     case DATA_ENERGY_CAPACITY -> refiner.energyCapacity();
+                    case DATA_STATE -> refiner.state().ordinal();
                     default -> 0;
                 };
             }
@@ -111,6 +118,11 @@ public final class RefinerMenu extends AbstractContainerMenu {
 
     public int energyCapacity() {
         return data.get(DATA_ENERGY_CAPACITY);
+    }
+
+    /** What the Refiner is doing, as the server last sent it. */
+    public MachineState state() {
+        return MachineState.of(data.get(DATA_STATE));
     }
 
     @Override

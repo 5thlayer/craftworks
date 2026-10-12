@@ -1218,15 +1218,15 @@ final class AssemblerFluidTests {
                         && menu.fluidCapacity(3) == 100 && menu.fluidCapacity(4) == 100,
                 "the menu shows capacities " + menu.fluidCapacity(0) + ", " + menu.fluidCapacity(1) + ", " + menu.fluidCapacity(2) + ", "
                         + menu.fluidCapacity(3) + " and " + menu.fluidCapacity(4));
-        // The screen is a row taller: the player's inventory stands 12 lower.
-        helper.assertTrue(menu.inventoryY() == AssemblerMenu.INVENTORY_Y && menu.slots.get(AssemblerSlots.SIZE).y == 96,
-                tier + "'s inventory stands at " + menu.slots.get(AssemblerSlots.SIZE).y + ", not 96");
+        // The screen's rows (#55): the player's inventory stands below the gauges, the energy bar and the status line.
+        helper.assertTrue(menu.inventoryY() == AssemblerMenu.INVENTORY_Y && menu.slots.get(AssemblerSlots.SIZE).y == 162,
+                tier + "'s inventory stands at " + menu.slots.get(AssemblerSlots.SIZE).y + ", not 162");
 
         // The client's menu, opened from the buffer the block writes, is the same on every tier.
         RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
         buffer.writeBlockPos(helper.absolutePos(ORIGIN));
         AssemblerMenu client = new AssemblerMenu(2, assembler.player().getInventory(), buffer);
-        helper.assertTrue(client.inventoryY() == AssemblerMenu.INVENTORY_Y && client.slots.get(AssemblerSlots.SIZE).y == 96,
+        helper.assertTrue(client.inventoryY() == AssemblerMenu.INVENTORY_Y && client.slots.get(AssemblerSlots.SIZE).y == 162,
                 "the client's menu of a " + tier + " Assembler stands its inventory at " + client.slots.get(AssemblerSlots.SIZE).y);
     }
 

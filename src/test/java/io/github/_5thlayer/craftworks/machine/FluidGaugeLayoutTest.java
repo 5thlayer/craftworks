@@ -8,30 +8,44 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-/** Where a machine's gauges stand across its screen. */
+/** Where a machine's gauges stand on its screen. */
 class FluidGaugeLayoutTest {
 
     @Test
-    void theAssemblersFiveStandAcrossTheRow() {
+    void theAssemblersInputsStandLeftAndItsOutputsRight() {
         FluidGaugeLayout layout = FluidGaugeLayout.of(FluidLayout.ASSEMBLER);
-        assertEquals(28, layout.width());
+        assertEquals(76, layout.width());
         assertEquals(8, layout.x(0));
-        assertEquals(40, layout.x(1));
-        assertEquals(76, layout.x(2));
-        assertEquals(108, layout.x(3));
-        assertEquals(140, layout.x(4));
+        assertEquals(8, layout.x(1));
+        assertEquals(92, layout.x(2));
+        assertEquals(92, layout.x(3));
+        assertEquals(92, layout.x(4));
     }
 
     @Test
-    void twoInAndThreeOutFitTheRowWithoutOverlap() {
+    void eachColumnRunsDownFromTheTopRow() {
         FluidGaugeLayout layout = new FluidGaugeLayout(2, 3);
-        assertEquals(28, layout.width());
+        assertEquals(0, layout.row(0));
+        assertEquals(1, layout.row(1));
+        assertEquals(0, layout.row(2));
+        assertEquals(1, layout.row(3));
+        assertEquals(2, layout.row(4));
+        assertEquals(3, layout.rows());
+    }
+
+    @Test
+    void theColumnsFitThePanelWithAGapBetween() {
+        FluidGaugeLayout layout = new FluidGaugeLayout(2, 3);
+        assertTrue(layout.x(2) + layout.width() <= FluidGaugeLayout.RIGHT);
+        assertEquals(FluidGaugeLayout.GROUP_GAP, layout.x(2) - (layout.x(0) + layout.width()));
+    }
+
+    @Test
+    void aMachineWithOnlyOutputsTakesTheWholeWidth() {
+        FluidGaugeLayout layout = new FluidGaugeLayout(0, 2);
+        assertEquals(160, layout.width());
         assertEquals(8, layout.x(0));
-        assertEquals(140, layout.x(4));
-        assertTrue(layout.x(4) + layout.width() <= FluidGaugeLayout.RIGHT);
-        for (int box = 1; box < 5; box++) {
-            assertTrue(layout.x(box) >= layout.x(box - 1) + layout.width() + FluidGaugeLayout.GAP);
-        }
-        assertTrue(layout.x(2) - (layout.x(1) + layout.width()) > layout.x(1) - (layout.x(0) + layout.width()));
+        assertEquals(1, layout.row(1));
+        assertEquals(2, layout.rows());
     }
 }

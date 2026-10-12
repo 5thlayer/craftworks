@@ -38,6 +38,8 @@
   "block.craftworks.creative_energy_source": "Creative Energy Source",
   "block.craftworks.creative_fluid_source": "Creative Fluid Source",
   "craftworks.machine.energy": "%s / %s FE",
+  "craftworks.machine.progress": "Progress: %s%%",
+  "craftworks.machine.nothing_to_smelt": "Nothing to smelt",
   "craftworks.assembler.fill_recipe": "Set as this Assembler's recipe",
   "craftworks.assembler.refused.not_assembling": "%s is not an Assembling recipe the Assembler can hold.",
   "craftworks.assembler.refused.wrong_category": "%s is in a recipe category this Assembler's tier can't make.",
