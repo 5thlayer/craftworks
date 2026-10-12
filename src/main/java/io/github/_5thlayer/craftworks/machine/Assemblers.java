@@ -13,6 +13,7 @@ import io.github._5thlayer.groundworks.Footprint;
 import io.github._5thlayer.groundworks.FootprintItem;
 import io.github._5thlayer.groundworks.FootprintPartBlock;
 import io.github._5thlayer.groundworks.FootprintShape;
+import io.github._5thlayer.libworks.WorksTab;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponentType;
@@ -20,9 +21,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -34,6 +32,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -63,9 +62,6 @@ public final class Assemblers {
     private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, Craftworks.MOD_ID);
     private static final DeferredRegister<DataComponentType<?>> COMPONENTS =
             DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, Craftworks.MOD_ID);
-
-    private static final DeferredRegister<CreativeModeTab> CREATIVE_TABS =
-            DeferredRegister.create(Registries.CREATIVE_MODE_TAB, Craftworks.MOD_ID);
 
     private static final Map<AssemblerTier, Footprint> FOOTPRINTS = new EnumMap<>(AssemblerTier.class);
     private static final Map<AssemblerTier, DeferredBlock<AssemblerBlock>> BLOCK_BY_TIER = new EnumMap<>(AssemblerTier.class);
@@ -102,7 +98,7 @@ public final class Assemblers {
                     .networkSynchronized(Identifier.STREAM_CODEC)
                     .build());
 
-    /** Creative-only: no recipe, and the creative tab is the only way to get one. */
+    /** Creative-only: no recipe, and the Works tab is the only way to get one. */
     public static final DeferredBlock<CreativeEnergySourceBlock> CREATIVE_ENERGY_SOURCE =
             BLOCKS.registerBlock("creative_energy_source", CreativeEnergySourceBlock::new,
                     properties -> properties.strength(3.0f, 6.0f).sound(SoundType.METAL));
@@ -126,22 +122,6 @@ public final class Assemblers {
             BLOCK_ENTITIES.register("creative_fluid_source", () -> new BlockEntityType<>(CreativeFluidSourceBlockEntity::new,
                     CREATIVE_FLUID_SOURCE.get()));
 
-    /**
-     * Craftworks' own creative tab, with the Assembler 1 as its icon. Every Craftworks item sits in it and in
-     * no other tab; a new item gets its place with one line in the list.
-     */
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> CREATIVE_TAB =
-            CREATIVE_TABS.register("craftworks", () -> CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)
-                    .title(Component.translatable("itemGroup." + Craftworks.MOD_ID))
-                    .icon(() -> new ItemStack(item(AssemblerTier.ONE).get()))
-                    .displayItems((parameters, output) -> {
-                        ITEM_BY_TIER.values().forEach(output::accept);
-                        output.accept(Refiners.ITEM.get());
-                        output.accept(CREATIVE_ENERGY_SOURCE_ITEM.get());
-                        output.accept(CREATIVE_FLUID_SOURCE_ITEM.get());
-                    })
-                    .build());
-
     private Assemblers() {
     }
 
@@ -159,13 +139,22 @@ public final class Assemblers {
         BLOCK_ENTITIES.register(modBus);
         MENUS.register(modBus);
         COMPONENTS.register(modBus);
-        CREATIVE_TABS.register(modBus);
         modBus.addListener(Assemblers::registerCapabilities);
+        modBus.addListener(Assemblers::addToWorksTab);
         // On both sides: the preview plans on the client and the click on the server (Groundworks' ADR 0008).
         FastReplace.group(Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "assembler"),
                 block -> block instanceof AssemblerBlock
                         || block instanceof FootprintPartBlock part && FOOTPRINTS.containsValue(part.footprint()),
                 new AssemblerReplace());
+    }
+
+    private static void addToWorksTab(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() == WorksTab.KEY) {
+            ITEM_BY_TIER.values().forEach(event::accept);
+            event.accept(Refiners.ITEM.get());
+            event.accept(CREATIVE_ENERGY_SOURCE_ITEM.get());
+            event.accept(CREATIVE_FLUID_SOURCE_ITEM.get());
+        }
     }
 
     /** The tier's footprint. */

@@ -16,7 +16,7 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * The Creative Energy Source: a creative-only block that powers whatever touches it, so an Assembler runs
- * where no energy mod is installed (#23). It has no recipe and appears only in the creative tab.
+ * where no energy mod is installed (#23). It has no recipe and appears only in the Works tab.
  */
 public final class CreativeEnergySourceBlock extends BaseEntityBlock {
 

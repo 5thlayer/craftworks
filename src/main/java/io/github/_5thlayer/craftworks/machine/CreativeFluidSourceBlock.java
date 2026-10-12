@@ -24,7 +24,7 @@ import org.jspecify.annotations.Nullable;
  * The Creative Fluid Source: a creative-only block that gives fluid to whatever pulls from it, so an
  * Assembler's Fluid Connections work where no fluid mod is installed (#32). A filled bucket used on it sets
  * its fluid and is not emptied; an empty bucket clears it. It has no recipe and appears only in the
- * creative tab.
+ * Works tab.
  */
 public final class CreativeFluidSourceBlock extends BaseEntityBlock {
 
