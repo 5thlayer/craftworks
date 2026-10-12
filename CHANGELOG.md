@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+## 0.9.1
+
 - Assembler 1 has the **drain slot** and the **fill slot** too, like Assemblers 2 and 3 (#57): every tier takes fluid in and out by bucket, and a swap between tiers keeps what is in them.
 - With EMI installed, a stack in hand goes into an empty Assembler slot that shows a ghost, the drain and fill slots too; a left click on the ghost showed its recipes instead. EMI's recipe and usage keys still work on every ghost, the Held recipe's product at the head too (libworks#23).
 
