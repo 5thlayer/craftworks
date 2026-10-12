@@ -1,7 +1,8 @@
 # SPDX-FileCopyrightText: 2026 5thlayer
 # SPDX-License-Identifier: MIT
 
-"""Writes the rings of the Assemblers' Fluid Connections, `assembler_connections` (their casings are written by hand).
+"""Writes the Assemblers' casings, `assembler_1` to `assembler_3`, and the rings of their Fluid Connections,
+`assembler_connections`. The casings' sprites are Malcolm Riley's, unmodified (NOTICE).
 
 A machine's origin draws the whole footprint, which is wider and taller than one block. Minecraft refuses an
 element whose 'from' or 'to' is below -16 or above 32 (CuboidModelElement), a block and a half either way from the
@@ -85,10 +86,49 @@ def rings(sites):
     return _group(elements, {"ring": ring}, False, ring)
 
 
+def casing(tier):
+    """An Assembler's 3x2x3 casing, one element per footprint block with only its outward faces: plating, braced
+    at the top's corners and vented at its sides; the tier's band round the upper row and across the top; and the
+    crafting grid at the upper centre of the front (north), at eye height; the blockstate turns it to each facing. The lower row is left plain plating,
+    for the Fluid Connections' rings."""
+    elements = []
+    for x in (-1, 0, 1):
+        for y in (0, 1):
+            for z in (-1, 0, 1):
+                faces = {}
+                if y == 0:
+                    faces["down"] = _face("#plating")
+                else:
+                    corner = x != 0 and z != 0
+                    faces["up"] = _face("#brace" if corner else "#band_vertical" if x == 0 else "#vent")
+                side = "#band" if y == 1 else "#inset"
+                for outward, name in ((x == -1, "west"), (x == 1, "east"), (z == -1, "north"), (z == 1, "south")):
+                    if outward:
+                        faces[name] = _face(side)
+                if (x, y, z) == (0, 1, -1):
+                    faces["north"] = _face("#front")
+                elements.append({"from": [16 * x, 16 * y, 16 * z], "to": [16 * x + 16, 16 * y + 16, 16 * z + 16],
+                                 "faces": faces})
+    folder = "craftworks:block/assembler/"
+    textures = {
+        "plating": folder + "plating",
+        "inset": folder + "plating_inset",
+        "brace": folder + "plating_brace",
+        "vent": folder + "plating_vent",
+        "front": folder + "front",
+        "band": folder + "band_%d" % tier,
+        "band_vertical": folder + "band_%d_vertical" % tier,
+    }
+    return _group(elements, textures, False, textures["band"])
+
+
 MODELS_TO_WRITE = {
+    "assembler_1": casing(1),
+    "assembler_2": casing(2),
+    "assembler_3": casing(3),
     # Every Assembler tier, 3x3, spaced so no two pipes beside them touch: the two ends of the edge it faces
     # (north) and of the other, and the centre of each side. The layout is symmetric under a half turn, so the
-    # blockstate's two rotations cover the four facings. The casings are hand-written and not made here.
+    # blockstate's two rotations cover the four facings.
     "assembler_connections": rings([(-1, -1, "north"), (1, -1, "north"),
                                     (-1, 1, "south"), (1, 1, "south"),
                                     (-1, 0, "west"), (1, 0, "east")]),

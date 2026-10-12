@@ -20,12 +20,20 @@ path = [
     "src/main/resources/**/*.nbt",
     "src/main/resources/**/*.png",
     "LICENSE",
+    "NOTICE",
     "publish/summary.txt",
     "src/main/resources/kubejs.plugins.txt",
     ".github/**",
 ]
 SPDX-FileCopyrightText = "2026 5thlayer"
 SPDX-License-Identifier = "MIT"
+
+# Malcolm Riley's unused textures: the Assemblers' casings, copied unmodified (NOTICE).
+[[annotations]]
+path = ["src/main/resources/assets/craftworks/textures/block/assembler/*.png"]
+precedence = "override"
+SPDX-FileCopyrightText = "Malcolm Riley"
+SPDX-License-Identifier = "CC-BY-4.0"
 
 # The Gradle wrapper is Gradle's.
 [[annotations]]

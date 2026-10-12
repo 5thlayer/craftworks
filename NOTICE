@@ -1,0 +1,28 @@
+Third-party material committed to this repository
+==================================================
+
+Each entry names the files, their author, where they came from and the licence they are under. A
+file listed here is NOT covered by the licence this repository states for its own work; its own
+licence governs it. Which licence covers which file is REUSE.toml's to say; this list is the
+credits for what was copied in.
+
+Assembler casings
+-----------------
+
+Files:   src/main/resources/assets/craftworks/textures/block/assembler/*.png
+Author:  Malcolm Riley
+Source:  https://github.com/malcolmriley/unused-textures
+         at commit 9218cb8997bf1dc83617bd7748acf44a16c19c42, copied unmodified and renamed:
+           plating.png              blocks/space-plating-plain.png
+           plating_inset.png        blocks/space-plating-inset-horizontal.png
+           plating_brace.png        blocks/space-plating-square.png
+           plating_vent.png         blocks/space-plating-vent.png
+           front.png                blocks/device_workbench_top.png
+           band_1.png               blocks/space-plating-stripe-gray-horizontal-undamaged.png
+           band_1_vertical.png      blocks/space-plating-stripe-gray-vertical-undamaged.png
+           band_2.png               blocks/space-plating-stripe-yellow-horizontal-undamaged.png
+           band_2_vertical.png      blocks/space-plating-stripe-yellow-vertical-undamaged.png
+           band_3.png               blocks/space-plating-stripe-cyan-horizontal-undamaged.png
+           band_3_vertical.png      blocks/space-plating-stripe-cyan-vertical-undamaged.png
+Licence: Creative Commons Attribution 4.0 International
+         https://creativecommons.org/licenses/by/4.0/
