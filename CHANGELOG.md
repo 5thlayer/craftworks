@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+## 0.8.0
+
 - The Assembler's and the Refiner's screens are laid out as the other mods' machines are (#55): labelled bars for the craft's or smelt's progress and for the energy, the Assembler's fluid boxes as wide gauges that show their amount, inputs down the left and outputs down the right, and a status line saying what the machine is doing, such as "Needs power". Both screens are taller, the Assembler's to 240, and the Refiner's input and output stand at the panel's two sides.
 - The Assemblers and the Refiner have real art in place of the stand-ins: plated casings from Malcolm Riley's unused textures (CC BY 4.0, credited in `NOTICE`), with a band round the top and across the roof in each tier's colour, light grey, yellow or cyan, and a crafting grid on the front at eye height. The casing now turns with the Assembler's facing. The Refiner is plated to match, with Riley's smelter, cold or glowing, let into its front. (#22)
 - The Assembler's and the Refiner's screens and Jade tooltips are drawn by libworks-runtime's shared machine look, the same as the other mods' machines: a fluid gauge, too narrow for its amount, shows none at any fill, and its tooltip says "Empty" where it said "No fluid": the keys `craftworks.machine.fluid` and `craftworks.machine.fluid_empty` are gone for libworks-runtime's `libworks.machine.fluid` and `libworks.machine.fluid_empty`. (#54)
