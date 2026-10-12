@@ -78,7 +78,7 @@ final class AssemblerReport {
 
     /**
      * Words the report: the Held recipe's product, then its state, with a progress bar while it crafts. The
-     * fluid boxes are Jade's own bars, from {@link AssemblerTanks}.
+     * fluid boxes are Jade's own bars, from {@link AssemblerFluidView}.
      */
     static final class Lines {
 

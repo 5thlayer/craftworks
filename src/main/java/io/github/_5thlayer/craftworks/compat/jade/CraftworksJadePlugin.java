@@ -10,7 +10,6 @@ import io.github._5thlayer.craftworks.machine.RefinerBlock;
 import io.github._5thlayer.craftworks.machine.RefinerBlockEntity;
 import io.github._5thlayer.craftworks.machine.CreativeFluidSourceBlockEntity;
 import io.github._5thlayer.libworks.machine.jade.MachineReport;
-import io.github._5thlayer.libworks.machine.jade.MachineTanks;
 import snownee.jade.api.IWailaClientRegistration;
 import snownee.jade.api.IWailaCommonRegistration;
 import snownee.jade.api.IWailaPlugin;
@@ -37,7 +36,7 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
         registration.registerBlockDataProvider(RefinerReport.REPORT, RefinerBlockEntity.class);
         registration.registerEnergyStorage(InfiniteEnergy.INSTANCE, CreativeEnergySourceBlockEntity.class);
         registration.registerFluidStorage(InfiniteFluid.INSTANCE, CreativeFluidSourceBlockEntity.class);
-        registration.registerFluidStorage(new MachineTanks<>(AssemblerTanks.UID, AssemblerBlockEntity.class, AssemblerTanks::of), AssemblerBlockEntity.class);
+        registration.registerFluidStorage(AssemblerFluidView.INSTANCE, AssemblerBlockEntity.class);
     }
 
     @Override
@@ -46,6 +45,6 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
         registration.registerBlockComponent(new MachineReport.Client<>(RefinerReport.REPORT, RefinerReport.Lines::add), RefinerBlock.class);
         registration.registerEnergyStorageClient(InfiniteEnergy.INSTANCE);
         registration.registerFluidStorageClient(InfiniteFluid.INSTANCE);
-        registration.registerFluidStorageClient(new MachineTanks.Client(AssemblerTanks.UID));
+        registration.registerFluidStorageClient(AssemblerFluidView.INSTANCE);
     }
 }
