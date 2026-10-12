@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- With EMI installed, a stack in hand goes into an empty Assembler slot that shows a ghost, the drain and fill slots too; a left click on the ghost showed its recipes instead. EMI's recipe and usage keys still work on every ghost, the Held recipe's product at the head too (libworks#23).
+
 ## 0.9.0
 
 - Assembler 2 and 3 have a **drain slot** and a **fill slot**, so fluid moves in and out by bucket or by any item with NeoForge's fluid item capability, with no pipe mod (#57). A filled container in the drain slot is poured into the input box bound to its fluid; an empty one in the fill slot is filled from the first output box that holds a whole container's worth. A container moves whole or not at all, and waits in its slot while it can't. A hopper or pipe on any face of any block of the Assembler puts an ingredient in its input slot first, then a filled container in the drain slot and an empty one in the fill slot, and takes only from the outputs; it brings a container only if it can move (a lava bucket is not taken for a recipe that pours water, an empty bucket not for a recipe that makes no fluid). The slots stand under the input gauges, and show as ghosts what they take: every empty fluid container in the fill slot, and the Held recipe's fluids as filled containers in the drain slot. Assembler 1 has neither slot, and swapping a tier 2 or 3 Assembler down to it hands any containers in those slots back to you.

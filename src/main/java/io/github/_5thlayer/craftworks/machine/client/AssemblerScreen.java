@@ -11,6 +11,7 @@ import io.github._5thlayer.craftworks.machine.FluidLayout;
 import io.github._5thlayer.craftworks.machine.MachineGhosts;
 import io.github._5thlayer.craftworks.machine.MachineState;
 import io.github._5thlayer.libworks.ghost.Ghost;
+import io.github._5thlayer.libworks.ghost.GhostScreen;
 import io.github._5thlayer.libworks.ghost.Ghosts;
 import io.github._5thlayer.libworks.ghost.client.GhostDraw;
 import io.github._5thlayer.libworks.machine.client.MachineDraw;
@@ -32,9 +33,9 @@ import net.minecraft.world.inventory.Slot;
  * recipe is ghosted in the slots: each ingredient in the input slot that takes it, with the count one craft
  * needs, and the product in its slot. A tag ingredient cycles through its members. An input holding less than
  * one craft is red. What is ghosted, and where, is {@link MachineGhosts}'s; {@link #ghostAt} is how the recipe
- * viewers ask what is under the mouse.
+ * viewers ask what is under the mouse: EMI through libworks-runtime, which this screen is a {@link GhostScreen} for.
  */
-public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu> {
+public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu> implements GhostScreen {
 
     private static final int PROGRESS = 0xFF5DA05D;
     private static final int ENERGY = 0xFFB8392B;
@@ -92,10 +93,18 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
         graphics.text(font, MachineDraw.fitted(font, stateLine(), stateWidth()), MachineDraw.MARGIN, AssemblerMenu.STATUS_Y, MachineDraw.TEXT, false);
     }
 
+    /** The slots' ghosts, the ones drawn veiled; the head's only answers {@link #ghostAt}. */
+    @Override
+    public Ghosts ghosts() {
+        return ghosts.slots();
+    }
+
     /**
      * The ghost under the mouse, or empty over a real stack, an empty slot with nothing to ghost, and the
-     * rest of the panel: what the slots and the head show, and what EMI's and JEI's shortcuts ask of it.
+     * rest of the panel: what the slots and the head show, and what EMI's and JEI's shortcuts ask of it. The head's
+     * is beyond {@link #ghosts()}, so this finds it too.
      */
+    @Override
     public Optional<Ghost> ghostAt(double mouseX, double mouseY) {
         return ghosts.at(mouseX, mouseY, Util.getMillis());
     }

@@ -9,7 +9,6 @@ import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.recipe.VanillaEmiRecipeCategories;
 import dev.emi.emi.api.stack.EmiStack;
-import dev.emi.emi.api.stack.EmiStackInteraction;
 import dev.emi.emi.screen.EmiScreenManager;
 import dev.emi.emi.search.EmiSearch;
 import io.github._5thlayer.craftworks.Craftworks;
@@ -41,7 +40,9 @@ import net.minecraft.resources.Identifier;
  * null menu type since {@code InventoryMenu} has none. So Fill Recipe queues from the inventory screen and
  * nowhere else.
  *
- * <p>The Assembler screen's ghosts answer Recipe and Uses as a real stack does (see {@link #ghostAt}).
+ * <p>The Assembler screen's ghosts answer Recipe and Uses as a real stack does, and a click on one reaches its slot:
+ * {@link AssemblerScreen} is a libworks {@code GhostScreen}, whose ghosts libworks-runtime offers to EMI itself, not
+ * clickable (libworks ADR 0007), so this registers no stack provider for them.
  */
 @EmiEntrypoint
 public final class AssemblingEmiPlugin implements EmiPlugin {
@@ -69,17 +70,6 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
         if (!EmiScreenManager.isDisabled() && Minecraft.getInstance().player != null) EmiScreenManager.forceRecalculate();
     }
 
-    /**
-     * The ghost under the mouse on the Assembler's screen, as EMI's hovered stack, or none
-     * where there isn't one, so EMI's own slot lookup answers for a real stack. One item, whatever count the
-     * ghost is drawn with: Recipe and Uses ask about the item.
-     */
-    private static EmiStackInteraction ghostAt(AssemblerScreen screen, int mouseX, int mouseY) {
-        return screen.ghostAt(mouseX, mouseY)
-                .map(shown -> new EmiStackInteraction(EmiStack.of(shown.stack().copyWithCount(1))))
-                .orElse(EmiStackInteraction.EMPTY);
-    }
-
     @Override
     public void register(EmiRegistry registry) {
         EmiRecipeCategory tab = category();
@@ -90,7 +80,6 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
         }
         registry.addRecipeHandler(null, new PersonalAssemblerEmiHandler());
         registry.addRecipeHandler(Assemblers.MENU.get(), new AssemblerEmiHandler());
-        registry.addStackProvider(AssemblerScreen.class, AssemblingEmiPlugin::ghostAt);
         ConfiguredTabs.workstations().forEach(item -> registry.addWorkstation(tab, EmiStack.of(item)));
         // The Refiner smelts what vanilla's furnace and blast furnace do, so it is their tabs' workstation (ADR-0020).
         registry.addWorkstation(VanillaEmiRecipeCategories.SMELTING, EmiStack.of(Refiners.ITEM.get()));
