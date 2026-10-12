@@ -26,7 +26,7 @@ import net.minecraft.world.inventory.Slot;
  * product and the remainders, then rows laid out as the suite's other machines lay theirs (#55): how far the craft
  * is, a gauge for each fluid box (the inputs down the left and the outputs down the right, as
  * {@link FluidGaugeLayout} lays them), the energy in the buffer and what the Assembler is doing. A stand-in drawn
- * from fills with libworks-runtime's {@link MachineDraw} (real art is 5thlayer/craftworks#22).
+ * from fills with libworks-runtime's {@link MachineDraw}.
  *
  * <p>No recipe is picked here and none cleared; the recipe viewer's Fill Recipe is the only picker. The Held
  * recipe is ghosted in the slots: each ingredient in the input slot that takes it, with the count one craft

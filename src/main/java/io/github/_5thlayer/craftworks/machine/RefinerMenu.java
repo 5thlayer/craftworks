@@ -41,7 +41,8 @@ public final class RefinerMenu extends AbstractContainerMenu {
     public static final int PROGRESS_Y = SLOT_Y + 22;
     public static final int ENERGY_Y = PROGRESS_Y + ROW;
     public static final int STATUS_Y = ENERGY_Y + ROW;
-    public static final int INVENTORY_Y = STATUS_Y + 14;
+    /** Where the player's inventory starts, its label clear of the status line above it, as the Harvester's is. */
+    public static final int INVENTORY_Y = STATUS_Y + 22;
 
     private final @Nullable RefinerBlockEntity refiner;
     private final BlockPos pos;

@@ -15,7 +15,7 @@ import net.minecraft.world.entity.player.Inventory;
 /**
  * The Refiner's screen, laid out as the suite's other machines lay theirs (#55): its input and output, then rows for
  * the smelt's progress, the energy in the buffer and what it is doing. A stand-in drawn from fills with
- * libworks-runtime's {@link MachineDraw} (5thlayer/craftworks#22).
+ * libworks-runtime's {@link MachineDraw}.
  */
 public final class RefinerScreen extends AbstractContainerScreen<RefinerMenu> {
 

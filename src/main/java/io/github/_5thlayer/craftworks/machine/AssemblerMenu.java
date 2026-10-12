@@ -65,15 +65,19 @@ public final class AssemblerMenu extends AbstractContainerMenu {
     public static final int INPUT_Y = 36;
     public static final int PRODUCT_X = 134;
     public static final int REMAINDERS_X = PRODUCT_X + 18;
-    /** Where the player's inventory starts: the gauges and the energy bar take a row each between the slots and it. */
-    /** One row of the panel: a bar or a gauge and the gap below it, as the suite's other machines space theirs. */
-    public static final int ROW = 18;
-    public static final int PROGRESS_Y = 58;
+    /**
+     * One row of the panel: a bar or a gauge and the gap below it. Two less than the suite's other machines space
+     * theirs, so the Assembler's three rows of gauges keep the panel 240 tall, which fits a 720-line window at GUI
+     * scale 3.
+     */
+    public static final int ROW = 16;
+    public static final int PROGRESS_Y = 56;
     /** The gauges' top row; they run down in two columns ({@link FluidGaugeLayout}). */
     public static final int GAUGES_Y = PROGRESS_Y + ROW;
     public static final int ENERGY_Y = GAUGES_Y + FluidGaugeLayout.of(LAYOUT).rows() * ROW;
     public static final int STATUS_Y = ENERGY_Y + ROW;
-    public static final int INVENTORY_Y = STATUS_Y + 14;
+    /** Where the player's inventory starts, its label clear of the status line above it, as the Harvester's is. */
+    public static final int INVENTORY_Y = STATUS_Y + 22;
 
     private final @Nullable AssemblerBlockEntity assembler;
     private final BlockPos pos;
@@ -169,7 +173,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
         return amount <= 0 || fluid == Fluids.EMPTY ? FluidStack.EMPTY : new FluidStack(fluid, amount);
     }
 
-    /** Where the player's inventory starts, {@link #INVENTORY_Y}: below the gauges and the energy bar. */
+    /** Where the player's inventory starts, {@link #INVENTORY_Y}: below the gauges, the energy bar and the status line. */
     public int inventoryY() {
         return INVENTORY_Y;
     }
