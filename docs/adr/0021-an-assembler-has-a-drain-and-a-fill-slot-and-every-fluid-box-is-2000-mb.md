@@ -68,3 +68,8 @@ makes no fluid, would sit in a slot for good and jam it; the item face takes a c
 recipe with fluid results sized by the old rules now has 2,000 mB boxes, and a recipe needing more than 2,000 mB of
 one fluid a craft is refused. A save keeps its fluid, though a box above 2,000 mB, which the old output sizing could
 make, keeps what it holds. A Fast Replace between any tiers keeps what is in the drain and fill slots, as it keeps the other slots.
+
+**Amended after 0.9.0: every tier has the slots.** 0.9.0 gave the drain and fill slots to tiers 2 and 3 only, on the
+mistaken premise that tier 1 takes no fluid; under ADR-0019 every tier has the same fluid boxes and takes the same
+recipes, so tier 1 showed gauges it could only fill by pipe. Every tier now has both slots, and the hand-back that
+returned a tier-1 swap's containers to the player goes with the gate. The text above is written for the amended rule.

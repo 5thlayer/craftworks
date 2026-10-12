@@ -23,7 +23,7 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The work of an Assembler's drain and fill slots of tiers 2 and 3 (ADR-0021), in its tick: a filled container
+ * The work of an Assembler's drain and fill slots (ADR-0021), in its tick: a filled container
  * in the drain slot is poured into the input box bound to its fluid, an empty one in the fill slot is filled from
  * the first output box holding a whole container's worth, and what the container becomes goes to the shared
  * outputs. The move is libworks-runtime's {@link FluidContainers}, whole or not at all, a container that cannot

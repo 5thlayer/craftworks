@@ -24,7 +24,7 @@ import net.minecraft.world.inventory.Slot;
 
 /**
  * The Assembler's screen: the Held recipe at its head as its product's icon and name, its five inputs, its four
- * shared outputs and, on tiers 2 and 3, the drain and fill slots under the input gauges, then rows laid out as the suite's other machines lay theirs (#55): how far the craft
+ * shared outputs and the drain and fill slots under the input gauges, then rows laid out as the suite's other machines lay theirs (#55): how far the craft
  * is, a gauge for each fluid box (the inputs down the left and the outputs down the right, as
  * {@link FluidGaugeLayout} lays them), the energy in the buffer and what the Assembler is doing. A stand-in drawn
  * from fills with libworks-runtime's {@link MachineDraw}.

@@ -35,7 +35,7 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * The Assembler's menu: its five inputs in a row, its four shared outputs in a block of two by two, the drain and
- * fill slots of tiers 2 and 3 in the free cell under the input gauges, then the player's inventory; the Held recipe and how far its craft is. No recipe is picked here and none cleared: the recipe
+ * fill slots in the free cell under the input gauges, then the player's inventory; the Held recipe and how far its craft is. No recipe is picked here and none cleared: the recipe
  * viewer's Fill Recipe lands on {@link #request}, and the Held recipe is replaced, never removed.
  *
  * <p>The Held recipe crosses to the client as {@link HeldRecipeSyncPacket} when it changes, since the client

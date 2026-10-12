@@ -40,7 +40,7 @@ import org.slf4j.Logger;
 
 /**
  * An Assembler's block entity, one type for all three tiers: the Held recipe, eleven item slots (five inputs, four
- * shared outputs, and the drain and fill slots that tiers 2 and 3 use), an energy buffer and the craft under way. Its fluid boxes and Fluid Connections
+ * shared outputs, and the drain and fill slots), an energy buffer and the craft under way. Its fluid boxes and Fluid Connections
  * are its {@link AssemblerFluidSide}, which it owns.
  *
  * <p>The Held recipe is an id, resolved when asked and never on load, when the recipes may not be there. It
@@ -52,8 +52,8 @@ import org.slf4j.Logger;
  * would stall it is asked first, in a probe that aborts, so a blocked Assembler draws nothing, starts nothing and
  * voids nothing. Progress is held across a stall: the inputs are only taken on the last tick, and the energy
  * already paid is the craft's. Changing the Held recipe resets it. The craft waits while the shared outputs cannot
- * hold its product and remainders, or an output fluid box cannot hold what it makes. Tiers 2 and 3 also move a
- * container a tick between their drain and fill slots, their fluid boxes and the shared outputs
+ * hold its product and remainders, or an output fluid box cannot hold what it makes. It also moves a
+ * container a tick between its drain and fill slots, its fluid boxes and the shared outputs
  * ({@link AssemblerContainers}).
  */
 public final class AssemblerBlockEntity extends BlockEntity implements MenuProvider, MachineItemFace.Gate {

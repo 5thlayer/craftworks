@@ -6,8 +6,8 @@ package io.github._5thlayer.craftworks.machine;
 import java.util.List;
 
 /**
- * An Assembler's slots ({@link MachineSlots}): five inputs, four shared outputs, then the drain and fill slots of
- * tiers 2 and 3 (ADR-0021).
+ * An Assembler's slots ({@link MachineSlots}): five inputs, four shared outputs, then the drain and fill slots
+ * (ADR-0021).
  *
  * <p>The outputs follow the inputs where the product and the remainders once did, so a save from before them
  * keeps its product in the first output and its remainders in the second.
