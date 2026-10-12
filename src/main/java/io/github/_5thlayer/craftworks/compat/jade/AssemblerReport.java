@@ -10,6 +10,7 @@ import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.machine.AssemblerBlockEntity;
 import io.github._5thlayer.craftworks.machine.MachineState;
 import io.github._5thlayer.craftworks.machine.HeldRecipes;
+import io.github._5thlayer.libworks.machine.jade.MachineReport;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -20,11 +21,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.Nullable;
-import snownee.jade.api.BlockAccessor;
-import snownee.jade.api.IBlockComponentProvider;
-import snownee.jade.api.config.IPluginConfig;
 import snownee.jade.api.ITooltip;
-import snownee.jade.api.StreamServerDataProvider;
 import snownee.jade.api.ui.BoxStyle;
 import snownee.jade.api.ui.JadeUI;
 import snownee.jade.api.view.ProgressView;
@@ -34,11 +31,10 @@ import snownee.jade.api.view.ProgressView;
  * and how far its craft is. The state is the block entity's own ({@link AssemblerBlockEntity#state}), worked out on the
  * server where the checks are and never repeated here.
  *
- * <p>The {@link Client} draws it. They are apart so that a dedicated server never loads Jade's drawing.
+ * <p>Sent and decoded by libworks-runtime's {@link MachineReport}; {@link Lines} words it on the client, apart so
+ * that a dedicated server never loads Jade's drawing.
  */
-class AssemblerReport implements StreamServerDataProvider<BlockAccessor, AssemblerReport.Data> {
-
-    static final AssemblerReport INSTANCE = new AssemblerReport();
+final class AssemblerReport {
 
     // Jade keys a player's on/off setting for this tooltip by it.
     private static final Identifier UID = Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "assembler");
@@ -61,12 +57,16 @@ class AssemblerReport implements StreamServerDataProvider<BlockAccessor, Assembl
     record Data(Optional<Identifier> held, ItemStack product, MachineState state, float progress) {
     }
 
-    @Override
-    public @Nullable Data streamData(BlockAccessor accessor) {
-        if (!(accessor.getLevel() instanceof ServerLevel server)) {
+    static final MachineReport<AssemblerBlockEntity, Data> REPORT =
+            new MachineReport<>(UID, AssemblerBlockEntity.class, AssemblerReport::read, CODEC);
+
+    private AssemblerReport() {
+    }
+
+    private static @Nullable Data read(AssemblerBlockEntity assembler) {
+        if (!(assembler.getLevel() instanceof ServerLevel server)) {
             return null;
         }
-        AssemblerBlockEntity assembler = accessor.typedBlockEntity();
         Optional<Identifier> held = assembler.heldRecipe();
         ItemStack product = held.flatMap(id -> HeldRecipes.find(server, id))
                 .map(recipe -> recipe.value().product())
@@ -76,46 +76,34 @@ class AssemblerReport implements StreamServerDataProvider<BlockAccessor, Assembl
         return new Data(held, product, assembler.state(), progress);
     }
 
-    @Override
-    public StreamCodec<RegistryFriendlyByteBuf, Data> streamCodec() {
-        return CODEC;
-    }
-
-    @Override
-    public Identifier getUid() {
-        return UID;
-    }
-
     /**
-     * Draws the report: the Held recipe's product, then its state, with a progress bar while it crafts. The
-     * fluid boxes are Jade's own bars, from {@link AssemblerFluidView}.
+     * Words the report: the Held recipe's product, then its state, with a progress bar while it crafts. The
+     * fluid boxes are Jade's own bars, from {@link AssemblerTanks}.
      */
-    static final class Client extends AssemblerReport implements IBlockComponentProvider {
+    static final class Lines {
 
-        static final Client INSTANCE = new Client();
+        private Lines() {
+        }
 
-        @Override
-        public void appendTooltip(ITooltip tooltip, BlockAccessor accessor, IPluginConfig config) {
-            decodeFromData(accessor).ifPresent(report -> {
-                if (report.held().isEmpty()) {
-                    tooltip.add(Component.translatable("craftworks.jade.no_held_recipe").withStyle(ChatFormatting.GRAY));
-                } else if (report.product().isEmpty()) {
-                    tooltip.add(Component.literal(report.held().get().toString()));
-                } else {
-                    tooltip.add(JadeUI.smallItem(report.product()));
-                    tooltip.append(report.product().getHoverName());
+        static void add(Data report, ITooltip tooltip) {
+            if (report.held().isEmpty()) {
+                tooltip.add(Component.translatable("craftworks.jade.no_held_recipe").withStyle(ChatFormatting.GRAY));
+            } else if (report.product().isEmpty()) {
+                tooltip.add(Component.literal(report.held().get().toString()));
+            } else {
+                tooltip.add(JadeUI.smallItem(report.product()));
+                tooltip.append(report.product().getHoverName());
+            }
+            switch (report.state()) {
+                case NO_RECIPE -> {
                 }
-                switch (report.state()) {
-                    case NO_RECIPE -> {
-                    }
-                    case CRAFTING -> tooltip.add(JadeUI.progress(new ProgressView(
-                            ProgressView.Part.of(report.progress()),
-                            stateText(report.state()),
-                            JadeUI.progressStyle(),
-                            BoxStyle.nestedBox())));
-                    default -> tooltip.add(stateText(report.state()).copy().withStyle(ChatFormatting.RED));
-                }
-            });
+                case CRAFTING -> tooltip.add(JadeUI.progress(new ProgressView(
+                        ProgressView.Part.of(report.progress()),
+                        stateText(report.state()),
+                        JadeUI.progressStyle(),
+                        BoxStyle.nestedBox())));
+                default -> tooltip.add(stateText(report.state()).copy().withStyle(ChatFormatting.RED));
+            }
         }
 
         private static Component stateText(MachineState state) {

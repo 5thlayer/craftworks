@@ -11,6 +11,7 @@ import io.github._5thlayer.craftworks.machine.FluidLayout;
 import io.github._5thlayer.craftworks.machine.MachineGhosts;
 import io.github._5thlayer.libworks.ghost.Ghost;
 import io.github._5thlayer.libworks.ghost.client.GhostDraw;
+import io.github._5thlayer.libworks.machine.client.MachineDraw;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
@@ -58,16 +59,16 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         // The world dims behind the panel as it does behind the inventory.
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-        graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, MachineScreens.PANEL);
+        graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, MachineDraw.PANEL);
         menu.held().filter(recipe -> !recipe.product().isEmpty()).ifPresent(recipe -> {
             ItemStack product = recipe.product();
             graphics.item(product, leftPos + MachineGhosts.HEAD_X, topPos + MachineGhosts.HEAD_Y);
-            graphics.text(font, product.getHoverName(), leftPos + 28, topPos + 20, MachineScreens.TEXT, false);
+            graphics.text(font, product.getHoverName(), leftPos + 28, topPos + 20, MachineDraw.TEXT, false);
         });
         for (Slot slot : menu.slots) {
             int x = leftPos + slot.x;
             int y = topPos + slot.y;
-            MachineScreens.recess(graphics, x, y, 16, 16);
+            MachineDraw.recess(graphics, x, y, MachineDraw.SLOT_SIZE, MachineDraw.SLOT_SIZE);
             // The player's inventory follows the Assembler's slots, and takes only its recess.
             if (slot.index >= menu.layout().size()) {
                 continue;
@@ -80,12 +81,9 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
         for (Ghost ghost : ghosts.slots().shown(Util.getMillis())) {
             GhostDraw.draw(graphics, font, ghost);
         }
-        int x = leftPos + barX;
-        int y = topPos + AssemblerMenu.INPUT_Y;
-        MachineScreens.recess(graphics, x, y, barWidth, 16);
-        graphics.fill(x, y, x + Math.round(barWidth * menu.progress()), y + 16, MachineScreens.BAR);
+        MachineScreens.progressBar(graphics, font, leftPos + barX, topPos + AssemblerMenu.INPUT_Y, barWidth, menu.progress());
         for (int box = 0; box < FluidLayout.ASSEMBLER.boxes(); box++) {
-            MachineScreens.fluidGauge(graphics, menu.fluid(box), leftPos + gauges.x(box), topPos + GAUGE_Y, gauges.width(), menu.fluidCapacity(box));
+            MachineDraw.gauge(graphics, font, leftPos + gauges.x(box), topPos + GAUGE_Y, gauges.width(), menu.fluid(box), menu.fluidCapacity(box));
         }
         MachineScreens.energyBar(graphics, font, leftPos + 8, topPos + ENERGY_Y, ENERGY_WIDTH, menu.energy(), menu.energyCapacity());
     }
@@ -104,12 +102,12 @@ public final class AssemblerScreen extends AbstractContainerScreen<AssemblerMenu
         super.extractTooltip(graphics, mouseX, mouseY);
         Optional<Ghost> ghost = ghostAt(mouseX, mouseY);
         if (ghost.isPresent()) {
-            graphics.setTooltipForNextFrame(font, ghost.get().stack(), mouseX, mouseY);
+            GhostDraw.tooltip(graphics, font, ghost.get(), mouseX, mouseY);
             return;
         }
         for (int box = 0; box < FluidLayout.ASSEMBLER.boxes(); box++) {
-            if (MachineScreens.overGauge(leftPos + gauges.x(box), topPos + GAUGE_Y, gauges.width(), mouseX, mouseY)) {
-                MachineScreens.fluidTooltip(graphics, font, menu.fluid(box), menu.fluidCapacity(box), mouseX, mouseY);
+            if (MachineDraw.over(leftPos + gauges.x(box), topPos + GAUGE_Y, gauges.width(), MachineDraw.BAR_HEIGHT, mouseX, mouseY)) {
+                MachineDraw.fluidTooltip(graphics, font, menu.fluid(box), menu.fluidCapacity(box), mouseX, mouseY);
                 return;
             }
         }

@@ -9,13 +9,15 @@ import io.github._5thlayer.craftworks.machine.CreativeEnergySourceBlockEntity;
 import io.github._5thlayer.craftworks.machine.RefinerBlock;
 import io.github._5thlayer.craftworks.machine.RefinerBlockEntity;
 import io.github._5thlayer.craftworks.machine.CreativeFluidSourceBlockEntity;
+import io.github._5thlayer.libworks.machine.jade.MachineReport;
+import io.github._5thlayer.libworks.machine.jade.MachineTanks;
 import snownee.jade.api.IWailaClientRegistration;
 import snownee.jade.api.IWailaCommonRegistration;
 import snownee.jade.api.IWailaPlugin;
 import snownee.jade.api.WailaPlugin;
 
 /**
- * Shows a Refiner's state and smelt (ADR-0020), and an Assembler's Held recipe, state and energy in Jade's tooltip, with the fluid boxes as
+ * Shows, through libworks-runtime's machine providers (#54), a Refiner's state and smelt (ADR-0020), and an Assembler's Held recipe, state and energy in Jade's tooltip, with the fluid boxes as
  * Jade's own fluid bars (#25, #26, #27, #40); the Creative Energy Source's energy as Infinite FE (#28); and the
  * Creative Fluid Source's fluid as, say, "Water, infinite" (#32).
  *
@@ -31,19 +33,19 @@ public final class CraftworksJadePlugin implements IWailaPlugin {
 
     @Override
     public void register(IWailaCommonRegistration registration) {
-        registration.registerBlockDataProvider(AssemblerReport.INSTANCE, AssemblerBlockEntity.class);
-        registration.registerBlockDataProvider(RefinerReport.INSTANCE, RefinerBlockEntity.class);
+        registration.registerBlockDataProvider(AssemblerReport.REPORT, AssemblerBlockEntity.class);
+        registration.registerBlockDataProvider(RefinerReport.REPORT, RefinerBlockEntity.class);
         registration.registerEnergyStorage(InfiniteEnergy.INSTANCE, CreativeEnergySourceBlockEntity.class);
         registration.registerFluidStorage(InfiniteFluid.INSTANCE, CreativeFluidSourceBlockEntity.class);
-        registration.registerFluidStorage(AssemblerFluidView.INSTANCE, AssemblerBlockEntity.class);
+        registration.registerFluidStorage(new MachineTanks<>(AssemblerTanks.UID, AssemblerBlockEntity.class, AssemblerTanks::of), AssemblerBlockEntity.class);
     }
 
     @Override
     public void registerClient(IWailaClientRegistration registration) {
-        registration.registerBlockComponent(AssemblerReport.Client.INSTANCE, AssemblerBlock.class);
-        registration.registerBlockComponent(RefinerReport.Client.INSTANCE, RefinerBlock.class);
+        registration.registerBlockComponent(new MachineReport.Client<>(AssemblerReport.REPORT, AssemblerReport.Lines::add), AssemblerBlock.class);
+        registration.registerBlockComponent(new MachineReport.Client<>(RefinerReport.REPORT, RefinerReport.Lines::add), RefinerBlock.class);
         registration.registerEnergyStorageClient(InfiniteEnergy.INSTANCE);
         registration.registerFluidStorageClient(InfiniteFluid.INSTANCE);
-        registration.registerFluidStorageClient(AssemblerFluidView.INSTANCE);
+        registration.registerFluidStorageClient(new MachineTanks.Client(AssemblerTanks.UID));
     }
 }
