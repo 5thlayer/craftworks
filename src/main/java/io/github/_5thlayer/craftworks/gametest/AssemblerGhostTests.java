@@ -153,7 +153,7 @@ final class AssemblerGhostTests {
         helper.succeed();
     }
 
-    /** The drain and fill slots of a tier 2 Assembler, and not of a tier 1's. */
+    /** The drain and fill slots' ghosts, of a tier 2 Assembler and of a tier 1's alike. */
     private static void containerSlots(GameTestHelper helper) {
         AssemblerMachineTests.Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.TWO);
         // No Held recipe: the drain slot has nothing to show, the fill slot every empty container.
@@ -186,13 +186,12 @@ final class AssemblerGhostTests {
                 "a container slot holding a container has a ghost");
         helper.destroyBlock(AssemblerMachineTests.ORIGIN);
 
-        // Tier 1 has neither slot, so no ghosts.
+        // Tier 1 has the same slots, so the same ghosts.
         AssemblerMachineTests.Placed one = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
         AssemblerMachineTests.hold(one, TWO_OUTPUTS);
         AssemblerMenu tierOne = open(one, TWO_OUTPUTS);
-        helper.assertTrue(at(tierOne, AssemblerMenu.DRAIN_X, AssemblerMenu.CONTAINER_Y, 0).isEmpty()
-                        && at(tierOne, AssemblerMenu.FILL_X, AssemblerMenu.CONTAINER_Y, 0).isEmpty(),
-                "a tier 1 Assembler has a ghost in a container slot");
+        expect(helper, at(tierOne, AssemblerMenu.DRAIN_X, AssemblerMenu.CONTAINER_Y, 0), Items.WATER_BUCKET, 1, AssemblerMenu.DRAIN_X, AssemblerMenu.CONTAINER_Y);
+        expect(helper, at(tierOne, AssemblerMenu.FILL_X, AssemblerMenu.CONTAINER_Y, 0), Items.BUCKET, 1, AssemblerMenu.FILL_X, AssemblerMenu.CONTAINER_Y);
         helper.succeed();
     }
 

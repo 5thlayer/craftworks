@@ -122,37 +122,13 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
 
     /**
      * Swapped for another tier by Fast Replace, which keeps this block entity: the buffer follows the new tier,
-     * and every tier has the same fluid boxes and item slots, so they keep what they held. Containers in the
-     * drain or fill slot of a tier that has neither are handed back by {@link AssemblerBlock#setPlacedBy}, which
-     * knows the player; this moves no item, as a state change that is no swap, such as the connections' ring, must not.
+     * and every tier has the same fluid boxes and item slots, the drain and fill slots too (ADR-0021), so they keep
+     * what they held.
      */
     @Override
     public void setBlockState(BlockState state) {
         super.setBlockState(state);
         resizeBuffer();
-    }
-
-    /**
-     * Gives the containers in the drain and fill slots of a tier that has neither to {@code player}, into their
-     * inventory or at their feet if it is full, as Fast Replace hands back the old item, and drops them here when
-     * there is no player. Asked of the origin as the swap places it, while they are still in their slots.
-     */
-    void handBackContainers(@Nullable Player player) {
-        if (!(level instanceof ServerLevel server) || tier().hasContainerSlots()) {
-            return;
-        }
-        for (int slot : AssemblerSlots.CONTAINER_SLOTS) {
-            ItemStack stack = inventory.getResource(slot).toStack(inventory.getAmountAsInt(slot));
-            if (stack.isEmpty()) {
-                continue;
-            }
-            inventory.set(slot, ItemResource.EMPTY, 0);
-            if (player != null) {
-                player.getInventory().placeItemBackInInventory(stack);
-            } else {
-                Containers.dropItemStack(server, worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5, stack);
-            }
-        }
     }
 
     /** The item slots, inputs first, for the menu and the game tests. */
@@ -279,9 +255,6 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     }
 
     private boolean takesContainer(int slot, ItemStack container) {
-        if (!tier().hasContainerSlots()) {
-            return false;
-        }
         Optional<AssemblingRecipe> recipe = runnable();
         if (recipe.isEmpty() || ingredientHasRoom(ItemResource.of(container))) {
             return false;
@@ -338,14 +311,9 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         }
         AssemblingRecipe recipe = resolved.get();
         fluidSide.pull(server, recipe);
-        boolean containers = tier().hasContainerSlots();
-        if (containers) {
-            AssemblerContainers.drain(inventory, fluidSide);
-        }
+        AssemblerContainers.drain(inventory, fluidSide);
         craft(recipe);
-        if (containers) {
-            AssemblerContainers.fill(inventory, fluidSide);
-        }
+        AssemblerContainers.fill(inventory, fluidSide);
         fluidSide.push(server);
     }
 

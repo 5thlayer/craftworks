@@ -10,7 +10,8 @@ and libworks-runtime ships the move (`FluidContainers`, libworks#21). The boxes'
 bucket: an input box held 4 crafts' worth, 40 mB for a recipe of 10 mB, and an output box 100 mB, so a bucket of 1,000
 mB seldom fitted whole. Craftworks is also no longer held to the Pack's Factorio figures: the FactoryWorks Pack is gone.
 
-**Decision.** An Assembler of tier 2 or 3 has two slots beside its inputs, tier 1 neither (#57):
+**Decision.** An Assembler of every tier has two slots beside its inputs (#57), as every tier has the same fluid boxes and
+Fluid Connections (ADR-0019):
 
 - A **drain slot** takes any filled fluid container, any item with NeoForge's fluid item capability, and pours it into
   the input box bound to its fluid.
@@ -66,7 +67,4 @@ makes no fluid, would sit in a slot for good and jam it; the item face takes a c
 **Consequences.** This breaks a pack author's recipes and a player's screen (ADR-0008, libworks ADR 0001), so the next release is a minor. A pack author's
 recipe with fluid results sized by the old rules now has 2,000 mB boxes, and a recipe needing more than 2,000 mB of
 one fluid a craft is refused. A save keeps its fluid, though a box above 2,000 mB, which the old output sizing could
-make, keeps what it holds. An Assembler swapped from tier 2 or 3 to tier 1 hands any container in its drain or fill
-slot back to the player who swapped it (Fast Replace tells each block it places who placed it), as it hands back the old
-item, into their inventory or at their feet, and drops it at the Assembler when there is no player, since tier 1 has no
-slot to show it in.
+make, keeps what it holds. A Fast Replace between any tiers keeps what is in the drain and fill slots, as it keeps the other slots.

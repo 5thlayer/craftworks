@@ -60,9 +60,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
     private static final int DATA_CAPACITIES = DATA_SHARED + 2 * LAYOUT.boxes();
     /** What the Assembler is doing, a {@link MachineState} ordinal, for the screen's status line. */
     private static final int DATA_STATE = DATA_CAPACITIES + LAYOUT.boxes();
-    /** 1 when the tier has a drain slot and a fill slot, else 0. */
-    private static final int DATA_CONTAINERS = DATA_STATE + 1;
-    private static final int DATA_COUNT = DATA_CONTAINERS + 1;
+    private static final int DATA_COUNT = DATA_STATE + 1;
 
     public static final int INPUT_X = 8;
     public static final int INPUT_Y = 36;
@@ -164,10 +162,7 @@ public final class AssemblerMenu extends AbstractContainerMenu {
                 if (index < DATA_STATE) {
                     return assembler.fluids().displayCapacity(index - DATA_CAPACITIES);
                 }
-                if (index == DATA_STATE) {
-                    return assembler.state().ordinal();
-                }
-                return index == DATA_CONTAINERS && assembler.tier().hasContainerSlots() ? 1 : 0;
+                return assembler.state().ordinal();
             }
 
             @Override
@@ -192,11 +187,6 @@ public final class AssemblerMenu extends AbstractContainerMenu {
         int amount = data.get(index + 1);
         Fluid fluid = BuiltInRegistries.FLUID.byId(data.get(index));
         return amount <= 0 || fluid == Fluids.EMPTY ? FluidStack.EMPTY : new FluidStack(fluid, amount);
-    }
-
-    /** Whether this tier has a drain slot and a fill slot: tiers 2 and 3. */
-    public boolean hasContainerSlots() {
-        return assembler != null ? assembler.tier().hasContainerSlots() : data.get(DATA_CONTAINERS) > 0;
     }
 
     /** Where the player's inventory starts, {@link #INVENTORY_Y}: below the gauges, the energy bar and the status line. */
@@ -354,9 +344,9 @@ public final class AssemblerMenu extends AbstractContainerMenu {
     }
 
     /**
-     * The drain slot takes a filled fluid container and the fill slot an empty one, in a tier that has them, and
-     * is not there in one that has not. The client and the server ask the same thing of the item itself: the
-     * Held recipe is not asked, so a container waits where the player put it until it can move.
+     * The drain slot takes a filled fluid container and the fill slot an empty one. The client and the server ask
+     * the same thing of the item itself: the Held recipe is not asked, so a container waits where the player put it
+     * until it can move.
      */
     private final class ContainerSlot extends ResourceHandlerSlot {
         ContainerSlot(ResourceHandler<ItemResource> handler, IndexModifier<ItemResource> modifier, int index, int x, int y) {
@@ -364,13 +354,8 @@ public final class AssemblerMenu extends AbstractContainerMenu {
         }
 
         @Override
-        public boolean isActive() {
-            return hasContainerSlots();
-        }
-
-        @Override
         public boolean mayPlace(ItemStack stack) {
-            return hasContainerSlots() && AssemblerContainers.placeable(getSlotIndex(), stack);
+            return AssemblerContainers.placeable(getSlotIndex(), stack);
         }
     }
 
