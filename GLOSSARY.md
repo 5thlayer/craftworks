@@ -136,6 +136,17 @@ Vanilla's come built in; every other mod's are converted as recipes load, unless
 already has an Assembling recipe at that id.
 _Avoid_: imported recipe, ported recipe
 
+**Data-carrying recipe**:
+A Converted recipe whose result is built from the stacks a craft consumed, as at a crafting table: a charged
+tablet makes a charged Atomic Disassembler, a full factory upgrades into a full one. Its ingredients take an
+item carrying data as well as a Pristine one, and both Assemblers make what a crafting table would.
+_Avoid_: self-assembling recipe, special recipe
+
+**Pristine**:
+An item carrying no data beyond what a freshly made one has: an empty tablet, an undamaged sword. A plan
+pays with a Pristine item before one carrying data.
+_Avoid_: clean, empty, blank
+
 **Route priority**:
 The number that decides which of several Assembling recipes makes an item: the highest-priority route the
 player can resolve, with nothing Missing or Locked, wins; ties go to the lowest recipe id. Only when no
