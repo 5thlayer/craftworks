@@ -134,21 +134,17 @@ public final class QueuedPlan {
      * a Resolver bug, and the alternative to a loud failure is a plan that silently crafts something
      * out of nothing.
      */
-    void completeCraft() {
+    void completeCraft(CraftFinish finish) {
         CraftStep step = plan.steps().get(stepIndex);
-        for (ItemAmount input : step.inputs()) {
-            int wanted = step.share(input.count(), craftsDone);
-            if (buffer.count(input.item()) < wanted) {
-                throw new IllegalStateException("Plan " + plan.id() + " step " + stepIndex
-                        + " wants " + wanted + " " + input.item()
-                        + " but the plan is holding " + buffer.count(input.item()));
-            }
-        }
-        for (ItemAmount input : step.inputs()) {
-            buffer.remove(input.item(), step.share(input.count(), craftsDone));
-        }
-        for (ItemAmount output : step.outputs()) {
-            buffer.add(output.item(), step.share(output.count(), craftsDone));
+        List<ItemAmount> consumed = draw(step.craftInputs(craftsDone));
+        for (ItemAmount input : consumed) buffer.remove(input.item(), input.count());
+        for (int i = 0; i < step.outputs().size(); i++) {
+            ItemAmount output = step.outputs().get(i);
+            int share = step.share(output.count(), craftsDone);
+            if (share <= 0) continue;
+            ItemAmount planned = new ItemAmount(output.item(), share);
+            ItemAmount made = i == 0 && step.dataCarrying() ? finish.result(step.recipe(), consumed, planned) : planned;
+            buffer.add(made.item(), made.count());
         }
         for (ItemAmount remainder : step.remainders()) {
             buffer.add(remainder.item(), step.share(remainder.count(), craftsDone));
@@ -159,6 +155,45 @@ public final class QueuedPlan {
             stepIndex++;
             craftsDone = 0;
         }
+    }
+
+    /**
+     * The exact keys the buffer gives for {@code wanted}: each key itself first, then the same item carrying
+     * data, which is what an earlier step of this plan may have banked in its place (ADR-0022).
+     */
+    private List<ItemAmount> draw(List<ItemAmount> wanted) {
+        ItemBag held = buffer.copy();
+        ItemBag owed = new ItemBag();
+        List<ItemAmount> drawn = new ArrayList<>();
+        for (ItemAmount input : wanted) {
+            int exact = Math.min(input.count(), held.count(input.item()));
+            if (exact > 0) {
+                held.remove(input.item(), exact);
+                drawn.add(new ItemAmount(input.item(), exact));
+            }
+            owed.add(input.item(), input.count() - exact);
+        }
+        for (ItemAmount input : owed.amounts()) {
+            int left = input.count();
+            for (ItemAmount stock : held.amounts()) {
+                if (left <= 0) break;
+                if (!ItemKey.hasPatch(stock.item()) || !sameItem(stock.item(), input.item())) continue;
+                int taken = Math.min(left, stock.count());
+                held.remove(stock.item(), taken);
+                drawn.add(new ItemAmount(stock.item(), taken));
+                left -= taken;
+            }
+            if (left > 0) {
+                throw new IllegalStateException("Plan " + plan.id() + " step " + stepIndex
+                        + " wants " + input.count() + " " + input.item()
+                        + " but the plan is holding " + (input.count() - left));
+            }
+        }
+        return drawn;
+    }
+
+    static boolean sameItem(String key, String other) {
+        return ItemKey.itemId(key).equals(ItemKey.itemId(other));
     }
 
     /**

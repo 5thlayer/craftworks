@@ -111,6 +111,11 @@ public final class PlanQueue {
      * the moment the player frees a slot.
      */
     public void tick(PlayerItems items) {
+        tick(items, CraftFinish.PLANNED);
+    }
+
+    /** One server tick of the head plan, {@code finish} saying what each Data-carrying craft really made. */
+    public void tick(PlayerItems items, CraftFinish finish) {
         if (entries.isEmpty()) {
             blocked = false;
             return;
@@ -127,7 +132,7 @@ public final class PlanQueue {
         }
         head.advanceTick();
         if (head.progressTicks() >= head.currentStep().time()) {
-            head.completeCraft();
+            head.completeCraft(finish);
             if (!deliver(head, items)) {
                 blocked = true;
                 return;
@@ -241,18 +246,33 @@ public final class PlanQueue {
         ItemBag needed = new ItemBag();
         List<CraftStep> steps = entry.plan().steps();
         for (int i = entry.stepIndex(); i < steps.size(); i++) {
-            CraftStep step = steps.get(i);
             int done = i == entry.stepIndex() ? entry.craftsDone() : 0;
-            for (ItemAmount input : step.inputs()) {
-                needed.add(input.item(), step.remaining(input.count(), done));
+            for (ItemAmount input : steps.get(i).remainingInputs(done)) {
+                needed.add(input.item(), input.count());
+            }
+        }
+        // What a step wants may be held as the same item carrying data, which an earlier step made (ADR-0022).
+        ItemBag spare = ItemBag.ofAmounts(entry.held());
+        ItemBag unmet = new ItemBag();
+        for (ItemAmount want : needed.amounts()) {
+            int covered = Math.min(want.count(), spare.count(want.item()));
+            spare.remove(want.item(), covered);
+            unmet.add(want.item(), want.count() - covered);
+        }
+        for (ItemAmount want : unmet.amounts()) {
+            int left = want.count();
+            for (ItemAmount stock : spare.amounts()) {
+                if (left <= 0) break;
+                if (!ItemKey.hasPatch(stock.item()) || !QueuedPlan.sameItem(stock.item(), want.item())) continue;
+                int covered = Math.min(left, stock.count());
+                spare.remove(stock.item(), covered);
+                left -= covered;
             }
         }
         boolean allDelivered = true;
-        for (ItemAmount held : entry.held()) {
-            int spare = held.count() - needed.count(held.item());
-            if (spare <= 0) continue;
-            if (items.give(held.item(), spare)) {
-                entry.takeFromBuffer(held.item(), spare);
+        for (ItemAmount held : spare.amounts()) {
+            if (items.give(held.item(), held.count())) {
+                entry.takeFromBuffer(held.item(), held.count());
             } else {
                 allDelivered = false;
             }

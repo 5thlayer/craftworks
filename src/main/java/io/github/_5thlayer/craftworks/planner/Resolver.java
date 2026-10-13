@@ -164,9 +164,14 @@ public final class Resolver {
             // What the spent items leave behind goes to the player, never into the surplus: a plan
             // that counted on it would be paying part of its cost after it was queued.
             ItemBag left = new ItemBag();
+            // A Data-carrying step also keeps the draws ingredient by ingredient, for each craft's own stacks.
+            List<ItemAmount> inOrder = new ArrayList<>();
+            long drawnTotal = 0;
             for (Ingredient ingredient : recipe.ingredients()) {
                 for (ItemAmount drawn : take(ingredient, ingredient.count() * n, path, recipe.dataCarrying())) {
                     spent.add(drawn.item(), drawn.count());
+                    inOrder.add(drawn);
+                    drawnTotal += drawn.count();
                     String remainder = ingredient.remainder(drawn.item());
                     if (remainder != null) left.add(remainder, drawn.count());
                 }
@@ -174,7 +179,12 @@ public final class Resolver {
             ItemAmount made = new ItemAmount(recipe.result().item(), recipe.result().count() * n);
             surplus.add(made.item(), made.count());
             toCraft.add(made.item(), made.count());
-            steps.add(new CraftStep(recipe.id(), spent.amounts(), List.of(made), recipe.time(), n, left.amounts()));
+            // A step that came up short is only ever shown as Missing, and cannot be laid out per craft.
+            long wanted = 0;
+            for (Ingredient ingredient : recipe.ingredients()) wanted += (long) ingredient.count() * n;
+            boolean laidOut = recipe.dataCarrying() && wanted == drawnTotal;
+            steps.add(new CraftStep(recipe.id(), laidOut ? inOrder : spent.amounts(), List.of(made), recipe.time(), n,
+                    left.amounts(), laidOut ? recipe.ingredients().stream().map(Ingredient::count).toList() : List.of()));
             return true;
         }
 

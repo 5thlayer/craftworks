@@ -22,6 +22,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 
@@ -45,6 +46,8 @@ final class SelfAssemblingTests {
         tests.test("a_named_sword_pays_for_a_data_carrying_recipe", 20, SelfAssemblingTests::namedSwordPays);
         tests.test("a_plain_sword_is_spent_before_a_named_one", 20, SelfAssemblingTests::plainBeforeNamed);
         tests.test("cancelling_refunds_the_named_sword_exactly", 20, SelfAssemblingTests::cancelRefundsNamed);
+        tests.test("a_named_sword_makes_a_delivered_named_diamond_sword", 200, SelfAssemblingTests::namedSwordMakesANamedSword);
+        tests.test("one_named_and_one_plain_sword_deliver_one_of_each", 200, SelfAssemblingTests::mixedCraftsDeliverOneOfEach);
         tests.test("the_machine_makes_the_listed_product_of_a_recipe_that_assembles_nothing", 40, SelfAssemblingTests::machinePlain);
     }
 
@@ -94,6 +97,40 @@ final class SelfAssemblingTests {
         helper.assertTrue(swords.size() == 1 && ItemStack.isSameItemSameComponents(swords.get(0), named()),
                 "the refund should be the named sword at damage 42, and is " + swords);
         helper.succeed();
+    }
+
+    /** The named, damaged sword makes a diamond sword with the same name and damage, delivered as made. */
+    private static void namedSwordMakesANamedSword(GameTestHelper helper) {
+        ServerPlayer player = holding(helper, named(), new ItemStack(Items.DIAMOND));
+        helper.assertTrue(PersonalAssembler.craft(player, KEEPS_DATA, 1), "the recipe should queue");
+        helper.onEachTick(() -> EventHooks.firePlayerTickPost(player));
+        helper.succeedWhen(() -> {
+            helper.assertTrue(PersonalAssembler.queueOf(player).isEmpty(), "the plan is still queued");
+            List<ItemStack> swords = diamondSwords(player);
+            helper.assertTrue(swords.size() == 1 && Component.literal("Biter").equals(swords.get(0).get(DataComponents.CUSTOM_NAME))
+                            && swords.get(0).getDamageValue() == 42,
+                    "one diamond sword named Biter at damage 42 should be delivered, and " + swords + " are");
+        });
+    }
+
+    /** Two crafts, one named sword and one plain: each craft makes what a crafting table would from its own stacks. */
+    private static void mixedCraftsDeliverOneOfEach(GameTestHelper helper) {
+        ServerPlayer player = holding(helper, named(), new ItemStack(Items.IRON_SWORD), new ItemStack(Items.DIAMOND, 2));
+        helper.assertTrue(PersonalAssembler.craft(player, KEEPS_DATA, 2), "two crafts should queue");
+        helper.onEachTick(() -> EventHooks.firePlayerTickPost(player));
+        helper.succeedWhen(() -> {
+            helper.assertTrue(PersonalAssembler.queueOf(player).isEmpty(), "the plan is still queued");
+            List<ItemStack> swords = diamondSwords(player);
+            long named = swords.stream().filter(s -> Component.literal("Biter").equals(s.get(DataComponents.CUSTOM_NAME))
+                    && s.getDamageValue() == 42).count();
+            long plain = swords.stream().filter(s -> !s.has(DataComponents.CUSTOM_NAME)).count();
+            helper.assertTrue(swords.size() == 2 && named == 1 && plain == 1,
+                    "one named and one plain diamond sword should be delivered, and " + swords + " are");
+        });
+    }
+
+    private static List<ItemStack> diamondSwords(ServerPlayer player) {
+        return player.getInventory().getNonEquipmentItems().stream().filter(s -> s.is(Items.DIAMOND_SWORD)).toList();
     }
 
     private static ServerPlayer holding(GameTestHelper helper, ItemStack... stacks) {

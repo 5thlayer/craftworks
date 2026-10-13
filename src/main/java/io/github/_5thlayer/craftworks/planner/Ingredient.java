@@ -61,6 +61,12 @@ public record Ingredient(List<String> items, int count, Map<String, String> rema
 
     /** What one spent {@code item} leaves behind, or null when it leaves nothing. */
     public String remainder(String item) {
-        return remainders.get(item);
+        String listed = remainders.get(item);
+        if (listed != null || !ItemKey.hasPatch(item)) return listed;
+        // A key carrying data (ADR-0022) leaves what its listed item leaves.
+        for (Map.Entry<String, String> entry : remainders.entrySet()) {
+            if (ItemKey.itemId(entry.getKey()).equals(ItemKey.itemId(item))) return entry.getValue();
+        }
+        return null;
     }
 }

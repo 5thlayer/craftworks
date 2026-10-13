@@ -44,7 +44,8 @@ public final class AssemblerCodecs {
                     ITEM_AMOUNT.listOf().fieldOf("outputs").forGetter(CraftStep::outputs),
                     Codec.INT.fieldOf("time").forGetter(CraftStep::time),
                     Codec.INT.optionalFieldOf("crafts", 1).forGetter(CraftStep::crafts),
-                    ITEM_AMOUNT.listOf().optionalFieldOf("remainders", List.of()).forGetter(CraftStep::remainders))
+                    ITEM_AMOUNT.listOf().optionalFieldOf("remainders", List.of()).forGetter(CraftStep::remainders),
+                    Codec.INT.listOf().optionalFieldOf("per_craft", List.of()).forGetter(CraftStep::perCraft))
             .apply(instance, CraftStep::new));
 
     public static final Codec<CraftingPlan> CRAFTING_PLAN = RecordCodecBuilder.create(instance -> instance.group(
