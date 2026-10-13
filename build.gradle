@@ -228,6 +228,15 @@ if (providers.gradleProperty('withAE2').isPresent()) {
     }
 }
 
+// Mekanism on the dev client, only with -PwithMekanism, to see its self-assembling recipes (the Atomic
+// Disassembler, the tier upgrades) in the Personal Assembler (#58). Mekanism has no 26.1 release of its own;
+// this is the unofficial "Mekanism: Version Locked" port from CurseForge.
+if (providers.gradleProperty('withMekanism').isPresent()) {
+    dependencies {
+        localRuntime 'curse.maven:mekanism-version-locked-1713956:9154732'
+    }
+}
+
 // KubeJS on the dev runs, only with -PwithKubeJS, to try the recipe schema and the lock event for real
 // (#11). The sample scripts in kubejs/ are copied into each run's game directory, so the client and the
 // game tests read the same ones; the game tests then run the KubeJS tests too.
