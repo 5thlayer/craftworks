@@ -3,11 +3,14 @@
 
 package io.github._5thlayer.craftworks.mixin.minecraft;
 
-import io.github._5thlayer.craftworks.assembler.InventoryGrid;
 import io.github._5thlayer.craftworks.assembler.RemovedGridSlot;
 import net.minecraft.world.inventory.AbstractCraftingMenu;
+import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.inventory.Slot;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
@@ -20,10 +23,19 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
  * copy can rebuild its slots whenever it likes -- clear them and call these two again -- and a swap made
  * once, when the menu opened, would leave live slots under the cover after the first rebuild. It also
  * covers the client's menu and the server's alike, with nothing to register. The slot goes in at the
- * index it would have had, so every index stays constant. The 3x3 crafting table is left as it is.
+ * index it would have had, so every index stays constant.
+ *
+ * <p>The size is read from the menu's own {@code craftSlots} field, not from {@code getGridWidth()} and
+ * {@code getGridHeight()}: those are overridable, and these methods run while a subclass is still being
+ * built, so an override that reads a field it has not set yet would throw. {@code craftSlots} is set by
+ * {@code AbstractCraftingMenu}'s own constructor, before any subclass adds a slot. The 3x3 crafting table is left as it is.
  */
 @Mixin(AbstractCraftingMenu.class)
 public abstract class AbstractCraftingMenuMixin {
+
+    @Shadow
+    @Final
+    protected CraftingContainer craftSlots;
 
     private static final String ADD_SLOT =
             "Lnet/minecraft/world/inventory/AbstractCraftingMenu;addSlot(Lnet/minecraft/world/inventory/Slot;)Lnet/minecraft/world/inventory/Slot;";
@@ -38,7 +50,8 @@ public abstract class AbstractCraftingMenuMixin {
         return craftworks$removeIf2x2(slot);
     }
 
+    @Unique
     private Slot craftworks$removeIf2x2(Slot slot) {
-        return InventoryGrid.is2x2((AbstractCraftingMenu) (Object) this) ? RemovedGridSlot.standingIn(slot) : slot;
+        return craftSlots.getWidth() == 2 && craftSlots.getHeight() == 2 ? RemovedGridSlot.standingIn(slot) : slot;
     }
 }
