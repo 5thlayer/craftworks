@@ -218,6 +218,16 @@ if (providers.gradleProperty('withResearchd').isPresent()) {
     }
 }
 
+// AE2 on the dev client, only with -PwithAE2, to see another mod's tag-keyed crafting recipes, such as its
+// certus quartz tools, convert (#58); the game tests check the conversion with a recipe of their own.
+if (providers.gradleProperty('withAE2').isPresent()) {
+    dependencies {
+        localRuntime 'maven.modrinth:ae2:26.1.13-beta'
+        // GuideME, which AE2 requires.
+        localRuntime 'maven.modrinth:guideme:26.1.15-beta'
+    }
+}
+
 // KubeJS on the dev runs, only with -PwithKubeJS, to try the recipe schema and the lock event for real
 // (#11). The sample scripts in kubejs/ are copied into each run's game directory, so the client and the
 // game tests read the same ones; the game tests then run the KubeJS tests too.
