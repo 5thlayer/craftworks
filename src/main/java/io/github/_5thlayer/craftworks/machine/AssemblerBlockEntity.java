@@ -10,6 +10,7 @@ import java.util.Optional;
 import com.mojang.logging.LogUtils;
 import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
+import io.github._5thlayer.craftworks.recipe.SelfAssembly;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponentMap;
@@ -396,13 +397,22 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             return stopped;
         }
         List<Leftover> remainders = new ArrayList<>();
-        stopped = takeItems(recipe, tx, remainders);
+        List<ItemStack> consumed = new ArrayList<>();
+        stopped = takeItems(recipe, tx, remainders, consumed);
         if (stopped != null) {
             return stopped;
         }
-        ItemStackTemplate product = recipe.productTemplate().orElse(null);
-        if (product != null && !place(ItemResource.of(product), product.count(), tx)) {
-            return MachineState.OUTPUT_FULL;
+        // A Data-carrying recipe makes what its original makes of the stacks taken (ADR-0022).
+        Optional<ItemStack> assembled = SelfAssembly.assemble(held.idOrNull(), consumed);
+        if (assembled.isPresent()) {
+            if (!place(ItemResource.of(assembled.get()), assembled.get().getCount(), tx)) {
+                return MachineState.OUTPUT_FULL;
+            }
+        } else {
+            ItemStackTemplate product = recipe.productTemplate().orElse(null);
+            if (product != null && !place(ItemResource.of(product), product.count(), tx)) {
+                return MachineState.OUTPUT_FULL;
+            }
         }
         for (ItemStackTemplate extra : recipe.extraResults()) {
             if (!place(ItemResource.of(extra), extra.count(), tx)) {
@@ -441,7 +451,8 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
      * {@code remainders}: cake's buckets, honey block's bottles. Returns null if they all went, and otherwise
      * what stopped it.
      */
-    private @Nullable MachineState takeItems(AssemblingRecipe recipe, TransactionContext tx, List<Leftover> remainders) {
+    private @Nullable MachineState takeItems(AssemblingRecipe recipe, TransactionContext tx, List<Leftover> remainders,
+            List<ItemStack> consumed) {
         for (int slot = 0; slot < recipe.ingredients().size(); slot++) {
             SizedIngredient sized = recipe.ingredients().get(slot);
             ItemResource resource = inventory.getResource(slot);
@@ -449,6 +460,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
                     || inventory.extract(slot, resource, sized.count(), tx) != sized.count()) {
                 return MachineState.MISSING_INGREDIENTS;
             }
+            for (int i = 0; i < sized.count(); i++) consumed.add(resource.toStack(1));
             ItemStackTemplate remainder = resource.getItem().getCraftingRemainder(resource.toStack(1));
             if (remainder != null) {
                 remainders.add(new Leftover(ItemResource.of(remainder), remainder.count() * sized.count()));

@@ -89,12 +89,16 @@ final class ModRecipesTests {
         AtomicBoolean done = new AtomicBoolean();
         List<? extends String> excludedBefore = CraftworksConfig.MOD_RECIPES_EXCLUDED.get();
         boolean onBefore = CraftworksConfig.MOD_RECIPES.get();
-        CraftworksConfig.MOD_RECIPES_EXCLUDED.set(List.of(EXCLUDED));
+        CraftworksConfig.MOD_RECIPES_EXCLUDED.set(List.of(EXCLUDED, "craftworks:gametest/keeps_data"));
         ModRecipes.follow(server)
                 .thenRun(() -> {
                     if (type(server, EXCLUDED) != RecipeType.CRAFTING || type(server, SHAPED) != CraftworksRecipes.ASSEMBLING_TYPE.get()) {
                         failure.compareAndSet(null, "excluding " + EXCLUDED + " should leave it alone and convert the rest; it is "
                                 + type(server, EXCLUDED) + " and " + SHAPED + " is " + type(server, SHAPED));
+                    }
+                    if (type(server, "craftworks:gametest/keeps_data") != RecipeType.CRAFTING) {
+                        failure.compareAndSet(null, "excluding craftworks:gametest/keeps_data should keep it at the table, and it is "
+                                + type(server, "craftworks:gametest/keeps_data"));
                     }
                     CraftworksConfig.MOD_RECIPES.set(false);
                 })
@@ -123,7 +127,7 @@ final class ModRecipesTests {
                 .mapToInt(Ingredient::count).sum();
     }
 
-    private static RecipeType<?> type(MinecraftServer server, String id) {
+    static RecipeType<?> type(MinecraftServer server, String id) {
         return server.getRecipeManager().recipeMap().values().stream()
                 .filter(holder -> holder.id().identifier().toString().equals(id))
                 .map(holder -> (RecipeType<?>) holder.value().getType())

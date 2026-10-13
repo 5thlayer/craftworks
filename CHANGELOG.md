@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- A mod's shaped or shapeless crafting recipe that assembles its own result, such as Mekanism's Atomic Disassembler or a factory tier upgrade, now converts to an Assembling recipe instead of staying at the crafting table; an Assembler machine holding one makes what a crafting table would from the stacks it took, keeping their data. `modRecipesExcluded` still keeps any of them at the table. (#60)
+
 ## 0.9.2
 
 - Where Pipeworks is installed beside Craftworks, it must be 0.3.1 or later.

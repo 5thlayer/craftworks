@@ -14,7 +14,8 @@ datapack and KubeJS script has applied, each recipe whose class extends `ShapedR
 `ShapelessRecipe` with a fixed result is replaced by a real Assembling recipe at its own id, its slots
 counted into a bag, with the default craft time and Route priority. An id that is already an Assembling
 recipe (the built-in vanilla pack, or a pack's own) is left alone, as are vanilla's ids while
-`vanillaRecipes` is off and a subclass that assembles its own result. The server config's `modRecipes` flag,
+`vanillaRecipes` is off. (A subclass that assembles its own result was left alone here; ADR-0022 converts it
+as a Data-carrying recipe.) The server config's `modRecipes` flag,
 on by default, turns it off; an exclude list of namespaces and ids keeps chosen recipes at the table. An
 ingredient the Assembling codec cannot encode skips its recipe with a log line.
 

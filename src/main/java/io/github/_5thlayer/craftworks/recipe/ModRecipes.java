@@ -27,6 +27,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -78,11 +79,15 @@ public final class ModRecipes {
     public static RecipeMap convert(RecipeMap recipes, HolderLookup.Provider registries) {
         Settings settings = Settings.configured();
         applied = settings;
-        if (!settings.enabled()) return recipes;
+        if (!settings.enabled()) {
+            SelfAssembly.replace(Map.of());
+            return recipes;
+        }
         var ops = withItemTags(registries);
         List<String> skipped = new ArrayList<>();
         int converted = 0;
         List<RecipeHolder<?>> holders = new ArrayList<>(recipes.values().size());
+        Map<Identifier, CraftingRecipe> kept = new LinkedHashMap<>();
         for (RecipeHolder<?> holder : recipes.values()) {
             Identifier id = holder.id().identifier();
             // With the vanilla pack off, vanilla's ids stay at the table: that flag answers for them, not this one.
@@ -99,9 +104,12 @@ public final class ModRecipes {
             } else {
                 holders.add(new RecipeHolder<>(holder.id(), assembling));
                 converted++;
+                // A Data-carrying recipe: the original is kept, for a craft to ask what it made (ADR-0022).
+                if (assemblesItsOwn(holder.value())) kept.put(id, (CraftingRecipe) holder.value());
             }
         }
-        LOGGER.info("Personal Assembler: {} mod crafting recipe(s) converted to Assembling recipes.", converted);
+        SelfAssembly.replace(kept);
+        LOGGER.info("Personal Assembler: {} mod crafting recipe(s) converted to Assembling recipes, {} assembling their own result.", converted, kept.size());
         if (!skipped.isEmpty()) {
             LOGGER.warn("Personal Assembler: {} mod crafting recipe(s) left at the crafting table, with an ingredient or "
                     + "result an Assembling recipe cannot hold: {}", skipped.size(), skipped);
@@ -111,10 +119,10 @@ public final class ModRecipes {
 
     /**
      * The recipe as a Converted recipe, or null when it is not a shaped or shapeless one with a fixed
-     * result. A subclass that assembles its own result (copying an input's components, say) has none.
+     * result.
      */
     private static AssemblingRecipe toAssembling(Recipe<?> recipe) {
-        if (recipe.isSpecial() || assemblesItsOwn(recipe)) return null;
+        if (recipe.isSpecial()) return null;
         List<Ingredient> slots;
         ItemStackTemplate result;
         if (recipe instanceof ShapedRecipe shaped) {
