@@ -6,7 +6,7 @@ status: accepted
 
 ADR-0011 converts other mods' crafting recipes but leaves alone "a subclass that assembles its own result":
 one whose result is built from the stacks put in. Mekanism's Atomic Disassembler takes a charged energy
-tablet and comes out holding its energy; its tier upgrades keep a machine's contents. #58 asks for them in
+tablet and comes out holding its energy; its tier upgrades keep a machine's contents. #59 (split from #58) asks for them in
 the Personal Assembler, and a charged tablet paying for one is not negotiable. ADR-0002 stands in the way
 twice: a key is an item and all its data, so a charged tablet is not the tablet the recipe lists and never
 pays; and a plan names its result before the craft, which here depends on what the craft takes.
