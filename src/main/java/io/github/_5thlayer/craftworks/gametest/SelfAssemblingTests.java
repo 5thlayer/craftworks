@@ -6,7 +6,10 @@ package io.github._5thlayer.craftworks.gametest;
 import java.util.List;
 import java.util.UUID;
 
+import io.github._5thlayer.craftworks.assembler.ItemKeys;
 import io.github._5thlayer.craftworks.assembler.PersonalAssembler;
+import io.github._5thlayer.craftworks.assembler.PlanSource;
+import io.github._5thlayer.craftworks.planner.ItemAmount;
 import io.github._5thlayer.craftworks.planner.PlanQueue;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -48,6 +51,8 @@ final class SelfAssemblingTests {
         tests.test("cancelling_refunds_the_named_sword_exactly", 20, SelfAssemblingTests::cancelRefundsNamed);
         tests.test("a_named_sword_makes_a_delivered_named_diamond_sword", 200, SelfAssemblingTests::namedSwordMakesANamedSword);
         tests.test("one_named_and_one_plain_sword_deliver_one_of_each", 200, SelfAssemblingTests::mixedCraftsDeliverOneOfEach);
+        tests.test("the_plan_predicts_a_named_diamond_sword_for_a_named_sword", 20, SelfAssemblingTests::planPredictsNamed);
+        tests.test("one_named_and_one_plain_sword_predict_two_rows", 20, SelfAssemblingTests::planPredictsTwoRows);
         tests.test("the_machine_makes_the_listed_product_of_a_recipe_that_assembles_nothing", 40, SelfAssemblingTests::machinePlain);
     }
 
@@ -127,6 +132,35 @@ final class SelfAssemblingTests {
             helper.assertTrue(swords.size() == 2 && named == 1 && plain == 1,
                     "one named and one plain diamond sword should be delivered, and " + swords + " are");
         });
+    }
+
+    /** The Crafting Plan the server would send shows the result the original recipe makes from the named sword. */
+    private static void planPredictsNamed(GameTestHelper helper) {
+        ServerPlayer player = holding(helper, named(), new ItemStack(Items.DIAMOND));
+        PlanSource.ResolvedPlan plan = PlanSource.ACTIVE.resolve(player, KEEPS_DATA, 1);
+        helper.assertTrue(plan.complete(), "the plan should be complete");
+        List<ItemAmount> shown = plan.display().toCraft();
+        helper.assertTrue(shown.size() == 1 && shown.get(0).count() == 1 && isNamedDiamondSword(player, shown.get(0).item()),
+                "the plan should show one named diamond sword, and shows " + shown);
+        helper.assertTrue(AssemblerTests.count(player, Items.IRON_SWORD) == 1, "previewing should take nothing");
+        helper.succeed();
+    }
+
+    /** One craft takes the plain sword and one the named, so the plan shows a row of each. */
+    private static void planPredictsTwoRows(GameTestHelper helper) {
+        ServerPlayer player = holding(helper, named(), new ItemStack(Items.IRON_SWORD), new ItemStack(Items.DIAMOND, 2));
+        List<ItemAmount> shown = PlanSource.ACTIVE.resolve(player, KEEPS_DATA, 2).display().toCraft();
+        long named = shown.stream().filter(a -> a.count() == 1 && isNamedDiamondSword(player, a.item())).count();
+        long plain = shown.stream().filter(a -> a.count() == 1 && a.item().equals("minecraft:diamond_sword")).count();
+        helper.assertTrue(shown.size() == 2 && named == 1 && plain == 1,
+                "the plan should show one named and one plain diamond sword, and shows " + shown);
+        helper.succeed();
+    }
+
+    private static boolean isNamedDiamondSword(ServerPlayer player, String key) {
+        ItemStack stack = ItemKeys.toStack(key, 1, player.registryAccess());
+        return stack.is(Items.DIAMOND_SWORD) && Component.literal("Biter").equals(stack.get(DataComponents.CUSTOM_NAME))
+                && stack.getDamageValue() == 42;
     }
 
     private static List<ItemStack> diamondSwords(ServerPlayer player) {

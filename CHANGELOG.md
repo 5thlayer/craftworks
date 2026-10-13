@@ -6,6 +6,7 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 - A mod's shaped or shapeless crafting recipe that assembles its own result, such as Mekanism's Atomic Disassembler or a factory tier upgrade, now converts to an Assembling recipe instead of staying at the crafting table; an Assembler machine holding one makes what a crafting table would from the stacks it took, keeping their data. `modRecipesExcluded` still keeps any of them at the table. (#60)
 - In the Personal Assembler, such a recipe pays with an item carrying data too, a charged tablet or a named sword, spending plain items first and then in inventory order; a cancel gives back exactly what was taken. Each craft makes what the mod's own recipe makes from the stacks it took, as a crafting table would: a charged tablet makes a charged disassembler, and a chain of upgrades keeps the contents to the end. (#61, #62)
+- The Crafting Plan shows such a recipe's result as the mod's own recipe will make it from the stacks the plan would take, a row for each distinct result, before you queue; the plan still counts on the listed result. (#63)
 
 ## 0.9.2
 

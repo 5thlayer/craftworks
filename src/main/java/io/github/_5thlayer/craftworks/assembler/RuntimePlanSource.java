@@ -18,7 +18,9 @@ import io.github._5thlayer.craftworks.compat.researchd.ResearchdLocks;
 import io.github._5thlayer.craftworks.planner.AssemblingRecipe;
 import io.github._5thlayer.craftworks.planner.AssemblingRecipeSet;
 import io.github._5thlayer.craftworks.planner.ItemAmount;
+import io.github._5thlayer.craftworks.planner.CraftingPlan;
 import io.github._5thlayer.craftworks.planner.ItemBag;
+import io.github._5thlayer.craftworks.planner.PlanPreview;
 import io.github._5thlayer.craftworks.planner.Locks;
 import io.github._5thlayer.craftworks.planner.Resolver;
 import io.github._5thlayer.craftworks.recipe.RuntimeAssemblingRecipes;
@@ -47,11 +49,15 @@ public final class RuntimePlanSource implements PlanSource {
         Locks.Reasoned<Component> locks = locksFor(player);
         Resolver.Resolution resolution = new Resolver(RuntimeAssemblingRecipes.recipes(player.level()), guarded(locks))
                 .resolve(recipe.toString(), crafts, inventoryOf(player));
-        PlanDisplay display = new PlanDisplay(recipe, resolution.rawCost(), resolution.toCraft(),
+        CraftingPlan plan = resolution.complete()
+                ? resolution.toPlan(UUID.randomUUID(), rootItemOf(player, recipe), crafts) : null;
+        // A Data-carrying recipe's result is shown as the original would make it from the stacks the plan takes.
+        List<ItemAmount> toCraft = plan == null ? resolution.toCraft()
+                : PlanPreview.toCraft(plan, resolution.toCraft(), PersonalAssembler.madeBy(player));
+        PlanDisplay display = new PlanDisplay(recipe, resolution.rawCost(), toCraft,
                 resolution.missing(), resolution.locked(),
                 reasonsByItem(player, recipe, resolution.locked(), locks.reasons()), resolution.complete());
-        if (!resolution.complete()) return new ResolvedPlan(display, null);
-        return new ResolvedPlan(display, resolution.toPlan(UUID.randomUUID(), rootItemOf(player, recipe), crafts));
+        return new ResolvedPlan(display, plan);
     }
 
     @Override

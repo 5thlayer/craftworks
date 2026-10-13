@@ -194,7 +194,7 @@ public final class PersonalAssembler {
      * What a craft of a Data-carrying recipe made (ADR-0022): the mod's original recipe asked, as a crafting
      * table would, with the stacks the craft consumed. The listed result when it assembles nothing from them.
      */
-    private static CraftFinish madeBy(ServerPlayer player) {
+    static CraftFinish madeBy(ServerPlayer player) {
         return (recipe, consumed, planned) -> {
             List<ItemStack> stacks = new ArrayList<>();
             for (ItemAmount input : consumed) {
