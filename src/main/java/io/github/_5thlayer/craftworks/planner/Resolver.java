@@ -4,7 +4,9 @@
 package io.github._5thlayer.craftworks.planner;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -163,7 +165,7 @@ public final class Resolver {
             // that counted on it would be paying part of its cost after it was queued.
             ItemBag left = new ItemBag();
             for (Ingredient ingredient : recipe.ingredients()) {
-                for (ItemAmount drawn : take(ingredient, ingredient.count() * n, path)) {
+                for (ItemAmount drawn : take(ingredient, ingredient.count() * n, path, recipe.dataCarrying())) {
                     spent.add(drawn.item(), drawn.count());
                     String remainder = ingredient.remainder(drawn.item());
                     if (remainder != null) left.add(remainder, drawn.count());
@@ -195,11 +197,13 @@ public final class Resolver {
          * <p>Everything already crafted is drawn on before anything held, and both before anything is
          * crafted, so a surplus is never left stranded while the plan makes more of it.
          */
-        private List<ItemAmount> take(Ingredient ingredient, int quantity, List<String> ancestors) {
+        private List<ItemAmount> take(Ingredient ingredient, int quantity, List<String> ancestors,
+                                      boolean dataCarrying) {
             List<ItemAmount> drawn = new ArrayList<>();
             int owed = quantity;
             owed -= drawAcross(surplus, ingredient, owed, drawn, false);
             owed -= drawAcross(available, ingredient, owed, drawn, true);
+            if (dataCarrying) owed -= drawWithData(ingredient, owed, drawn);
             if (owed <= 0) return drawn;
 
             // Route priority: the first route, in the set's order, whose whole subtree resolves. A
@@ -310,6 +314,28 @@ public final class Resolver {
                 if (taken <= 0) continue;
                 if (fromInventory) rawCost.add(item, taken);
                 drawn.add(new ItemAmount(item, taken));
+                total += taken;
+            }
+            return total;
+        }
+
+        /**
+         * A Data-carrying ingredient's second choice: the held keys carrying data on an item it accepts, in
+         * inventory order, once the Pristine ones are spent (ADR-0022). The draws name the exact keys.
+         */
+        private int drawWithData(Ingredient ingredient, int owed, List<ItemAmount> drawn) {
+            if (owed <= 0) return 0;
+            Set<String> accepted = new HashSet<>();
+            for (String item : ingredient.items()) accepted.add(ItemKey.itemId(item));
+            int total = 0;
+            for (String key : new ArrayList<>(available.asMap().keySet())) {
+                if (total >= owed) break;
+                if (!ItemKey.hasPatch(key) || ingredient.items().contains(key)
+                        || !accepted.contains(ItemKey.itemId(key))) continue;
+                int taken = drawDown(available, key, owed - total);
+                if (taken <= 0) continue;
+                rawCost.add(key, taken);
+                drawn.add(new ItemAmount(key, taken));
                 total += taken;
             }
             return total;

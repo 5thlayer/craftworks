@@ -16,6 +16,7 @@ import io.github._5thlayer.craftworks.planner.ItemAmount;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
@@ -126,7 +127,7 @@ public final class RuntimeAssemblingRecipes {
                 && recipe.fluidIngredients().isEmpty() && recipe.fluidResults().isEmpty();
         return new io.github._5thlayer.craftworks.planner.AssemblingRecipe(
                 id, ingredients, new ItemAmount(result, product.count()), recipe.time(),
-                recipe.priority(), handCraftable);
+                recipe.priority(), handCraftable, SelfAssembly.keeps(Identifier.parse(id)));
     }
 
     /**

@@ -4,6 +4,11 @@
 package io.github._5thlayer.craftworks.gametest;
 
 import java.util.List;
+import java.util.UUID;
+
+import io.github._5thlayer.craftworks.assembler.PersonalAssembler;
+import io.github._5thlayer.craftworks.planner.PlanQueue;
+import net.minecraft.server.level.ServerPlayer;
 
 import io.github._5thlayer.craftworks.machine.AssemblerSlots;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
@@ -37,6 +42,9 @@ final class SelfAssemblingTests {
     static void register(CraftworksGameTests.Registrar tests) {
         tests.test("a_self_assembling_recipe_converts_at_its_id", 20, SelfAssemblingTests::converts);
         tests.test("the_machine_makes_what_a_self_assembling_recipe_assembles", 40, SelfAssemblingTests::machineKeeps);
+        tests.test("a_named_sword_pays_for_a_data_carrying_recipe", 20, SelfAssemblingTests::namedSwordPays);
+        tests.test("a_plain_sword_is_spent_before_a_named_one", 20, SelfAssemblingTests::plainBeforeNamed);
+        tests.test("cancelling_refunds_the_named_sword_exactly", 20, SelfAssemblingTests::cancelRefundsNamed);
         tests.test("the_machine_makes_the_listed_product_of_a_recipe_that_assembles_nothing", 40, SelfAssemblingTests::machinePlain);
     }
 
@@ -55,6 +63,43 @@ final class SelfAssemblingTests {
                 "the machine should make a diamond sword named Biter at damage 42, and made " + made + " named "
                         + made.get(DataComponents.CUSTOM_NAME) + " at damage " + made.getDamageValue());
         helper.succeed();
+    }
+
+    /** Holding only a named sword and a diamond, the recipe queues and takes the named sword. */
+    private static void namedSwordPays(GameTestHelper helper) {
+        ServerPlayer player = holding(helper, named(), new ItemStack(Items.DIAMOND));
+        helper.assertTrue(PersonalAssembler.craft(player, KEEPS_DATA, 1), "a named sword and a diamond should queue " + KEEPS_DATA);
+        helper.assertTrue(AssemblerTests.count(player, Items.IRON_SWORD) == 0 && AssemblerTests.count(player, Items.DIAMOND) == 0,
+                "queueing should have taken the named sword and the diamond");
+        helper.succeed();
+    }
+
+    /** The Pristine sword pays first, so the named one stays with the player. */
+    private static void plainBeforeNamed(GameTestHelper helper) {
+        ServerPlayer player = holding(helper, named(), new ItemStack(Items.IRON_SWORD), new ItemStack(Items.DIAMOND));
+        helper.assertTrue(PersonalAssembler.craft(player, KEEPS_DATA, 1), "the recipe should queue");
+        List<ItemStack> swords = player.getInventory().getNonEquipmentItems().stream().filter(s -> s.is(Items.IRON_SWORD)).toList();
+        helper.assertTrue(swords.size() == 1 && Component.literal("Biter").equals(swords.get(0).get(DataComponents.CUSTOM_NAME)),
+                "only the named sword should be left, and " + swords + " are");
+        helper.succeed();
+    }
+
+    /** A cancel gives back the sword with its name and damage. */
+    private static void cancelRefundsNamed(GameTestHelper helper) {
+        ServerPlayer player = holding(helper, named(), new ItemStack(Items.DIAMOND));
+        helper.assertTrue(PersonalAssembler.craft(player, KEEPS_DATA, 1), "the recipe should queue");
+        UUID row = PersonalAssembler.queueOf(player).entries().get(0).plan().id();
+        helper.assertTrue(PersonalAssembler.cancel(player, row, PlanQueue.ALL), "the cancel should go through");
+        List<ItemStack> swords = player.getInventory().getNonEquipmentItems().stream().filter(s -> s.is(Items.IRON_SWORD)).toList();
+        helper.assertTrue(swords.size() == 1 && ItemStack.isSameItemSameComponents(swords.get(0), named()),
+                "the refund should be the named sword at damage 42, and is " + swords);
+        helper.succeed();
+    }
+
+    private static ServerPlayer holding(GameTestHelper helper, ItemStack... stacks) {
+        ServerPlayer player = AssemblerTests.playerHolding(helper, stacks[0]);
+        for (int i = 1; i < stacks.length; i++) player.getInventory().add(stacks[i]);
+        return player;
     }
 
     private static void machinePlain(GameTestHelper helper) {
