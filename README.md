@@ -4,6 +4,8 @@ Craftworks adds automated crafting in the spirit of Factorio. The **Personal Ass
 
 **NeoForge, Minecraft 26.1.2 only.** Craftworks is early work, so please report any issues you find on [GitHub](https://github.com/5thlayer/craftworks/issues).
 
+To play Craftworks beside every other FactoryWorks mod, install the [FactoryWorks Showcase](https://www.curseforge.com/minecraft/modpacks/factoryworks-showcase) modpack from CurseForge.
+
 > **Craftworks is built for modpacks.** The Assembler crafts `craftworks:assembling` recipes: vanilla's and other mods' crafting recipes out of the box, and whatever a pack or datapack adds or replaces.
 
 ## Features
