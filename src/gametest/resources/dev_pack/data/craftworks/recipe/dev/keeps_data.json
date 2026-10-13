@@ -1,7 +1,0 @@
-{
-  "type": "craftworks:gametest_keeps_data",
-  "category": "equipment",
-  "pattern": ["D", "S"],
-  "key": { "D": "minecraft:diamond", "S": "minecraft:iron_sword" },
-  "result": { "id": "minecraft:diamond_sword" }
-}
