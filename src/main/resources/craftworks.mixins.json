@@ -3,6 +3,7 @@
   "package": "io.github._5thlayer.craftworks.mixin.minecraft",
   "compatibilityLevel": "JAVA_25",
   "mixins": ["InventoryMenuMixin", "RecipeManagerMixin", "ShapedRecipeAccessor", "ShapelessRecipeAccessor"],
+  "client": ["AbstractRecipeBookScreenAccessor"],
   "injectors": {
     "defaultRequire": 1
   }

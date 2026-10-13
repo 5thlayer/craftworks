@@ -3,6 +3,8 @@
 
 package io.github._5thlayer.craftworks.gametest;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import io.github._5thlayer.craftworks.assembler.FillRequest;
@@ -12,10 +14,16 @@ import io.github._5thlayer.craftworks.planner.PlanQueue;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractCraftingMenu;
+import net.minecraft.world.inventory.CraftingMenu;
+import net.minecraft.world.inventory.RecipeBookType;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
 
 /**
  * The inventory screen is the Assembler (ADR-0005, ADR-0007): the 2x2 grid is gone from a real
@@ -29,6 +37,8 @@ final class InventoryScreenTests {
     static void register(CraftworksGameTests.Registrar tests) {
         tests.test("the_inventory_menu_keeps_its_slot_indices", 20, InventoryScreenTests::keepsSlotIndices);
         tests.test("the_2x2_grid_takes_nothing_and_crafts_nothing", 20, InventoryScreenTests::gridIsDead);
+        tests.test("another_menus_2x2_grid_takes_nothing", 20, InventoryScreenTests::copiedGridIsDead);
+        tests.test("the_3x3_crafting_table_is_left_alone", 20, InventoryScreenTests::craftingTableIsKept);
         tests.test("a_partial_cancel_refunds_and_keeps_the_row", 20, InventoryScreenTests::partialCancel);
     }
 
@@ -92,6 +102,95 @@ final class InventoryScreenTests {
                 "a log in the grid made " + menu.getSlot(InventoryMenu.RESULT_SLOT).getItem());
         menu.getSlot(InventoryMenu.CRAFT_SLOT_START).container.setItem(0, ItemStack.EMPTY);
         helper.succeed();
+    }
+
+    /**
+     * A menu of another mod that copies the inventory's 2x2 grid, as Curios' does: an
+     * {@code AbstractCraftingMenu} of its own, not an {@code InventoryMenu}. Opening it, the way the server
+     * does it, takes the grid and the result away with every index kept.
+     */
+    private static void copiedGridIsDead(GameTestHelper helper) {
+        ServerPlayer player = AssemblerTests.playerHolding(helper, ItemStack.EMPTY);
+        CopiedGridMenu menu = new CopiedGridMenu(player);
+        int slots = menu.slots.size();
+        NeoForge.EVENT_BUS.post(new PlayerContainerEvent.Open(player, menu));
+
+        helper.assertTrue(menu.slots.size() == slots, "the menu has " + menu.slots.size() + " slots, not " + slots);
+        for (int i = 0; i < menu.slots.size(); i++) {
+            helper.assertTrue(menu.slots.get(i).index == i, "slot " + i + " carries index " + menu.slots.get(i).index);
+        }
+        List<Slot> grid = new ArrayList<>(menu.getInputGridSlots());
+        grid.add(menu.getResultSlot());
+        helper.assertTrue(grid.size() == 5, "the grid and result are " + grid.size() + " slots, not 5");
+        for (Slot slot : grid) {
+            Slot now = menu.slots.get(slot.index);
+            helper.assertTrue(now instanceof RemovedGridSlot, "slot " + slot.index + " is still a live grid slot");
+            helper.assertFalse(now.isActive(), "slot " + slot.index + " is drawn");
+            helper.assertFalse(now.mayPlace(new ItemStack(Items.OAK_LOG)), "slot " + slot.index + " takes items");
+            helper.assertFalse(now.mayPickup(player), "slot " + slot.index + " gives items");
+        }
+        // The rest of the menu is the other mod's, and still its own.
+        helper.assertFalse(menu.slots.get(menu.slots.size() - 1) instanceof RemovedGridSlot,
+                "the player's own slots were taken too");
+        helper.succeed();
+    }
+
+    /** The crafting table is a 3x3: opening it takes nothing. */
+    private static void craftingTableIsKept(GameTestHelper helper) {
+        ServerPlayer player = AssemblerTests.playerHolding(helper, ItemStack.EMPTY);
+        CraftingMenu menu = new CraftingMenu(1, player.getInventory());
+        NeoForge.EVENT_BUS.post(new PlayerContainerEvent.Open(player, menu));
+        for (Slot slot : menu.slots) {
+            helper.assertFalse(slot instanceof RemovedGridSlot, "the crafting table lost slot " + slot.index);
+        }
+        helper.assertTrue(menu.getSlot(1).mayPlace(new ItemStack(Items.OAK_LOG)), "the table's grid takes nothing");
+        helper.succeed();
+    }
+
+    /** A 2x2 {@code AbstractCraftingMenu} laid out as vanilla's inventory is, and not that menu. */
+    private static final class CopiedGridMenu extends AbstractCraftingMenu {
+        private final Player owner;
+        private final Slot result;
+
+        CopiedGridMenu(Player owner) {
+            super(null, 99, 2, 2);
+            this.owner = owner;
+            this.result = addResultSlot(owner, 154, 28);
+            addCraftingGridSlots(98, 18);
+            for (int i = 0; i < 9; i++) {
+                addSlot(new Slot(owner.getInventory(), i, 8 + i * 18, 142));
+            }
+        }
+
+        @Override
+        public Slot getResultSlot() {
+            return result;
+        }
+
+        @Override
+        public List<Slot> getInputGridSlots() {
+            return slots.subList(1, 5);
+        }
+
+        @Override
+        protected Player owner() {
+            return owner;
+        }
+
+        @Override
+        public RecipeBookType getRecipeBookType() {
+            return RecipeBookType.CRAFTING;
+        }
+
+        @Override
+        public boolean stillValid(Player player) {
+            return true;
+        }
+
+        @Override
+        public ItemStack quickMoveStack(Player player, int slot) {
+            return ItemStack.EMPTY;
+        }
     }
 
     /** A left click's cancel on a real player: one craft's cost back, the rest still queued under its id. */

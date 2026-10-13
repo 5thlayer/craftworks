@@ -9,9 +9,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraft.world.inventory.Slot;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -33,6 +31,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  *       {@code ServerPlaceRecipe} writes to the container directly, and a mod could too.
  * </ul>
  *
+ * <p>Another mod's copy of this menu is not an {@code InventoryMenu} and never reaches this class;
+ * {@code CopiedInventoryGrid} removes its grid the same way when a player opens it.
+ *
  * <p>The grid is also painted on the inventory texture, which no menu change reaches; the cover and
  * the recipe book button are {@code InventoryGridBlank}'s, client-side. Neither is load-bearing --
  * this class is what makes the grid unable to craft.
@@ -46,19 +47,10 @@ public class InventoryMenuMixin {
         AbstractContainerMenu menu = (AbstractContainerMenu) (Object) this;
         // The result slot and then the four inputs, which vanilla adds in that order and which its
         // own constants describe as one run: RESULT_SLOT, then CRAFT_SLOT_START to CRAFT_SLOT_END.
-        craftworks$deaden(menu, InventoryMenu.RESULT_SLOT);
+        RemovedGridSlot.replace(menu, InventoryMenu.RESULT_SLOT);
         for (int i = InventoryMenu.CRAFT_SLOT_START; i < InventoryMenu.CRAFT_SLOT_END; i++) {
-            craftworks$deaden(menu, i);
+            RemovedGridSlot.replace(menu, i);
         }
-    }
-
-    @Unique
-    private static void craftworks$deaden(AbstractContainerMenu menu, int index) {
-        Slot replaced = menu.slots.get(index);
-        Slot dead = new RemovedGridSlot(
-                replaced.container, replaced.getContainerSlot(), replaced.x, replaced.y);
-        dead.index = replaced.index;
-        menu.slots.set(index, dead);
     }
 
     @Inject(method = "slotsChanged", at = @At("HEAD"), cancellable = true)

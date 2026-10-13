@@ -5,6 +5,7 @@ package io.github._5thlayer.craftworks.assembler;
 
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
@@ -27,6 +28,21 @@ public final class RemovedGridSlot extends Slot {
 
     public RemovedGridSlot(Container container, int slot, int x, int y) {
         super(container, slot, x, y);
+    }
+
+    /**
+     * Replaces the slot at {@code index} of {@code menu} with a {@code RemovedGridSlot} standing in the
+     * same place, keeping its index, container, container slot and position. The one place a grid slot
+     * is taken out, for the inventory menu ({@code InventoryMenuMixin}) and for another mod's copy of it
+     * ({@link CopiedInventoryGrid}) alike. A slot already removed is left as it is.
+     */
+    public static void replace(AbstractContainerMenu menu, int index) {
+        Slot replaced = menu.slots.get(index);
+        if (replaced instanceof RemovedGridSlot) return;
+        Slot dead = new RemovedGridSlot(
+                replaced.container, replaced.getContainerSlot(), replaced.x, replaced.y);
+        dead.index = replaced.index;
+        menu.slots.set(index, dead);
     }
 
     @Override
