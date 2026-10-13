@@ -261,7 +261,7 @@ class PlanQueueTest {
     }
 
     @Test
-    void theRowCountsDownAsEachCraftFinishes() {
+    void theRowCountsDownAsEachCraftResultes() {
         TestPlayerItems items = new TestPlayerItems().with(IRON, 24);
         PlanQueue queue = new PlanQueue();
         queue.enqueue(gearPlan("twelve", 12), items);

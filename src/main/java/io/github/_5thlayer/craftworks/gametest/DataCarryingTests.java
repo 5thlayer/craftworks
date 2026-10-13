@@ -4,6 +4,7 @@
 package io.github._5thlayer.craftworks.gametest;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import io.github._5thlayer.craftworks.assembler.ItemKeys;
@@ -17,6 +18,7 @@ import io.github._5thlayer.craftworks.machine.AssemblerSlots;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.HeldRecipes;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
+import io.github._5thlayer.craftworks.recipe.DataCarryingRecipes;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
@@ -24,6 +26,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
@@ -34,26 +37,28 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
  * makes a diamond sword with the sword's name and damage), is a Data-carrying recipe (ADR-0022): converted, and the
  * Assembler machine asks the original what each craft made.
  */
-final class SelfAssemblingTests {
+final class DataCarryingTests {
 
     static final Identifier KEEPS_DATA = Identifier.parse("craftworks:gametest/keeps_data");
     /** Shapeless and plain: two sand and a dirt make three clay balls. */
     private static final Identifier PLAIN = Identifier.parse("craftworks:gametest/converted_shapeless");
 
-    private SelfAssemblingTests() {
+    private DataCarryingTests() {
     }
 
     static void register(CraftworksGameTests.Registrar tests) {
-        tests.test("a_self_assembling_recipe_converts_at_its_id", 20, SelfAssemblingTests::converts);
-        tests.test("the_machine_makes_what_a_self_assembling_recipe_assembles", 40, SelfAssemblingTests::machineKeeps);
-        tests.test("a_named_sword_pays_for_a_data_carrying_recipe", 20, SelfAssemblingTests::namedSwordPays);
-        tests.test("a_plain_sword_is_spent_before_a_named_one", 20, SelfAssemblingTests::plainBeforeNamed);
-        tests.test("cancelling_refunds_the_named_sword_exactly", 20, SelfAssemblingTests::cancelRefundsNamed);
-        tests.test("a_named_sword_makes_a_delivered_named_diamond_sword", 200, SelfAssemblingTests::namedSwordMakesANamedSword);
-        tests.test("one_named_and_one_plain_sword_deliver_one_of_each", 200, SelfAssemblingTests::mixedCraftsDeliverOneOfEach);
-        tests.test("the_plan_predicts_a_named_diamond_sword_for_a_named_sword", 20, SelfAssemblingTests::planPredictsNamed);
-        tests.test("one_named_and_one_plain_sword_predict_two_rows", 20, SelfAssemblingTests::planPredictsTwoRows);
-        tests.test("the_machine_makes_the_listed_product_of_a_recipe_that_assembles_nothing", 40, SelfAssemblingTests::machinePlain);
+        tests.test("a_data_carrying_recipe_converts_at_its_id", 20, DataCarryingTests::converts);
+        tests.test("the_machine_makes_what_a_data_carrying_recipe_assembles", 40, DataCarryingTests::machineKeeps);
+        tests.test("a_named_sword_pays_for_a_data_carrying_recipe", 20, DataCarryingTests::namedSwordPays);
+        tests.test("a_plain_sword_is_spent_before_a_named_one", 20, DataCarryingTests::plainBeforeNamed);
+        tests.test("cancelling_refunds_the_named_sword_exactly", 20, DataCarryingTests::cancelRefundsNamed);
+        tests.test("a_named_sword_makes_a_delivered_named_diamond_sword", 200, DataCarryingTests::namedSwordMakesANamedSword);
+        tests.test("one_named_and_one_plain_sword_deliver_one_of_each", 200, DataCarryingTests::mixedCraftsDeliverOneOfEach);
+        tests.test("the_plan_predicts_a_named_diamond_sword_for_a_named_sword", 20, DataCarryingTests::planPredictsNamed);
+        tests.test("one_named_and_one_plain_sword_predict_two_rows", 20, DataCarryingTests::planPredictsTwoRows);
+        tests.test("a_partial_cancel_refunds_the_named_sword_exactly", 20, DataCarryingTests::partialCancelRefundsNamed);
+        tests.test("overlapping_slots_are_laid_out_by_any_valid_placement", 20, DataCarryingTests::overlappingSlots);
+        tests.test("the_machine_makes_the_listed_product_of_a_recipe_that_assembles_nothing", 40, DataCarryingTests::machinePlain);
     }
 
     private static void converts(GameTestHelper helper) {
@@ -101,6 +106,31 @@ final class SelfAssemblingTests {
         List<ItemStack> swords = player.getInventory().getNonEquipmentItems().stream().filter(s -> s.is(Items.IRON_SWORD)).toList();
         helper.assertTrue(swords.size() == 1 && ItemStack.isSameItemSameComponents(swords.get(0), named()),
                 "the refund should be the named sword at damage 42, and is " + swords);
+        helper.succeed();
+    }
+
+    /** Two crafts, one cancelled: the named sword comes back as it was, the Pristine one pays the craft left. */
+    private static void partialCancelRefundsNamed(GameTestHelper helper) {
+        ServerPlayer player = holding(helper, named(), new ItemStack(Items.IRON_SWORD), new ItemStack(Items.DIAMOND, 2));
+        helper.assertTrue(PersonalAssembler.craft(player, KEEPS_DATA, 2), "two crafts should queue");
+        UUID row = PersonalAssembler.queueOf(player).entries().get(0).plan().id();
+        helper.assertTrue(PersonalAssembler.cancel(player, row, 1), "the partial cancel should go through");
+        List<ItemStack> swords = player.getInventory().getNonEquipmentItems().stream().filter(s -> s.is(Items.IRON_SWORD)).toList();
+        helper.assertTrue(swords.size() == 1 && ItemStack.isSameItemSameComponents(swords.get(0), named()),
+                "the refund should be the named sword at damage 42, and is " + swords);
+        helper.succeed();
+    }
+
+    /** A first slot taking either sword and a second taking only the iron one: first-fit would strand the iron sword. */
+    private static void overlappingSlots(GameTestHelper helper) {
+        List<Optional<Ingredient>> slots = List.of(Optional.of(Ingredient.of(Items.IRON_SWORD, Items.DIAMOND_SWORD)),
+                Optional.of(Ingredient.of(Items.IRON_SWORD)));
+        ItemStack iron = new ItemStack(Items.IRON_SWORD);
+        ItemStack diamond = new ItemStack(Items.DIAMOND_SWORD);
+        List<ItemStack> grid = DataCarryingRecipes.layOut(slots, List.of(iron, diamond));
+        helper.assertTrue(grid != null && grid.get(0) == diamond && grid.get(1) == iron,
+                "the diamond sword should take the first slot and the iron one the second, and the grid is " + grid);
+        helper.assertTrue(DataCarryingRecipes.layOut(slots, List.of(diamond, diamond)) == null, "two diamond swords fit no placement");
         helper.succeed();
     }
 

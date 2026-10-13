@@ -111,11 +111,11 @@ public final class PlanQueue {
      * the moment the player frees a slot.
      */
     public void tick(PlayerItems items) {
-        tick(items, CraftFinish.PLANNED);
+        tick(items, CraftResult.PLANNED);
     }
 
     /** One server tick of the head plan, {@code finish} saying what each Data-carrying craft really made. */
-    public void tick(PlayerItems items, CraftFinish finish) {
+    public void tick(PlayerItems items, CraftResult finish) {
         if (entries.isEmpty()) {
             blocked = false;
             return;
@@ -263,7 +263,7 @@ public final class PlanQueue {
             int left = want.count();
             for (ItemAmount stock : spare.amounts()) {
                 if (left <= 0) break;
-                if (!ItemKey.hasPatch(stock.item()) || !QueuedPlan.sameItem(stock.item(), want.item())) continue;
+                if (!ItemKey.hasPatch(stock.item()) || !ItemKey.sameItem(stock.item(), want.item())) continue;
                 int covered = Math.min(left, stock.count());
                 spare.remove(stock.item(), covered);
                 left -= covered;

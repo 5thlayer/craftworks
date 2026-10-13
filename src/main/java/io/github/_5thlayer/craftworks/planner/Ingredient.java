@@ -65,7 +65,7 @@ public record Ingredient(List<String> items, int count, Map<String, String> rema
         if (listed != null || !ItemKey.hasPatch(item)) return listed;
         // A key carrying data (ADR-0022) leaves what its listed item leaves.
         for (Map.Entry<String, String> entry : remainders.entrySet()) {
-            if (ItemKey.itemId(entry.getKey()).equals(ItemKey.itemId(item))) return entry.getValue();
+            if (ItemKey.sameItem(entry.getKey(), item)) return entry.getValue();
         }
         return null;
     }

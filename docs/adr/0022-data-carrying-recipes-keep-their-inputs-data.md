@@ -15,7 +15,8 @@ pays; and a plan names its result before the craft, which here depends on what t
 as a **Data-carrying recipe**; `modRecipesExcluded` still keeps one at the table.
 
 - **What pays.** A Data-carrying recipe's ingredients take an item carrying data as well as a **Pristine**
-  one, Pristine first, then in inventory order. Every other recipe keeps ADR-0002's exact match, so a
+  one, a Pristine one already held first, then in inventory order; a held item carrying data is spent before
+  the plan crafts a fresh Pristine one. Every other recipe keeps ADR-0002's exact match, so a
   charged or enchanted item never pays where its data would vanish.
 - **What it makes.** Each craft, in the Personal Assembler and the Assembler machine alike, rebuilds a
   crafting grid from the stacks it took (in pattern positions for a shaped recipe) and asks the original

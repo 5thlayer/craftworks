@@ -127,7 +127,7 @@ public final class RuntimeAssemblingRecipes {
                 && recipe.fluidIngredients().isEmpty() && recipe.fluidResults().isEmpty();
         return new io.github._5thlayer.craftworks.planner.AssemblingRecipe(
                 id, ingredients, new ItemAmount(result, product.count()), recipe.time(),
-                recipe.priority(), handCraftable, SelfAssembly.keeps(Identifier.parse(id)));
+                recipe.priority(), handCraftable, DataCarryingRecipes.isDataCarrying(Identifier.parse(id)));
     }
 
     /**

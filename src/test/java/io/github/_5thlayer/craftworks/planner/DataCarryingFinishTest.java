@@ -33,7 +33,7 @@ class DataCarryingFinishTest {
     }
 
     /** A hook that names the result when a named sword was consumed, as the original recipe would, and counts it twice. */
-    private static CraftFinish namesIt(List<List<ItemAmount>> asked) {
+    private static CraftResult namesIt(List<List<ItemAmount>> asked) {
         return (recipe, consumed, planned) -> {
             asked.add(consumed);
             boolean named = consumed.stream().anyMatch(input -> input.item().equals(NAMED));
@@ -49,7 +49,7 @@ class DataCarryingFinishTest {
         return queue;
     }
 
-    private static void run(PlanQueue queue, TestPlayerItems items, CraftFinish finish) {
+    private static void run(PlanQueue queue, TestPlayerItems items, CraftResult finish) {
         for (int tick = 0; tick < 1000 && !queue.isEmpty(); tick++) queue.tick(items, finish);
         assertTrue(queue.isEmpty(), "the queue should have finished");
     }
@@ -107,13 +107,13 @@ class DataCarryingFinishTest {
         assertTrue(queue.enqueue(resolver.resolve("to_elite", 1, ItemBag.of(items.contents()))
                 .toPlan(UUID.randomUUID(), "elite", 1), items));
         List<List<ItemAmount>> asked = new ArrayList<>();
-        CraftFinish keeps = (recipe, consumed, planned) -> {
+        CraftResult carrying = (recipe, consumed, planned) -> {
             asked.add(consumed);
             return new ItemAmount(planned.item() + "[full=1]", planned.count());
         };
 
         for (int tick = 0; tick < 1000 && !queue.isEmpty(); tick++) {
-            queue.tick(items, keeps);
+            queue.tick(items, carrying);
             assertFalse(items.contents().containsKey("advanced[full=1]"), "the intermediate was handed back");
         }
 

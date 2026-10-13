@@ -134,7 +134,7 @@ public final class QueuedPlan {
      * a Resolver bug, and the alternative to a loud failure is a plan that silently crafts something
      * out of nothing.
      */
-    void completeCraft(CraftFinish finish) {
+    void completeCraft(CraftResult finish) {
         CraftStep step = plan.steps().get(stepIndex);
         List<ItemAmount> consumed = draw(step.craftInputs(craftsDone));
         for (ItemAmount input : consumed) buffer.remove(input.item(), input.count());
@@ -143,7 +143,7 @@ public final class QueuedPlan {
             int share = step.share(output.count(), craftsDone);
             if (share <= 0) continue;
             ItemAmount planned = new ItemAmount(output.item(), share);
-            ItemAmount made = i == 0 && step.dataCarrying() ? finish.result(step.recipe(), consumed, planned) : planned;
+            ItemAmount made = i == 0 && step.dataCarrying() ? finish.made(step.recipe(), consumed, planned) : planned;
             buffer.add(made.item(), made.count());
         }
         for (ItemAmount remainder : step.remainders()) {
@@ -177,7 +177,7 @@ public final class QueuedPlan {
             int left = input.count();
             for (ItemAmount stock : held.amounts()) {
                 if (left <= 0) break;
-                if (!ItemKey.hasPatch(stock.item()) || !sameItem(stock.item(), input.item())) continue;
+                if (!ItemKey.hasPatch(stock.item()) || !ItemKey.sameItem(stock.item(), input.item())) continue;
                 int taken = Math.min(left, stock.count());
                 held.remove(stock.item(), taken);
                 drawn.add(new ItemAmount(stock.item(), taken));
@@ -190,10 +190,6 @@ public final class QueuedPlan {
             }
         }
         return drawn;
-    }
-
-    static boolean sameItem(String key, String other) {
-        return ItemKey.itemId(key).equals(ItemKey.itemId(other));
     }
 
     /**

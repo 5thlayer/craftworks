@@ -10,7 +10,7 @@ import java.util.Optional;
 import com.mojang.logging.LogUtils;
 import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
-import io.github._5thlayer.craftworks.recipe.SelfAssembly;
+import io.github._5thlayer.craftworks.recipe.DataCarryingRecipes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponentMap;
@@ -403,16 +403,13 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             return stopped;
         }
         // A Data-carrying recipe makes what its original makes of the stacks taken (ADR-0022).
-        Optional<ItemStack> assembled = SelfAssembly.assemble(held.idOrNull(), consumed);
-        if (assembled.isPresent()) {
-            if (!place(ItemResource.of(assembled.get()), assembled.get().getCount(), tx)) {
-                return MachineState.OUTPUT_FULL;
-            }
-        } else {
-            ItemStackTemplate product = recipe.productTemplate().orElse(null);
-            if (product != null && !place(ItemResource.of(product), product.count(), tx)) {
-                return MachineState.OUTPUT_FULL;
-            }
+        ItemStack assembled = DataCarryingRecipes.assemble(held.idOrNull(), consumed).orElse(ItemStack.EMPTY);
+        ItemStackTemplate listed = recipe.productTemplate().orElse(null);
+        ItemResource product = !assembled.isEmpty() ? ItemResource.of(assembled)
+                : listed != null ? ItemResource.of(listed) : null;
+        int count = !assembled.isEmpty() ? assembled.getCount() : listed != null ? listed.count() : 0;
+        if (product != null && !place(product, count, tx)) {
+            return MachineState.OUTPUT_FULL;
         }
         for (ItemStackTemplate extra : recipe.extraResults()) {
             if (!place(ItemResource.of(extra), extra.count(), tx)) {

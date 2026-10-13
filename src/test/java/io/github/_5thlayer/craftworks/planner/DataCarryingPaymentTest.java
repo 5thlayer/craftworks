@@ -154,4 +154,59 @@ class DataCarryingPaymentTest {
     private static ItemBag bagOf(TestPlayerItems items) {
         return ItemBag.of(items.contents());
     }
+
+    @Test
+    void aHeldItemWithDataIsSpentBeforeThePlanCraftsAFreshPristineOne() {
+        AssemblingRecipe forge = new AssemblingRecipe("forge", List.of(Ingredient.of("iron", 1)),
+                new ItemAmount(PRISTINE, 1), 10);
+        Resolver resolver = new Resolver(AssemblingRecipeSet.builder().add(upgrade(true)).add(forge).build(), Set.of()::contains);
+
+        Resolver.Resolution resolution = resolver.resolve("upgrade", 1, have("diamond", 1, NAMED, 1, "iron", 1));
+
+        assertTrue(resolution.complete());
+        assertEquals(Map.of("diamond", 1, NAMED, 1), asMap(resolution.rawCost()));
+        assertEquals(1, resolution.steps().size());
+    }
+
+    @Test
+    void itemsWithDataPayInInventoryOrderAcrossSeveralKeys() {
+        Resolver.Resolution resolution = resolverOf(upgrade(true))
+                .resolve("upgrade", 3, have("diamond", 3, OTHER, 1, NAMED, 2, "iron_sword[name=Claw]", 1));
+
+        assertEquals(Map.of("diamond", 3, OTHER, 1, NAMED, 2), asMap(resolution.rawCost()));
+    }
+
+    @Test
+    void aQueueOfSeveralCraftsHoldingKeysWithDataRoundTripsWithItsPerCraftLayout() {
+        TestPlayerItems items = stocked(have("diamond", 3, NAMED, 1, OTHER, 1, PRISTINE, 1));
+        PlanQueue queue = new PlanQueue();
+        assertTrue(queue.enqueue(resolverOf(upgrade(true)).resolve("upgrade", 3, bagOf(items))
+                .toPlan(UUID.randomUUID(), "diamond_sword", 3), items));
+        assertFalse(queue.entries().get(0).plan().steps().get(0).perCraft().isEmpty());
+
+        JsonElement json = AssemblerCodecs.QUEUE.encodeStart(JsonOps.INSTANCE, queue).getOrThrow();
+        PlanQueue back = AssemblerCodecs.QUEUE.parse(JsonOps.INSTANCE, json).getOrThrow();
+
+        assertEquals(queue.entries(), back.entries());
+        assertEquals(queue.entries().get(0).plan().steps().get(0).perCraft(),
+                back.entries().get(0).plan().steps().get(0).perCraft());
+    }
+
+    @Test
+    void aPartialCancelOfSeveralCraftsRefundsTheExactKeysAndReplans() {
+        TestPlayerItems items = stocked(have("diamond", 3, NAMED, 1, OTHER, 1, PRISTINE, 1));
+        Resolver resolver = resolverOf(upgrade(true));
+        UUID id = UUID.randomUUID();
+        PlanQueue queue = new PlanQueue();
+        assertTrue(queue.enqueue(resolver.resolve("upgrade", 3, bagOf(items)).toPlan(id, "diamond_sword", 3), items));
+
+        PlanQueue.CancelResult result = queue.cancel(id, 1, items, (recipe, crafts, planId) ->
+                Optional.of(resolver.resolve(recipe, crafts, bagOf(items)).toPlan(planId, "diamond_sword", crafts)));
+
+        assertTrue(result.cancelled());
+        assertEquals(2, queue.entries().get(0).plan().amount());
+        int keysHeld = items.contents().values().stream().mapToInt(i -> i).sum()
+                + queue.entries().get(0).buffer().values().stream().mapToInt(i -> i).sum();
+        assertEquals(6, keysHeld, "three diamonds and three swords, none lost or invented");
+    }
 }

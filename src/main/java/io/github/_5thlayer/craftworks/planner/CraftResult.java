@@ -13,14 +13,14 @@ import java.util.List;
  * pays for the step it was made for.
  */
 @FunctionalInterface
-public interface CraftFinish {
+public interface CraftResult {
 
     /** Every craft makes what it planned. */
-    CraftFinish PLANNED = (recipe, consumed, planned) -> planned;
+    CraftResult PLANNED = (recipe, consumed, planned) -> planned;
 
     /**
      * The key and count one craft of {@code recipe} made, given the exact keys that craft consumed;
      * {@code planned} (the listed result) when nothing changes.
      */
-    ItemAmount result(String recipe, List<ItemAmount> consumed, ItemAmount planned);
+    ItemAmount made(String recipe, List<ItemAmount> consumed, ItemAmount planned);
 }

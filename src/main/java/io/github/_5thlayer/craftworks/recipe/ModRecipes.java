@@ -80,7 +80,7 @@ public final class ModRecipes {
         Settings settings = Settings.configured();
         applied = settings;
         if (!settings.enabled()) {
-            SelfAssembly.replace(Map.of());
+            DataCarryingRecipes.replace(Map.of());
             return recipes;
         }
         var ops = withItemTags(registries);
@@ -108,8 +108,8 @@ public final class ModRecipes {
                 if (assemblesItsOwn(holder.value())) kept.put(id, (CraftingRecipe) holder.value());
             }
         }
-        SelfAssembly.replace(kept);
-        LOGGER.info("Personal Assembler: {} mod crafting recipe(s) converted to Assembling recipes, {} assembling their own result.", converted, kept.size());
+        DataCarryingRecipes.replace(kept);
+        LOGGER.info("Personal Assembler: {} mod crafting recipe(s) converted to Assembling recipes, {} of them Data-carrying (the original assembles the result).", converted, kept.size());
         if (!skipped.isEmpty()) {
             LOGGER.warn("Personal Assembler: {} mod crafting recipe(s) left at the crafting table, with an ingredient or "
                     + "result an Assembling recipe cannot hold: {}", skipped.size(), skipped);

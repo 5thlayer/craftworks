@@ -14,12 +14,11 @@ import io.github._5thlayer.craftworks.network.CraftworksNetwork;
 import io.github._5thlayer.craftworks.network.PlanUpdatePacket;
 import io.github._5thlayer.craftworks.network.QueueSyncPacket;
 import io.github._5thlayer.craftworks.planner.AssemblerCodecs;
-import io.github._5thlayer.craftworks.planner.CraftFinish;
-import io.github._5thlayer.craftworks.planner.PlanQueue;
+import io.github._5thlayer.craftworks.planner.CraftResult;
 import io.github._5thlayer.craftworks.planner.ItemAmount;
+import io.github._5thlayer.craftworks.planner.PlanQueue;
 import io.github._5thlayer.craftworks.planner.Resolver;
-import io.github._5thlayer.craftworks.recipe.SelfAssembly;
-import net.minecraft.world.item.ItemStack;
+import io.github._5thlayer.craftworks.recipe.DataCarryingRecipes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -27,6 +26,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
@@ -194,16 +194,16 @@ public final class PersonalAssembler {
      * What a craft of a Data-carrying recipe made (ADR-0022): the mod's original recipe asked, as a crafting
      * table would, with the stacks the craft consumed. The listed result when it assembles nothing from them.
      */
-    static CraftFinish madeBy(ServerPlayer player) {
+    static CraftResult madeBy(ServerPlayer player) {
         return (recipe, consumed, planned) -> {
             List<ItemStack> stacks = new ArrayList<>();
             for (ItemAmount input : consumed) {
                 ItemStack one = ItemKeys.toStack(input.item(), 1, player.registryAccess());
                 for (int i = 0; i < input.count(); i++) stacks.add(one.copy());
             }
-            Optional<ItemStack> made = SelfAssembly.assemble(Identifier.tryParse(recipe), stacks);
-            String key = made.map(stack -> ItemKeys.of(stack, player.registryAccess())).orElse(null);
-            return key == null ? planned : new ItemAmount(key, made.get().getCount());
+            Optional<ItemStack> made = DataCarryingRecipes.assemble(Identifier.tryParse(recipe), stacks);
+            return made.map(stack -> new ItemAmount(ItemKeys.of(stack, player.registryAccess()), stack.getCount()))
+                    .orElse(planned);
         };
     }
 

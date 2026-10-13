@@ -28,7 +28,7 @@ class PlanPreviewTest {
             List.of(Ingredient.of("diamond", 1), Ingredient.of(PRISTINE, 1)),
             new ItemAmount("diamond_sword", 1), 2, 0, true, true);
 
-    private static final CraftFinish NAMES_IT = (recipe, consumed, planned) ->
+    private static final CraftResult NAMES_IT = (recipe, consumed, planned) ->
             consumed.stream().anyMatch(input -> input.item().equals(NAMED))
                     ? new ItemAmount(NAMED_RESULT, planned.count()) : planned;
 
@@ -37,7 +37,7 @@ class PlanPreviewTest {
         return resolver.resolve(recipe.id(), crafts, ItemBag.of(stock));
     }
 
-    private static List<ItemAmount> predicted(Resolver.Resolution resolution, CraftFinish finish) {
+    private static List<ItemAmount> predicted(Resolver.Resolution resolution, CraftResult finish) {
         return PlanPreview.toCraft(resolution.toPlan(UUID.randomUUID(), "diamond_sword", 1), resolution.toCraft(), finish);
     }
 
@@ -69,5 +69,20 @@ class PlanPreviewTest {
                 resolution.toPlan(UUID.randomUUID(), "gem", 1), resolution.toCraft(), (recipe, consumed, planned) -> {
                     throw new AssertionError("asked about " + recipe);
                 }));
+    }
+
+    @Test
+    void anIntermediateShowsAsListedWhileTheFinalResultIsPredicted() {
+        AssemblingRecipe toAdvanced = new AssemblingRecipe("to_advanced",
+                List.of(Ingredient.of("basic", 1), Ingredient.of("gold", 1)), new ItemAmount("advanced", 1), 2, 0, true, true);
+        AssemblingRecipe toElite = new AssemblingRecipe("to_elite",
+                List.of(Ingredient.of("advanced", 1), Ingredient.of("gold", 1)), new ItemAmount("elite", 1), 2, 0, true, true);
+        Resolver resolver = new Resolver(AssemblingRecipeSet.builder().add(toAdvanced).add(toElite).build(), Set.of()::contains);
+        Resolver.Resolution resolution = resolver.resolve("to_elite", 1, ItemBag.of(stocked(have("basic", 1, "gold", 2)).contents()));
+        CraftResult tags = (recipe, consumed, planned) -> new ItemAmount(planned.item() + "[full=1]", planned.count());
+
+        List<ItemAmount> shown = PlanPreview.toCraft(resolution.toPlan(UUID.randomUUID(), "elite", 1), resolution.toCraft(), tags);
+
+        assertEquals(Map.of("advanced", 1, "elite[full=1]", 1), ItemBag.ofAmounts(shown).asMap());
     }
 }

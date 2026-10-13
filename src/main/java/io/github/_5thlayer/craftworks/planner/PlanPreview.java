@@ -10,7 +10,7 @@ import java.util.List;
  *
  * <p>A Data-carrying recipe makes what the mod's original recipe assembles from the stacks its crafts take, so
  * the listed result is only a guess. The plan is run here on a copy of its own cost, craft by craft, through the
- * same {@link CraftFinish} the queue ticks with: nothing is taken and nothing is delivered. Intermediates stay as
+ * same {@link CraftResult} the queue ticks with: nothing is taken and nothing is delivered. Intermediates stay as
  * listed, and the plan still counts on the listed result.
  */
 public final class PlanPreview {
@@ -22,13 +22,13 @@ public final class PlanPreview {
      * {@code toCraft} with the final result's listed row replaced by one row per distinct predicted result;
      * {@code toCraft} unchanged when the final step is not a Data-carrying recipe's.
      */
-    public static List<ItemAmount> toCraft(CraftingPlan plan, List<ItemAmount> toCraft, CraftFinish finish) {
+    public static List<ItemAmount> toCraft(CraftingPlan plan, List<ItemAmount> toCraft, CraftResult finish) {
         if (plan.steps().isEmpty() || !plan.steps().getLast().dataCarrying()) return toCraft;
         CraftStep last = plan.steps().getLast();
         ItemAmount listed = last.outputs().get(0);
         ItemBag predicted = new ItemBag();
-        CraftFinish recording = (recipe, consumed, planned) -> {
-            ItemAmount made = finish.result(recipe, consumed, planned);
+        CraftResult recording = (recipe, consumed, planned) -> {
+            ItemAmount made = finish.made(recipe, consumed, planned);
             predicted.add(made.item(), made.count());
             return made;
         };

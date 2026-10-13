@@ -97,6 +97,11 @@ public final class ItemKey {
         return start < 0 ? key : key.substring(0, start);
     }
 
+    /** Whether two keys name the same item, whatever data each carries. */
+    public static boolean sameItem(String key, String other) {
+        return itemId(key).equals(itemId(other));
+    }
+
     /** Whether the key names anything beyond a pristine item. */
     public static boolean hasPatch(String key) {
         return key.indexOf(START) >= 0;

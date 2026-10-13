@@ -144,7 +144,8 @@ _Avoid_: self-assembling recipe, special recipe
 
 **Pristine**:
 An item carrying no data beyond what a freshly made one has: an empty tablet, an undamaged sword. A plan
-pays with a Pristine item before one carrying data.
+pays with a Pristine item already held before one carrying data, and with a held item carrying data before
+crafting a fresh Pristine one.
 _Avoid_: clean, empty, blank
 
 **Route priority**:
