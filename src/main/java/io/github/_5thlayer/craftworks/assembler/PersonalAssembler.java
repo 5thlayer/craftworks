@@ -72,7 +72,6 @@ public final class PersonalAssembler {
         MENUS.register(modBus);
         AssemblerTicker.register();
         ReadyWatch.register();
-        CopiedInventoryGrid.register();
     }
 
     public static PlanQueue queueOf(Player player) {

@@ -17,6 +17,15 @@ import java.util.Collection;
  */
 record GridCover(int left, int top, int right, int bottom) {
 
+    /** A slot's well is drawn one pixel out on the left. */
+    private static final int WELL_LEFT = 1;
+    /** The {@code container.crafting} title sits this far above the topmost slot. */
+    private static final int TITLE_ABOVE = 13;
+    /** A 16 pixel slot, plus the well's white highlight on its right edge. */
+    private static final int WELL_RIGHT = 17;
+    /** A 16 pixel slot, plus the well's highlight below it. */
+    private static final int WELL_BELOW = 18;
+
     /** Where a slot's top left corner stands. */
     record SlotAt(int x, int y) {
     }
@@ -33,6 +42,6 @@ record GridCover(int left, int top, int right, int bottom) {
             maxX = Math.max(maxX, slot.x());
             maxY = Math.max(maxY, slot.y());
         }
-        return new GridCover(minX - 1, minY - 13, maxX + 17, maxY + 18);
+        return new GridCover(minX - WELL_LEFT, minY - TITLE_ABOVE, maxX + WELL_RIGHT, maxY + WELL_BELOW);
     }
 }

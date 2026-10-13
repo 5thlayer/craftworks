@@ -3,10 +3,7 @@
 
 package io.github._5thlayer.craftworks.assembler.client;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import io.github._5thlayer.craftworks.assembler.CopiedInventoryGrid;
+import io.github._5thlayer.craftworks.assembler.InventoryGrid;
 import io.github._5thlayer.craftworks.assembler.client.GridCover.SlotAt;
 import io.github._5thlayer.craftworks.mixin.minecraft.AbstractRecipeBookScreenAccessor;
 import net.minecraft.client.Minecraft;
@@ -25,12 +22,12 @@ import net.neoforged.neoforge.client.event.ScreenEvent;
  * The client half of removing the 2x2 crafting grid (ADR-0007): the part of the grid that is a picture.
  *
  * <p>It acts on the inventory screen and on any other recipe book screen whose menu copies the
- * inventory's grid ({@link CopiedInventoryGrid#isCopy}: a crafting menu with a 2x2 grid), such as the
+ * inventory's grid ({@link InventoryGrid#is2x2}: a crafting menu with a 2x2 grid), such as the
  * screen of a mod that adds slots beside the player's. Nothing here names such a mod; the crafting table,
  * a 3x3, is left alone.
  *
- * <p>{@code InventoryMenuMixin} takes the slots and the recipe of the inventory menu, and
- * {@link CopiedInventoryGrid} those of a copy, which is what makes the grid unable to craft. Two things
+ * <p>{@code AbstractCraftingMenuMixin} takes the slots of every 2x2 grid, the inventory's and a copy's, and
+ * {@code InventoryMenuMixin} the inventory's recipe, which is what makes the grid unable to craft. Two things
  * they cannot reach survive them, and both are here:
  *
  * <ul>
@@ -45,10 +42,6 @@ import net.neoforged.neoforge.client.event.ScreenEvent;
  *       crafts nothing, but it moves items into invisible slots that hand them back on close, which
  *       is a worse answer than the button not being there.
  * </ul>
- *
- * <p><b>A copy's slots are removed here on the client too.</b> The server removes them when a player
- * opens the menu, but the client's menu is a separate object, and left alone it would predict a
- * placement that the server then refuses.
  *
  * <p><b>Creative's own inventory tab is left alone, deliberately.</b> Its grid is as dead as anywhere,
  * since it re-adds the player menu's real slots; what survives is the picture, on a different texture
@@ -82,14 +75,14 @@ final class InventoryGridBlank {
     /** The menu of {@code screen} when it copies the inventory's grid, else null. */
     private static AbstractCraftingMenu gridMenu(Object screen) {
         if (screen instanceof AbstractRecipeBookScreen<?> book
-                && CopiedInventoryGrid.isCopy(book.getMenu())) {
+                && InventoryGrid.is2x2(book.getMenu())) {
             return (AbstractCraftingMenu) book.getMenu();
         }
         return null;
     }
 
     /**
-     * Closes the crafting recipe book before the screen lays itself out, and removes a copy's slots.
+     * Closes the crafting recipe book before the screen lays itself out.
      *
      * <p>{@code Init.Pre}, not {@code Post}, because {@code RecipeBookComponent.init} latches
      * visibility from the book's settings and the screen then positions itself around it. Closing it
@@ -102,7 +95,6 @@ final class InventoryGridBlank {
     static void onScreenOpening(ScreenEvent.Init.Pre event) {
         AbstractCraftingMenu menu = gridMenu(event.getScreen());
         if (menu == null) return;
-        CopiedInventoryGrid.deaden(menu);
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null) return;
         player.getRecipeBook().setOpen(RecipeBookType.CRAFTING, false);
@@ -126,12 +118,7 @@ final class InventoryGridBlank {
     static void onScreenForeground(ContainerScreenEvent.Render.Foreground event) {
         AbstractCraftingMenu menu = gridMenu(event.getContainerScreen());
         if (menu == null) return;
-        List<SlotAt> slots = new ArrayList<>();
-        slots.add(at(menu.getResultSlot()));
-        for (Slot input : menu.getInputGridSlots()) {
-            slots.add(at(input));
-        }
-        GridCover cover = GridCover.around(slots);
+        GridCover cover = GridCover.around(InventoryGrid.slotsOf(menu).stream().map(InventoryGridBlank::at).toList());
         event.getGuiGraphics().fill(cover.left(), cover.top(), cover.right(), cover.bottom(), PANEL_GREY);
     }
 
