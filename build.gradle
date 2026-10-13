@@ -228,6 +228,20 @@ if (providers.gradleProperty('withAE2').isPresent()) {
     }
 }
 
+// Curios and Dark Utilities on the dev client, only with -PwithCurios, to see Curios' slots and screen beside
+// the Personal Assembler, and Dark Utilities' charms, whose recipes key their string by a tag (#58).
+if (providers.gradleProperty('withCurios').isPresent()) {
+    dependencies {
+        localRuntime 'maven.modrinth:curios:15.0.0+26.1.2'
+        localRuntime 'maven.modrinth:dark-utilities:26.1.2.2'
+        // Bookshelf, Nyctography, Runelic and Pig Pen Cipher, which Dark Utilities requires.
+        localRuntime 'maven.modrinth:bookshelf-lib:26.1.2.15'
+        localRuntime 'maven.modrinth:nyctography:26.1.2.3'
+        localRuntime 'maven.modrinth:runelic:26.1.2.3'
+        localRuntime 'maven.modrinth:pig-pen-cipher:26.1.2.4'
+    }
+}
+
 // Mekanism on the dev client, only with -PwithMekanism, to see its self-assembling recipes (the Atomic
 // Disassembler, the tier upgrades) in the Personal Assembler (#58). Mekanism has no 26.1 release of its own;
 // this is the unofficial "Mekanism: Version Locked" port from CurseForge.
