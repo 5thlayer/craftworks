@@ -29,6 +29,10 @@ final class ModRecipesTests {
     private static final String SHAPED = "craftworks:gametest/converted_shaped";
     /** Shapeless: two sand and a dirt make three clay balls. */
     private static final String SHAPELESS = "craftworks:gametest/converted_shapeless";
+    /** Shaped with tag keys, as AE2's certus shovel is (#58). */
+    private static final String TAGGED = "craftworks:gametest/converted_tagged";
+    /** Shapeless, a NeoForge compound ingredient holding a tag: a stick or a dirt make a coarse dirt. */
+    private static final String COMPOUND_TAG = "craftworks:gametest/converted_compound_tag";
     /** Shapeless, and what the reloading test excludes. */
     private static final String EXCLUDED = "craftworks:gametest/excluded_shapeless";
 
@@ -45,7 +49,7 @@ final class ModRecipesTests {
 
     private static void converts(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        for (String id : List.of(SHAPED, SHAPELESS, EXCLUDED)) {
+        for (String id : List.of(SHAPED, SHAPELESS, TAGGED, COMPOUND_TAG, EXCLUDED)) {
             if (type(server, id) != CraftworksRecipes.ASSEMBLING_TYPE.get()) {
                 helper.fail(id + " should be a Converted recipe, and is " + type(server, id));
                 return;
@@ -65,6 +69,11 @@ final class ModRecipesTests {
         AssemblingRecipe clay = recipes.byId(SHAPELESS);
         if (clay == null || clay.result().count() != 3 || count(clay, "minecraft:sand") != 2 || count(clay, "minecraft:dirt") != 1) {
             helper.fail(SHAPELESS + " should be two sand and a dirt making three clay balls, and is " + clay);
+            return;
+        }
+        AssemblingRecipe shovel = recipes.byId(TAGGED);
+        if (shovel == null || count(shovel, "minecraft:stick") != 2 || count(shovel, "minecraft:diamond") != 1) {
+            helper.fail(TAGGED + "'s tags should hold two sticks and a diamond, and are " + (shovel == null ? null : shovel.ingredients()));
             return;
         }
         helper.succeed();

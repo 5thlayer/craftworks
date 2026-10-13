@@ -10,13 +10,20 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import com.google.gson.JsonElement;
 import com.mojang.logging.LogUtils;
+import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.JsonOps;
 import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.mixin.minecraft.ShapedRecipeAccessor;
 import io.github._5thlayer.craftworks.mixin.minecraft.ShapelessRecipeAccessor;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.RegistryOps;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.CraftingInput;
@@ -72,7 +79,7 @@ public final class ModRecipes {
         Settings settings = Settings.configured();
         applied = settings;
         if (!settings.enabled()) return recipes;
-        var ops = registries.createSerializationContext(JsonOps.INSTANCE);
+        var ops = withItemTags(registries);
         List<String> skipped = new ArrayList<>();
         int converted = 0;
         List<RecipeHolder<?>> holders = new ArrayList<>(recipes.values().size());
@@ -127,6 +134,24 @@ public final class ModRecipes {
         bag.forEach((ingredient, count) -> ingredients.add(new SizedIngredient(ingredient, count)));
         return new AssemblingRecipe(ingredients, List.of(result), AssemblingRecipe.DEFAULT_TIME,
                 AssemblingRecipe.DEFAULT_PRIORITY, List.of(), List.of(), true, AssemblingCategory.CRAFTING);
+    }
+
+    /**
+     * Ops over the registries that can encode an item tag while the recipes load (#58). The recipes' tags
+     * belong to the item registry, but the reload hands out a stand-in lookup holding the tags it hasn't bound
+     * yet, and a tag only encodes in its own registry's ops; so the items are looked up in the registry itself.
+     */
+    private static DynamicOps<JsonElement> withItemTags(HolderLookup.Provider registries) {
+        RegistryOps.RegistryInfoLookup rest = new RegistryOps.HolderLookupAdapter(registries);
+        return RegistryOps.create(JsonOps.INSTANCE, new RegistryOps.RegistryInfoLookup() {
+            @Override
+            @SuppressWarnings("unchecked")
+            public <E> Optional<RegistryOps.RegistryInfo<E>> lookup(ResourceKey<? extends Registry<? extends E>> key) {
+                return key.equals(Registries.ITEM)
+                        ? Optional.of((RegistryOps.RegistryInfo<E>) RegistryOps.RegistryInfo.fromRegistryLookup(BuiltInRegistries.ITEM))
+                        : rest.lookup(key);
+            }
+        });
     }
 
     private static boolean assemblesItsOwn(Recipe<?> recipe) {

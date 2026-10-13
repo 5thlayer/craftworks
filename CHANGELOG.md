@@ -5,6 +5,7 @@ Written for players and pack authors: what the Personal Assembler does, and what
 ## Unreleased
 
 - Where Pipeworks is installed beside Craftworks, it must be 0.3.1 or later.
+- Mods' crafting recipes keyed by an item tag, such as AE2's certus quartz tools, convert to Assembling recipes, a tag inside a NeoForge compound ingredient included; every one of them used to stay at the crafting table. (#58)
 
 ## 0.9.1
 

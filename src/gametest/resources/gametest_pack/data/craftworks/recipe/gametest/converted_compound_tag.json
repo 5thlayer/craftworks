@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "neoforge:ingredient_type": "neoforge:compound", "children": ["#c:rods/wooden", "minecraft:dirt"] }
+  ],
+  "result": { "id": "minecraft:coarse_dirt" }
+}

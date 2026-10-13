@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "a": "#c:gems/diamond",
+    "b": "#c:rods/wooden"
+  },
+  "pattern": [
+    "a",
+    "b",
+    "b"
+  ],
+  "result": {
+    "id": "minecraft:diamond_shovel"
+  }
+}
