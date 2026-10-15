@@ -4,7 +4,7 @@ A player-held crafting planner, the Personal Assembler. See `GLOSSARY.md` for th
 
 ## Workflow
 
-Commit on the current branch; open a feature branch only when the user asks for one.
+Commit on the current branch; open a feature branch only when the user asks for one. Nothing is pushed without the user's word. Asking a session to steward a PR is the user's word for that PR's pushes, its rebases onto `main`, and its merge, under the `steward` skill.
 
 Anything that changes the mod's behaviour gets a review by the `code-review` skill in `.claude/skills/` (mattpocock-skills:
 a Standards and a Spec review, side by side), and by no other code review, Claude Code's built-in `/code-review`
