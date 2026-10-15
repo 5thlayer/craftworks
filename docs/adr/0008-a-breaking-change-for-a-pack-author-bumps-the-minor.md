@@ -4,7 +4,7 @@ status: accepted, its rule superseded by libworks ADR 0001
 
 # A breaking change for a pack author bumps the minor
 
-Craftworks' versioning is libworks' ADR 0001, which every Library inherits unchanged:
+Craftworks' versioning is libworks' ADR 0001, which every Module inherits unchanged:
 <https://github.com/5thlayer/libworks/blob/main/docs/adr/0001-below-1-0-an-addition-bumps-the-patch.md>.
 This ADR held the rule until the template took it over, and now only names what it covers here.
 

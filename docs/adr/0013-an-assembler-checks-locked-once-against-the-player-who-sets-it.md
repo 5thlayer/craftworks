@@ -14,7 +14,7 @@ online then, and refuses a recipe Locked for them. Once held, the recipe is neve
 Assembler crafts it whoever is online, and breaking and placing it again keeps it.
 
 **Considered: the placer's team, on every craft.** It needs a team, and Craftworks has none: Researchd's
-is Researchd's, FTB Teams leaves the Showcase (FactoryWorks ADR-0115), and a Library naming either breaks
+is Researchd's, FTB Teams leaves the Showcase (FactoryWorks ADR-0115), and a Module naming either breaks
 ADR-0006. Asking every craft also needs the placer online, or a remembered answer that goes stale in the
 same way the one-time check does.
 
