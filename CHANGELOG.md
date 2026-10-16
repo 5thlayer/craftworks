@@ -4,8 +4,6 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
-- A Gallery pack, **Craftworks Gallery**, ships in the jar, off until a world turns it on: `/function craftworks:gallery/build` lays a scene of each feature in rows of three beside you, with a sign naming it that builds the scene again when clicked, and the three Assemblers and the Refiner working. It adds no recipes, loot or worldgen.
-
 ## 0.10.0
 
 - A mod's shaped or shapeless crafting recipe that assembles its own result, such as Mekanism's Atomic Disassembler or a factory tier upgrade, now converts to an Assembling recipe instead of staying at the crafting table; an Assembler machine holding one makes what a crafting table would from the stacks it took, keeping their data. `modRecipesExcluded` still keeps any of them at the table, and a pack that relied on one staying there must now name it. (#60)
