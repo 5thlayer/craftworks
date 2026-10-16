@@ -28,7 +28,8 @@ libworks {
     // which runs to the next minor. It draws the Assembler's ghosts (#52) and registers the Works tab
     // (FactoryWorks ADR-0128, #48). 0.1.5 adds FluidContainers, which moves a container between the drain and fill
     // slots and the fluid boxes (#57). 0.1.7 offers the Assembler's ghosts to EMI, not clickable, so a click
-    // reaches the empty slot (libworks#23).
+    // reaches the empty slot (libworks#23). 0.1.9 brings GalleryPack, which offers the Gallery pack, and the
+    // GalleryCheck game test that builds it (libworks ADR 0010).
     runtime = '0.1.9'
 }
 

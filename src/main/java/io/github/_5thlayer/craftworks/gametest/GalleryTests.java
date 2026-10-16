@@ -17,8 +17,7 @@ import net.minecraft.world.level.block.Blocks;
 /**
  * The Gallery pack builds a scene of each README feature in README order, through libworks'
  * {@link GalleryCheck} (libworks ADR 0010): the Personal Assembler's six features as a sign at a lectern,
- * and the placed machines working. No scene shows an Assembler making a fluid recipe: no recipe with a
- * fluid ships outside the dev and game-test packs.
+ * and the placed machines working.
  */
 final class GalleryTests {
 
