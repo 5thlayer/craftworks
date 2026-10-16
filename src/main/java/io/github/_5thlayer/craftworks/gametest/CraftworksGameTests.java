@@ -111,9 +111,9 @@ public final class CraftworksGameTests {
         var reloadingTests = new Registrar(event, reloading);
         VanillaPackTests.registerReloading(reloadingTests);
         ModRecipesTests.registerReloading(reloadingTests);
-        // Turning the Gallery pack on reloads the server's data under every test in its batch (libworks ADR 0010).
-        var gallery = event.registerEnvironment(id("gallery"), new TestEnvironmentDefinition.AllOf(List.of()));
-        GalleryTests.register(new Registrar(event, gallery));
+        // Each gallery test turns the Gallery pack on, which reloads the server's data under every test in its batch
+        // (libworks ADR 0010), so each runs in a batch of its own.
+        GalleryTests.register(new Registrar(event, environment));
     }
 
     private static Identifier id(String path) {
@@ -124,9 +124,21 @@ public final class CraftworksGameTests {
     record Registrar(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> environment) {
 
         void test(String name, int maxTicks, Consumer<GameTestHelper> body) {
+            register(name, maxTicks, body, environment);
+        }
+
+        /**
+         * A test that runs in a batch of its own, for one that changes the whole server, such as turning a
+         * datapack on, which reloads its data under every test running with it.
+         */
+        void testOnItsOwn(String name, int maxTicks, Consumer<GameTestHelper> body) {
+            register(name, maxTicks, body, event.registerEnvironment(id("on_its_own/" + name), new TestEnvironmentDefinition.AllOf(List.of())));
+        }
+
+        private void register(String name, int maxTicks, Consumer<GameTestHelper> body, Holder<TestEnvironmentDefinition<?>> batch) {
             var id = id(name);
             CodeGameTest.define(id, body);
-            event.registerTest(id, new CodeGameTest(id, new TestData<>(environment, PLATFORM, maxTicks, 0, true, Rotation.NONE)));
+            event.registerTest(id, new CodeGameTest(id, new TestData<>(batch, PLATFORM, maxTicks, 0, true, Rotation.NONE)));
         }
     }
 }

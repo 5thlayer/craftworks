@@ -3,6 +3,7 @@
 
 package io.github._5thlayer.craftworks.gametest;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -37,6 +38,7 @@ final class GalleryTests {
     private static final BlockPos STAND = new BlockPos(13, 0, -2);
     private static final BlockPos MACHINE = new BlockPos(8, 0, -6);
     private static final BlockPos SIGN = new BlockPos(13, 0, 0);
+    private static final String PACK = GalleryPack.id(Craftworks.MOD_ID);
     private static final int ROW = 3;
     private static final int ROW_DEPTH = 16;
 
@@ -56,21 +58,17 @@ final class GalleryTests {
     }
 
     static void register(CraftworksGameTests.Registrar tests) {
-        tests.test("gallery_builds_a_scene_of_each_feature", GalleryCheck.TICKS, GalleryTests::builds);
-        tests.test("gallery_scenes_sign_clicked_builds_the_scene_again", GalleryCheck.TICKS, GalleryTests::signReplays);
+        tests.testOnItsOwn("gallery_builds_a_scene_of_each_feature", GalleryCheck.TICKS, GalleryTests::builds);
+        tests.testOnItsOwn("gallery_scenes_sign_clicked_builds_the_scene_again", GalleryCheck.TICKS, GalleryTests::signReplays);
     }
 
     private static void builds(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
-        var pack = GalleryPack.id(Craftworks.MOD_ID);
-        GalleryCheck.assertOfferedAndOff(helper, pack);
         var source = GalleryCheck.operator(helper, helper.absolutePos(ORIGIN));
-        forceLoad(helper);
-        var on = GalleryCheck.select(server, pack, true);
-        clearAwayIfItFails(helper, pack, on);
+        var on = turnOn(helper);
         var off = new AtomicReference<CompletableFuture<Void>>();
         helper.startSequence()
-                .thenWaitUntil(() -> helper.assertTrue(on.isDone(), pack + " is not on yet"))
+                .thenWaitUntil(() -> helper.assertTrue(on.isDone(), PACK + " is not on yet"))
                 .thenWaitUntil(() -> helper.assertTrue(loaded(helper), "the gallery's chunks are not loaded yet"))
                 .thenExecute(() -> {
                     GalleryCheck.assertLoads(helper, source, Craftworks.MOD_ID);
@@ -89,23 +87,19 @@ final class GalleryTests {
                         helper.assertTrue(helper.getLevel().getBlockState(sign).is(Blocks.OAK_SIGN),
                                 "scene " + scene.name() + " has no sign at " + sign.toShortString());
                     }
-                    off.set(clearAway(helper, pack));
+                    off.set(clearAway(helper));
                 })
-                .thenWaitUntil(() -> helper.assertTrue(off.get() != null && off.get().isDone(), pack + " is not off yet"))
+                .thenWaitUntil(() -> helper.assertTrue(off.get() != null && off.get().isDone(), PACK + " is not off yet"))
                 .thenSucceed();
     }
 
     /** A scene's sign, clicked, builds the scene again where it stands: here the first Assembler's, taken away. */
     private static void signReplays(GameTestHelper helper) {
-        var server = helper.getLevel().getServer();
-        var pack = GalleryPack.id(Craftworks.MOD_ID);
         var source = GalleryCheck.operator(helper, helper.absolutePos(ORIGIN));
-        forceLoad(helper);
-        var on = GalleryCheck.select(server, pack, true);
-        clearAwayIfItFails(helper, pack, on);
+        var on = turnOn(helper);
         var off = new AtomicReference<CompletableFuture<Void>>();
         helper.startSequence()
-                .thenWaitUntil(() -> helper.assertTrue(on.isDone(), pack + " is not on yet"))
+                .thenWaitUntil(() -> helper.assertTrue(on.isDone(), PACK + " is not on yet"))
                 .thenWaitUntil(() -> helper.assertTrue(loaded(helper), "the gallery's chunks are not loaded yet"))
                 .thenExecute(() -> {
                     GalleryCheck.assertRuns(helper, source, GalleryPack.scene(Craftworks.MOD_ID, "assembler_1"));
@@ -118,9 +112,9 @@ final class GalleryTests {
                             "the scene's sign runs no command when clicked");
                     helper.assertTrue(helper.getLevel().getBlockState(built).is(Assemblers.block(AssemblerTier.ONE).get()),
                             "clicking the sign did not build the Assembler again where it stood");
-                    off.set(clearAway(helper, pack));
+                    off.set(clearAway(helper));
                 })
-                .thenWaitUntil(() -> helper.assertTrue(off.get() != null && off.get().isDone(), pack + " is not off yet"))
+                .thenWaitUntil(() -> helper.assertTrue(off.get() != null && off.get().isDone(), PACK + " is not off yet"))
                 .thenSucceed();
     }
 
@@ -130,7 +124,7 @@ final class GalleryTests {
     }
 
     private static BoundingBox strip(GameTestHelper helper) {
-        var boxes = new java.util.ArrayList<BoundingBox>();
+        var boxes = new ArrayList<BoundingBox>();
         for (int i = 0; i < SCENES.size(); i++) boxes.add(GalleryCheck.plot(sceneOrigin(helper, i)));
         return BoundingBox.encapsulatingBoxes(boxes).orElseThrow();
     }
@@ -144,16 +138,34 @@ final class GalleryTests {
         return strip(helper).intersectingChunks().allMatch(chunk -> helper.getLevel().hasChunk(chunk.x(), chunk.z()));
     }
 
-    /** Takes away what the gallery built, plot by plot, and turns the pack off. */
-    private static CompletableFuture<Void> clearAway(GameTestHelper helper, String pack) {
+    /**
+     * Checks the pack is offered and off, force-loads the gallery's chunks (the runner releases them at the
+     * batch's end) and turns the pack on, clearing away if the test fails.
+     *
+     * @return the reload, done once the pack is on
+     */
+    private static CompletableFuture<Void> turnOn(GameTestHelper helper) {
+        GalleryCheck.assertOfferedAndOff(helper, PACK);
+        forceLoad(helper);
+        var on = GalleryCheck.select(helper.getLevel().getServer(), PACK, true);
+        clearAwayIfItFails(helper, on);
+        return on;
+    }
+
+    private static void clearPlots(GameTestHelper helper) {
         for (int i = 0; i < SCENES.size(); i++) {
             StructureUtils.clearSpaceForStructure(GalleryCheck.plot(sceneOrigin(helper, i)), helper.getLevel());
         }
-        return GalleryCheck.select(helper.getLevel().getServer(), pack, false);
+    }
+
+    /** Takes away what the gallery built, plot by plot, and turns the pack off. */
+    private static CompletableFuture<Void> clearAway(GameTestHelper helper) {
+        clearPlots(helper);
+        return GalleryCheck.select(helper.getLevel().getServer(), PACK, false);
     }
 
     /** A failed test skips its own last steps, which would leave the pack on under the batches after it. */
-    private static void clearAwayIfItFails(GameTestHelper helper, String pack, CompletableFuture<Void> on) {
+    private static void clearAwayIfItFails(GameTestHelper helper, CompletableFuture<Void> on) {
         ServerLevel level = helper.getLevel();
         helper.testInfo.addListener(new GameTestListener() {
             @Override
@@ -166,11 +178,9 @@ final class GalleryTests {
 
             @Override
             public void testFailed(GameTestInfo testInfo, GameTestRunner runner) {
-                for (int i = 0; i < SCENES.size(); i++) {
-                    StructureUtils.clearSpaceForStructure(GalleryCheck.plot(sceneOrigin(helper, i)), level);
-                }
+                clearPlots(helper);
                 var server = level.getServer();
-                on.whenComplete((done, failed) -> server.execute(() -> GalleryCheck.select(server, pack, false)));
+                on.whenComplete((done, failed) -> server.execute(() -> GalleryCheck.select(server, PACK, false)));
             }
 
             @Override
