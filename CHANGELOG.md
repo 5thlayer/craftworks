@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- Craftworks' game-test code and structures no longer ship in its jar (libworks ADR 0011): a game no longer registers its test type `craftworks:code`, nor carries its `gametest/platform` structure, and its test tank and fluids, which only its own test runs registered, are gone from the jar too. Craftworks builds on libworks-plugin 0.4.0.
+
 ## 0.10.0
 
 - A mod's shaped or shapeless crafting recipe that assembles its own result, such as Mekanism's Atomic Disassembler or a factory tier upgrade, now converts to an Assembling recipe instead of staying at the crafting table; an Assembler machine holding one makes what a crafting table would from the stacks it took, keeping their data. `modRecipesExcluded` still keeps any of them at the table, and a pack that relied on one staying there must now name it. (#60)

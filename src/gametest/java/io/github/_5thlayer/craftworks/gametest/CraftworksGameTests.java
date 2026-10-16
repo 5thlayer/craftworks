@@ -20,6 +20,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Rotation;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLConstructModEvent;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -27,12 +30,12 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * The Mod's game tests, run by the {@code gameTestServer} Gradle run: the Minecraft-integration
  * seam, with a real player on a real server. Each test stands on the {@code gametest/platform}
  * structure, a stone floor that {@code sh ./gradlew buildGametestStructures} writes, and sets up
- * what it needs itself, so the setup is in the diff.
+ * what it needs itself, so the setup is in the diff. It lives in the {@code gametest} source set, which
+ * only the Mod's own runs load, and hooks itself in, so the {@code @Mod} class names no game-test
+ * code and nothing gates it (libworks ADR 0011).
  */
+@EventBusSubscriber(modid = Craftworks.MOD_ID)
 public final class CraftworksGameTests {
-
-    /** Set by the Mod's own {@code gameTestServer} run, which registers the tests' own block and fluids. */
-    private static final String OWN_RUN = "craftworks.gametest";
 
     /** Set by a {@code -PwithKubeJS} run, which puts KubeJS and the sample script on the server. */
     private static final String KUBEJS_TESTS = "craftworks.kubejsTests";
@@ -49,16 +52,19 @@ public final class CraftworksGameTests {
     private CraftworksGameTests() {
     }
 
+    @SubscribeEvent
+    static void construct(FMLConstructModEvent event) {
+        register(event.getContainer().getEventBus());
+    }
+
     public static void register(IEventBus modBus) {
         TEST_TYPES.register(modBus);
-        // Posted only when game tests are enabled, so a production server never registers the tests.
+        // The tests' own fluid-handler block, which a player's world never has.
+        TestTank.register(modBus);
+        // And the fluids a five-fluid recipe needs beyond water and lava.
+        TestFluids.register(modBus);
+        // Posted only when game tests are enabled, which a production game never is.
         modBus.addListener(CraftworksGameTests::registerTests);
-        if (Boolean.getBoolean(OWN_RUN)) {
-            // The tests' own fluid-handler block, which a player's world never has.
-            TestTank.register(modBus);
-            // And the fluids a five-fluid recipe needs beyond water and lava.
-            TestFluids.register(modBus);
-        }
         registerDevLockReason();
     }
 

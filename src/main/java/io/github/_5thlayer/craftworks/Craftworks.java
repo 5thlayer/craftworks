@@ -4,7 +4,6 @@
 package io.github._5thlayer.craftworks;
 
 import io.github._5thlayer.craftworks.assembler.PersonalAssembler;
-import io.github._5thlayer.craftworks.gametest.CraftworksGameTests;
 import io.github._5thlayer.craftworks.machine.Assemblers;
 import io.github._5thlayer.craftworks.machine.Refiners;
 import io.github._5thlayer.craftworks.network.CraftworksNetwork;
@@ -17,7 +16,8 @@ import net.neoforged.fml.config.ModConfig;
 
 /**
  * The Mod's common half. Its feature is the Personal Assembler, the player's own crafting planner
- * (GLOSSARY.md).
+ * (GLOSSARY.md). The game tests hook themselves in from the {@code gametest} source set, which never ships
+ * (libworks ADR 0011).
  */
 @Mod(Craftworks.MOD_ID)
 public final class Craftworks {
@@ -32,6 +32,5 @@ public final class Craftworks {
         PersonalAssembler.register(modBus);
         Assemblers.register(modBus);
         Refiners.register(modBus);
-        CraftworksGameTests.register(modBus);
     }
 }

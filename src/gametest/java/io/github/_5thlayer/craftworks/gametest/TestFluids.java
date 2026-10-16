@@ -15,8 +15,8 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 /**
  * Three fluids for the game tests, so a recipe can name five distinct ones with water and lava: a plain still fluid and
- * its flowing twin each, with no block or bucket, since only a tank holds them. Registered only when the game tests
- * run ({@code craftworks.gametest}), like {@link TestTank}, so no player's world has them.
+ * its flowing twin each, with no block or bucket, since only a tank holds them. Registered only in the Mod's own runs,
+ * from the {@code gametest} source set, like {@link TestTank}, so no player's world has them.
  */
 final class TestFluids {
 

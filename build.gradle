@@ -1,7 +1,7 @@
 // ModDevGradle on Java 25, the game test server that names each test, the jar's licensing, ~/.m2-only
 // publishing and the release and upload tasks come from the libworks convention plugin (libworks ADR 0003).
 plugins {
-    id 'io.github.5thlayer.libworks.module' version '0.3.0'
+    id 'io.github.5thlayer.libworks.module' version '0.4.0'
 }
 
 // What the Mod requires of the other Modules, each as a range whose lower bound is a released version:
@@ -38,17 +38,6 @@ def emi = 'curse.maven:emi-unofficial-port-1544558:8630349'
 repositories {
     // EMI for 26.1 is an unofficial port, published on CurseForge only.
     maven { url = 'https://cursemaven.com' }
-    // Groundworks, Pipeworks and libworks-runtime, from the local maven only, where their releases publish them the moment
-    // they are cut, with no site's review to wait on. CI builds their tags there first.
-    exclusiveContent {
-        forRepository { mavenLocal() }
-        filter {
-            includeModule 'io.github.5thlayer', 'groundworks'
-            includeModule 'io.github.5thlayer', 'pipeworks'
-            includeModule 'io.github.5thlayer', 'libworks-runtime'
-            includeModule 'io.github.5thlayer', 'libworks-gametest'
-        }
-    }
     // KubeJS and Rhino, its script engine.
     maven {
         url = 'https://maven.latvian.dev/releases'
@@ -102,8 +91,6 @@ neoForge {
         }
         gameTestServer {
             sourceSet = sourceSets.solo
-            // Marks this run as the Mod's own, which is when it registers its test tank and fluids.
-            systemProperty 'craftworks.gametest', 'true'
         }
     }
 
