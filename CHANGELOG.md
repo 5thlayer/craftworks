@@ -4,7 +4,7 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
-- A Gallery pack, **Craftworks Gallery**, ships in the jar, off until a world turns it on: `/function craftworks:gallery/build` lays a scene of each feature in a row beside you, with a sign naming it, and the three Assemblers and the Refiner working. It adds no recipes, loot or worldgen.
+- A Gallery pack, **Craftworks Gallery**, ships in the jar, off until a world turns it on: `/function craftworks:gallery/build` lays a scene of each feature in rows of three beside you, with a sign naming it that builds the scene again when clicked, and the three Assemblers and the Refiner working. It adds no recipes, loot or worldgen.
 
 ## 0.10.0
 

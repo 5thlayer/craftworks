@@ -1,7 +1,5 @@
 # A tier 1 Assembler holding minecraft:oak_planks, fed by hand and powered by a Creative Energy Source beside it.
-fill ~2 ~-1 ~-12 ~25 ~15 ~ minecraft:structure_void
-fill ~2 ~-1 ~-12 ~25 ~-1 ~ minecraft:stone
-fill ~2 ~-1 ~-12 ~25 ~15 ~ minecraft:air
+function craftworks:gallery/clear
 
 setblock ~8 ~ ~-6 craftworks:assembler_1[facing=north]{held_recipe:"minecraft:oak_planks",items:{stacks:[{id:"minecraft:oak_log",count:64}]}} strict
 setblock ~7 ~0 ~-7 craftworks:assembler_1_part[facing=north,part=1] strict
@@ -22,4 +20,4 @@ setblock ~7 ~1 ~-5 craftworks:assembler_1_part[facing=north,part=15] strict
 setblock ~8 ~1 ~-5 craftworks:assembler_1_part[facing=north,part=16] strict
 setblock ~9 ~1 ~-5 craftworks:assembler_1_part[facing=north,part=17] strict
 setblock ~10 ~ ~-6 craftworks:creative_energy_source
-setblock ~13 ~ ~ minecraft:oak_sign[rotation=0]{is_waxed:1b,front_text:{messages:[{translate:"craftworks.gallery.assembler_1"},{translate:"craftworks.gallery.assembler_1.1"},{translate:"craftworks.gallery.assembler_1.2"},{translate:"craftworks.gallery.assembler_1.3"}]}}
+function craftworks:gallery/sign {scene:"assembler_1"}
