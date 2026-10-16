@@ -29,7 +29,7 @@ libworks {
     // (FactoryWorks ADR-0128, #48). 0.1.5 adds FluidContainers, which moves a container between the drain and fill
     // slots and the fluid boxes (#57). 0.1.7 offers the Assembler's ghosts to EMI, not clickable, so a click
     // reaches the empty slot (libworks#23).
-    runtime = '0.1.8'
+    runtime = '0.1.9'
 }
 
 // EMI for 26.1: the unofficial port.

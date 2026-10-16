@@ -111,6 +111,9 @@ public final class CraftworksGameTests {
         var reloadingTests = new Registrar(event, reloading);
         VanillaPackTests.registerReloading(reloadingTests);
         ModRecipesTests.registerReloading(reloadingTests);
+        // Turning the Gallery pack on reloads the server's data under every test in its batch (libworks ADR 0010).
+        var gallery = event.registerEnvironment(id("gallery"), new TestEnvironmentDefinition.AllOf(List.of()));
+        GalleryTests.register(new Registrar(event, gallery));
     }
 
     private static Identifier id(String path) {

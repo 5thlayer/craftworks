@@ -10,6 +10,7 @@ import io.github._5thlayer.craftworks.machine.Refiners;
 import io.github._5thlayer.craftworks.network.CraftworksNetwork;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
 import io.github._5thlayer.craftworks.recipe.VanillaPack;
+import io.github._5thlayer.libworks.gallery.GalleryPack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -32,6 +33,7 @@ public final class Craftworks {
         PersonalAssembler.register(modBus);
         Assemblers.register(modBus);
         Refiners.register(modBus);
+        GalleryPack.register(modBus, MOD_ID);
         CraftworksGameTests.register(modBus);
     }
 }
