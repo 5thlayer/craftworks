@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+## 0.10.1
+
 - Craftworks' game-test code and structures no longer ship in its jar (libworks ADR 0011): a game no longer registers its test type `craftworks:code`, nor carries its `gametest/platform` structure, and its test tank and fluids, which only its own test runs registered, are gone from the jar too. Craftworks builds on libworks-plugin 0.4.0.
 
 ## 0.10.0
