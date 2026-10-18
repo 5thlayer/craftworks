@@ -39,7 +39,9 @@ public final class EmiMixinPlugin implements IMixinConfigPlugin {
             "Lorg/spongepowered/asm/mixin/injection/Inject;",
             "Lorg/spongepowered/asm/mixin/injection/ModifyVariable;",
             "Lorg/spongepowered/asm/mixin/injection/ModifyArg;",
-            "Lorg/spongepowered/asm/mixin/injection/Redirect;");
+            "Lorg/spongepowered/asm/mixin/injection/Redirect;",
+            "Lcom/llamalad7/mixinextras/injector/wrapmethod/WrapMethod;",
+            "Lcom/llamalad7/mixinextras/injector/wrapoperation/WrapOperation;");
     private static final String SHADOW = "Lorg/spongepowered/asm/mixin/Shadow;";
 
     @Override

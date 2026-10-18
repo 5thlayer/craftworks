@@ -73,7 +73,8 @@ public final class PersonalAssemblerEmiHandler implements EmiRecipeHandler<Inven
     }
 
     /**
-     * Fill Recipe is always possible; EMI's craftables list is possible only for a Ready recipe.
+     * Fill Recipe is always possible; EMI's craftables list is possible only for a Ready recipe, but a
+     * click never waits on it.
      *
      * <p>The button must stay enabled when the player lacks the ingredients, because showing what is
      * missing is the Crafting Plan's entire job. So every context but one answers true. The exception is
@@ -81,11 +82,18 @@ public final class PersonalAssemblerEmiHandler implements EmiRecipeHandler<Inven
      * and that is answered from the Ready set the server syncs (ADR-0012): what Fill Recipe would queue
      * right now, intermediates included. Before the first sync it is empty, so nothing is listed.
      *
+     * <p>Ready decides what the list shows, never whether a click reaches the server (ADR-0012, #66): the
+     * set lags the inventory, and a click gated on it did nothing. While EMI is inside a Craftables or
+     * favorite click ({@link CraftClick#bypassesReady()}) {@code CRAFTABLE} answers true, and the server
+     * queues the Fill or opens the Crafting Plan (ADR-0004). While a favorite's recipe is being chosen it
+     * is still answered from Ready, so a Ready recipe wins and only when none is does EMI's own choice
+     * stand. The list, a favorite's tooltip and the hover highlight are outside a click and unchanged.
+     *
      * <p>Which recipes get a button at all is {@link #supportsRecipe}'s question, and a different one.
      */
     @Override
     public boolean canCraft(EmiRecipe recipe, EmiCraftContext<InventoryMenu> context) {
-        if (context.getType() != EmiCraftContext.Type.CRAFTABLE) return true;
+        if (context.getType() != EmiCraftContext.Type.CRAFTABLE || CraftClick.bypassesReady()) return true;
         Identifier id = recipe.getId();
         return id != null && ReadyRecipeIds.contains(id.toString());
     }
