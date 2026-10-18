@@ -11,33 +11,33 @@ package io.github._5thlayer.craftworks.compat.emi;
  * see another's state. It only records: the click is never altered, consumed or rerouted, and on any
  * screen but the Assembler's nothing reads it.
  *
- * <p>While {@link #choosing()} is also true, EMI is picking a favorite's recipe and the handler still
+ * <p>While {@link #pickingFavoriteRecipe} has it on, EMI is picking a favorite's recipe and the handler still
  * answers from the Ready set, so a Ready recipe is preferred over one that isn't.
  */
 public final class CraftClick {
 
     private static boolean inProgress;
-    private static boolean choosing;
+    private static boolean pickingRecipe;
 
     private CraftClick() {
     }
 
     public static void begin() {
         inProgress = true;
-        choosing = false;
+        pickingRecipe = false;
     }
 
     public static void end() {
         inProgress = false;
-        choosing = false;
+        pickingRecipe = false;
     }
 
-    public static void chooseReadyOnly(boolean on) {
-        choosing = on;
+    public static void pickingFavoriteRecipe(boolean on) {
+        pickingRecipe = on;
     }
 
     /** True while a click's Fill must reach {@code craft()} whatever the Ready set says. */
     public static boolean bypassesReady() {
-        return inProgress && !choosing;
+        return inProgress && !pickingRecipe;
     }
 }

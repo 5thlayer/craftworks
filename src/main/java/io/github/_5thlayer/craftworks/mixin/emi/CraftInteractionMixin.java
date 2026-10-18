@@ -56,12 +56,12 @@ public abstract class CraftInteractionMixin {
     @WrapOperation(method = "craftInteraction(Ldev/emi/emi/api/stack/EmiIngredient;Ljava/util/function/Supplier;Ldev/emi/emi/api/stack/EmiStackInteraction;Ljava/util/function/Function;)Z",
             at = @At(value = "INVOKE", target = "Ljava/util/function/Supplier;get()Ljava/lang/Object;"))
     private static Object craftworks$readyFirst(Supplier<?> supplier, Operation<Object> original) {
-        CraftClick.chooseReadyOnly(true);
+        CraftClick.pickingFavoriteRecipe(true);
         Object ready;
         try {
             ready = original.call(supplier);
         } finally {
-            CraftClick.chooseReadyOnly(false);
+            CraftClick.pickingFavoriteRecipe(false);
         }
         return ready != null ? ready : original.call(supplier);
     }

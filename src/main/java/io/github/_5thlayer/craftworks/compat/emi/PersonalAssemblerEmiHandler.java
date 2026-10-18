@@ -82,12 +82,9 @@ public final class PersonalAssemblerEmiHandler implements EmiRecipeHandler<Inven
      * and that is answered from the Ready set the server syncs (ADR-0012): what Fill Recipe would queue
      * right now, intermediates included. Before the first sync it is empty, so nothing is listed.
      *
-     * <p>Ready decides what the list shows, never whether a click reaches the server (ADR-0012, #66): the
-     * set lags the inventory, and a click gated on it did nothing. While EMI is inside a Craftables or
-     * favorite click ({@link CraftClick#bypassesReady()}) {@code CRAFTABLE} answers true, and the server
-     * queues the Fill or opens the Crafting Plan (ADR-0004). While a favorite's recipe is being chosen it
-     * is still answered from Ready, so a Ready recipe wins and only when none is does EMI's own choice
-     * stand. The list, a favorite's tooltip and the hover highlight are outside a click and unchanged.
+     * <p>Ready decides what the list shows, never whether a click reaches the server (ADR-0012, #66):
+     * during a Craftables or favorite click ({@link CraftClick#bypassesReady()}) {@code CRAFTABLE}
+     * answers true. {@code CraftInteractionMixin} says when that is and how a favorite's recipe is picked.
      *
      * <p>Which recipes get a button at all is {@link #supportsRecipe}'s question, and a different one.
      */
