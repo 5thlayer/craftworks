@@ -229,6 +229,17 @@ if (providers.gradleProperty('withCurios').isPresent()) {
     }
 }
 
+// Sophisticated Backpacks on the dev client, only with -PwithSophisticated, to see its backpacks and upgrades,
+// whose recipes wrap a shaped one, convert (ADR-0023, #68); the game tests check it with a wrapper of their own.
+// The versions the Showcase ships.
+if (providers.gradleProperty('withSophisticated').isPresent()) {
+    dependencies {
+        localRuntime 'maven.modrinth:sophisticated-backpacks:26.1.2-3.26.11.2198'
+        // Sophisticated Core, which it requires.
+        localRuntime 'maven.modrinth:sophisticated-core:26.1.2-1.5.10.2387'
+    }
+}
+
 // Mekanism on the dev client, only with -PwithMekanism, to see its self-assembling recipes (the Atomic
 // Disassembler, the tier upgrades) in the Personal Assembler (#58). Mekanism has no 26.1 release of its own;
 // this is the unofficial "Mekanism: Version Locked" port from CurseForge.
