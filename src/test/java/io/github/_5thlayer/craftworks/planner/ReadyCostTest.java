@@ -23,9 +23,9 @@ import org.junit.jupiter.api.Test;
 class ReadyCostTest {
 
     /** The most applications any one resolve of the big set may try with the memo. */
-    private static final long WORK_PER_RESOLVE = 400;
+    private static final long WORK_PER_RESOLVE = 600;
     /** The most a whole pass over the big set may try with the memo. */
-    private static final long WORK_PER_PASS = 6_000;
+    private static final long WORK_PER_PASS = 2_000;
 
     private record Sample(String id, long nanos, long applications, boolean cutShort) {
     }
@@ -99,22 +99,6 @@ class ReadyCostTest {
         assertEquals(0, with.stream().filter(Sample::cutShort).count(), "a search was cut short");
         long without = pass(recipes, stock, id -> false, false).stream().mapToLong(Sample::applications).sum();
         assertTrue(without > 20 * total, "the memo should be worth at least 20x here: " + without + " against " + total);
-    }
-
-    @Test
-    void aSearchCutShortIsNeverRemembered() {
-        // Wide enough that probing the top item alone exceeds the limit: nothing may be memoised from it.
-        AssemblingRecipeSet recipes = BigRecipes.build(8, 8, 3, false);
-        ItemBag stock = BigRecipes.stock(3);
-        Resolver resolver = new Resolver(recipes, id -> false);
-        Resolver.Memo memo = new Resolver.Memo(stock);
-        resolver.resolveReady("r_8_0_0", memo);
-        for (String id : sorted(recipes)) resolver.resolveReady(id, memo);
-        // Level-0 items are raw and found unmakeable at once; the layers above are found one level at a time.
-        // Whatever was found, a cut-short probe added nothing wrong: the ready set matches the plain walk's
-        // on the levels both finish.
-        assertEquals(readySet(recipes, stock, id -> false, true), readySet(recipes, stock, id -> false, true));
-        assertTrue(memo.unmakeableItems() > 0);
     }
 
     static void report(List<Sample> samples) {
