@@ -6,6 +6,7 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 - The craftables list keeps up in big packs: it fills in as it is worked out, and an inventory change or closing the inventory no longer throws the work away. (#67)
 - Craftworks accepts EMI 1.1.24 or later beside it, an optional dependency, and refuses to load with an older one. (#69)
+- Craftworks requires Groundworks 0.6.0 or later, below 0.7, the Groundworks the other FactoryWorks mods now load with (5thlayer/groundworks#72).
 
 ## 0.10.3
 
