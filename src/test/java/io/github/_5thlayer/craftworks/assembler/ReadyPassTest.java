@@ -88,4 +88,15 @@ class ReadyPassTest {
         assertEquals(4, pass.total());
         assertFalse(pass.done());
     }
+
+    @Test
+    void lastPassesReadyRecipesAreResolvedFirstThenTheRest() {
+        assertEquals(List.of("planks", "torch", "sticks", "sticks_from_bamboo"),
+                ReadyPass.ordered(RECIPES.ids(), Set.of("torch", "planks", "gone")));
+    }
+
+    @Test
+    void withNothingReadyBeforeTheOrderIsSorted() {
+        assertEquals(List.of("planks", "sticks", "sticks_from_bamboo", "torch"), ReadyPass.ordered(RECIPES.ids(), Set.of()));
+    }
 }

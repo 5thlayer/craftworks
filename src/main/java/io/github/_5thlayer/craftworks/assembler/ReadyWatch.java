@@ -6,6 +6,7 @@ package io.github._5thlayer.craftworks.assembler;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The players whose clients report the inventory screen open, and the Ready set each is sent (ADR-0012).
+ * The players whose clients report the inventory screen open, and the Ready set each is sent (ADR-0012, ADR-0024).
  *
  * <p>The server cannot see a screen open, so the client says so ({@code InventoryWatchPacket}). A player
  * who is not in here costs nothing: this class looks up their id on their tick and stops.
@@ -53,7 +54,10 @@ public final class ReadyWatch {
         }
         Watch watch = WATCHED.computeIfAbsent(player.getUUID(), id -> new Watch(player));
         watch.player = player;
-        watch.seenChanges = player.getInventory().getTimesChanged();
+        int changes = player.getInventory().getTimesChanged();
+        // Nothing is compared while closed, so a change since the last tick is found here, and counts as pending.
+        if (changes != watch.seenChanges) watch.refresh.inventoryChanged();
+        watch.seenChanges = changes;
         watch.refresh.open();
     }
 
@@ -61,6 +65,12 @@ public final class ReadyWatch {
     public static boolean watching(ServerPlayer player) {
         Watch watch = WATCHED.get(player.getUUID());
         return watch != null && watch.refresh.watching();
+    }
+
+    /** Whether a Ready pass is in flight for this player, paused by a closed screen or not. */
+    public static boolean working(ServerPlayer player) {
+        Watch watch = WATCHED.get(player.getUUID());
+        return watch != null && watch.refresh.working();
     }
 
     /** The Ready set last sent to this player, or empty if none was: what their client lists. */
@@ -92,18 +102,40 @@ public final class ReadyWatch {
         final ReadyRefresh refresh;
         ServerPlayer player;
         int seenChanges;
+        /** What the client lists: the last whole set, plus what a running pass has streamed since. */
         Set<String> published = Set.of();
+        /** What the last finished pass found, which the next one resolves first. */
+        Set<String> lastReady = Set.of();
         boolean sentOnce;
 
         Watch(ServerPlayer player) {
             this.player = player;
-            this.refresh = new ReadyRefresh(System::nanoTime, () -> ReadyRecipes.begin(this.player), this::publish);
+            // A new Watch starts in step with the inventory: only a change after it is one.
+            this.seenChanges = player.getInventory().getTimesChanged();
+            this.refresh = new ReadyRefresh(System::nanoTime, () -> ReadyRecipes.begin(this.player, lastReady),
+                    this::streamAdded, this::publish);
         }
 
-        /** Sent when it differs from what the client already has: the client keeps the last set between openings. */
+        /** Newly Ready ids from a pass still running: added on the client, nothing removed. */
+        private void streamAdded(Set<String> added) {
+            Set<String> next = new HashSet<>(published);
+            next.addAll(added);
+            published = Set.copyOf(next);
+            sentOnce = true;
+            List<String> ids = new ArrayList<>(added);
+            Collections.sort(ids);
+            CraftworksNetwork.sendToPlayer(player, new ReadyRecipesPacket(ids, true));
+        }
+
+        /**
+         * A finished pass: logged once, and sent when it differs from what the client now has (the client
+         * keeps the last set between openings), which is how removals reach it.
+         */
         private void publish(ReadyRefresh.Refreshed done) {
-            LOGGER.debug("Craftworks: Ready for {} worked out in {} ms over {} tick(s): {} of {} recipes",
-                    player.getGameProfile().name(), done.nanos() / 1_000_000.0, done.ticks(), done.ready().size(), done.total());
+            LOGGER.info("Craftworks: Ready for {} worked out in {} ms (slowest tick {} ms) over {} tick(s): {} of {} recipes",
+                    player.getGameProfile().name(), done.nanos() / 1_000_000.0, done.maxTickNanos() / 1_000_000.0,
+                    done.ticks(), done.ready().size(), done.total());
+            lastReady = done.ready();
             if (sentOnce && published.equals(done.ready())) return;
             sentOnce = true;
             published = done.ready();

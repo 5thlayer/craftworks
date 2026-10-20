@@ -31,6 +31,17 @@ public final class ReadyRecipeIds {
         onChange.run();
     }
 
+    /**
+     * Adds to the set, for a pass still running that streams what it finds (ADR-0024). Nothing is removed:
+     * the set the pass ends with replaces this one through {@link #accept}.
+     */
+    public static void add(Set<String> more) {
+        if (ids.containsAll(more)) return;
+        Set<String> next = new java.util.HashSet<>(ids);
+        next.addAll(more);
+        accept(next);
+    }
+
     /** Forgets the set, as on leaving a world. */
     public static void clear() {
         accept(Set.of());

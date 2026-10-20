@@ -18,15 +18,25 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 /**
  * The recipe ids that are Ready for this player, server to client (ADR-0012), sent when a refresh finds
  * them different from what the client last had.
+ *
+ * <p>{@code additive} says the ids are only ones a running pass has newly found, to add to the client's
+ * set; without it they are the whole set and replace it (ADR-0024). The pass ends with the second kind,
+ * which is what removes a recipe, so none vanishes and returns mid-pass.
  */
-public record ReadyRecipesPacket(List<String> ids) implements CustomPacketPayload {
+public record ReadyRecipesPacket(List<String> ids, boolean additive) implements CustomPacketPayload {
 
     public static final Type<ReadyRecipesPacket> TYPE = new Type<>(
             Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "ready_recipes"));
 
     public static final StreamCodec<ByteBuf, ReadyRecipesPacket> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), ReadyRecipesPacket::ids,
+            ByteBufCodecs.BOOL, ReadyRecipesPacket::additive,
             ReadyRecipesPacket::new);
+
+    /** The whole set, replacing the client's. */
+    public ReadyRecipesPacket(List<String> ids) {
+        this(ids, false);
+    }
 
     @Override
     public Type<? extends CustomPacketPayload> type() {
@@ -34,6 +44,12 @@ public record ReadyRecipesPacket(List<String> ids) implements CustomPacketPayloa
     }
 
     static void handle(ReadyRecipesPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> ReadyRecipeIds.accept(Set.copyOf(packet.ids())));
+        context.enqueueWork(() -> {
+            if (packet.additive()) {
+                ReadyRecipeIds.add(Set.copyOf(packet.ids()));
+            } else {
+                ReadyRecipeIds.accept(Set.copyOf(packet.ids()));
+            }
+        });
     }
 }

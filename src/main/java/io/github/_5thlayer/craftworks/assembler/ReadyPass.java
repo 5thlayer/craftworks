@@ -3,6 +3,8 @@
 
 package io.github._5thlayer.craftworks.assembler;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -18,20 +20,37 @@ import io.github._5thlayer.craftworks.planner.Resolver;
  * {@code complete()}: exactly what Fill Recipe would queue. Nothing about Ready is decided here.
  *
  * <p>The inventory is the snapshot the pass was made with, and the Resolver only reads it, so a pass
- * spread over ticks answers for one inventory throughout.
+ * spread over ticks answers for one inventory throughout. The pass owns a {@link Resolver.Memo} of the
+ * items it has found unmakeable from that snapshot, which is why a resolve stays cheap however deep the
+ * chain behind it (ADR-0024).
  */
 public final class ReadyPass implements ReadyRefresh.Pass {
 
     private final Resolver resolver;
-    private final ItemBag stock;
     private final List<String> candidates;
+    private final Resolver.Memo memo;
     private final Set<String> ready = new HashSet<>();
     private int next;
 
     public ReadyPass(Resolver resolver, ItemBag stock, List<String> candidates) {
         this.resolver = resolver;
-        this.stock = stock;
+        this.memo = new Resolver.Memo(stock);
         this.candidates = List.copyOf(candidates);
+    }
+
+    /**
+     * The candidates in the order a pass should resolve them (ADR-0024): the last pass's Ready recipes
+     * first, sorted, then the rest, sorted. A pass that streams what it adds shows the list a player
+     * already had before anything new, and most of a list survives an inventory change.
+     */
+    public static List<String> ordered(Collection<String> ids, Set<String> lastReady) {
+        List<String> first = new ArrayList<>();
+        List<String> rest = new ArrayList<>();
+        for (String id : ids) (lastReady.contains(id) ? first : rest).add(id);
+        first.sort(null);
+        rest.sort(null);
+        first.addAll(rest);
+        return first;
     }
 
     @Override
@@ -42,7 +61,7 @@ public final class ReadyPass implements ReadyRefresh.Pass {
     @Override
     public void resolveNext() {
         String recipe = candidates.get(next++);
-        if (resolver.resolve(recipe, 1, stock).complete()) ready.add(recipe);
+        if (resolver.resolveReady(recipe, memo).complete()) ready.add(recipe);
     }
 
     @Override

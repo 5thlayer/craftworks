@@ -26,6 +26,9 @@ import net.neoforged.neoforge.event.EventHooks;
  */
 final class ReadyTests {
 
+    /** Players carrying this tag are slow to ask the Lock source about each recipe, so a pass takes many ticks. */
+    private static final String SLOW_LOCKS = "craftworks.gametest.slow_locks";
+
     /** Only players carrying this tag are locked out of the torch by the test's hook. */
     private static final String TORCH_LOCKED = "craftworks.gametest.torch_locked";
 
@@ -33,9 +36,16 @@ final class ReadyTests {
     }
 
     static void register(CraftworksGameTests.Registrar tests) {
-        LockHooks.register((player, recipe) -> player.entityTags().contains(TORCH_LOCKED) && recipe.toString().equals("minecraft:torch"));
+        LockHooks.register((player, recipe) -> {
+            if (player.entityTags().contains(SLOW_LOCKS)) {
+                long until = System.nanoTime() + 500_000L;
+                while (System.nanoTime() < until) Thread.onSpinWait();
+            }
+            return player.entityTags().contains(TORCH_LOCKED) && recipe.toString().equals("minecraft:torch");
+        });
         tests.test("logs_and_coal_make_the_stick_and_torch_recipes_ready", 20, ReadyTests::throughIntermediates);
         tests.test("a_locked_recipe_is_not_ready", 20, ReadyTests::lockedIsNotReady);
+        tests.test("ready_pass_survives_a_change_and_a_close_and_reopen", 20, ReadyTests::passSurvivesChangeAndReopen);
         tests.test("ready_is_worked_out_only_while_the_inventory_screen_is_open", 20, ReadyTests::onlyWhileWatched);
     }
 
@@ -112,10 +122,56 @@ final class ReadyTests {
         helper.succeed();
     }
 
-    /** Ticks until a refresh has published, which takes as many ticks as the budget needs for the whole vanilla pack. */
+    /**
+     * Ticks until the pass in flight has ended and published its whole set, which takes as many ticks as the
+     * budget needs for the whole vanilla pack. A pass streams what it adds on the way, so a set appearing
+     * is not the end.
+     */
     private static void tickUntilPublished(ServerPlayer player) {
-        Set<String> before = ReadyWatch.published(player);
-        for (int i = 0; i < 2_000 && ReadyWatch.published(player) == before; i++) EventHooks.firePlayerTickPost(player);
+        EventHooks.firePlayerTickPost(player);
+        for (int i = 0; i < 2_000 && ReadyWatch.working(player); i++) EventHooks.firePlayerTickPost(player);
+    }
+
+    /**
+     * A pass is not dropped by an inventory change or by the screen closing (ADR-0024): it is paused by the
+     * second, finishes, and publishes, and the change gets a pass of its own after it. The Lock source is
+     * slowed so the pass is certainly still running when the change and the close come.
+     */
+    private static void passSurvivesChangeAndReopen(GameTestHelper helper) {
+        List<? extends String> before = CraftworksConfig.LOCK_SOURCES.get();
+        CraftworksConfig.LOCK_SOURCES.set(List.of());
+        try {
+            ServerPlayer player = holdingLogsAndCoal(helper);
+            player.addTag(SLOW_LOCKS);
+            ReadyWatch.watch(player, true);
+            tick(player, 5);
+            helper.assertTrue(ReadyWatch.working(player), "the pass ended before it could be interrupted");
+
+            player.getInventory().add(new ItemStack(Items.IRON_INGOT, 9));
+            // A menu does this when it moves a stack; adding straight to the inventory does not.
+            player.getInventory().setChanged();
+            tick(player, 5);
+            helper.assertTrue(ReadyWatch.working(player), "an inventory change dropped the pass");
+
+            ReadyWatch.watch(player, false);
+            tick(player, 50);
+            helper.assertTrue(ReadyWatch.working(player), "closing the screen dropped the pass");
+
+            ReadyWatch.watch(player, true);
+            player.removeTag(SLOW_LOCKS);
+            tickUntilPublished(player);
+            helper.assertTrue(ReadyWatch.published(player).contains("minecraft:torch"),
+                    "the pass that was interrupted never published");
+
+            // The change made meanwhile gets its own pass once the inventory has been quiet.
+            tick(player, 20);
+            tickUntilPublished(player);
+            helper.assertTrue(ReadyWatch.published(player).contains("minecraft:iron_block"),
+                    "the change made during the pass never got a pass of its own");
+        } finally {
+            CraftworksConfig.LOCK_SOURCES.set(before);
+        }
+        helper.succeed();
     }
 
     private static void tick(ServerPlayer player, int times) {

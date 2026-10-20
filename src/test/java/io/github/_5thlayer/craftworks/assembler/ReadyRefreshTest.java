@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -14,7 +15,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /**
- * When the Ready set is worked out again and how a refresh is spread over ticks (ADR-0012), against a
+ * When the Ready set is worked out again and how a refresh is spread over ticks (ADR-0024), against a
  * fake clock: a pass costs what the test says each resolve costs.
  */
 class ReadyRefreshTest {
@@ -59,7 +60,10 @@ class ReadyRefreshTest {
 
         @Override
         public Set<String> ready() {
-            return done() ? Set.of(generation) : Set.of();
+            if (done()) return Set.of(generation);
+            Set<String> partial = new HashSet<>();
+            for (int i = 0; i < resolved; i++) partial.add(generation + "_found" + i);
+            return partial;
         }
 
         @Override
@@ -71,6 +75,7 @@ class ReadyRefreshTest {
     private final FakeClock clock = new FakeClock();
     private final List<FakePass> begun = new ArrayList<>();
     private final List<ReadyRefresh.Refreshed> published = new ArrayList<>();
+    private final List<Set<String>> streamed = new ArrayList<>();
     private int candidates = 4;
     private long cost = 0;
 
@@ -79,7 +84,7 @@ class ReadyRefreshTest {
             FakePass pass = new FakePass(clock, candidates, cost, "pass" + begun.size());
             begun.add(pass);
             return pass;
-        }, published::add);
+        }, streamed::add, published::add);
     }
 
     private static void tick(ReadyRefresh refresh, int times) {
@@ -105,17 +110,22 @@ class ReadyRefreshTest {
     }
 
     @Test
-    void closingStopsResolvingAndDropsTheRunningPass() {
+    void closingPausesTheRunningPassAndOpeningResumesIt() {
         candidates = 100;
         cost = MS;
         ReadyRefresh refresh = refresh();
         refresh.open();
-        refresh.tick();
+        tick(refresh, 2);
+        int before = begun.get(0).resolved;
         refresh.close();
         tick(refresh, 500);
-        assertEquals(1, begun.size());
+        assertEquals(before, begun.get(0).resolved, "a closed screen kept resolving");
         assertEquals(0, published.size());
-        assertTrue(begun.get(0).resolved < 100, "a closed screen kept resolving");
+        assertTrue(refresh.working(), "closing dropped the pass");
+        refresh.open();
+        tick(refresh, 60);
+        assertEquals(1, begun.size(), "opening started a pass over the one in flight");
+        assertEquals(List.of(Set.of("pass0")), published.stream().map(ReadyRefresh.Refreshed::ready).toList());
     }
 
     @Test
@@ -187,21 +197,6 @@ class ReadyRefreshTest {
         assertTrue(published.size() > before, "no pass finished while the inventory kept changing");
     }
 
-    /** The change a heartbeat pass could not see still gets its quiet refresh once the inventory settles. */
-    @Test
-    void aChangeDuringAHeartbeatPassIsRefreshedOnceQuiet() {
-        ReadyRefresh refresh = refresh();
-        refresh.open();
-        refresh.tick();
-        for (int t = 0; t < ReadyRefresh.HEARTBEAT_TICKS + 1; t++) {
-            if (t % 3 == 0) refresh.inventoryChanged();
-            refresh.tick();
-        }
-        int afterTrickle = published.size();
-        tick(refresh, ReadyRefresh.QUIET_TICKS);
-        assertEquals(afterTrickle + 1, published.size(), "the last change was never refreshed");
-    }
-
     @Test
     void theHeartbeatCountsFromTheEndOfALongPass() {
         candidates = 30;
@@ -260,28 +255,38 @@ class ReadyRefreshTest {
     }
 
     @Test
-    void aStaleRefreshNeverPublishesOverANewerOne() {
+    void aChangeDuringAPassDoesNotDropItAndTheNextPassFollowsOnceQuiet() {
         candidates = 20;
         cost = MS;
         ReadyRefresh refresh = refresh();
         refresh.open();
         tick(refresh, 3);
-        assertEquals(6, begun.get(0).resolved);
         refresh.inventoryChanged();
-        // The pass in flight is about an inventory that is gone: it stops, and the quiet ticks pass.
-        tick(refresh, ReadyRefresh.QUIET_TICKS - 1);
-        assertEquals(6, begun.get(0).resolved);
+        // The pass in flight runs on to the end and publishes, however many changes land meanwhile.
+        tick(refresh, 7);
         assertEquals(1, begun.size());
-        // The newer pass runs to the end; only it is published.
-        tick(refresh, 10);
+        assertEquals(List.of(Set.of("pass0")), published.stream().map(ReadyRefresh.Refreshed::ready).toList());
+        // The change then waits out its quiet ticks, counted from the change, and gets its own pass.
+        tick(refresh, 15);
         assertEquals(2, begun.size());
-        Set<String> seen = new HashSet<>();
-        published.forEach(refreshed -> seen.addAll(refreshed.ready()));
-        assertEquals(Set.of("pass1"), seen);
+        assertEquals(List.of(Set.of("pass0"), Set.of("pass1")), published.stream().map(ReadyRefresh.Refreshed::ready).toList());
     }
 
     @Test
-    void reopeningRestartsARunningPass() {
+    void aPassThatChangesKeepArrivingDuringStillFinishes() {
+        candidates = 200;
+        cost = MS;
+        ReadyRefresh refresh = refresh();
+        refresh.open();
+        for (int t = 0; t < 130; t++) {
+            if (t % 2 == 0) refresh.inventoryChanged();
+            refresh.tick();
+        }
+        assertEquals(Set.of("pass0"), published.get(0).ready());
+    }
+
+    @Test
+    void reopeningResumesARunningPassRatherThanRestartingIt() {
         candidates = 20;
         cost = MS;
         ReadyRefresh refresh = refresh();
@@ -289,12 +294,12 @@ class ReadyRefreshTest {
         tick(refresh, 2);
         refresh.open();
         tick(refresh, 10);
-        assertEquals(2, begun.size());
-        assertEquals(List.of(Set.of("pass1")), published.stream().map(ReadyRefresh.Refreshed::ready).toList());
+        assertEquals(1, begun.size());
+        assertEquals(List.of(Set.of("pass0")), published.stream().map(ReadyRefresh.Refreshed::ready).toList());
     }
 
     @Test
-    void aChangeWhileClosedIsForgottenOnceOpened() {
+    void aChangeWhileClosedWithNoPassInFlightIsSeenByThePassOpeningStarts() {
         ReadyRefresh refresh = refresh();
         refresh.inventoryChanged();
         refresh.open();
@@ -303,4 +308,73 @@ class ReadyRefreshTest {
         tick(refresh, ReadyRefresh.QUIET_TICKS);
         assertEquals(1, begun.size(), "a change from before the screen opened started a second pass");
     }
+
+    @Test
+    void aChangeWhileClosedWithAPassInFlightFollowsTheResumedPass() {
+        candidates = 20;
+        cost = MS;
+        ReadyRefresh refresh = refresh();
+        refresh.open();
+        tick(refresh, 2);
+        refresh.close();
+        refresh.inventoryChanged();
+        tick(refresh, 100);
+        assertEquals(1, begun.size());
+        refresh.open();
+        tick(refresh, 10);
+        assertEquals(1, published.size());
+        tick(refresh, ReadyRefresh.QUIET_TICKS);
+        assertEquals(2, begun.size(), "the change made while closed never got its pass");
+    }
+
+    @Test
+    void nothingRunsAtLoginUntilTheScreenOpens() {
+        ReadyRefresh refresh = refresh();
+        tick(refresh, 500);
+        assertEquals(0, begun.size());
+    }
+
+    @Test
+    void additionsStreamEveryTwentyTicksAndRemovalsWaitForTheEnd() {
+        candidates = 100;
+        cost = MS;
+        ReadyRefresh refresh = refresh();
+        refresh.open();
+        tick(refresh, ReadyRefresh.STREAM_TICKS - 1);
+        assertEquals(0, streamed.size());
+        refresh.tick();
+        assertEquals(1, streamed.size());
+        assertEquals(40, streamed.get(0).size(), "the first batch is everything found so far");
+        tick(refresh, ReadyRefresh.STREAM_TICKS);
+        assertEquals(2, streamed.size());
+        assertTrue(Collections.disjoint(streamed.get(0), streamed.get(1)), "an id was streamed twice");
+        assertEquals(40, streamed.get(1).size());
+        assertEquals(0, published.size());
+        tick(refresh, 10);
+        assertEquals(1, published.size());
+        assertEquals(Set.of("pass0"), published.get(0).ready());
+    }
+
+    @Test
+    void aTickThatFindsNothingNewStreamsNothing() {
+        candidates = 100;
+        cost = 0;
+        ReadyRefresh refresh = refresh();
+        refresh.open();
+        refresh.tick();
+        assertEquals(0, streamed.size());
+    }
+
+    @Test
+    void aRefreshReportsItsSlowestTick() {
+        ReadyRefresh refresh = refresh();
+        candidates = 4;
+        cost = 3 * MS;
+        refresh.open();
+        // 3 ms per resolve against a 2 ms budget: a tick is one resolve of 3 ms.
+        tick(refresh, 4);
+        assertEquals(3 * MS, published.get(0).maxTickNanos());
+        assertEquals(12 * MS, published.get(0).nanos());
+    }
+
 }
