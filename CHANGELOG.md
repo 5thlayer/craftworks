@@ -4,7 +4,7 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
-- Craftworks accepts EMI 1.1.24 or later beside it and refuses to load with an older one, and the same for Researchd from 1.3.4-26.1; both stay optional, and the mod list shows the relation. (#69)
+- Craftworks accepts EMI 1.1.24 or later beside it, an optional dependency, and refuses to load with an older one. (#69)
 
 ## 0.10.3
 
