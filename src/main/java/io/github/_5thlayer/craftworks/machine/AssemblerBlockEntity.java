@@ -68,7 +68,10 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
 
     private final HeldRecipeRef held = new HeldRecipeRef();
     private int progress;
-    /** A finished craft's assembled result found no room though the listed one had: not saved, since the next try finds out. */
+    /**
+     * A finished craft's assembled result found no room though the listed one had: not saved, since the next
+     * try finds out.
+     */
     private boolean assembledResultBlocked;
 
     private final MachineInventory inventory;
