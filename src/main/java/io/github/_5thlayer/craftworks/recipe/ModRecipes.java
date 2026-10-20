@@ -105,7 +105,9 @@ public final class ModRecipes {
                 holders.add(new RecipeHolder<>(holder.id(), assembling));
                 converted++;
                 // A Data-carrying recipe: the original is kept, for a craft to ask what it made (ADR-0022).
-                if (WrapperRecipes.unwrap(holder.value()) != null || assemblesItsOwn(holder.value())) kept.put(id, (CraftingRecipe) holder.value());
+                if (WrapperRecipes.unwrap(holder.value()) != null || assemblesItsOwn(holder.value())) {
+                    kept.put(id, (CraftingRecipe) holder.value());
+                }
             }
         }
         DataCarryingRecipes.replace(kept);
@@ -123,8 +125,7 @@ public final class ModRecipes {
      */
     private static AssemblingRecipe toAssembling(Recipe<?> recipe) {
         // A wrapper converts through the recipe it wraps, and that one says whether it is special (ADR-0023).
-        Recipe<?> inner = WrapperRecipes.unwrap(recipe);
-        if (inner == null) inner = recipe;
+        Recipe<?> inner = WrapperRecipes.unwrapOrSelf(recipe);
         if (inner.isSpecial()) return null;
         List<Ingredient> slots;
         ItemStackTemplate result;

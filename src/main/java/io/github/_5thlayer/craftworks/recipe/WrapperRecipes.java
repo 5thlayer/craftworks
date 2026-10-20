@@ -6,6 +6,7 @@ package io.github._5thlayer.craftworks.recipe;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
@@ -22,15 +23,18 @@ final class WrapperRecipes {
 
     /**
      * The shaped or shapeless recipe {@code recipe} wraps, or null when it is not a wrapper: it implements an
-     * interface named {@code IWrapperRecipe}, has a public no-arg {@code getCompose()} and that returns a
+     * interface named {@code IWrapperRecipe}, has a public no-arg {@code getCompose()} that returns a
      * shaped or shapeless recipe. Any failure to ask reads as not a wrapper.
      */
     static Recipe<?> unwrap(Recipe<?> recipe) {
-        if (recipe instanceof ShapedRecipe || recipe instanceof ShapelessRecipe || !implementsWrapper(recipe.getClass())) {
+        if (!(recipe instanceof CraftingRecipe) || recipe instanceof ShapedRecipe || recipe instanceof ShapelessRecipe) {
             return null;
         }
+        Class<?> wrapper = wrapperInterface(recipe.getClass());
+        if (wrapper == null) return null;
         try {
-            for (Method method : recipe.getClass().getMethods()) {
+            // Through the interface's own method, which is public whatever the implementing class is.
+            for (Method method : wrapper.getMethods()) {
                 if (!method.getName().equals("getCompose") || method.getParameterCount() != 0 || method.isBridge()
                         || Modifier.isStatic(method.getModifiers())) {
                     continue;
@@ -44,12 +48,21 @@ final class WrapperRecipes {
         return null;
     }
 
-    private static boolean implementsWrapper(Class<?> type) {
+    /** The recipe a craft lays its grid out by: the one {@code recipe} wraps, or {@code recipe} itself. */
+    static Recipe<?> unwrapOrSelf(Recipe<?> recipe) {
+        Recipe<?> inner = unwrap(recipe);
+        return inner != null ? inner : recipe;
+    }
+
+    /** The interface named {@code IWrapperRecipe} that {@code type} implements, or null. */
+    private static Class<?> wrapperInterface(Class<?> type) {
         for (Class<?> c = type; c != null; c = c.getSuperclass()) {
             for (Class<?> implemented : c.getInterfaces()) {
-                if (implemented.getSimpleName().equals("IWrapperRecipe") || implementsWrapper(implemented)) return true;
+                if (implemented.getSimpleName().equals("IWrapperRecipe")) return implemented;
+                Class<?> above = wrapperInterface(implemented);
+                if (above != null) return above;
             }
         }
-        return false;
+        return null;
     }
 }

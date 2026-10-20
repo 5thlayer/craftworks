@@ -5,6 +5,7 @@ package io.github._5thlayer.craftworks.recipe;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,8 +35,14 @@ public final class DataCarryingRecipes {
     private DataCarryingRecipes() {
     }
 
+    /** What each original lays its grid out by: itself, or the recipe it wraps (ADR-0023). */
+    private static volatile Map<Identifier, Recipe<?>> grids = Map.of();
+
     static void replace(Map<Identifier, CraftingRecipe> kept) {
         originals = Map.copyOf(kept);
+        Map<Identifier, Recipe<?>> laid = new HashMap<>();
+        kept.forEach((id, original) -> laid.put(id, WrapperRecipes.unwrapOrSelf(original)));
+        grids = Map.copyOf(laid);
     }
 
     public static boolean isDataCarrying(Identifier id) {
@@ -45,16 +52,15 @@ public final class DataCarryingRecipes {
     /**
      * What the original recipe makes of the stacks one craft consumed, one stack per item, or empty when
      * {@code id} assembles nothing of its own or the stacks do not fit its grid (a warning names the recipe
-     * then, and the caller falls back to the listed result). A shaped recipe's, or a wrapper's wrapped one, are laid
-     * back in its pattern, any valid placement being found.
+     * then, and the caller falls back to the listed result). The stacks of a shaped recipe, or of the shaped
+     * recipe a wrapper wraps, are laid back in its pattern, any valid placement being found.
      */
     public static Optional<ItemStack> assemble(Identifier id, List<ItemStack> consumed) {
         CraftingRecipe original = id == null ? null : originals.get(id);
         if (original == null) return Optional.empty();
         CraftingInput input = null;
         // A wrapper's grid follows the recipe it wraps, and the wrapper makes the result (ADR-0023).
-        Recipe<?> inner = WrapperRecipes.unwrap(original);
-        if (inner == null) inner = original;
+        Recipe<?> inner = grids.get(id);
         if (inner instanceof ShapedRecipe shaped) {
             List<ItemStack> grid = layOut(shaped.pattern.ingredients(), consumed);
             if (grid != null) input = CraftingInput.of(shaped.getWidth(), shaped.getHeight(), grid);

@@ -68,6 +68,8 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
 
     private final HeldRecipeRef held = new HeldRecipeRef();
     private int progress;
+    /** A finished craft's assembled result found no room though the listed one had: not saved, since the next try finds out. */
+    private boolean assembledResultBlocked;
 
     private final MachineInventory inventory;
     private final EnergyBuffer buffer = new EnergyBuffer();
@@ -212,6 +214,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         }
         held.set(next);
         progress = 0;
+        assembledResultBlocked = false;
         fluidSide.empty();
         if (level instanceof ServerLevel server) {
             fluidSide.syncConnections(server);
@@ -319,6 +322,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     }
 
     private void craft(AssemblingRecipe recipe) {
+        assembledResultBlocked = false;
         try (Transaction probe = Transaction.openRoot()) {
             if (finish(recipe, probe, false) != null) {
                 return;
@@ -332,7 +336,12 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             }
             int next = progress + 1;
             if (next >= duration) {
-                if (finish(recipe, tx, true) != null) {
+                MachineState stopped = finish(recipe, tx, true);
+                if (stopped == MachineState.OUTPUT_FULL) {
+                    assembledResultBlocked = true;
+                    return;
+                }
+                if (stopped != null) {
                     LOGGER.warn("{} at {} passed its checks and could not finish {}", getBlockState().getBlock().getName().getString(),
                             worldPosition.toShortString(), held.idOrNull());
                     return;
@@ -375,6 +384,9 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             if (stalled != null) {
                 return stalled;
             }
+        }
+        if (assembledResultBlocked) {
+            return MachineState.OUTPUT_FULL;
         }
         int duration = duration(recipe);
         int fe = feThisTick(recipe, duration);
