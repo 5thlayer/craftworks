@@ -52,6 +52,8 @@ public final class Resolver {
 
     private final AssemblingRecipeSet recipes;
     private final Predicate<String> locked;
+    private long applications;
+    private int cutShort;
 
     /**
      * @param recipes the Assembling recipes
@@ -61,6 +63,22 @@ public final class Resolver {
     public Resolver(AssemblingRecipeSet recipes, Predicate<String> locked) {
         this.recipes = recipes;
         this.locked = locked;
+    }
+
+    /**
+     * Recipe applications this Resolver has tried across all its resolves, abandoned routes included.
+     *
+     * <p>A measure of work that does not depend on the machine, for tests and the debug log: the time a
+     * resolve takes is the number of applications it tries times what each costs, and only the first
+     * is something a test can assert on.
+     */
+    public long applicationsTried() {
+        return applications;
+    }
+
+    /** How many searches this Resolver has abandoned at {@link #SEARCH_LIMIT} rather than finished. */
+    public int searchesCutShort() {
+        return cutShort;
     }
 
     /**
@@ -154,7 +172,12 @@ public final class Resolver {
          * {@link #SEARCH_LIMIT} applications, which unwinds every open route the same way.
          */
         private boolean craft(AssemblingRecipe recipe, int n, List<String> ancestors) {
-            if (++tried > SEARCH_LIMIT || overflows(recipe, n)) return false;
+            applications++;
+            if (++tried > SEARCH_LIMIT) {
+                if (tried == SEARCH_LIMIT + 1) cutShort++;
+                return false;
+            }
+            if (overflows(recipe, n)) return false;
             List<String> path = new ArrayList<>(ancestors);
             path.add(recipe.id());
             // Merged rather than one entry per ingredient. An ingredient satisfied from two items
