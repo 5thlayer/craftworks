@@ -130,8 +130,8 @@ its own, holds it and idles.
 _Avoid_: selected recipe, active recipe, machine recipe
 
 **Converted recipe**:
-An Assembling recipe Craftworks makes from a shaped or shapeless crafting recipe, at that recipe's own id,
-replacing it: its slots become a bag of ingredients, with the default craft time and Route priority.
+An Assembling recipe Craftworks makes from a shaped or shapeless crafting recipe, or from one that wraps
+such a recipe (Sophisticated Backpacks' backpacks), at that recipe's own id, replacing it: its slots become a bag of ingredients, with the default craft time and Route priority.
 Vanilla's come built in; every other mod's are converted as recipes load, unless the pack excludes them or
 already has an Assembling recipe at that id.
 _Avoid_: imported recipe, ported recipe
