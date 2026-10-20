@@ -320,7 +320,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
 
     private void craft(AssemblingRecipe recipe) {
         try (Transaction probe = Transaction.openRoot()) {
-            if (finish(recipe, probe) != null) {
+            if (finish(recipe, probe, false) != null) {
                 return;
             }
         }
@@ -332,7 +332,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             }
             int next = progress + 1;
             if (next >= duration) {
-                if (finish(recipe, tx) != null) {
+                if (finish(recipe, tx, true) != null) {
                     LOGGER.warn("{} at {} passed its checks and could not finish {}", getBlockState().getBlock().getName().getString(),
                             worldPosition.toShortString(), held.idOrNull());
                     return;
@@ -371,7 +371,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         }
         AssemblingRecipe recipe = resolved.get();
         try (Transaction probe = Transaction.openRoot()) {
-            MachineState stalled = finish(recipe, probe);
+            MachineState stalled = finish(recipe, probe, false);
             if (stalled != null) {
                 return stalled;
             }
@@ -389,9 +389,11 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
      * ingredients' remainders, in that order, in any shared output slot with room, and each fluid result in the
      * output box its order names. Returns null if it all went, and otherwise what stopped it:
      * {@link MachineState#MISSING_INGREDIENTS} or {@link MachineState#OUTPUT_FULL}. Never part of a craft: the
-     * caller aborts the transaction on a stop.
+     * caller aborts the transaction on a stop. Only a craft that {@code finishes} for real asks a Data-carrying
+     * recipe what it made; a probe checks for room with the listed result, so a mod's {@code assemble} isn't run
+     * every tick.
      */
-    private @Nullable MachineState finish(AssemblingRecipe recipe, TransactionContext tx) {
+    private @Nullable MachineState finish(AssemblingRecipe recipe, TransactionContext tx, boolean finishes) {
         MachineState stopped = fluidSide.take(recipe, tx);
         if (stopped != null) {
             return stopped;
@@ -403,7 +405,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             return stopped;
         }
         // A Data-carrying recipe makes what its original makes of the stacks taken (ADR-0022).
-        ItemStack assembled = DataCarryingRecipes.assemble(held.idOrNull(), consumed).orElse(ItemStack.EMPTY);
+        ItemStack assembled = finishes ? DataCarryingRecipes.assemble(held.idOrNull(), consumed).orElse(ItemStack.EMPTY) : ItemStack.EMPTY;
         ItemStackTemplate listed = recipe.productTemplate().orElse(null);
         ItemResource product = !assembled.isEmpty() ? ItemResource.of(assembled)
                 : listed != null ? ItemResource.of(listed) : null;

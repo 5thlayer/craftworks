@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 
 /**
@@ -44,14 +45,17 @@ public final class DataCarryingRecipes {
     /**
      * What the original recipe makes of the stacks one craft consumed, one stack per item, or empty when
      * {@code id} assembles nothing of its own or the stacks do not fit its grid (a warning names the recipe
-     * then, and the caller falls back to the listed result). A shaped recipe's are laid back in its pattern,
-     * any valid placement being found.
+     * then, and the caller falls back to the listed result). A shaped recipe's, or a wrapper's wrapped one, are laid
+     * back in its pattern, any valid placement being found.
      */
     public static Optional<ItemStack> assemble(Identifier id, List<ItemStack> consumed) {
         CraftingRecipe original = id == null ? null : originals.get(id);
         if (original == null) return Optional.empty();
         CraftingInput input = null;
-        if (original instanceof ShapedRecipe shaped) {
+        // A wrapper's grid follows the recipe it wraps, and the wrapper makes the result (ADR-0023).
+        Recipe<?> inner = WrapperRecipes.unwrap(original);
+        if (inner == null) inner = original;
+        if (inner instanceof ShapedRecipe shaped) {
             List<ItemStack> grid = layOut(shaped.pattern.ingredients(), consumed);
             if (grid != null) input = CraftingInput.of(shaped.getWidth(), shaped.getHeight(), grid);
         } else if (!consumed.isEmpty()) {

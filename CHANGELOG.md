@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- Sophisticated Backpacks' backpack, its tier upgrades and its upgrades' next tiers convert to Assembling recipes, so both Assemblers make them; a tier upgrade keeps the backpack's contents, as a crafting table does. Any mod recipe that wraps a shaped or shapeless one through an `IWrapperRecipe` converts the same way, and `modRecipesExcluded` still keeps any at the table. An Assembler upgrades a linked-storage backpack Sophisticated would refuse to. (#68)
+
 ## 0.10.2
 
 - A click on an EMI Craftables entry or a favorite, or EMI's craft hotkey on a hovered stack, now reaches the Personal Assembler even when its list of what is ready is stale or still empty after joining: it queues the recipe, or opens the Crafting Plan naming what is missing. A favorite with several Assembling recipes still prefers one that is ready. The Craftables list still shows only ready recipes. (#66)

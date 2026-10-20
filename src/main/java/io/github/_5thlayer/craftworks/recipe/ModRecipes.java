@@ -105,7 +105,7 @@ public final class ModRecipes {
                 holders.add(new RecipeHolder<>(holder.id(), assembling));
                 converted++;
                 // A Data-carrying recipe: the original is kept, for a craft to ask what it made (ADR-0022).
-                if (assemblesItsOwn(holder.value())) kept.put(id, (CraftingRecipe) holder.value());
+                if (WrapperRecipes.unwrap(holder.value()) != null || assemblesItsOwn(holder.value())) kept.put(id, (CraftingRecipe) holder.value());
             }
         }
         DataCarryingRecipes.replace(kept);
@@ -118,17 +118,20 @@ public final class ModRecipes {
     }
 
     /**
-     * The recipe as a Converted recipe, or null when it is not a shaped or shapeless one with a fixed
-     * result.
+     * The recipe as a Converted recipe, or null when it is not a shaped or shapeless one, or a wrapper of
+     * one, with a fixed result.
      */
     private static AssemblingRecipe toAssembling(Recipe<?> recipe) {
-        if (recipe.isSpecial()) return null;
+        // A wrapper converts through the recipe it wraps, and that one says whether it is special (ADR-0023).
+        Recipe<?> inner = WrapperRecipes.unwrap(recipe);
+        if (inner == null) inner = recipe;
+        if (inner.isSpecial()) return null;
         List<Ingredient> slots;
         ItemStackTemplate result;
-        if (recipe instanceof ShapedRecipe shaped) {
+        if (inner instanceof ShapedRecipe shaped) {
             slots = shaped.getIngredients().stream().flatMap(Optional::stream).toList();
             result = ((ShapedRecipeAccessor) shaped).craftworks$result();
-        } else if (recipe instanceof ShapelessRecipe shapeless) {
+        } else if (inner instanceof ShapelessRecipe shapeless) {
             slots = ((ShapelessRecipeAccessor) shapeless).craftworks$ingredients();
             result = shapeless.result();
         } else {

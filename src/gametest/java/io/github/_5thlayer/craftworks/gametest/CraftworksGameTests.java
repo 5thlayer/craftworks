@@ -108,6 +108,7 @@ public final class CraftworksGameTests {
         VanillaPackTests.register(tests);
         ModRecipesTests.register(tests);
         DataCarryingTests.register(tests);
+        WrappedRecipeTests.register(tests);
         // KubeJS sends the mock player a payload of its own at login, which throws before the Mod's are checked (#51).
         if (!kubeJS) NoChannelTests.register(tests);
         if (kubeJS) KubeJSTests.register(tests);
