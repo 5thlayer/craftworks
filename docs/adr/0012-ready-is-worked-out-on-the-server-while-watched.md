@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted, schedule and budget superseded by ADR-0024
 ---
 
 # Ready is worked out on the server, only while watched, across ticks
