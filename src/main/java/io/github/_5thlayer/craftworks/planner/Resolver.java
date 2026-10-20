@@ -5,7 +5,9 @@ package io.github._5thlayer.craftworks.planner;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -89,18 +91,30 @@ public final class Resolver {
      * {@link #largestAffordable} does a dozen times.
      */
     public Resolution resolve(String recipeId, int crafts, ItemBag available) {
-        Walk walk = new Walk(available.copy());
+        return resolve(recipeId, crafts, new Walk(new LinkedHashMap<>(available.asMap()), null));
+    }
+
+    /**
+     * One craft of {@code recipeId} against the inventory the {@link Memo} was made with, for the Ready
+     * pass, which reads only {@code complete()}. Fill never calls this: its Missing and Locked breakdown
+     * has to name everything, which the memo's skipping would not.
+     */
+    public Resolution resolveReady(String recipeId, Memo memo) {
+        return resolve(recipeId, 1, new Walk(new LinkedHashMap<>(memo.stock), memo));
+    }
+
+    private Resolution resolve(String recipeId, int crafts, Walk walk) {
         AssemblingRecipe root = recipes.byId(recipeId);
         if (root == null || crafts <= 0 || crafts > MAX_CRAFTS) {
             return walk.finish();
         }
         ItemAmount result = root.result();
         if (locked.test(root.id())) {
-            walk.locked.add(result.item(), scaled(result.count(), crafts));
+            walk.add(LOCKED, result.item(), scaled(result.count(), crafts));
             return walk.finish();
         }
         if (!walk.craft(root, crafts, List.of())) {
-            walk.missing.add(result.item(), scaled(result.count(), crafts));
+            walk.add(MISSING, result.item(), scaled(result.count(), crafts));
         }
         return walk.finish();
     }
@@ -135,28 +149,122 @@ public final class Resolver {
     }
 
     /**
+     * What a Ready pass remembers across its resolves (#67): the inventory it was made with, and the items
+     * it has found no way to craft from that inventory.
+     *
+     * <p>Only "none can be made" is remembered, never "this much can be made". A walk shares its stock and
+     * its surplus between branches, so a count that held in one place says nothing about another; but an
+     * item that cannot be crafted even once, from the whole inventory, with no ancestors to forbid a
+     * recipe, cannot be crafted in a narrower place either. It is found by a probe of its own (see
+     * {@code Walk.learn}) and never from a failure in context, which may have been the amount asked, the
+     * stock an earlier ingredient took or a cycle. A search the {@link #SEARCH_LIMIT} cut short never
+     * counts, because it proved nothing.
+     *
+     * <p>The one case the verdict is not exact in is a contrived one: the walk's choices are greedy and
+     * never revisited, so a surplus of one acceptable item can steer a later ingredient to succeed where
+     * the probe, which has no surplus, drew the other and failed. Ready is a list for a player to pick
+     * from and a click still resolves live, so the cost of that is a recipe missing from the list.
+     *
+     * <p>Valid for one pass: the Lock source is asked through the pass's own cache, and a memo carried to
+     * a pass with another inventory would be wrong. Fill never has one.
+     */
+    public static final class Memo {
+
+        private final Map<String, Integer> stock;
+        private final Set<String> unmakeable = new HashSet<>();
+        private final Set<String> probed = new HashSet<>();
+
+        public Memo(ItemBag snapshot) {
+            this.stock = new LinkedHashMap<>(snapshot.asMap());
+        }
+
+        /** How many items the pass has found unmakeable so far. */
+        public int unmakeableItems() {
+            return unmakeable.size();
+        }
+    }
+
+    private static final int SURPLUS = 0;
+    private static final int RAW_COST = 1;
+    private static final int MISSING = 2;
+    private static final int LOCKED = 3;
+    private static final int TO_CRAFT = 4;
+    /** Held items live in a map of their own: see {@link Walk#available}. */
+    private static final int AVAILABLE = 5;
+
+    /** One change to a bag, kept so a route abandoned can be put back: positive added, negative removed. */
+    private record Undo(int bag, String item, int amount) {
+    }
+
+    /**
      * One resolution in progress: what has been taken, what has been planned, and what could not be.
      *
      * <p>{@code surplus} is what makes a recipe that produces two at a time behave. Outputs land there
      * and later demands draw from it first, so three sticks asked for twice is four crafts and not
      * six, and the leftover is simply part of the plan, delivered when no remaining step wants it.
+     *
+     * <p>Every change to a bag goes through {@link #add} and {@link #draw}, which journal it while a
+     * {@link Mark} is open: putting a route back is undoing its journal, not restoring copies of every
+     * bag, the whole inventory included (#67).
      */
     private final class Walk {
 
-        // Not final: a route tried and abandoned puts every one of them back (see Mark). So never hold
-        // one in a local across a recursive take: after a restore it would be a discarded bag.
-        private ItemBag available;
-        private ItemBag surplus = new ItemBag();
-        private ItemBag rawCost = new ItemBag();
-        private ItemBag missing = new ItemBag();
-        private ItemBag locked = new ItemBag();
-        private ItemBag toCraft = new ItemBag();
+        /**
+         * The held items. Drawing leaves a key at zero rather than removing it and nothing is ever added, so
+         * putting a draw back restores the order the keys are walked in, which {@link #drawWithData} reads.
+         */
+        private final Map<String, Integer> available;
+        private final ItemBag[] bags = {new ItemBag(), new ItemBag(), new ItemBag(), new ItemBag(), new ItemBag()};
         private final List<CraftStep> steps = new ArrayList<>();
+        private final List<Undo> journal = new ArrayList<>();
+        private int openMarks;
+        /** Net shortfalls (Missing and Locked adds) so far: what {@link Mark#clean} compares. */
+        private int failures;
+        /** The Ready pass's memo, or null for a walk that must report everything, as Fill's does. */
+        private final Memo memo;
         /** Recipe applications tried so far, abandoned routes included: see {@link #SEARCH_LIMIT}. */
         private int tried;
 
-        private Walk(ItemBag available) {
+        private Walk(Map<String, Integer> available, Memo memo) {
             this.available = available;
+            this.memo = memo;
+        }
+
+        private void add(int bag, String item, int count) {
+            if (count <= 0) return;
+            bags[bag].add(item, count);
+            if (bag == MISSING || bag == LOCKED) failures++;
+            if (openMarks > 0) journal.add(new Undo(bag, item, count));
+        }
+
+        private int count(int bag, String item) {
+            return bag == AVAILABLE ? available.getOrDefault(item, 0) : bags[bag].count(item);
+        }
+
+        /** Spends up to {@code wanted} of {@code item} out of a bag, and says how much. */
+        private int draw(int bag, String item, int wanted) {
+            if (wanted <= 0) return 0;
+            int have = count(bag, item);
+            int taken = Math.min(wanted, have);
+            if (taken <= 0) return 0;
+            if (bag == AVAILABLE) {
+                available.put(item, have - taken);
+            } else {
+                bags[bag].remove(item, taken);
+            }
+            if (openMarks > 0) journal.add(new Undo(bag, item, -taken));
+            return taken;
+        }
+
+        private void undo(Undo change) {
+            if (change.amount() > 0) {
+                bags[change.bag()].remove(change.item(), change.amount());
+                if (change.bag() == MISSING || change.bag() == LOCKED) failures--;
+            } else if (change.bag() == AVAILABLE) {
+                available.put(change.item(), available.get(change.item()) - change.amount());
+            } else {
+                bags[change.bag()].add(change.item(), -change.amount());
+            }
         }
 
         /**
@@ -200,8 +308,8 @@ public final class Resolver {
                 }
             }
             ItemAmount made = new ItemAmount(recipe.result().item(), recipe.result().count() * n);
-            surplus.add(made.item(), made.count());
-            toCraft.add(made.item(), made.count());
+            add(SURPLUS, made.item(), made.count());
+            add(TO_CRAFT, made.item(), made.count());
             // A step that came up short is only ever shown as Missing, and cannot be laid out per craft.
             long wanted = 0;
             for (Ingredient ingredient : recipe.ingredients()) wanted += (long) ingredient.count() * n;
@@ -234,8 +342,8 @@ public final class Resolver {
                                       boolean dataCarrying) {
             List<ItemAmount> drawn = new ArrayList<>();
             int owed = quantity;
-            owed -= drawAcross(surplus, ingredient, owed, drawn, false);
-            owed -= drawAcross(available, ingredient, owed, drawn, true);
+            owed -= drawAcross(SURPLUS, ingredient, owed, drawn);
+            owed -= drawAcross(AVAILABLE, ingredient, owed, drawn);
             if (dataCarrying) owed -= drawWithData(ingredient, owed, drawn);
             if (owed <= 0) return drawn;
 
@@ -243,15 +351,12 @@ public final class Resolver {
             // route is tried against what remains and, if anything under it comes up Missing or
             // Locked, rolled back whole, so an abandoned route never spends what a later step needs.
             for (String item : ingredient.items()) {
-                for (AssemblingRecipe route : recipes.routes(item)) {
-                    if (Resolver.this.locked.test(route.id()) || ancestors.contains(route.id())) continue;
-                    Mark mark = new Mark();
-                    if (make(route, owed, ancestors) && mark.clean()) {
-                        drawn.add(new ItemAmount(item, owed));
-                        return drawn;
-                    }
-                    mark.restore();
+                if (memo != null && memo.unmakeable.contains(item)) continue;
+                if (tryRoutes(item, owed, ancestors)) {
+                    drawn.add(new ItemAmount(item, owed));
+                    return drawn;
                 }
+                if (memo != null) learn(item);
             }
 
             // No route resolves: the plan reports the top route's Missing and Locked, walked again.
@@ -274,15 +379,50 @@ public final class Resolver {
                 // Locked beats Missing when anything could have made it: telling a player to go
                 // gathering for an item that only needs unlocking is the worse of the two mistakes.
                 if (blocked != null) {
-                    locked.add(blocked, owed);
+                    add(LOCKED, blocked, owed);
                 } else {
-                    missing.add(ingredient.preferred(), owed);
+                    add(MISSING, ingredient.preferred(), owed);
                 }
                 return drawn;
             }
 
+            if (memo != null) {
+                // The walk again would fail as the one above did, from the same state: a Ready pass reads
+                // only whether the plan is complete, and walking it twice at every level is what made a
+                // failing search cost the square of its depth.
+                add(MISSING, maker.result().item(), owed);
+                return drawn;
+            }
             if (make(maker, owed, ancestors)) drawn.add(new ItemAmount(maker.result().item(), owed));
             return drawn;
+        }
+
+        /** Whether some route of {@code item} resolves for {@code owed} of it, leaving the walk as that route left it. */
+        private boolean tryRoutes(String item, int owed, List<String> ancestors) {
+            for (AssemblingRecipe route : recipes.routes(item)) {
+                if (Resolver.this.locked.test(route.id()) || ancestors.contains(route.id())) continue;
+                Mark mark = new Mark();
+                if (make(route, owed, ancestors) && mark.clean()) {
+                    mark.release();
+                    return true;
+                }
+                mark.restore();
+            }
+            return false;
+        }
+
+        /**
+         * Asks, once per item per pass, whether {@code item} can be crafted at all: one of it, by its routes,
+         * from the whole inventory, with no ancestors. If not, and the search was not cut short, it joins
+         * {@link Memo}'s unmakeable items.
+         *
+         * <p>Run after a failure in context, so an item that is made pays for the probe only when
+         * something else went wrong around it, and once.
+         */
+        private void learn(String item) {
+            if (tried > SEARCH_LIMIT || !memo.probed.add(item)) return;
+            Walk probe = new Walk(new LinkedHashMap<>(memo.stock), memo);
+            if (!probe.tryRoutes(item, 1, List.of()) && probe.tried <= SEARCH_LIMIT) memo.unmakeable.add(item);
         }
 
         /** Crafts {@code owed} of what {@code maker} makes and takes it out of the surplus, or says it could not. */
@@ -294,40 +434,44 @@ public final class Resolver {
             // queue would take the cost, and then throw on a step it cannot feed. Reporting it as
             // Missing puts the refusal in front of the player, where every other shortfall goes.
             if (runs > MAX_CRAFTS || !craft(maker, runs, ancestors)) {
-                missing.add(makeable, owed);
+                add(MISSING, makeable, owed);
                 return false;
             }
-            surplus.remove(makeable, owed);
+            draw(SURPLUS, makeable, owed);
             return true;
         }
 
         /**
-         * The walk as it stood before a route was tried: enough to put it back exactly if the route
-         * turns out to leave something Missing or Locked.
+         * The walk as it stood before a route was tried: a position in the journal, enough to put it back
+         * exactly if the route turns out to leave something Missing or Locked. Ends with {@link #release}
+         * or {@link #restore}, one of the two.
          */
         private final class Mark {
 
-            private final ItemBag available = Walk.this.available.copy();
-            private final ItemBag surplus = Walk.this.surplus.copy();
-            private final ItemBag rawCost = Walk.this.rawCost.copy();
-            private final ItemBag missing = Walk.this.missing.copy();
-            private final ItemBag locked = Walk.this.locked.copy();
-            private final ItemBag toCraft = Walk.this.toCraft.copy();
-            private final int steps = Walk.this.steps.size();
+            private final int journalSize = journal.size();
+            private final int stepCount = steps.size();
+            private final int failuresAtMark = failures;
+
+            private Mark() {
+                openMarks++;
+            }
 
             /** Whether nothing has come up Missing or Locked since the mark. */
             private boolean clean() {
-                return missing.equals(Walk.this.missing) && locked.equals(Walk.this.locked);
+                return failures == failuresAtMark;
             }
 
+            /** Keeps what the route did. */
+            private void release() {
+                if (--openMarks == 0) journal.clear();
+            }
+
+            /** Puts back what the route did. */
             private void restore() {
-                Walk.this.available = available;
-                Walk.this.surplus = surplus;
-                Walk.this.rawCost = rawCost;
-                Walk.this.missing = missing;
-                Walk.this.locked = locked;
-                Walk.this.toCraft = toCraft;
-                Walk.this.steps.subList(steps, Walk.this.steps.size()).clear();
+                for (int i = journal.size() - 1; i >= journalSize; i--) undo(journal.get(i));
+                journal.subList(journalSize, journal.size()).clear();
+                steps.subList(stepCount, steps.size()).clear();
+                release();
             }
         }
 
@@ -337,15 +481,14 @@ public final class Resolver {
             return routes.isEmpty() ? null : routes.get(0);
         }
 
-        /** Spends up to {@code owed} out of {@code bag}, taking whatever the ingredient accepts. */
-        private int drawAcross(ItemBag bag, Ingredient ingredient, int owed, List<ItemAmount> drawn,
-                               boolean fromInventory) {
+        /** Spends up to {@code owed} out of a bag, taking whatever the ingredient accepts. */
+        private int drawAcross(int bag, Ingredient ingredient, int owed, List<ItemAmount> drawn) {
             int total = 0;
             for (String item : ingredient.items()) {
                 if (total >= owed) break;
-                int taken = drawDown(bag, item, owed - total);
+                int taken = draw(bag, item, owed - total);
                 if (taken <= 0) continue;
-                if (fromInventory) rawCost.add(item, taken);
+                if (bag == AVAILABLE) add(RAW_COST, item, taken);
                 drawn.add(new ItemAmount(item, taken));
                 total += taken;
             }
@@ -361,30 +504,22 @@ public final class Resolver {
             Set<String> accepted = new HashSet<>();
             for (String item : ingredient.items()) accepted.add(ItemKey.itemId(item));
             int total = 0;
-            for (String key : new ArrayList<>(available.asMap().keySet())) {
+            for (String key : available.keySet()) {
                 if (total >= owed) break;
                 if (!ItemKey.hasPatch(key) || ingredient.items().contains(key)
                         || !accepted.contains(ItemKey.itemId(key))) continue;
-                int taken = drawDown(available, key, owed - total);
+                int taken = draw(AVAILABLE, key, owed - total);
                 if (taken <= 0) continue;
-                rawCost.add(key, taken);
+                add(RAW_COST, key, taken);
                 drawn.add(new ItemAmount(key, taken));
                 total += taken;
             }
             return total;
         }
 
-        /** Spends up to {@code wanted} of {@code item} out of {@code bag}, and says how much. */
-        private static int drawDown(ItemBag bag, String item, int wanted) {
-            if (wanted <= 0) return 0;
-            int taken = Math.min(wanted, bag.count(item));
-            if (taken <= 0) return 0;
-            bag.remove(item, taken);
-            return taken;
-        }
-
         private Resolution finish() {
-            return new Resolution(steps, rawCost.amounts(), toCraft.amounts(), missing.amounts(), locked.amounts());
+            return new Resolution(steps, bags[RAW_COST].amounts(), bags[TO_CRAFT].amounts(), bags[MISSING].amounts(),
+                    bags[LOCKED].amounts());
         }
     }
 

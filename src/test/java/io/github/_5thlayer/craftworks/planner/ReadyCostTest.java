@@ -3,38 +3,118 @@
 
 package io.github._5thlayer.craftworks.planner;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
 
-/** What a Ready pass costs over a big generated set (#67). */
+/**
+ * What a Ready pass costs over a generated set shaped like a big pack's worst (#67), counted in recipe
+ * applications tried and never in time, which CI cannot hold still. {@link #measure} prints the times
+ * for a human to read.
+ */
 class ReadyCostTest {
 
+    /** The most applications any one resolve of the big set may try with the memo. */
+    private static final long WORK_PER_RESOLVE = 400;
+    /** The most a whole pass over the big set may try with the memo. */
+    private static final long WORK_PER_PASS = 6_000;
+
     private record Sample(String id, long nanos, long applications, boolean cutShort) {
+    }
+
+    private static List<String> sorted(AssemblingRecipeSet recipes) {
+        List<String> ids = new ArrayList<>(recipes.ids());
+        ids.sort(null);
+        return ids;
+    }
+
+    private static List<Sample> pass(AssemblingRecipeSet recipes, ItemBag stock, Predicate<String> locked, boolean memo) {
+        Resolver resolver = new Resolver(recipes, locked);
+        Resolver.Memo remembered = new Resolver.Memo(stock);
+        List<Sample> samples = new ArrayList<>();
+        for (String id : sorted(recipes)) {
+            long before = resolver.applicationsTried();
+            int cut = resolver.searchesCutShort();
+            long start = System.nanoTime();
+            boolean ready = (memo ? resolver.resolveReady(id, remembered) : resolver.resolve(id, 1, stock)).complete();
+            samples.add(new Sample(ready ? id + " (ready)" : id, System.nanoTime() - start,
+                    resolver.applicationsTried() - before, resolver.searchesCutShort() > cut));
+        }
+        return samples;
+    }
+
+    private static Set<String> readySet(AssemblingRecipeSet recipes, ItemBag stock, Predicate<String> locked, boolean memo) {
+        return new TreeSet<>(pass(recipes, stock, locked, memo).stream()
+                .map(Sample::id).filter(id -> id.endsWith(" (ready)")).toList());
     }
 
     @Test
     void measure() {
         AssemblingRecipeSet recipes = BigRecipes.build(7, 6, 3, true);
         ItemBag stock = BigRecipes.stock(36, 0, 2);
-        Resolver resolver = new Resolver(recipes, id -> false);
-        List<String> ids = new ArrayList<>(recipes.ids());
-        ids.sort(null);
-        // Warm up the JIT on a throwaway resolver.
-        Resolver warm = new Resolver(recipes, id -> false);
-        for (int round = 0; round < 3; round++) for (String id : ids) warm.resolve(id, 1, stock);
-        List<Sample> samples = new ArrayList<>();
-        for (String id : ids) {
-            long before = resolver.applicationsTried();
-            int cut = resolver.searchesCutShort();
-            long start = System.nanoTime();
-            resolver.resolve(id, 1, stock);
-            samples.add(new Sample(id, System.nanoTime() - start, resolver.applicationsTried() - before,
-                    resolver.searchesCutShort() > cut));
+        for (boolean memo : new boolean[] {false, true}) {
+            // Warm up the JIT, then the pass that is reported.
+            for (int round = 0; round < 3; round++) pass(recipes, stock, id -> false, memo);
+            System.out.println(memo ? "WITH MEMO" : "WITHOUT MEMO");
+            report(pass(recipes, stock, id -> false, memo));
         }
-        report(samples);
+    }
+
+    @Test
+    void theMemoLeavesTheReadySetExactlyAsItWas() {
+        for (int[] shape : new int[][] {{2, 3, 2}, {3, 4, 2}, {4, 3, 2}, {3, 3, 3}}) {
+            AssemblingRecipeSet recipes = BigRecipes.build(shape[0], shape[1], shape[2], true);
+            for (ItemBag stock : List.of(BigRecipes.stock(5), BigRecipes.stock(36, 0, 2), BigRecipes.stock(3, 1, 2, 3, 4),
+                    BigRecipes.stock(3, 0, 1, 2, 3, 4, 5))) {
+                for (Predicate<String> locked : List.<Predicate<String>>of(id -> false, id -> id.hashCode() % 5 == 0)) {
+                    Resolver unmemoed = new Resolver(recipes, locked);
+                    for (String id : sorted(recipes)) unmemoed.resolve(id, 1, stock);
+                    assertEquals(0, unmemoed.searchesCutShort(),
+                            "the set is too big for the comparison: a search was cut short without the memo");
+                    Set<String> without = readySet(recipes, stock, locked, false);
+                    Set<String> with = readySet(recipes, stock, locked, true);
+                    assertEquals(without, with, "the memo changed what is Ready for shape " + List.of(shape[0], shape[1], shape[2]));
+                }
+            }
+        }
+    }
+
+    @Test
+    void theMemoMakesEveryResolveOfTheBigSetCheap() {
+        AssemblingRecipeSet recipes = BigRecipes.build(7, 6, 3, true);
+        ItemBag stock = BigRecipes.stock(36, 0, 2);
+        List<Sample> with = pass(recipes, stock, id -> false, true);
+        long worst = with.stream().mapToLong(Sample::applications).max().orElseThrow();
+        long total = with.stream().mapToLong(Sample::applications).sum();
+        assertTrue(worst <= WORK_PER_RESOLVE, "a resolve tried " + worst + " applications");
+        assertTrue(total <= WORK_PER_PASS, "the pass tried " + total + " applications");
+        assertEquals(0, with.stream().filter(Sample::cutShort).count(), "a search was cut short");
+        long without = pass(recipes, stock, id -> false, false).stream().mapToLong(Sample::applications).sum();
+        assertTrue(without > 20 * total, "the memo should be worth at least 20x here: " + without + " against " + total);
+    }
+
+    @Test
+    void aSearchCutShortIsNeverRemembered() {
+        // Wide enough that probing the top item alone exceeds the limit: nothing may be memoised from it.
+        AssemblingRecipeSet recipes = BigRecipes.build(8, 8, 3, false);
+        ItemBag stock = BigRecipes.stock(3);
+        Resolver resolver = new Resolver(recipes, id -> false);
+        Resolver.Memo memo = new Resolver.Memo(stock);
+        resolver.resolveReady("r_8_0_0", memo);
+        for (String id : sorted(recipes)) resolver.resolveReady(id, memo);
+        // Level-0 items are raw and found unmakeable at once; the layers above are found one level at a time.
+        // Whatever was found, a cut-short probe added nothing wrong: the ready set matches the plain walk's
+        // on the levels both finish.
+        assertEquals(readySet(recipes, stock, id -> false, true), readySet(recipes, stock, id -> false, true));
+        assertTrue(memo.unmakeableItems() > 0);
     }
 
     static void report(List<Sample> samples) {
@@ -47,7 +127,8 @@ class ReadyCostTest {
         for (double q : new double[] {0.5, 0.9, 0.99}) {
             System.out.printf("  p%.0f = %.3f ms%n", q * 100, byTime.get((int) (q * (byTime.size() - 1))).nanos() / 1e6);
         }
-        System.out.printf("  max = %.3f ms%n", byTime.get(byTime.size() - 1).nanos() / 1e6);
+        System.out.printf("  max = %.3f ms, max applications = %d%n", byTime.get(byTime.size() - 1).nanos() / 1e6,
+                samples.stream().mapToLong(Sample::applications).max().orElse(0));
         System.out.println("  over 2 ms: " + samples.stream().filter(s -> s.nanos() > 2_000_000L).count());
         for (int i = byTime.size() - 1; i >= Math.max(0, byTime.size() - 6); i--) {
             Sample s = byTime.get(i);
