@@ -13,12 +13,16 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Predicate;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
  * What a Ready pass costs over a generated set shaped like a big pack's worst (#67), counted in recipe
  * applications tried and never in time, which CI cannot hold still. {@link #measure} prints the times
  * for a human to read.
+ *
+ * <p>{@link #measure} is tagged {@code benchmark} and left out of {@code build}; run it by hand with
+ * {@code sh ./gradlew test -PwithBenchmarks --tests '*ReadyCostTest.measure' -i}.
  */
 class ReadyCostTest {
 
@@ -57,6 +61,7 @@ class ReadyCostTest {
     }
 
     @Test
+    @Tag("benchmark")
     void measure() {
         AssemblingRecipeSet recipes = BigRecipes.build(7, 6, 3, true);
         ItemBag stock = BigRecipes.stock(36, 0, 2);

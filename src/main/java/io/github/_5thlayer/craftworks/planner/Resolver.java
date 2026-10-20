@@ -70,9 +70,9 @@ public final class Resolver {
     /**
      * Recipe applications this Resolver has tried across all its resolves, abandoned routes included.
      *
-     * <p>A measure of work that does not depend on the machine, for tests and the debug log: the time a
-     * resolve takes is the number of applications it tries times what each costs, and only the first
-     * is something a test can assert on.
+     * <p>A measure of work that does not depend on the machine, for tests: the time a resolve takes is
+     * the number of applications it tries times what each costs, and only the first is something a test
+     * can assert on. Nothing in the running mod reads it.
      */
     public long applicationsTried() {
         return applications;
@@ -178,10 +178,6 @@ public final class Resolver {
             this.stock = new LinkedHashMap<>(snapshot.asMap());
         }
 
-        /** How many items the pass has found unmakeable so far. */
-        public int unmakeableItems() {
-            return unmakeable.size();
-        }
     }
 
     private static final int SURPLUS = 0;
@@ -218,7 +214,7 @@ public final class Resolver {
         private final List<CraftStep> steps = new ArrayList<>();
         private final List<Undo> journal = new ArrayList<>();
         private int openMarks;
-        /** Net shortfalls (Missing and Locked adds) so far: what {@link Mark#clean} compares. */
+        /** Net Missing and Locked adds so far: what {@link Mark#clean} compares. */
         private int failures;
         /** The Ready pass's memo, or null for a walk that must report everything, as Fill's does. */
         private final Memo memo;

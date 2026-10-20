@@ -109,6 +109,13 @@ public final class ReadyRefresh {
         this.publish = publish;
     }
 
+    /** The ids in {@code found} that a client already holding {@code held} lacks: all a streamed batch need send. */
+    static Set<String> notHeld(Set<String> found, Set<String> held) {
+        Set<String> lacking = new HashSet<>(found);
+        lacking.removeAll(held);
+        return lacking;
+    }
+
     /** The client reports the inventory screen open: a pass in flight resumes, and with none a pass starts on the next tick. */
     public void open() {
         watching = true;

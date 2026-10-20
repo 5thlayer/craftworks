@@ -3,6 +3,7 @@
 
 package io.github._5thlayer.craftworks.assembler;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -37,7 +38,7 @@ public final class ReadyRecipeIds {
      */
     public static void add(Set<String> more) {
         if (ids.containsAll(more)) return;
-        Set<String> next = new java.util.HashSet<>(ids);
+        Set<String> next = new HashSet<>(ids);
         next.addAll(more);
         accept(next);
     }

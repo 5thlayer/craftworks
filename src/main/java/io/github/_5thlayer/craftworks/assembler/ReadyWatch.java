@@ -117,7 +117,10 @@ public final class ReadyWatch {
         }
 
         /** Newly Ready ids from a pass still running: added on the client, nothing removed. */
-        private void streamAdded(Set<String> added) {
+        private void streamAdded(Set<String> found) {
+            // The pass resolves last pass's Ready recipes first, which the client already lists.
+            Set<String> added = ReadyRefresh.notHeld(found, published);
+            if (added.isEmpty()) return;
             Set<String> next = new HashSet<>(published);
             next.addAll(added);
             published = Set.copyOf(next);

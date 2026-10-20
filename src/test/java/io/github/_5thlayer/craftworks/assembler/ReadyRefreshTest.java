@@ -377,4 +377,10 @@ class ReadyRefreshTest {
         assertEquals(12 * MS, published.get(0).nanos());
     }
 
+
+    @Test
+    void aStreamedBatchLeavesOutWhatTheClientAlreadyHolds() {
+        assertEquals(Set.of("c"), ReadyRefresh.notHeld(Set.of("a", "b", "c"), Set.of("a", "b", "gone")));
+        assertEquals(Set.of(), ReadyRefresh.notHeld(Set.of("a"), Set.of("a")));
+    }
 }

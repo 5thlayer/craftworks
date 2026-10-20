@@ -16,12 +16,13 @@ import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * The recipe ids that are Ready for this player, server to client (ADR-0012), sent when a refresh finds
- * them different from what the client last had.
+ * The recipe ids that are Ready for this player, server to client (ADR-0012), sent when a pass ends and
+ * finds them different from what the client last had.
  *
  * <p>{@code additive} says the ids are only ones a running pass has newly found, to add to the client's
  * set; without it they are the whole set and replace it (ADR-0024). The pass ends with the second kind,
- * which is what removes a recipe, so none vanishes and returns mid-pass.
+ * which is what removes a recipe, so none vanishes and returns mid-pass. Additive packets are sent
+ * unconditionally, each already holding only ids the client lacks.
  */
 public record ReadyRecipesPacket(List<String> ids, boolean additive) implements CustomPacketPayload {
 

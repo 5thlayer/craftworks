@@ -274,3 +274,11 @@ if (providers.gradleProperty('withKubeJS').isPresent()) {
     tasks.matching { it.name == 'runClient' }.configureEach { dependsOn toClient }
     tasks.matching { it.name == 'runGameTestServer' }.configureEach { dependsOn toGameTests }
 }
+
+// The tests tagged `benchmark` print timings and assert nothing, so `build` leaves them out;
+// -PwithBenchmarks runs them (see ReadyCostTest).
+tasks.named('test') {
+    useJUnitPlatform {
+        if (!providers.gradleProperty('withBenchmarks').isPresent()) excludeTags 'benchmark'
+    }
+}
