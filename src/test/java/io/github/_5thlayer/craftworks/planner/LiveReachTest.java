@@ -4,6 +4,7 @@
 package io.github._5thlayer.craftworks.planner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -53,10 +54,10 @@ class LiveReachTest {
 
     @Test
     void theReportWalkStillDescendsIntoARealRecipe() {
-        // Colour 0 has a real recipe from parts nobody holds, beside the conversions: its parts are the errand.
+        // Red's conversion comes first in route order, its real recipe second: the real recipe's parts are the errand.
         AssemblingRecipeSet recipes = AssemblingRecipeSet.builder()
                 .add(BigRecipes.recipe("dyeing", "item_red", Ingredient.of("item_base", 1), Ingredient.of("dye_red", 1)))
-                .add(BigRecipes.recipe("recolour_red", "item_red", new Ingredient(List.of("item_blue", "item_base"), 1), Ingredient.of("dye_red", 1)))
+                .add(BigRecipes.recipe("a_recolour_red", "item_red", new Ingredient(List.of("item_blue", "item_base"), 1), Ingredient.of("dye_red", 1)))
                 .add(BigRecipes.recipe("recolour_blue", "item_blue", new Ingredient(List.of("item_red", "item_base"), 1), Ingredient.of("dye_blue", 1)))
                 .add(BigRecipes.recipe("top", "top", new Ingredient(List.of("item_red", "item_blue"), 1)))
                 .build();
@@ -78,6 +79,29 @@ class LiveReachTest {
     void theIndexIsBuiltOncePerRecipeSet() {
         AssemblingRecipeSet recipes = BigRecipes.build(2, 3, 2, false);
         assertSame(recipes.reach(), recipes.reach());
-        assertTrue(recipes.reach() != BigRecipes.build(2, 3, 2, false).reach());
+        assertNotSame(recipes.reach(), BigRecipes.build(2, 3, 2, false).reach());
+    }
+
+    private static AssemblingRecipeSet redOrBlue(boolean realRecipe) {
+        AssemblingRecipeSet.Builder builder = AssemblingRecipeSet.builder()
+                .add(BigRecipes.recipe("a_recolour_red", "item_red", new Ingredient(List.of("item_blue"), 1), Ingredient.of("dye_red", 1)))
+                .add(BigRecipes.recipe("top", "top", new Ingredient(List.of("item_red", "item_blue"), 1)));
+        if (realRecipe) builder.add(BigRecipes.recipe("dyeing", "item_red", Ingredient.of("item_base", 1)));
+        return builder.build();
+    }
+
+    @Test
+    void aLockedConversionIsPassedOverAndMissingNamesThePreferredItem() {
+        Resolver.Resolution plan = new Resolver(redOrBlue(false), id -> id.equals("a_recolour_red")).resolve("top", 1, new ItemBag());
+        assertEquals(Map.of("item_red", 1), TestBags.asMap(plan.missing()));
+        assertTrue(plan.locked().isEmpty());
+    }
+
+    @Test
+    void aLockedRealTopRouteStillReportsLocked() {
+        Resolver.Resolution plan = new Resolver(redOrBlue(true), id -> id.equals("dyeing") || id.equals("a_recolour_red"))
+                .resolve("top", 1, new ItemBag());
+        assertEquals(Map.of("item_red", 1), TestBags.asMap(plan.locked()));
+        assertTrue(plan.missing().isEmpty());
     }
 }

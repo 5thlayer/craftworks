@@ -3,10 +3,7 @@
 
 package io.github._5thlayer.craftworks.planner;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -94,7 +91,7 @@ public final class Resolver {
      * {@link #largestAffordable} does a dozen times.
      */
     public Resolution resolve(String recipeId, int crafts, ItemBag available) {
-        return resolve(recipeId, crafts, new Walk(new LinkedHashMap<>(available.asMap()), null, unreached(available)));
+        return resolveAgainst(recipeId, crafts, available, unreached(available));
     }
 
     /** What {@code available} cannot reach (see {@link Reach}), which a walk over it skips: the worklist runs once per bag. */
@@ -110,7 +107,7 @@ public final class Resolver {
     /**
      * One craft of {@code recipeId} against the inventory the {@link Memo} was made with, for the Ready
      * pass, which reads only {@code complete()}. Fill never calls this: its Missing and Locked breakdown
-     * has to name everything, which the memo's skipping would not.
+     * has to name everything, which the memo's probes would not.
      */
     public Resolution resolveReady(String recipeId, Memo memo) {
         return resolve(recipeId, 1, new Walk(new LinkedHashMap<>(memo.stock), memo, Set.of()));
@@ -520,7 +517,7 @@ public final class Resolver {
         }
 
         /** Whether some ingredient of {@code route} lists an item {@code filling} accepts other than {@code item}. */
-        private boolean converts(AssemblingRecipe route, String item, Ingredient filling) {
+        private static boolean converts(AssemblingRecipe route, String item, Ingredient filling) {
             for (Ingredient own : route.ingredients()) {
                 for (String listed : own.items()) {
                     if (!listed.equals(item) && filling.items().contains(listed)) return true;
