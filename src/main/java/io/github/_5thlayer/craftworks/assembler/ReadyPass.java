@@ -21,8 +21,9 @@ import io.github._5thlayer.craftworks.planner.Resolver;
  *
  * <p>The inventory is the snapshot the pass was made with, and the Resolver only reads it, so a pass
  * spread over ticks answers for one inventory throughout. The pass owns a {@link Resolver.Memo} of the
- * items no chain of recipes reaches from that snapshot, which is why a resolve stays cheap however deep the
- * chain behind it (ADR-0024).
+ * items it knows cannot be made from that snapshot: those no chain of recipes reaches, found when the pass
+ * starts, and those a probe found short on quantity, found as it goes. That is why a resolve stays cheap
+ * however deep the chain behind it (ADR-0024).
  */
 public final class ReadyPass implements ReadyRefresh.Pass {
 

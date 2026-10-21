@@ -102,6 +102,48 @@ class ReadyCostTest {
         }
     }
 
+    /** Asserts the memo leaves the Ready set as it was, and returns it. */
+    private static Set<String> sameReadyWithTheMemo(AssemblingRecipeSet recipes, ItemBag stock) {
+        Set<String> without = readySet(recipes, stock, id -> false, false);
+        assertEquals(without, readySet(recipes, stock, id -> false, true), "the memo changed what is Ready");
+        return without;
+    }
+
+    @Test
+    void aHeldKeyWithDataSatisfiesABareIngredientOfADataCarryingRecipe() {
+        String damaged = ItemKey.of("sword", List.of(ItemKey.Entry.set("damage", "5")));
+        AssemblingRecipeSet recipes = AssemblingRecipeSet.builder()
+                .add(new AssemblingRecipe("scrap", List.of(Ingredient.of("sword", 1)), new ItemAmount("iron", 2), 10, 0, true, true))
+                .add(BigRecipes.recipe("ingot", "ingot", Ingredient.of("iron", 2)))
+                .build();
+        ItemBag stock = new ItemBag();
+        stock.add(damaged, 1);
+        assertEquals(Set.of("scrap (ready)", "ingot (ready)"), sameReadyWithTheMemo(recipes, stock));
+    }
+
+    @Test
+    void aRecipeThatWantsNothingFeedsAnother() {
+        AssemblingRecipeSet recipes = AssemblingRecipeSet.builder()
+                .add(new AssemblingRecipe("free", List.of(), new ItemAmount("bit", 1), 10, 0, true))
+                .add(BigRecipes.recipe("byte", "byte", Ingredient.of("bit", 1)))
+                .build();
+        assertEquals(Set.of("free (ready)", "byte (ready)"), sameReadyWithTheMemo(recipes, new ItemBag()));
+    }
+
+    @Test
+    void anItemBothHeldAndMadeIsStillMadeWhenHeldIsShort() {
+        AssemblingRecipeSet recipes = AssemblingRecipeSet.builder()
+                .add(BigRecipes.recipe("planks", "plank", Ingredient.of("log", 1)))
+                .add(BigRecipes.recipe("stick", "stick", Ingredient.of("plank", 2)))
+                .add(BigRecipes.recipe("table", "table", Ingredient.of("plank", 1)))
+                .build();
+        ItemBag held = new ItemBag();
+        held.add("plank", 1);
+        assertEquals(Set.of("table (ready)"), sameReadyWithTheMemo(recipes, held));
+        held.add("log", 1);
+        assertEquals(Set.of("planks (ready)", "stick (ready)", "table (ready)"), sameReadyWithTheMemo(recipes, held));
+    }
+
     @Test
     void theMemoMakesEveryResolveOfTheRecolouringSetCheap() {
         // Forty items in sixteen colours, none of it held, no dye held either (#70).

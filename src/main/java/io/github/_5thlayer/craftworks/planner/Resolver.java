@@ -5,7 +5,6 @@ package io.github._5thlayer.craftworks.planner;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -194,67 +193,102 @@ public final class Resolver {
         private final Set<String> unmakeable = new HashSet<>();
         private final Set<String> probed = new HashSet<>();
 
-        public Memo(ItemBag snapshot, AssemblingRecipeSet recipes) {
+        private Memo(ItemBag snapshot, AssemblingRecipeSet recipes) {
             this.stock = new LinkedHashMap<>(snapshot.asMap());
             unmakeable.addAll(unreachable(stock.keySet(), recipes));
         }
 
-        /** The results of {@code recipes} that no chain of them reaches from {@code held}. */
-        private static Set<String> unreachable(Set<String> held, AssemblingRecipeSet recipes) {
-            Set<String> heldIds = new HashSet<>();
-            for (String key : held) heldIds.add(ItemKey.itemId(key));
-            List<AssemblingRecipe> all = new ArrayList<>(recipes.size());
-            for (String id : recipes.ids()) all.add(recipes.byId(id));
-            // Every ingredient of every recipe is numbered; per recipe, how many are not yet met, and
-            // per item, the ingredients listing it (a number, then its slots filled so far).
-            int ingredients = 0;
-            for (AssemblingRecipe recipe : all) ingredients += recipe.ingredients().size();
-            int[] recipeOf = new int[ingredients];
-            int[] unmet = new int[all.size()];
-            boolean[] met = new boolean[ingredients];
-            Map<String, int[]> listedBy = new HashMap<>();
-            int number = 0;
-            for (int r = 0; r < all.size(); r++) {
-                unmet[r] = all.get(r).ingredients().size();
-                for (Ingredient ingredient : all.get(r).ingredients()) {
-                    recipeOf[number] = r;
-                    for (String item : ingredient.items()) {
-                        int[] list = listedBy.get(item);
-                        if (list == null) listedBy.put(item, list = new int[3]);
-                        else if (list[0] + 1 == list.length) listedBy.put(item, list = Arrays.copyOf(list, list.length * 2));
-                        list[++list[0]] = number;
+        /**
+         * Which ingredients list which items, flattened: every ingredient of every recipe is numbered, every
+         * distinct item listed gets a slot, and the ingredients listing slot {@code s} are
+         * {@code listedBy[listedFrom[s]]} up to but not including {@code listedBy[listedFrom[s + 1]]}.
+         */
+        private static final class Index {
+            final String[] results;
+            /** The recipe each ingredient belongs to. */
+            final int[] recipeOf;
+            /** Per recipe, how many of its ingredients there are. */
+            final int[] ingredientCount;
+            final Map<String, Integer> slotOf = new HashMap<>();
+            final int[] listedFrom;
+            final int[] listedBy;
+
+            Index(AssemblingRecipeSet recipes) {
+                List<AssemblingRecipe> all = new ArrayList<>(recipes.size());
+                for (String id : recipes.ids()) all.add(recipes.byId(id));
+                results = new String[all.size()];
+                ingredientCount = new int[all.size()];
+                int ingredients = 0;
+                int listings = 0;
+                for (int r = 0; r < all.size(); r++) {
+                    results[r] = all.get(r).result().item();
+                    ingredientCount[r] = all.get(r).ingredients().size();
+                    ingredients += ingredientCount[r];
+                    for (Ingredient ingredient : all.get(r).ingredients()) listings += ingredient.items().size();
+                }
+                // First pass: number the ingredients and the items, and count the listings per item.
+                recipeOf = new int[ingredients];
+                int[] ingredientOfListing = new int[listings];
+                int[] slotOfListing = new int[listings];
+                int[] counts = new int[listings];
+                int ingredientNumber = 0;
+                int listing = 0;
+                for (int r = 0; r < all.size(); r++) {
+                    for (Ingredient ingredient : all.get(r).ingredients()) {
+                        recipeOf[ingredientNumber] = r;
+                        for (String item : ingredient.items()) {
+                            Integer known = slotOf.get(item);
+                            int slot = known != null ? known : slotOf.size();
+                            if (known == null) slotOf.put(item, slot);
+                            counts[slot]++;
+                            ingredientOfListing[listing] = ingredientNumber;
+                            slotOfListing[listing++] = slot;
+                        }
+                        ingredientNumber++;
                     }
-                    number++;
+                }
+                // Second pass: lay the listings out by item.
+                listedFrom = new int[slotOf.size() + 1];
+                for (int slot = 0; slot < slotOf.size(); slot++) listedFrom[slot + 1] = listedFrom[slot] + counts[slot];
+                listedBy = new int[listings];
+                int[] filled = new int[slotOf.size()];
+                for (int i = 0; i < listings; i++) {
+                    int slot = slotOfListing[i];
+                    listedBy[listedFrom[slot] + filled[slot]++] = ingredientOfListing[i];
                 }
             }
+        }
+
+        /** The results of {@code recipes} that no chain of them reaches from {@code held}. */
+        private static Set<String> unreachable(Set<String> held, AssemblingRecipeSet recipes) {
+            Index index = new Index(recipes);
             Set<String> reached = new HashSet<>();
             Deque<String> pending = new ArrayDeque<>();
             for (String key : held) if (reached.add(key)) pending.add(key);
+            int[] unmet = index.ingredientCount.clone();
             // A recipe that wants nothing needs nothing reached.
-            for (int r = 0; r < all.size(); r++) {
-                String made = all.get(r).result().item();
-                if (unmet[r] == 0 && reached.add(made)) pending.add(made);
+            for (int r = 0; r < unmet.length; r++) {
+                if (unmet[r] == 0 && reached.add(index.results[r])) pending.add(index.results[r]);
             }
             // An item a held key matches by id is met without being reached, as a Data-carrying draw would be.
-            for (Map.Entry<String, int[]> entry : listedBy.entrySet()) {
-                if (heldIds.contains(ItemKey.itemId(entry.getKey()))) pending.add(entry.getKey());
-            }
+            Set<String> heldIds = new HashSet<>();
+            for (String key : held) heldIds.add(ItemKey.itemId(key));
+            for (String item : index.slotOf.keySet()) if (heldIds.contains(ItemKey.itemId(item))) pending.add(item);
+            boolean[] met = new boolean[index.recipeOf.length];
             while (!pending.isEmpty()) {
-                int[] list = listedBy.get(pending.poll());
-                if (list == null) continue;
-                for (int k = 1; k <= list[0]; k++) {
-                    int ingredient = list[k];
+                Integer slot = index.slotOf.get(pending.poll());
+                if (slot == null) continue;
+                for (int k = index.listedFrom[slot]; k < index.listedFrom[slot + 1]; k++) {
+                    int ingredient = index.listedBy[k];
                     if (met[ingredient]) continue;
                     met[ingredient] = true;
-                    if (--unmet[recipeOf[ingredient]] == 0) {
-                        String made = all.get(recipeOf[ingredient]).result().item();
-                        if (reached.add(made)) pending.add(made);
-                    }
+                    int recipe = index.recipeOf[ingredient];
+                    if (--unmet[recipe] == 0 && reached.add(index.results[recipe])) pending.add(index.results[recipe]);
                 }
             }
-            Set<String> out = new HashSet<>();
-            for (AssemblingRecipe recipe : all) if (!reached.contains(recipe.result().item())) out.add(recipe.result().item());
-            return out;
+            Set<String> unreached = new HashSet<>();
+            for (String made : index.results) if (!reached.contains(made)) unreached.add(made);
+            return unreached;
         }
 
     }
