@@ -11,6 +11,7 @@ To play Craftworks beside every other FactoryWorks mod, install the [FactoryWork
 ## Features
 
 - **Ask for the item, not the steps.** Find an item in EMI or JEI and press Fill Recipe (JEI: the recipe button) on its Assembling recipe: left click queues 1, right click 5, Shift as many as your inventory covers. Every intermediate is resolved for you, so asking for a machine plans the plates, gears and circuits that go into it.
+- **See what you can make.** In EMI, turn on the Craftables sidebar page in its config. Craftworks adds to it every recipe the Personal Assembler can make from what you carry, intermediates included, and keeps it current while the inventory is open. JEI has no such list.
 - **Paid up front, crafted over time.** The whole cost of a request is taken when you queue it, and each step takes its own craft time. Results land in your inventory as they finish; a full inventory pauses the queue until there is room.
 - **The inventory is the Assembler.** The 2x2 crafting grid is gone, and the queue sits where it was. With the inventory closed, the queue shows beside the hotbar.
 - **The Crafting Plan.** Middle-click Fill Recipe or the JEI button to see what a request would consume, the intermediates it would make, and anything **Missing** (you have none and nothing can make it) or **Locked** (not yours to use yet). Queue +1, +5 or All from there, and watch the plan update as you do.
@@ -29,7 +30,7 @@ To play Craftworks beside every other FactoryWorks mod, install the [FactoryWork
 
 ## Dependencies
 
-- **EMI or JEI**, one of them on the client: the Assembler has no item list of its own and takes requests through EMI's Fill Recipe or JEI's recipe button. A pack ships one, not both. A dedicated server needs neither.
+- **EMI or JEI**, one of them on the client: the Assembler has no item list of its own and takes requests through EMI's Fill Recipe or JEI's recipe button. EMI is the better companion, as only its Craftables page lists what the Personal Assembler can make for you. A pack ships one, not both. A dedicated server needs neither.
 - **Groundworks**, required: the Assemblers stand on its footprint and swap tiers by its Fast Replace. Install it beside Craftworks; it is not bundled.
 - **Pipeworks**, optional: its pipes fill and drain the Assemblers' Fluid Connections, and any other mod's tanks and pipes do too.
 - **Jade**, optional: shows the machines' Held recipe, state, progress and energy in its tooltip.
