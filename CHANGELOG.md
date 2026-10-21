@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- Clicking a recipe you cannot make that recolours an item from any colour, such as Refined Storage's devices, no longer stalls the server, nor does keeping its Crafting Plan open. The plan names the item and the dye you are missing, not a chain of dyes. (#73)
+
 ## 0.10.5
 
 - **Breaking:** EMI: the index tab row above the item index is gone, with its Assembling tab, the `IndexTabs` API and resource-pack tab files, and `@craftworks` lists only Craftworks' own items again. EMI's Craftables lists every Ready Assembling recipe instead. (#72)

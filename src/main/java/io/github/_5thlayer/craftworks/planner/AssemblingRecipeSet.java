@@ -24,6 +24,8 @@ public final class AssemblingRecipeSet {
 
     private final Map<String, AssemblingRecipe> byId;
     private final Map<String, List<AssemblingRecipe>> byResult;
+    /** Built on first use and kept for the life of the set, which never changes: see {@link #reach()}. */
+    private volatile Reach reach;
 
     private AssemblingRecipeSet(Map<String, AssemblingRecipe> byId, Map<String, List<AssemblingRecipe>> byResult) {
         this.byId = byId;
@@ -46,6 +48,16 @@ public final class AssemblingRecipeSet {
     /** The recipes that make this item, highest priority then lowest id first; empty when nothing makes it, a plan's leaf. */
     public List<AssemblingRecipe> routes(String item) {
         return byResult.getOrDefault(item, List.of());
+    }
+
+    /**
+     * What this set can reach from an inventory, indexed on first use and kept with the set, so it is built
+     * once however many resolves ask and again only for a new set, as a datapack reload makes (#73).
+     */
+    Reach reach() {
+        Reach built = reach;
+        if (built == null) reach = built = new Reach(this);
+        return built;
     }
 
     public int size() {

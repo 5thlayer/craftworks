@@ -94,7 +94,12 @@ public final class Resolver {
      * {@link #largestAffordable} does a dozen times.
      */
     public Resolution resolve(String recipeId, int crafts, ItemBag available) {
-        return resolve(recipeId, crafts, new Walk(new LinkedHashMap<>(available.asMap()), null));
+        return resolve(recipeId, crafts, new Walk(new LinkedHashMap<>(available.asMap()), null, unreached(available)));
+    }
+
+    /** What {@code available} cannot reach (see {@link Reach}), which a walk over it skips: the worklist runs once per bag. */
+    private Set<String> unreached(ItemBag available) {
+        return recipes.reach().unreachableFrom(available.asMap().keySet());
     }
 
     /** A memo for a Ready pass over {@code snapshot}, against this Resolver's recipe set. */
@@ -108,7 +113,7 @@ public final class Resolver {
      * has to name everything, which the memo's skipping would not.
      */
     public Resolution resolveReady(String recipeId, Memo memo) {
-        return resolve(recipeId, 1, new Walk(new LinkedHashMap<>(memo.stock), memo));
+        return resolve(recipeId, 1, new Walk(new LinkedHashMap<>(memo.stock), memo, Set.of()));
     }
 
     private Resolution resolve(String recipeId, int crafts, Walk walk) {
@@ -127,6 +132,10 @@ public final class Resolver {
         return walk.finish();
     }
 
+    private Resolution resolveAgainst(String recipeId, int crafts, ItemBag available, Set<String> unreached) {
+        return resolve(recipeId, crafts, new Walk(new LinkedHashMap<>(available.asMap()), null, unreached));
+    }
+
     /**
      * The Crafting Plan's {@code all}: the largest count whose plan is complete, so {@code all} can
      * never queue a plan the inventory then refuses (ADR-0003).
@@ -137,17 +146,18 @@ public final class Resolver {
      * ingredients.
      */
     public int largestAffordable(String recipeId, ItemBag available) {
-        if (!resolve(recipeId, 1, available).complete()) return 0;
+        Set<String> unreached = unreached(available);
+        if (!resolveAgainst(recipeId, 1, available, unreached).complete()) return 0;
         int affordable = 1;
         int beyond = 2;
-        while (beyond <= MAX_CRAFTS && resolve(recipeId, beyond, available).complete()) {
+        while (beyond <= MAX_CRAFTS && resolveAgainst(recipeId, beyond, available, unreached).complete()) {
             affordable = beyond;
             beyond *= 2;
         }
         int high = Math.min(beyond, MAX_CRAFTS + 1);
         while (affordable + 1 < high) {
             int middle = affordable + (high - affordable) / 2;
-            if (resolve(recipeId, middle, available).complete()) {
+            if (resolveAgainst(recipeId, middle, available, unreached).complete()) {
                 affordable = middle;
             } else {
                 high = middle;
@@ -165,14 +175,9 @@ public final class Resolver {
      * item that cannot be crafted even once, from the whole inventory, with no ancestors to forbid a
      * recipe, cannot be crafted in a narrower place either.
      *
-     * <p><b>Reachability</b>, worked out once when the memo is made, ignores quantities, remainders and the
-     * Lock source, every recipe counting as open. It starts from the inventory's keys and runs the recipes
-     * forward: a recipe fires once each ingredient lists an item that is reached, or that a held key matches
-     * by item id, which over-approximates the Data-carrying draws that match by item id (ADR-0022), and its
-     * result is then reached. An item it leaves out cannot be made in any amount, so it is unmakeable. It
-     * is a worklist over an index from each item to the recipes that list it, with a count per recipe of
-     * ingredients not yet met, so it costs the size of the set once. It catches what no search can afford
-     * to: a recolouring cycle that nothing held leads into, whose failing search walks every simple path.
+     * <p><b>Reachability</b> (see {@link Reach}), worked out once when the memo is made, starts the unmakeable
+     * items off with everything the inventory cannot lead to. Every live resolve skips the same items without
+     * a memo (#73); what the memo adds is the probes below.
      *
      * <p><b>A probe</b> catches the rest, an item that is reached but short on quantity. It is a search of
      * its own (see {@code Walk.learn}), run once per item after a failure in context and never from that
@@ -195,100 +200,7 @@ public final class Resolver {
 
         private Memo(ItemBag snapshot, AssemblingRecipeSet recipes) {
             this.stock = new LinkedHashMap<>(snapshot.asMap());
-            unmakeable.addAll(unreachable(stock.keySet(), recipes));
-        }
-
-        /**
-         * Which ingredients list which items, flattened: every ingredient of every recipe is numbered, every
-         * distinct item listed gets a slot, and the ingredients listing slot {@code s} are
-         * {@code listedBy[listedFrom[s]]} up to but not including {@code listedBy[listedFrom[s + 1]]}.
-         */
-        private static final class Index {
-            final String[] results;
-            /** The recipe each ingredient belongs to. */
-            final int[] recipeOf;
-            /** Per recipe, how many of its ingredients there are. */
-            final int[] ingredientCount;
-            final Map<String, Integer> slotOf = new HashMap<>();
-            final int[] listedFrom;
-            final int[] listedBy;
-
-            Index(AssemblingRecipeSet recipes) {
-                List<AssemblingRecipe> all = new ArrayList<>(recipes.size());
-                for (String id : recipes.ids()) all.add(recipes.byId(id));
-                results = new String[all.size()];
-                ingredientCount = new int[all.size()];
-                int ingredients = 0;
-                int listings = 0;
-                for (int r = 0; r < all.size(); r++) {
-                    results[r] = all.get(r).result().item();
-                    ingredientCount[r] = all.get(r).ingredients().size();
-                    ingredients += ingredientCount[r];
-                    for (Ingredient ingredient : all.get(r).ingredients()) listings += ingredient.items().size();
-                }
-                // First pass: number the ingredients and the items, and count the listings per item.
-                recipeOf = new int[ingredients];
-                int[] ingredientOfListing = new int[listings];
-                int[] slotOfListing = new int[listings];
-                int[] counts = new int[listings];
-                int ingredientNumber = 0;
-                int listing = 0;
-                for (int r = 0; r < all.size(); r++) {
-                    for (Ingredient ingredient : all.get(r).ingredients()) {
-                        recipeOf[ingredientNumber] = r;
-                        for (String item : ingredient.items()) {
-                            Integer known = slotOf.get(item);
-                            int slot = known != null ? known : slotOf.size();
-                            if (known == null) slotOf.put(item, slot);
-                            counts[slot]++;
-                            ingredientOfListing[listing] = ingredientNumber;
-                            slotOfListing[listing++] = slot;
-                        }
-                        ingredientNumber++;
-                    }
-                }
-                // Second pass: lay the listings out by item.
-                listedFrom = new int[slotOf.size() + 1];
-                for (int slot = 0; slot < slotOf.size(); slot++) listedFrom[slot + 1] = listedFrom[slot] + counts[slot];
-                listedBy = new int[listings];
-                int[] filled = new int[slotOf.size()];
-                for (int i = 0; i < listings; i++) {
-                    int slot = slotOfListing[i];
-                    listedBy[listedFrom[slot] + filled[slot]++] = ingredientOfListing[i];
-                }
-            }
-        }
-
-        /** The results of {@code recipes} that no chain of them reaches from {@code held}. */
-        private static Set<String> unreachable(Set<String> held, AssemblingRecipeSet recipes) {
-            Index index = new Index(recipes);
-            Set<String> reached = new HashSet<>();
-            Deque<String> pending = new ArrayDeque<>();
-            for (String key : held) if (reached.add(key)) pending.add(key);
-            int[] unmet = index.ingredientCount.clone();
-            // A recipe that wants nothing needs nothing reached.
-            for (int r = 0; r < unmet.length; r++) {
-                if (unmet[r] == 0 && reached.add(index.results[r])) pending.add(index.results[r]);
-            }
-            // An item a held key matches by id is met without being reached, as a Data-carrying draw would be.
-            Set<String> heldIds = new HashSet<>();
-            for (String key : held) heldIds.add(ItemKey.itemId(key));
-            for (String item : index.slotOf.keySet()) if (heldIds.contains(ItemKey.itemId(item))) pending.add(item);
-            boolean[] met = new boolean[index.recipeOf.length];
-            while (!pending.isEmpty()) {
-                Integer slot = index.slotOf.get(pending.poll());
-                if (slot == null) continue;
-                for (int k = index.listedFrom[slot]; k < index.listedFrom[slot + 1]; k++) {
-                    int ingredient = index.listedBy[k];
-                    if (met[ingredient]) continue;
-                    met[ingredient] = true;
-                    int recipe = index.recipeOf[ingredient];
-                    if (--unmet[recipe] == 0 && reached.add(index.results[recipe])) pending.add(index.results[recipe]);
-                }
-            }
-            Set<String> unreached = new HashSet<>();
-            for (String made : index.results) if (!reached.contains(made)) unreached.add(made);
-            return unreached;
+            unmakeable.addAll(recipes.reach().unreachableFrom(stock.keySet()));
         }
 
     }
@@ -331,12 +243,18 @@ public final class Resolver {
         private int failures;
         /** The Ready pass's memo, or null for a walk that must report everything, as Fill's does. */
         private final Memo memo;
+        /**
+         * What the inventory cannot reach, skipped like a memo's unmakeable items, for a walk without a memo: a
+         * memo's own set starts from the same answer. Empty for a memo's walk.
+         */
+        private final Set<String> unreached;
         /** Recipe applications tried so far, abandoned routes included: see {@link #SEARCH_LIMIT}. */
         private int tried;
 
-        private Walk(Map<String, Integer> available, Memo memo) {
+        private Walk(Map<String, Integer> available, Memo memo, Set<String> unreached) {
             this.available = available;
             this.memo = memo;
+            this.unreached = unreached;
         }
 
         private void add(int bag, String item, int count) {
@@ -460,7 +378,7 @@ public final class Resolver {
             // route is tried against what remains and, if anything under it comes up Missing or
             // Locked, rolled back whole, so an abandoned route never spends what a later step needs.
             for (String item : ingredient.items()) {
-                if (memo != null && memo.unmakeable.contains(item)) continue;
+                if (unreached.contains(item) || memo != null && memo.unmakeable.contains(item)) continue;
                 if (tryRoutes(item, owed, ancestors)) {
                     drawn.add(new ItemAmount(item, owed));
                     return drawn;
@@ -468,11 +386,12 @@ public final class Resolver {
                 if (memo != null) learn(item);
             }
 
-            // No route resolves: the plan reports the top route's Missing and Locked, walked again.
+            // No route resolves: the plan reports the top route's Missing and Locked, walked again. A route
+            // that only converts between what this ingredient accepts is not the errand, so it is passed over.
             AssemblingRecipe maker = null;
             String blocked = null;
             for (String item : ingredient.items()) {
-                AssemblingRecipe route = topRoute(item);
+                AssemblingRecipe route = topRoute(item, ingredient);
                 if (route == null) continue;
                 if (Resolver.this.locked.test(route.id())) {
                     if (blocked == null) blocked = item;
@@ -530,7 +449,7 @@ public final class Resolver {
          */
         private void learn(String item) {
             if (tried > SEARCH_LIMIT || !memo.probed.add(item)) return;
-            Walk probe = new Walk(new LinkedHashMap<>(memo.stock), memo);
+            Walk probe = new Walk(new LinkedHashMap<>(memo.stock), memo, Set.of());
             if (!probe.tryRoutes(item, 1, List.of()) && probe.tried <= SEARCH_LIMIT) memo.unmakeable.add(item);
         }
 
@@ -584,10 +503,30 @@ public final class Resolver {
             }
         }
 
-        /** The route reported when none resolves: the item's top route, highest priority first. */
-        private AssemblingRecipe topRoute(String item) {
-            List<AssemblingRecipe> routes = recipes.routes(item);
-            return routes.isEmpty() ? null : routes.get(0);
+        /**
+         * The route reported when none resolves: the item's first route that is not a conversion, highest
+         * priority first, or null when it has none.
+         *
+         * <p>A conversion, for the ingredient being filled, is a route with an ingredient listing another item
+         * this ingredient accepts: the recolouring of a colour from any other colour. Descending into one
+         * walks the colours, and what the player is short of is "any of these, and the dye", not every dye in
+         * the cycle (#73).
+         */
+        private AssemblingRecipe topRoute(String item, Ingredient filling) {
+            for (AssemblingRecipe route : recipes.routes(item)) {
+                if (!converts(route, item, filling)) return route;
+            }
+            return null;
+        }
+
+        /** Whether some ingredient of {@code route} lists an item {@code filling} accepts other than {@code item}. */
+        private boolean converts(AssemblingRecipe route, String item, Ingredient filling) {
+            for (Ingredient own : route.ingredients()) {
+                for (String listed : own.items()) {
+                    if (!listed.equals(item) && filling.items().contains(listed)) return true;
+                }
+            }
+            return false;
         }
 
         /** Spends up to {@code owed} out of a bag, taking whatever the ingredient accepts. */

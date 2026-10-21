@@ -155,8 +155,9 @@ class ReadyCostTest {
         assertTrue(worst <= RECOLOUR_WORK_PER_RESOLVE, "a resolve tried " + worst + " applications");
         assertTrue(total <= RECOLOUR_WORK_PER_PASS, "the pass tried " + total + " applications");
         assertEquals(0, with.stream().filter(Sample::cutShort).count(), "a search was cut short");
-        assertTrue(pass(recipes, stock, id -> false, false).stream().anyMatch(Sample::cutShort),
-                "without the memo the recolouring set should hit the search limit");
+        // Reachability is every live resolve's since #73, so the set no longer hits the search limit without the memo.
+        assertEquals(0, pass(recipes, stock, id -> false, false).stream().filter(Sample::cutShort).count(),
+                "a live resolve of the recolouring set was cut short");
     }
 
     @Test
