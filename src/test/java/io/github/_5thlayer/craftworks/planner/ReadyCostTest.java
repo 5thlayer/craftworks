@@ -27,9 +27,14 @@ import org.junit.jupiter.api.Test;
 class ReadyCostTest {
 
     /** The most applications any one resolve of the big set may try with the memo. */
-    private static final long WORK_PER_RESOLVE = 600;
+    private static final long WORK_PER_RESOLVE = 4;
     /** The most a whole pass over the big set may try with the memo. */
-    private static final long WORK_PER_PASS = 2_000;
+    private static final long WORK_PER_PASS = 400;
+
+    /** The most applications any one resolve of the recolouring set may try with the memo. */
+    private static final long RECOLOUR_WORK_PER_RESOLVE = 4;
+    /** The most a whole pass over the recolouring set may try with the memo. */
+    private static final long RECOLOUR_WORK_PER_PASS = 1_000;
 
     private record Sample(String id, long nanos, long applications, boolean cutShort) {
     }
@@ -42,7 +47,7 @@ class ReadyCostTest {
 
     private static List<Sample> pass(AssemblingRecipeSet recipes, ItemBag stock, Predicate<String> locked, boolean memo) {
         Resolver resolver = new Resolver(recipes, locked);
-        Resolver.Memo remembered = new Resolver.Memo(stock);
+        Resolver.Memo remembered = resolver.memo(stock);
         List<Sample> samples = new ArrayList<>();
         for (String id : sorted(recipes)) {
             long before = resolver.applicationsTried();
@@ -75,10 +80,15 @@ class ReadyCostTest {
 
     @Test
     void theMemoLeavesTheReadySetExactlyAsItWas() {
-        for (int[] shape : new int[][] {{2, 3, 2}, {3, 4, 2}, {4, 3, 2}, {3, 3, 3}}) {
-            AssemblingRecipeSet recipes = BigRecipes.build(shape[0], shape[1], shape[2], true);
+        for (int[] shape : new int[][] {{2, 3, 2, 0}, {3, 4, 2, 0}, {4, 3, 2, 0}, {3, 3, 3, 0}, {2, 3, 2, 2}}) {
+            AssemblingRecipeSet recipes = BigRecipes.build(shape[0], shape[1], shape[2], true, shape[3], 4);
+            ItemBag recoloured = BigRecipes.stock(3, 1, 2);
+            recoloured.add(BigRecipes.base(0), 1);
+            recoloured.add(BigRecipes.dye(1), 1);
+            recoloured.add(BigRecipes.dye(3), 1);
+            recoloured.add(BigRecipes.coloured(1, 2), 1);
             for (ItemBag stock : List.of(BigRecipes.stock(5), BigRecipes.stock(36, 0, 2), BigRecipes.stock(3, 1, 2, 3, 4),
-                    BigRecipes.stock(3, 0, 1, 2, 3, 4, 5))) {
+                    BigRecipes.stock(3, 0, 1, 2, 3, 4, 5), recoloured)) {
                 for (Predicate<String> locked : List.<Predicate<String>>of(id -> false, id -> id.hashCode() % 5 == 0)) {
                     Resolver unmemoed = new Resolver(recipes, locked);
                     for (String id : sorted(recipes)) unmemoed.resolve(id, 1, stock);
@@ -86,16 +96,31 @@ class ReadyCostTest {
                             "the set is too big for the comparison: a search was cut short without the memo");
                     Set<String> without = readySet(recipes, stock, locked, false);
                     Set<String> with = readySet(recipes, stock, locked, true);
-                    assertEquals(without, with, "the memo changed what is Ready for shape " + List.of(shape[0], shape[1], shape[2]));
+                    assertEquals(without, with, "the memo changed what is Ready for shape " + List.of(shape[0], shape[1], shape[2], shape[3]));
                 }
             }
         }
     }
 
     @Test
+    void theMemoMakesEveryResolveOfTheRecolouringSetCheap() {
+        // Forty items in sixteen colours, none of it held, no dye held either (#70).
+        AssemblingRecipeSet recipes = BigRecipes.build(0, 0, 0, false, 40, BigRecipes.COLOURS);
+        ItemBag stock = BigRecipes.stock(36);
+        List<Sample> with = pass(recipes, stock, id -> false, true);
+        long worst = with.stream().mapToLong(Sample::applications).max().orElseThrow();
+        long total = with.stream().mapToLong(Sample::applications).sum();
+        assertTrue(worst <= RECOLOUR_WORK_PER_RESOLVE, "a resolve tried " + worst + " applications");
+        assertTrue(total <= RECOLOUR_WORK_PER_PASS, "the pass tried " + total + " applications");
+        assertEquals(0, with.stream().filter(Sample::cutShort).count(), "a search was cut short");
+        assertTrue(pass(recipes, stock, id -> false, false).stream().anyMatch(Sample::cutShort),
+                "without the memo the recolouring set should hit the search limit");
+    }
+
+    @Test
     void theMemoMakesEveryResolveOfTheBigSetCheap() {
         AssemblingRecipeSet recipes = BigRecipes.build(7, 6, 3, true);
-        ItemBag stock = BigRecipes.stock(36, 0, 2);
+        ItemBag stock = BigRecipes.stock(36);
         List<Sample> with = pass(recipes, stock, id -> false, true);
         long worst = with.stream().mapToLong(Sample::applications).max().orElseThrow();
         long total = with.stream().mapToLong(Sample::applications).sum();

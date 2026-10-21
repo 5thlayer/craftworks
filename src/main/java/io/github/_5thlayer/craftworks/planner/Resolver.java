@@ -3,7 +3,11 @@
 
 package io.github._5thlayer.craftworks.planner;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -94,6 +98,11 @@ public final class Resolver {
         return resolve(recipeId, crafts, new Walk(new LinkedHashMap<>(available.asMap()), null));
     }
 
+    /** A memo for a Ready pass over {@code snapshot}, against this Resolver's recipe set. */
+    public Memo memo(ItemBag snapshot) {
+        return new Memo(snapshot, recipes);
+    }
+
     /**
      * One craft of {@code recipeId} against the inventory the {@link Memo} was made with, for the Ready
      * pass, which reads only {@code complete()}. Fill never calls this: its Missing and Locked breakdown
@@ -149,33 +158,89 @@ public final class Resolver {
     }
 
     /**
-     * What a Ready pass remembers across its resolves (#67): the inventory it was made with, and the items
-     * it has found no way to craft from that inventory.
+     * What a Ready pass knows from the start (#67, #70): the inventory it was made with, and the items no
+     * chain of recipes can reach from that inventory.
      *
-     * <p>Only "none can be made" is remembered, never "this much can be made". A walk shares its stock and
-     * its surplus between branches, so a count that held in one place says nothing about another; but an
-     * item that cannot be crafted even once, from the whole inventory, with no ancestors to forbid a
-     * recipe, cannot be crafted in a narrower place either. It is found by a probe of its own (see
-     * {@code Walk.learn}) and never from a failure in context, which may have been the amount asked, the
-     * stock an earlier ingredient took or a cycle. A search the {@link #SEARCH_LIMIT} cut short never
-     * counts, because it proved nothing.
+     * <p>Reachability ignores quantities, remainders and the Lock source, every recipe counting as open. It
+     * starts from the inventory's keys and runs the recipes forward: a recipe fires once each ingredient
+     * lists an item that is reached, or that a held key matches by item id, which over-approximates the
+     * Data-carrying draws that match by item id (ADR-0022), and its result is then reached. An item it
+     * leaves out cannot be made in any amount, by any route, with any ancestors, so the walk may skip it
+     * wherever it meets it and Ready does not change. Skipping is all the memo does: an item it does reach
+     * may still fail in context, on the amount asked, the stock an earlier ingredient took or a cycle,
+     * and the walk finds that out as it always did.
      *
-     * <p>The one case the verdict is not exact in is a contrived one: the walk's choices are greedy and
-     * never revisited, so a surplus of one acceptable item can steer a later ingredient to succeed where
-     * the probe, which has no surplus, drew the other and failed. Ready is a list for a player to pick
-     * from and a click still resolves live, so the cost of that is a recipe missing from the list.
+     * <p>It is a worklist over an index from each item to the recipes that list it, with a count per
+     * recipe of ingredients not yet met, so it costs the size of the set once, when the memo is made.
      *
-     * <p>Valid for one pass: the Lock source is asked through the pass's own cache, and a memo carried to
-     * a pass with another inventory would be wrong. Fill never has one.
+     * <p>Valid for one pass: a memo carried to a pass with another inventory would be wrong. Fill never has one.
      */
     public static final class Memo {
 
         private final Map<String, Integer> stock;
         private final Set<String> unmakeable = new HashSet<>();
-        private final Set<String> probed = new HashSet<>();
 
-        public Memo(ItemBag snapshot) {
+        public Memo(ItemBag snapshot, AssemblingRecipeSet recipes) {
             this.stock = new LinkedHashMap<>(snapshot.asMap());
+            unmakeable.addAll(unreachable(stock.keySet(), recipes));
+        }
+
+        /** The results of {@code recipes} that no chain of them reaches from {@code held}. */
+        private static Set<String> unreachable(Set<String> held, AssemblingRecipeSet recipes) {
+            Set<String> heldIds = new HashSet<>();
+            for (String key : held) heldIds.add(ItemKey.itemId(key));
+            List<AssemblingRecipe> all = new ArrayList<>(recipes.size());
+            for (String id : recipes.ids()) all.add(recipes.byId(id));
+            // Every ingredient of every recipe is numbered; per recipe, how many are not yet met, and
+            // per item, the ingredients listing it (a number, then its slots filled so far).
+            int ingredients = 0;
+            for (AssemblingRecipe recipe : all) ingredients += recipe.ingredients().size();
+            int[] recipeOf = new int[ingredients];
+            int[] unmet = new int[all.size()];
+            boolean[] met = new boolean[ingredients];
+            Map<String, int[]> listedBy = new HashMap<>();
+            int number = 0;
+            for (int r = 0; r < all.size(); r++) {
+                unmet[r] = all.get(r).ingredients().size();
+                for (Ingredient ingredient : all.get(r).ingredients()) {
+                    recipeOf[number] = r;
+                    for (String item : ingredient.items()) {
+                        int[] list = listedBy.get(item);
+                        if (list == null) listedBy.put(item, list = new int[3]);
+                        else if (list[0] + 1 == list.length) listedBy.put(item, list = Arrays.copyOf(list, list.length * 2));
+                        list[++list[0]] = number;
+                    }
+                    number++;
+                }
+            }
+            Set<String> reached = new HashSet<>();
+            Deque<String> pending = new ArrayDeque<>();
+            for (String key : held) if (reached.add(key)) pending.add(key);
+            // A recipe that wants nothing needs nothing reached.
+            for (int r = 0; r < all.size(); r++) {
+                String made = all.get(r).result().item();
+                if (unmet[r] == 0 && reached.add(made)) pending.add(made);
+            }
+            // An item a held key matches by id is met without being reached, as a Data-carrying draw would be.
+            for (Map.Entry<String, int[]> entry : listedBy.entrySet()) {
+                if (heldIds.contains(ItemKey.itemId(entry.getKey()))) pending.add(entry.getKey());
+            }
+            while (!pending.isEmpty()) {
+                int[] list = listedBy.get(pending.poll());
+                if (list == null) continue;
+                for (int k = 1; k <= list[0]; k++) {
+                    int ingredient = list[k];
+                    if (met[ingredient]) continue;
+                    met[ingredient] = true;
+                    if (--unmet[recipeOf[ingredient]] == 0) {
+                        String made = all.get(recipeOf[ingredient]).result().item();
+                        if (reached.add(made)) pending.add(made);
+                    }
+                }
+            }
+            Set<String> out = new HashSet<>();
+            for (AssemblingRecipe recipe : all) if (!reached.contains(recipe.result().item())) out.add(recipe.result().item());
+            return out;
         }
 
     }
@@ -352,7 +417,6 @@ public final class Resolver {
                     drawn.add(new ItemAmount(item, owed));
                     return drawn;
                 }
-                if (memo != null) learn(item);
             }
 
             // No route resolves: the plan reports the top route's Missing and Locked, walked again.
@@ -405,20 +469,6 @@ public final class Resolver {
                 mark.restore();
             }
             return false;
-        }
-
-        /**
-         * Asks, once per item per pass, whether {@code item} can be crafted at all: one of it, by its routes,
-         * from the whole inventory, with no ancestors. If not, and the search was not cut short, it joins
-         * {@link Memo}'s unmakeable items.
-         *
-         * <p>Run after a failure in context, so an item that is made pays for the probe only when
-         * something else went wrong around it, and once.
-         */
-        private void learn(String item) {
-            if (tried > SEARCH_LIMIT || !memo.probed.add(item)) return;
-            Walk probe = new Walk(new LinkedHashMap<>(memo.stock), memo);
-            if (!probe.tryRoutes(item, 1, List.of()) && probe.tried <= SEARCH_LIMIT) memo.unmakeable.add(item);
         }
 
         /** Crafts {@code owed} of what {@code maker} makes and takes it out of the surplus, or says it could not. */
