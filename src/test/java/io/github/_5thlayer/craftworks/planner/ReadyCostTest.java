@@ -27,9 +27,9 @@ import org.junit.jupiter.api.Test;
 class ReadyCostTest {
 
     /** The most applications any one resolve of the big set may try with the memo. */
-    private static final long WORK_PER_RESOLVE = 4;
+    private static final long WORK_PER_RESOLVE = 600;
     /** The most a whole pass over the big set may try with the memo. */
-    private static final long WORK_PER_PASS = 400;
+    private static final long WORK_PER_PASS = 2_000;
 
     /** The most applications any one resolve of the recolouring set may try with the memo. */
     private static final long RECOLOUR_WORK_PER_RESOLVE = 4;
@@ -120,7 +120,7 @@ class ReadyCostTest {
     @Test
     void theMemoMakesEveryResolveOfTheBigSetCheap() {
         AssemblingRecipeSet recipes = BigRecipes.build(7, 6, 3, true);
-        ItemBag stock = BigRecipes.stock(36);
+        ItemBag stock = BigRecipes.stock(36, 0, 2);
         List<Sample> with = pass(recipes, stock, id -> false, true);
         long worst = with.stream().mapToLong(Sample::applications).max().orElseThrow();
         long total = with.stream().mapToLong(Sample::applications).sum();

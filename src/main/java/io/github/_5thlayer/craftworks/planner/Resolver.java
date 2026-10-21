@@ -158,27 +158,41 @@ public final class Resolver {
     }
 
     /**
-     * What a Ready pass knows from the start (#67, #70): the inventory it was made with, and the items no
-     * chain of recipes can reach from that inventory.
+     * What a Ready pass knows and remembers across its resolves (#67, #70): the inventory it was made with,
+     * and the items it has found no way to craft from that inventory, by two means.
      *
-     * <p>Reachability ignores quantities, remainders and the Lock source, every recipe counting as open. It
-     * starts from the inventory's keys and runs the recipes forward: a recipe fires once each ingredient
-     * lists an item that is reached, or that a held key matches by item id, which over-approximates the
-     * Data-carrying draws that match by item id (ADR-0022), and its result is then reached. An item it
-     * leaves out cannot be made in any amount, by any route, with any ancestors, so the walk may skip it
-     * wherever it meets it and Ready does not change. Skipping is all the memo does: an item it does reach
-     * may still fail in context, on the amount asked, the stock an earlier ingredient took or a cycle,
-     * and the walk finds that out as it always did.
+     * <p>Only "none can be made" is remembered, never "this much can be made". A walk shares its stock and
+     * its surplus between branches, so a count that held in one place says nothing about another; but an
+     * item that cannot be crafted even once, from the whole inventory, with no ancestors to forbid a
+     * recipe, cannot be crafted in a narrower place either.
      *
-     * <p>It is a worklist over an index from each item to the recipes that list it, with a count per
-     * recipe of ingredients not yet met, so it costs the size of the set once, when the memo is made.
+     * <p><b>Reachability</b>, worked out once when the memo is made, ignores quantities, remainders and the
+     * Lock source, every recipe counting as open. It starts from the inventory's keys and runs the recipes
+     * forward: a recipe fires once each ingredient lists an item that is reached, or that a held key matches
+     * by item id, which over-approximates the Data-carrying draws that match by item id (ADR-0022), and its
+     * result is then reached. An item it leaves out cannot be made in any amount, so it is unmakeable. It
+     * is a worklist over an index from each item to the recipes that list it, with a count per recipe of
+     * ingredients not yet met, so it costs the size of the set once. It catches what no search can afford
+     * to: a recolouring cycle that nothing held leads into, whose failing search walks every simple path.
      *
-     * <p>Valid for one pass: a memo carried to a pass with another inventory would be wrong. Fill never has one.
+     * <p><b>A probe</b> catches the rest, an item that is reached but short on quantity. It is a search of
+     * its own (see {@code Walk.learn}), run once per item after a failure in context and never from that
+     * failure, which may have been the amount asked, the stock an earlier ingredient took or a cycle. A
+     * search the {@link #SEARCH_LIMIT} cut short never counts, because it proved nothing.
+     *
+     * <p>The one case a probe's verdict is not exact in is a contrived one: the walk's choices are greedy
+     * and never revisited, so a surplus of one acceptable item can steer a later ingredient to succeed where
+     * the probe, which has no surplus, drew the other and failed. Ready is a list for a player to pick
+     * from and a click still resolves live, so the cost of that is a recipe missing from the list.
+     *
+     * <p>Valid for one pass: the Lock source is asked through the pass's own cache, and a memo carried to
+     * a pass with another inventory would be wrong. Fill never has one.
      */
     public static final class Memo {
 
         private final Map<String, Integer> stock;
         private final Set<String> unmakeable = new HashSet<>();
+        private final Set<String> probed = new HashSet<>();
 
         public Memo(ItemBag snapshot, AssemblingRecipeSet recipes) {
             this.stock = new LinkedHashMap<>(snapshot.asMap());
@@ -417,6 +431,7 @@ public final class Resolver {
                     drawn.add(new ItemAmount(item, owed));
                     return drawn;
                 }
+                if (memo != null) learn(item);
             }
 
             // No route resolves: the plan reports the top route's Missing and Locked, walked again.
@@ -469,6 +484,20 @@ public final class Resolver {
                 mark.restore();
             }
             return false;
+        }
+
+        /**
+         * Asks, once per item per pass, whether {@code item} can be crafted at all: one of it, by its routes,
+         * from the whole inventory, with no ancestors. If not, and the search was not cut short, it joins
+         * {@link Memo}'s unmakeable items.
+         *
+         * <p>Run after a failure in context, so an item that is made pays for the probe only when
+         * something else went wrong around it, and once.
+         */
+        private void learn(String item) {
+            if (tried > SEARCH_LIMIT || !memo.probed.add(item)) return;
+            Walk probe = new Walk(new LinkedHashMap<>(memo.stock), memo);
+            if (!probe.tryRoutes(item, 1, List.of()) && probe.tried <= SEARCH_LIMIT) memo.unmakeable.add(item);
         }
 
         /** Crafts {@code owed} of what {@code maker} makes and takes it out of the surplus, or says it could not. */
