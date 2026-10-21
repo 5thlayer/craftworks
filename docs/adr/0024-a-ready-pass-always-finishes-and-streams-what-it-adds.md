@@ -23,10 +23,11 @@ server only while the inventory screen is open, and that it never gates a click 
   removals only when it ends, so a recipe never vanishes and comes back mid-pass. Last pass's Ready recipes
   are resolved first.
 - **A resolve stays whole, and is made cheap instead.** Trying a route no longer copies the whole inventory;
-  a pass remembers the items it found unmakeable from its snapshot, a search cut short by the Resolver's
-  search limit never counting, and skips them for the rest of the pass; it asks the Lock source once per
-  recipe. The memo and the cached Lock answers are the Ready pass's own: Fill still asks live and still
-  reports every Missing and Locked item.
+  a pass works out once, when it starts, every item some chain of recipes can reach from the inventory it
+  holds, ignoring quantities and the Lock source, and skips what is not reached wherever a walk meets it. An
+  item outside that set cannot be made in any amount, so skipping it changes nothing. The check is linear in
+  the size of the recipe set. The pass asks the Lock source once per recipe. The check and the cached Lock
+  answers are the Ready pass's own: Fill still asks live and still reports every Missing and Locked item.
 
 **Considered: a resolve that can pause partway.** It holds the budget exactly, but means rewriting the
 recursive walk, rollbacks included, as an explicit stack in the code Fill queues from.
@@ -38,6 +39,13 @@ time. Streaming fills the list from the first open instead.
 **Considered: remembering what an item can be made of.** Not sound: a walk shares its stock and surplus between
 branches, so "3 of X can be made" in one place says nothing about another. Only "none can be made from the whole
 snapshot" holds everywhere in the pass.
+
+**Considered: probing each failed item for whether it can be made at all.** This was the first answer (#67), and
+it is gone. In the Showcase, Refined Storage's `coloring/black_X` takes any of sixteen colours of X plus black
+dye, and each colour is made the same way from any other colour, so a search that fails walks the simple paths
+through the colour graph until the search limit cuts it short. The probe walked the same paths and was cut short
+too, so the memo never learned those items, and 561 resolves of one pass cost about 5,000 applications each
+(#70). Reachability asks no search of the colours at all: with no dye held, nothing in the cycle is reached.
 
 **Consequences.** The budget is still checked between resolves, so a single resolve can overshoot it; the cap
 on one is the search limit, made cheap. The list lags the inventory by up to one pass plus the quiet ticks, and
