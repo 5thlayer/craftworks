@@ -21,8 +21,9 @@ libworks {
     // capability alone, so a later Pipeworks can't break it.
     upstream('pipeworks') {
         optional = true
-        // 0.3.1 gives its Jade option the translation Jade's dev-only check asserts on (pipeworks#25).
-        range = '[0.3.1,)'
+        // 0.3.1 gives its Jade option the translation Jade's dev-only check asserts on (pipeworks#25), and 0.4.1
+        // stands on Groundworks 0.6, as the Mod does.
+        range = '[0.4.1,)'
     }
     // Nested by jar-in-jar, so players install nothing more; FML loads the newest nested copy in range,
     // which runs to the next minor. It draws the Assembler's ghosts (#52) and registers the Works tab
