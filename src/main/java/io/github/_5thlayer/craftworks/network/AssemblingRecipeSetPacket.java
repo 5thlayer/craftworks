@@ -16,22 +16,18 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-/**
- * The Assembling recipe set's ids and the items it makes, server to client, sent on login and on every
- * {@code /reload}.
- */
-public record AssemblingRecipeSetPacket(List<String> ids, List<String> itemsMade) implements CustomPacketPayload {
+/** The Assembling recipe set's ids, server to client, sent on login and on every {@code /reload}. */
+public record AssemblingRecipeSetPacket(List<String> ids) implements CustomPacketPayload {
 
     public static final Type<AssemblingRecipeSetPacket> TYPE = new Type<>(
             Identifier.fromNamespaceAndPath(Craftworks.MOD_ID, "assembling_recipes"));
 
     public static final StreamCodec<ByteBuf, AssemblingRecipeSetPacket> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), AssemblingRecipeSetPacket::ids,
-            ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), AssemblingRecipeSetPacket::itemsMade,
             AssemblingRecipeSetPacket::new);
 
     public static AssemblingRecipeSetPacket of(AssemblingRecipeSet recipes) {
-        return new AssemblingRecipeSetPacket(List.copyOf(recipes.ids()), List.copyOf(recipes.itemsMade()));
+        return new AssemblingRecipeSetPacket(List.copyOf(recipes.ids()));
     }
 
     @Override
@@ -40,6 +36,6 @@ public record AssemblingRecipeSetPacket(List<String> ids, List<String> itemsMade
     }
 
     static void handle(AssemblingRecipeSetPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> AssemblingRecipeIds.accept(Set.copyOf(packet.ids()), Set.copyOf(packet.itemsMade())));
+        context.enqueueWork(() -> AssemblingRecipeIds.accept(Set.copyOf(packet.ids())));
     }
 }

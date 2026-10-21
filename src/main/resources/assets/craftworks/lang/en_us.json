@@ -30,7 +30,6 @@
   "craftworks.plan.reason.not_enough": "Can't start: not enough items.",
   "craftworks.plan.reason.not_enough_for": "Can't queue %s: not enough items.",
   "craftworks.plan.reason.unplannable": "Can't start: this recipe can't be planned.",
-  "craftworks.tab.assembling": "Assembling",
   "block.craftworks.assembler_1": "Assembler 1",
   "block.craftworks.assembler_2": "Assembler 2",
   "block.craftworks.assembler_3": "Assembler 3",

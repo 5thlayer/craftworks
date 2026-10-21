@@ -10,7 +10,6 @@ import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.recipe.VanillaEmiRecipeCategories;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.screen.EmiScreenManager;
-import dev.emi.emi.search.EmiSearch;
 import io.github._5thlayer.craftworks.Craftworks;
 import io.github._5thlayer.craftworks.assembler.AssemblingRecipeIds;
 import io.github._5thlayer.craftworks.assembler.ReadyRecipeIds;
@@ -54,14 +53,6 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
     }
 
     /**
-     * Runs the search again when the recipe set syncs, so {@code @craftworks} lists what it makes after
-     * {@code /reload} without the player retyping it. Not before EMI has baked its search.
-     */
-    private static void searchAgain() {
-        if (!EmiScreenManager.isDisabled()) EmiSearch.update();
-    }
-
-    /**
      * Works EMI's craftables out again when the Ready set changes. EMI does so only when the player's
      * items differ from the last time it looked, and a Lock lifting or a sync arriving changes no item.
      * Not before EMI has loaded, and not without a player: EMI reads the inventory to do it.
@@ -84,7 +75,6 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
         // The Refiner smelts what vanilla's furnace and blast furnace do, so it is their tabs' workstation (ADR-0020).
         registry.addWorkstation(VanillaEmiRecipeCategories.SMELTING, EmiStack.of(Refiners.ITEM.get()));
         registry.addWorkstation(VanillaEmiRecipeCategories.BLASTING, EmiStack.of(Refiners.ITEM.get()));
-        AssemblingRecipeIds.onSync(AssemblingEmiPlugin::searchAgain);
         ReadyRecipeIds.onChange(AssemblingEmiPlugin::craftablesAgain);
     }
 }

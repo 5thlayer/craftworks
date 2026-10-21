@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- **Breaking:** EMI: the index tab row above the item index is gone, with its Assembling tab, the `IndexTabs` API and resource-pack tab files, and `@craftworks` lists only Craftworks' own items again. EMI's Craftables lists every Ready Assembling recipe instead. (#72)
+
 ## 0.10.4
 
 - The craftables list keeps up in big packs: it fills in as it is worked out, and an inventory change or closing the inventory no longer throws the work away. (#67)

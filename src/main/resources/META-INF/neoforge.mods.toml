@@ -66,11 +66,11 @@ versionRange = "[29.20.0.53,)"
 ordering = "NONE"
 side = "CLIENT"
 
-# An EMI category for Assembling recipes, its Fill Recipe queueing on the Personal Assembler (ADR-0004) and
-# the Assemblers, and the index tabs (#15). Not required: a client needs EMI or JEI (ADR-0009), and NeoForge
-# can't require one of two; its plugin is only loaded by EMI, and its mixins have nothing to apply to without
-# it. The range is the EMI the plugin is compiled against, the 26.1 unofficial port's 1.1.24, so an older EMI
-# refuses to load beside the Mod.
+# An EMI category for Assembling recipes, and its Fill Recipe queueing on the Personal Assembler (ADR-0004)
+# and the Assemblers. Not required: a client needs EMI or JEI (ADR-0009), and NeoForge can't require one of
+# two; its plugin is only loaded by EMI, and its mixins have nothing to apply to without it. The range is the
+# EMI the plugin is compiled against, the 26.1 unofficial port's 1.1.24, so an older EMI refuses to load
+# beside the Mod.
 [[dependencies.${mod_id}]]
 modId = "emi"
 type = "optional"
@@ -103,9 +103,8 @@ side = "BOTH"
 [[mixins]]
 config = "craftworks.mixins.json"
 
-# Records which mouse button pressed EMI's Fill Recipe (ADR-0004), makes @craftworks find what the Assembler
-# makes, and draws the index tabs (#15). Not required: a pack without EMI has nothing for it to apply to, and
-# its plugin skips, with an error, any mixin whose EMI method is gone.
+# Records which mouse button pressed EMI's Fill Recipe (ADR-0004). Not required: a pack without EMI has
+# nothing for it to apply to, and its plugin skips, with an error, any mixin whose EMI method is gone.
 [[mixins]]
 config = "craftworks.emi.mixins.json"
 
