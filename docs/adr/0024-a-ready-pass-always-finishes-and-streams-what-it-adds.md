@@ -55,3 +55,12 @@ to quantity, so it leaves the other shape to the probes.
 **Consequences.** The budget is still checked between resolves, so a single resolve can overshoot it; the cap
 on one is the search limit, made cheap. The list lags the inventory by up to one pass plus the quiet ticks, and
 a lock lifting mid-pass waits for the next pass.
+
+**Amended (#73): every live resolve skips what it cannot reach.** Fill, the Crafting Plan and its refresh on
+the sync beat resolve live and had no reachability, so a click on an unmakeable recolouring recipe ran into the
+search limit three times, and twice more every 5 ticks while the plan stayed open. Reachability is not a memo:
+it is worked out from the inventory being resolved, so any resolve can skip an unreached item without changing
+whether its plan is complete, and Fill still reports every Missing and Locked item. Probes stay the Ready pass's
+own. The report walk, which names Missing when no route resolves, no longer descends into a route that only
+converts between the alternatives of the ingredient it is filling: the player's errand for a recolouring is
+"any of these, and the dye", not every dye in the cycle.
