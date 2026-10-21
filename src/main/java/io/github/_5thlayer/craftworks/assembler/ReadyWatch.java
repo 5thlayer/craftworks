@@ -135,7 +135,7 @@ public final class ReadyWatch {
          * keeps the last set between openings), which is how removals reach it.
          */
         private void publish(ReadyRefresh.Refreshed done) {
-            LOGGER.info("Craftworks: Ready for {} worked out in {} ms (slowest tick {} ms) over {} tick(s): {} of {} recipes",
+            LOGGER.debug("Craftworks: Ready for {} worked out in {} ms (slowest tick {} ms) over {} tick(s): {} of {} recipes",
                     player.getGameProfile().name(), done.nanos() / 1_000_000.0, done.maxTickNanos() / 1_000_000.0,
                     done.ticks(), done.ready().size(), done.total());
             lastReady = done.ready();
