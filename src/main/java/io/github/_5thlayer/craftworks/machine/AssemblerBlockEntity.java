@@ -324,21 +324,45 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         fluidSide.push(server);
     }
 
-    private void craft(AssemblingRecipe recipe) {
-        assembledResultBlocked = false;
+    /** The first check a tick would fail, or CRAFTING, with what the tick then needs. */
+    private record Check(MachineState state, int duration, int fe) {
+    }
+
+    /**
+     * Asks, in order: whether the craft's inputs and room are there (a probe that makes nothing), whether the
+     * last craft's assembled result found no room, and whether the buffer can pay this tick. Changes nothing.
+     */
+    private Check check(AssemblingRecipe recipe) {
         try (Transaction probe = Transaction.openRoot()) {
-            if (finish(recipe, probe, false) != null) {
-                return;
+            MachineState stalled = finish(recipe, probe, false);
+            if (stalled != null) {
+                return new Check(stalled, 0, 0);
             }
+        }
+        if (assembledResultBlocked) {
+            return new Check(MachineState.OUTPUT_FULL, 0, 0);
         }
         int duration = duration(recipe);
         int fe = feThisTick(recipe, duration);
+        try (Transaction probe = Transaction.openRoot()) {
+            MachineState state = buffer.extract(fe, probe) == fe ? MachineState.CRAFTING : MachineState.NEEDS_POWER;
+            return new Check(state, duration, fe);
+        }
+    }
+
+    private void craft(AssemblingRecipe recipe) {
+        // Cleared before asking: while it is set, check answers OUTPUT_FULL and the craft is never tried again.
+        assembledResultBlocked = false;
+        Check check = check(recipe);
+        if (check.state() != MachineState.CRAFTING) {
+            return;
+        }
         try (Transaction tx = Transaction.openRoot()) {
-            if (buffer.extract(fe, tx) != fe) {
+            if (buffer.extract(check.fe(), tx) != check.fe()) {
                 return;
             }
             int next = progress + 1;
-            if (next >= duration) {
+            if (next >= check.duration()) {
                 MachineState stopped = finish(recipe, tx, true);
                 if (stopped == MachineState.OUTPUT_FULL) {
                     assembledResultBlocked = true;
@@ -381,21 +405,7 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         if (resolved.isEmpty()) {
             return MachineState.CANT_RUN;
         }
-        AssemblingRecipe recipe = resolved.get();
-        try (Transaction probe = Transaction.openRoot()) {
-            MachineState stalled = finish(recipe, probe, false);
-            if (stalled != null) {
-                return stalled;
-            }
-        }
-        if (assembledResultBlocked) {
-            return MachineState.OUTPUT_FULL;
-        }
-        int duration = duration(recipe);
-        int fe = feThisTick(recipe, duration);
-        try (Transaction probe = Transaction.openRoot()) {
-            return buffer.extract(fe, probe) == fe ? MachineState.CRAFTING : MachineState.NEEDS_POWER;
-        }
+        return check(resolved.get()).state();
     }
 
     /**
