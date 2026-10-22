@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+## 0.10.7
+
 - The Crafting Plan gives the right reason an item is Locked when a recolouring recipe also makes it: the reason of the recipe that Locked it, not of the first recipe listed for the item.
 
 ## 0.10.6
