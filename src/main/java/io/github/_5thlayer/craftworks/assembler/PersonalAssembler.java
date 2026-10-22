@@ -15,6 +15,7 @@ import io.github._5thlayer.craftworks.network.PlanUpdatePacket;
 import io.github._5thlayer.craftworks.network.QueueSyncPacket;
 import io.github._5thlayer.craftworks.planner.AssemblerCodecs;
 import io.github._5thlayer.craftworks.planner.CraftResult;
+import io.github._5thlayer.craftworks.planner.CraftingPlan;
 import io.github._5thlayer.craftworks.planner.ItemAmount;
 import io.github._5thlayer.craftworks.planner.PlanQueue;
 import io.github._5thlayer.craftworks.planner.Resolver;
@@ -87,9 +88,11 @@ public final class PersonalAssembler {
      * Crafting Plan, and so does a queue that loses a race with the inventory, and a middle click.
      */
     public static void fill(ServerPlayer player, Identifier recipe, FillRequest request) {
-        int count = request.queueCount(PlanSource.ACTIVE.largestAffordable(player, recipe));
-        if (count > 0 && craft(player, recipe, count)) return;
-        openPlan(player, recipe, request.asked(count));
+        PlayerPlanning planning = PlayerPlanning.of(player);
+        int count = request.queueCount(planning.largestAffordable(recipe));
+        if (count > 0 && craft(player, planning, recipe, count)) return;
+        // Nothing was queued, so the inventory is as the planning read it and the view reuses its resolves.
+        openPlan(player, planning, recipe, request.asked(count));
     }
 
     /**
@@ -102,7 +105,11 @@ public final class PersonalAssembler {
 
     /** As {@link #openPlan(ServerPlayer, Identifier)}, naming the {@code refused} crafts a request could not queue. */
     private static void openPlan(ServerPlayer player, Identifier recipe, int refused) {
-        PlanView view = planView(player, recipe);
+        openPlan(player, PlayerPlanning.of(player), recipe, refused);
+    }
+
+    private static void openPlan(ServerPlayer player, PlayerPlanning planning, Identifier recipe, int refused) {
+        PlayerPlanning.PlanView view = planning.view(recipe);
         player.openMenu(
                 new SimpleMenuProvider(
                         (id, inventory, who) -> new CraftingPlanMenu(id, view.display(), view.all(), refused),
@@ -122,17 +129,9 @@ public final class PersonalAssembler {
      */
     public static void refreshPlan(ServerPlayer player) {
         if (!(player.containerMenu instanceof CraftingPlanMenu menu)) return;
-        PlanView view = planView(player, menu.display().recipe());
+        // A fresh planning: a press or a running queue has changed the inventory since any earlier one.
+        PlayerPlanning.PlanView view = PlayerPlanning.of(player).view(menu.display().recipe());
         CraftworksNetwork.sendToPlayer(player, new PlanUpdatePacket(menu.containerId, view.display(), view.all()));
-    }
-
-    /** What the screen shows, resolved one way for the open and every update so the two cannot drift. */
-    private static PlanView planView(ServerPlayer player, Identifier recipe) {
-        return new PlanView(PlanSource.ACTIVE.resolve(player, recipe, 1).display(),
-                PlanSource.ACTIVE.largestAffordable(player, recipe));
-    }
-
-    private record PlanView(PlanDisplay display, int all) {
     }
 
     /**
@@ -143,12 +142,17 @@ public final class PersonalAssembler {
      * inventory can no longer cover.
      */
     public static boolean craft(ServerPlayer player, Identifier recipe, int amount) {
+        return craft(player, PlayerPlanning.of(player), recipe, amount);
+    }
+
+    /** As {@link #craft(ServerPlayer, Identifier, int)}, from a planning the caller already made for this inventory. */
+    private static boolean craft(ServerPlayer player, PlayerPlanning planning, Identifier recipe, int amount) {
         int wanted = Math.min(Math.max(1, amount), Resolver.MAX_CRAFTS);
-        PlanSource.ResolvedPlan resolved = PlanSource.ACTIVE.resolve(player, recipe, wanted);
+        Optional<CraftingPlan> plan = planning.plan(recipe, wanted);
         boolean queued = false;
-        if (resolved.complete()) {
+        if (plan.isPresent()) {
             PlanQueue queue = queueOf(player);
-            queued = queue.enqueue(resolved.plan(), new InventoryPlayerItems(player.getInventory()));
+            queued = queue.enqueue(plan.get(), new InventoryPlayerItems(player.getInventory()));
             if (queued) player.setData(QUEUE, queue);
         }
         sync(player);
@@ -169,8 +173,8 @@ public final class PersonalAssembler {
                 (recipe, left, id) -> {
                     Identifier parsed = Identifier.tryParse(recipe);
                     if (parsed == null) return Optional.empty();
-                    return Optional.ofNullable(PlanSource.ACTIVE.resolve(player, parsed, left).plan())
-                            .map(plan -> plan.withId(id));
+                    // After the refund, which wrote through to the inventory: a planning made earlier would be stale.
+                    return PlayerPlanning.of(player).plan(parsed, left).map(plan -> plan.withId(id));
                 });
         if (result.cancelled()) {
             for (ItemAmount leftover : result.notReturned()) {

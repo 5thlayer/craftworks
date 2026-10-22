@@ -13,7 +13,7 @@ import io.github._5thlayer.craftworks.api.LockHooks;
 import io.github._5thlayer.craftworks.assembler.CraftingPlanMenu;
 import io.github._5thlayer.craftworks.assembler.FillRequest;
 import io.github._5thlayer.craftworks.assembler.PersonalAssembler;
-import io.github._5thlayer.craftworks.assembler.RuntimePlanSource;
+import io.github._5thlayer.craftworks.assembler.PlayerPlanning;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
@@ -59,21 +59,21 @@ final class LockTests {
             player.addTag(LOCKED_BY_HOOK);
             // The slime ball is in the book, so only the hook locks it; the sapling is not, so only the book does.
             player.getRecipeBook().add(ResourceKey.create(Registries.RECIPE, SLIME_BALL));
-            Predicate<String> locked = RuntimePlanSource.lockedFor(player);
+            Predicate<String> locked = PlayerPlanning.lockedFor(player);
             helper.assertTrue(locked.test(AssemblerTests.OAK_SAPLING.toString()), "the recipe book did not lock the sapling");
             helper.assertTrue(locked.test(SLIME_BALL.toString()), "the hook did not lock the slime ball");
 
             // Config and hook read here and restored before returning: nothing else runs in between, since
             // a test body runs whole on the server thread.
             CraftworksConfig.LOCK_SOURCES.set(List.of());
-            helper.assertTrue(RuntimePlanSource.lockedFor(player).test(SLIME_BALL.toString()),
+            helper.assertTrue(PlayerPlanning.lockedFor(player).test(SLIME_BALL.toString()),
                     "the hook alone did not lock the slime ball");
-            helper.assertFalse(RuntimePlanSource.lockedFor(player).test(AssemblerTests.OAK_SAPLING.toString()),
+            helper.assertFalse(PlayerPlanning.lockedFor(player).test(AssemblerTests.OAK_SAPLING.toString()),
                     "with no lockSources the sapling is still Locked");
             CraftworksConfig.LOCK_SOURCES.set(List.of("recipeBook"));
 
             player.removeTag(LOCKED_BY_HOOK);
-            helper.assertFalse(RuntimePlanSource.lockedFor(player).test(SLIME_BALL.toString()),
+            helper.assertFalse(PlayerPlanning.lockedFor(player).test(SLIME_BALL.toString()),
                     "the slime ball is still Locked with the hook saying no and the book holding it");
 
             PersonalAssembler.fill(player, AssemblerTests.OAK_SAPLING, FillRequest.ONE);
@@ -114,7 +114,7 @@ final class LockTests {
         CraftworksConfig.LOCK_SOURCES.set(List.of("researchd"));
         try {
             ServerPlayer player = AssemblerTests.playerHolding(helper, ItemStack.EMPTY);
-            helper.assertFalse(RuntimePlanSource.lockedFor(player).test(AssemblerTests.OAK_SAPLING.toString()),
+            helper.assertFalse(PlayerPlanning.lockedFor(player).test(AssemblerTests.OAK_SAPLING.toString()),
                     "researchd locked a recipe with Researchd not installed");
         } finally {
             CraftworksConfig.LOCK_SOURCES.set(before);

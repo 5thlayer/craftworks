@@ -6,7 +6,7 @@ package io.github._5thlayer.craftworks.gametest;
 import java.util.List;
 
 import io.github._5thlayer.craftworks.CraftworksConfig;
-import io.github._5thlayer.craftworks.assembler.RuntimePlanSource;
+import io.github._5thlayer.craftworks.assembler.PlayerPlanning;
 import io.github._5thlayer.craftworks.planner.AssemblingRecipe;
 import io.github._5thlayer.craftworks.planner.AssemblingRecipeSet;
 import io.github._5thlayer.craftworks.planner.Ingredient;
@@ -112,9 +112,9 @@ final class KubeJSTests {
         CraftworksConfig.LOCK_SOURCES.set(List.of());
         try {
             ServerPlayer player = AssemblerTests.playerHolding(helper, ItemStack.EMPTY);
-            helper.assertFalse(RuntimePlanSource.lockedFor(player).test(DIAMOND), "the diamond is Locked for an untagged player");
+            helper.assertFalse(PlayerPlanning.lockedFor(player).test(DIAMOND), "the diamond is Locked for an untagged player");
             player.addTag(LOCKED_TAG);
-            Locks.Reasoned<Component> locks = RuntimePlanSource.locksFor(player);
+            Locks.Reasoned<Component> locks = PlayerPlanning.locksFor(player);
             helper.assertTrue(locks.test(DIAMOND), "the lock event did not lock the diamond for a tagged player");
             helper.assertFalse(locks.test(STICK), "the lock event locked a recipe it does not name");
             Component reason = locks.reasons().get(DIAMOND);

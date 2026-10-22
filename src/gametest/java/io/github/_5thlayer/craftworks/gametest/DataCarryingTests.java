@@ -9,7 +9,7 @@ import java.util.UUID;
 
 import io.github._5thlayer.craftworks.assembler.ItemKeys;
 import io.github._5thlayer.craftworks.assembler.PersonalAssembler;
-import io.github._5thlayer.craftworks.assembler.PlanSource;
+import io.github._5thlayer.craftworks.assembler.PlayerPlanning;
 import io.github._5thlayer.craftworks.planner.ItemAmount;
 import io.github._5thlayer.craftworks.planner.PlanQueue;
 import net.minecraft.server.level.ServerPlayer;
@@ -167,9 +167,9 @@ final class DataCarryingTests {
     /** The Crafting Plan the server would send shows the result the original recipe makes from the named sword. */
     private static void planPredictsNamed(GameTestHelper helper) {
         ServerPlayer player = holding(helper, named(), new ItemStack(Items.DIAMOND));
-        PlanSource.ResolvedPlan plan = PlanSource.ACTIVE.resolve(player, KEEPS_DATA, 1);
-        helper.assertTrue(plan.complete(), "the plan should be complete");
-        List<ItemAmount> shown = plan.display().toCraft();
+        PlayerPlanning.PlanView view = PlayerPlanning.of(player).view(KEEPS_DATA);
+        helper.assertTrue(view.display().complete(), "the plan should be complete");
+        List<ItemAmount> shown = view.display().toCraft();
         helper.assertTrue(shown.size() == 1 && shown.get(0).count() == 1 && isNamedDiamondSword(player, shown.get(0).item()),
                 "the plan should show one named diamond sword, and shows " + shown);
         helper.assertTrue(AssemblerTests.count(player, Items.IRON_SWORD) == 1, "previewing should take nothing");
@@ -179,7 +179,7 @@ final class DataCarryingTests {
     /** One craft takes the plain sword and one the named, so the plan shows a row of each. */
     private static void planPredictsTwoRows(GameTestHelper helper) {
         ServerPlayer player = holding(helper, named(), new ItemStack(Items.IRON_SWORD), new ItemStack(Items.DIAMOND, 2));
-        List<ItemAmount> shown = PlanSource.ACTIVE.resolve(player, KEEPS_DATA, 2).display().toCraft();
+        List<ItemAmount> shown = PlayerPlanning.of(player).view(KEEPS_DATA, 2).display().toCraft();
         long named = shown.stream().filter(a -> a.count() == 1 && isNamedDiamondSword(player, a.item())).count();
         long plain = shown.stream().filter(a -> a.count() == 1 && a.item().equals("minecraft:diamond_sword")).count();
         helper.assertTrue(shown.size() == 2 && named == 1 && plain == 1,

@@ -20,7 +20,7 @@ import io.github._5thlayer.craftworks.planner.Resolver;
 import org.junit.jupiter.api.Test;
 
 /**
- * Ready is the Resolver's {@code complete()} for one craft, per recipe: intermediates count, Missing and
+ * Ready is the Planning's {@code complete()} for one craft, per recipe: intermediates count, Missing and
  * Locked do not, and two routes to one item are both Ready when both resolve.
  */
 class ReadyPassTest {
@@ -37,7 +37,7 @@ class ReadyPassTest {
             .build();
 
     private static Set<String> ready(ItemBag stock, Predicate<String> locked) {
-        ReadyPass pass = new ReadyPass(new Resolver(RECIPES, locked), stock, List.copyOf(RECIPES.ids()));
+        ReadyPass pass = new ReadyPass(new Resolver(RECIPES, locked).planning(stock), List.copyOf(RECIPES.ids()));
         while (!pass.done()) pass.resolveNext();
         return pass.ready();
     }
@@ -84,7 +84,7 @@ class ReadyPassTest {
 
     @Test
     void thePassResolvesEveryCandidateAndSaysHowMany() {
-        ReadyPass pass = new ReadyPass(new Resolver(RECIPES, recipe -> false), new ItemBag(), List.copyOf(RECIPES.ids()));
+        ReadyPass pass = new ReadyPass(new Resolver(RECIPES, recipe -> false).planning(new ItemBag()), List.copyOf(RECIPES.ids()));
         assertEquals(4, pass.total());
         assertFalse(pass.done());
     }

@@ -47,13 +47,13 @@ class ReadyCostTest {
 
     private static List<Sample> pass(AssemblingRecipeSet recipes, ItemBag stock, Predicate<String> locked, boolean memo) {
         Resolver resolver = new Resolver(recipes, locked);
-        Resolver.Memo remembered = resolver.memo(stock);
+        Planning planning = resolver.planning(stock);
         List<Sample> samples = new ArrayList<>();
         for (String id : sorted(recipes)) {
             long before = resolver.applicationsTried();
             int cut = resolver.searchesCutShort();
             long start = System.nanoTime();
-            boolean ready = (memo ? resolver.resolveReady(id, remembered) : resolver.resolve(id, 1, stock)).complete();
+            boolean ready = memo ? planning.ready(id) : planning.plan(id, 1).complete();
             samples.add(new Sample(ready ? id + " (ready)" : id, System.nanoTime() - start,
                     resolver.applicationsTried() - before, resolver.searchesCutShort() > cut));
         }
@@ -91,7 +91,7 @@ class ReadyCostTest {
                     BigRecipes.stock(3, 0, 1, 2, 3, 4, 5), recoloured)) {
                 for (Predicate<String> locked : List.<Predicate<String>>of(id -> false, id -> id.hashCode() % 5 == 0)) {
                     Resolver unmemoed = new Resolver(recipes, locked);
-                    for (String id : sorted(recipes)) unmemoed.resolve(id, 1, stock);
+                    for (String id : sorted(recipes)) unmemoed.planning(stock).plan(id, 1);
                     assertEquals(0, unmemoed.searchesCutShort(),
                             "the set is too big for the comparison: a search was cut short without the memo");
                     Set<String> without = readySet(recipes, stock, locked, false);

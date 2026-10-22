@@ -9,7 +9,7 @@ import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.assembler.CraftingPlanMenu;
 import io.github._5thlayer.craftworks.assembler.FillRequest;
 import io.github._5thlayer.craftworks.assembler.PersonalAssembler;
-import io.github._5thlayer.craftworks.assembler.PlanSource;
+import io.github._5thlayer.craftworks.assembler.PlayerPlanning;
 import io.github._5thlayer.craftworks.assembler.ReadyWatch;
 import io.github._5thlayer.craftworks.machine.AssemblerMenu;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
@@ -51,8 +51,8 @@ final class NoChannelTests {
             // with the channels sends, so the plan is put in place instead.
             PersonalAssembler.fill(player, AssemblerTests.OAK_SAPLING, FillRequest.ONE);
             helper.assertTrue(PersonalAssembler.queueOf(player).entries().size() == 1, "Fill Recipe queued nothing");
-            var plan = PlanSource.ACTIVE.resolve(player, AssemblerTests.OAK_SAPLING, 1);
-            player.containerMenu = new CraftingPlanMenu(1, plan.display(), 1, 0);
+            var view = PlayerPlanning.of(player).view(AssemblerTests.OAK_SAPLING);
+            player.containerMenu = new CraftingPlanMenu(1, view.display(), 1, 0);
             PersonalAssembler.refreshPlan(player);
 
             // The Ready set, once the client says the inventory screen is open.

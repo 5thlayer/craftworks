@@ -9,33 +9,29 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import io.github._5thlayer.craftworks.planner.ItemBag;
-import io.github._5thlayer.craftworks.planner.Resolver;
+import io.github._5thlayer.craftworks.planner.Planning;
 
 /**
- * One refresh of the Ready set: one craft of every candidate recipe resolved by the {@link Resolver},
+ * One refresh of the Ready set: one craft of every candidate recipe asked of a {@link Planning},
  * one at a time, so {@link ReadyRefresh} can stop between any two.
  *
- * <p>A recipe is Ready when its plan has nothing Missing or Locked, which is the Resolver's own
+ * <p>A recipe is Ready when its plan has nothing Missing or Locked, which is the Planning's own
  * {@code complete()}: exactly what Fill Recipe would queue. Nothing about Ready is decided here.
  *
- * <p>The inventory is the snapshot the pass was made with, and the Resolver only reads it, so a pass
- * spread over ticks answers for one inventory throughout. The pass owns a {@link Resolver.Memo} of the
- * items it knows cannot be made from that snapshot: those no chain of recipes reaches, found when the pass
- * starts, and those a probe found short on quantity, found as it goes. That is why a resolve stays cheap
- * however deep the chain behind it (ADR-0024).
+ * <p>The Planning is the one the pass was made with, and it only reads its stock, so a pass spread over
+ * ticks answers for one inventory throughout. It remembers the items that cannot be made from that stock:
+ * those no chain of recipes reaches, found when it was made, and those a probe found short on quantity,
+ * found as the pass goes. That is why a resolve stays cheap however deep the chain behind it (ADR-0024).
  */
 public final class ReadyPass implements ReadyRefresh.Pass {
 
-    private final Resolver resolver;
+    private final Planning planning;
     private final List<String> candidates;
-    private final Resolver.Memo memo;
     private final Set<String> ready = new HashSet<>();
     private int next;
 
-    public ReadyPass(Resolver resolver, ItemBag stock, List<String> candidates) {
-        this.resolver = resolver;
-        this.memo = resolver.memo(stock);
+    public ReadyPass(Planning planning, List<String> candidates) {
+        this.planning = planning;
         this.candidates = List.copyOf(candidates);
     }
 
@@ -62,7 +58,7 @@ public final class ReadyPass implements ReadyRefresh.Pass {
     @Override
     public void resolveNext() {
         String recipe = candidates.get(next++);
-        if (resolver.resolveReady(recipe, memo).complete()) ready.add(recipe);
+        if (planning.ready(recipe)) ready.add(recipe);
     }
 
     @Override

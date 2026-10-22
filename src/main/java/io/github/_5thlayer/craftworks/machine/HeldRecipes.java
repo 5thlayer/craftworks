@@ -6,7 +6,7 @@ package io.github._5thlayer.craftworks.machine;
 import java.util.Optional;
 
 import io.github._5thlayer.craftworks.CraftworksConfig;
-import io.github._5thlayer.craftworks.assembler.RuntimePlanSource;
+import io.github._5thlayer.craftworks.assembler.PlayerPlanning;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -122,7 +122,7 @@ public final class HeldRecipes {
                 .fluidVolumeFits(fluidVolumeFits(found))
                 .fitsSlots(fitsSlots(found))
                 .remaindersFit(remaindersFit(found))
-                .locked(RuntimePlanSource.lockedFor(player).test(id.toString())))
+                .locked(PlayerPlanning.lockedFor(player).test(id.toString())))
                 .orElse(HoldVerdict.Checks.passing().resolves(false)));
     }
 

@@ -85,32 +85,37 @@ public final class Resolver {
     }
 
     /**
-     * Resolves {@code crafts} runs of {@code recipeId} against what the player has.
-     *
-     * <p>{@code available} is read, never spent: the queue takes the cost when the plan is queued, and
-     * a Resolver that emptied the bag it was handed could not be asked twice, which
-     * {@link #largestAffordable} does a dozen times.
+     * A {@link Planning} against {@code stock}: this Resolver's recipes and Lock source, read for one moment
+     * of the inventory. {@code stock} is copied, so the caller may go on changing it.
      */
-    public Resolution resolve(String recipeId, int crafts, ItemBag available) {
-        return resolveAgainst(recipeId, crafts, available, unreached(available));
-    }
-
-    /** What {@code available} cannot reach (see {@link Reach}), which a walk over it skips: the worklist runs once per bag. */
-    private Set<String> unreached(ItemBag available) {
-        return recipes.reach().unreachableFrom(available.asMap().keySet());
-    }
-
-    /** A memo for a Ready pass over {@code snapshot}, against this Resolver's recipe set. */
-    public Memo memo(ItemBag snapshot) {
-        return new Memo(snapshot, recipes);
+    public Planning planning(ItemBag stock) {
+        return new Planning(this, stock);
     }
 
     /**
-     * One craft of {@code recipeId} against the inventory the {@link Memo} was made with, for the Ready
-     * pass, which reads only {@code complete()}. Fill never calls this: its Missing and Locked breakdown
-     * has to name everything, which the memo's probes would not.
+     * Resolves {@code crafts} runs of {@code recipeId} against what the player has, once and uncached: a
+     * {@link Planning} of {@code available} asked one question. Whoever asks several keeps the Planning.
      */
-    public Resolution resolveReady(String recipeId, Memo memo) {
+    public Resolution resolve(String recipeId, int crafts, ItemBag available) {
+        return planning(available).plan(recipeId, crafts);
+    }
+
+    /** The largest count of {@code recipeId} that {@code available} covers: see {@link Planning#largestAffordable}. */
+    public int largestAffordable(String recipeId, ItemBag available) {
+        return planning(available).largestAffordable(recipeId);
+    }
+
+    /** What {@code stock} cannot reach (see {@link Reach}), which a walk over it skips: the worklist runs once per stock. */
+    Set<String> unreachedFrom(Map<String, Integer> stock) {
+        return recipes.reach().unreachableFrom(stock.keySet());
+    }
+
+    /**
+     * One craft of {@code recipeId} against the stock the {@link Memo} was made with, for the Ready pass,
+     * which reads only {@code complete()}. Fill never calls this: its Missing and Locked breakdown has to
+     * name everything, which the memo's probes would not.
+     */
+    Resolution resolveReady(String recipeId, Memo memo) {
         return resolve(recipeId, 1, new Walk(new LinkedHashMap<>(memo.stock), memo, Set.of()));
     }
 
@@ -130,38 +135,9 @@ public final class Resolver {
         return walk.finish();
     }
 
-    private Resolution resolveAgainst(String recipeId, int crafts, ItemBag available, Set<String> unreached) {
-        return resolve(recipeId, crafts, new Walk(new LinkedHashMap<>(available.asMap()), null, unreached));
-    }
-
-    /**
-     * The Crafting Plan's {@code all}: the largest count whose plan is complete, so {@code all} can
-     * never queue a plan the inventory then refuses (ADR-0003).
-     *
-     * <p>Found by doubling and then bisecting rather than by dividing the inventory through the
-     * recipe, because a chain's cost is not linear in the count: a recipe making two at a time leaves
-     * a surplus that the next craft uses, so twice the crafts can cost less than twice the
-     * ingredients.
-     */
-    public int largestAffordable(String recipeId, ItemBag available) {
-        Set<String> unreached = unreached(available);
-        if (!resolveAgainst(recipeId, 1, available, unreached).complete()) return 0;
-        int affordable = 1;
-        int beyond = 2;
-        while (beyond <= MAX_CRAFTS && resolveAgainst(recipeId, beyond, available, unreached).complete()) {
-            affordable = beyond;
-            beyond *= 2;
-        }
-        int high = Math.min(beyond, MAX_CRAFTS + 1);
-        while (affordable + 1 < high) {
-            int middle = affordable + (high - affordable) / 2;
-            if (resolveAgainst(recipeId, middle, available, unreached).complete()) {
-                affordable = middle;
-            } else {
-                high = middle;
-            }
-        }
-        return affordable;
+    /** {@code crafts} runs of {@code recipeId} from {@code stock}, which the walk copies and never spends. */
+    Resolution resolveAgainst(String recipeId, int crafts, Map<String, Integer> stock, Set<String> unreached) {
+        return resolve(recipeId, crafts, new Walk(new LinkedHashMap<>(stock), null, unreached));
     }
 
     /**
@@ -173,8 +149,8 @@ public final class Resolver {
      * item that cannot be crafted even once, from the whole inventory, with no ancestors to forbid a
      * recipe, cannot be crafted in a narrower place either.
      *
-     * <p><b>Reachability</b> (see {@link Reach}), worked out once when the memo is made, starts the unmakeable
-     * items off with everything the inventory cannot lead to. Every live resolve skips the same items without
+     * <p><b>Reachability</b> (see {@link Reach}), worked out once when the {@link Planning} is made, starts the unmakeable
+     * items off with everything the inventory cannot lead to. Every {@link Planning#plan} skips the same items without
      * a memo (#73); what the memo adds is the probes below.
      *
      * <p><b>A probe</b> catches the rest, an item that is reached but short on quantity. It is a search of
@@ -187,18 +163,18 @@ public final class Resolver {
      * the probe, which has no surplus, drew the other and failed. Ready is a list for a player to pick
      * from and a click still resolves live, so the cost of that is a recipe missing from the list.
      *
-     * <p>Valid for one pass: the Lock source is asked through the pass's own cache, and a memo carried to
-     * a pass with another inventory would be wrong. Fill never has one.
+     * <p>Valid for one {@link Planning}: it holds that Planning's stock, which it never changes, and the Lock
+     * answers are the Planning's. Only a Ready pass keeps one; Fill never has one.
      */
-    public static final class Memo {
+    static final class Memo {
 
         private final Map<String, Integer> stock;
         private final Set<String> unmakeable = new HashSet<>();
         private final Set<String> probed = new HashSet<>();
 
-        private Memo(ItemBag snapshot, AssemblingRecipeSet recipes) {
-            this.stock = new LinkedHashMap<>(snapshot.asMap());
-            unmakeable.addAll(recipes.reach().unreachableFrom(stock.keySet()));
+        Memo(Map<String, Integer> stock, Set<String> unreached) {
+            this.stock = stock;
+            unmakeable.addAll(unreached);
         }
 
     }
