@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- The Crafting Plan gives the right reason an item is Locked when a recolouring recipe also makes it: the reason of the recipe that Locked it, not of the first recipe listed for the item.
+
 ## 0.10.6
 
 - Clicking a recipe you cannot make that recolours an item from any colour, such as Refined Storage's devices, no longer stalls the server, nor does keeping its Crafting Plan open. The plan names the item and the dye you are missing, not a chain of dyes. (#73)

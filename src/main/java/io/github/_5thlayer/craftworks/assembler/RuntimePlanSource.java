@@ -4,9 +4,7 @@
 package io.github._5thlayer.craftworks.assembler;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
@@ -16,7 +14,6 @@ import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.api.LockHooks;
 import io.github._5thlayer.craftworks.compat.researchd.ResearchdLocks;
 import io.github._5thlayer.craftworks.planner.AssemblingRecipe;
-import io.github._5thlayer.craftworks.planner.AssemblingRecipeSet;
 import io.github._5thlayer.craftworks.planner.CraftingPlan;
 import io.github._5thlayer.craftworks.planner.ItemAmount;
 import io.github._5thlayer.craftworks.planner.ItemBag;
@@ -56,7 +53,7 @@ public final class RuntimePlanSource implements PlanSource {
                 : PlanPreview.toCraft(plan, resolution.toCraft(), PersonalAssembler.madeBy(player));
         PlanDisplay display = new PlanDisplay(recipe, resolution.rawCost(), toCraft,
                 resolution.missing(), resolution.locked(),
-                reasonsByItem(player, recipe, resolution.locked(), locks.reasons()), resolution.complete());
+                resolution.lockReasons(locks.reasons()), resolution.complete());
         return new ResolvedPlan(display, plan);
     }
 
@@ -105,28 +102,6 @@ public final class RuntimePlanSource implements PlanSource {
     private static Function<String, Optional<Locks.Lock<Component>>> reasoned(
             Function<Identifier, Optional<LockHooks.Lock>> lock) {
         return recipe -> lock.apply(Identifier.parse(recipe)).map(answer -> new Locks.Lock<>(answer.reason()));
-    }
-
-    /**
-     * Each Locked item's reason, by the recipe the Resolver found Locked for it: the root when the root
-     * is Locked, otherwise the item's first route, which is the one the Resolver asks.
-     */
-    private static Map<String, Component> reasonsByItem(ServerPlayer player, Identifier recipe,
-            List<ItemAmount> locked, Map<String, Component> reasons) {
-        Map<String, Component> byItem = new LinkedHashMap<>();
-        if (reasons.isEmpty()) return byItem;
-        AssemblingRecipeSet recipes = RuntimeAssemblingRecipes.recipes(player.level());
-        AssemblingRecipe root = recipes.byId(recipe.toString());
-        for (ItemAmount amount : locked) {
-            String item = amount.item();
-            Component reason = root != null && root.result().item().equals(item) ? reasons.get(root.id()) : null;
-            if (reason == null) {
-                List<AssemblingRecipe> routes = recipes.routes(item);
-                if (!routes.isEmpty()) reason = reasons.get(routes.get(0).id());
-            }
-            if (reason != null) byItem.put(item, reason);
-        }
-        return byItem;
     }
 
     /**

@@ -4,6 +4,7 @@
 package io.github._5thlayer.craftworks.planner;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -120,7 +121,7 @@ public final class Resolver {
         }
         ItemAmount result = root.result();
         if (locked.test(root.id())) {
-            walk.add(LOCKED, result.item(), scaled(result.count(), crafts));
+            walk.addLocked(result.item(), scaled(result.count(), crafts), root.id());
             return walk.finish();
         }
         if (!walk.craft(root, crafts, List.of())) {
@@ -210,8 +211,17 @@ public final class Resolver {
     /** Held items live in a map of their own: see {@link Walk#available}. */
     private static final int AVAILABLE = 5;
 
-    /** One change to a bag, kept so a route abandoned can be put back: positive added, negative removed. */
-    private record Undo(int bag, String item, int amount) {
+    /**
+     * One change to a bag, kept so a route abandoned can be put back: positive added, negative removed.
+     *
+     * <p>{@code lockedBy} is set on a Locked add that first named, in {@link Walk#lockedBy}, a recipe that
+     * Locked its item, so putting the add back takes that recipe back too; null everywhere else.
+     */
+    private record Undo(int bag, String item, int amount, String lockedBy) {
+
+        private Undo(int bag, String item, int amount) {
+            this(bag, item, amount, null);
+        }
     }
 
     /**
@@ -235,6 +245,8 @@ public final class Resolver {
         private final ItemBag[] bags = {new ItemBag(), new ItemBag(), new ItemBag(), new ItemBag(), new ItemBag()};
         private final List<CraftStep> steps = new ArrayList<>();
         private final List<Undo> journal = new ArrayList<>();
+        /** The recipes that Locked each Locked item, in the order they were met: see {@link Resolution#lockedBy}. */
+        private final Map<String, List<String>> lockedBy = new LinkedHashMap<>();
         private int openMarks;
         /** Net Missing and Locked adds so far: what {@link Mark#clean} compares. */
         private int failures;
@@ -261,6 +273,17 @@ public final class Resolver {
             if (openMarks > 0) journal.add(new Undo(bag, item, count));
         }
 
+        /** Adds to the Locked bag and remembers {@code recipe} as what Locked {@code item}, both put back by an undo. */
+        private void addLocked(String item, int count, String recipe) {
+            if (count <= 0) return;
+            List<String> recipes = lockedBy.computeIfAbsent(item, key -> new ArrayList<>());
+            boolean fresh = !recipes.contains(recipe);
+            if (fresh) recipes.add(recipe);
+            bags[LOCKED].add(item, count);
+            failures++;
+            if (openMarks > 0) journal.add(new Undo(LOCKED, item, count, fresh ? recipe : null));
+        }
+
         private int count(int bag, String item) {
             return bag == AVAILABLE ? available.getOrDefault(item, 0) : bags[bag].count(item);
         }
@@ -284,6 +307,11 @@ public final class Resolver {
             if (change.amount() > 0) {
                 bags[change.bag()].remove(change.item(), change.amount());
                 if (change.bag() == MISSING || change.bag() == LOCKED) failures--;
+                if (change.lockedBy() != null) {
+                    List<String> recipes = lockedBy.get(change.item());
+                    recipes.remove(change.lockedBy());
+                    if (recipes.isEmpty()) lockedBy.remove(change.item());
+                }
             } else if (change.bag() == AVAILABLE) {
                 available.put(change.item(), available.get(change.item()) - change.amount());
             } else {
@@ -387,11 +415,15 @@ public final class Resolver {
             // that only converts between what this ingredient accepts is not the errand, so it is passed over.
             AssemblingRecipe maker = null;
             String blocked = null;
+            AssemblingRecipe lockedRoute = null;
             for (String item : ingredient.items()) {
                 AssemblingRecipe route = topRoute(item, ingredient);
                 if (route == null) continue;
                 if (Resolver.this.locked.test(route.id())) {
-                    if (blocked == null) blocked = item;
+                    if (blocked == null) {
+                        blocked = item;
+                        lockedRoute = route;
+                    }
                     continue;
                 }
                 // A cycle. The set is whatever a pack author loaded, so the Resolver must be the
@@ -404,7 +436,7 @@ public final class Resolver {
                 // Locked beats Missing when anything could have made it: telling a player to go
                 // gathering for an item that only needs unlocking is the worse of the two mistakes.
                 if (blocked != null) {
-                    add(LOCKED, blocked, owed);
+                    addLocked(blocked, owed, lockedRoute.id());
                 } else {
                     add(MISSING, ingredient.preferred(), owed);
                 }
@@ -564,7 +596,7 @@ public final class Resolver {
 
         private Resolution finish() {
             return new Resolution(steps, bags[RAW_COST].amounts(), bags[TO_CRAFT].amounts(), bags[MISSING].amounts(),
-                    bags[LOCKED].amounts());
+                    bags[LOCKED].amounts(), lockedBy);
         }
     }
 
@@ -583,13 +615,18 @@ public final class Resolver {
      * <p>{@code rawCost} is everything the plan takes from the player's items: leaves and any
      * intermediate the player already had, since both leave the inventory when the plan is queued and
      * both come back on a cancel. {@code toCraft} is every step's output, the root's included.
+     *
+     * <p>{@code lockedBy} names, for each Locked item, the recipes that Locked it in the order the walk
+     * met them: one item can be Locked by different recipes, since the route reported depends on the
+     * ingredient being filled. A route the walk abandoned leaves nothing in it.
      */
     public record Resolution(
             List<CraftStep> steps,
             List<ItemAmount> rawCost,
             List<ItemAmount> toCraft,
             List<ItemAmount> missing,
-            List<ItemAmount> locked) {
+            List<ItemAmount> locked,
+            Map<String, List<String>> lockedBy) {
 
         public Resolution {
             steps = List.copyOf(steps);
@@ -597,6 +634,26 @@ public final class Resolver {
             toCraft = List.copyOf(toCraft);
             missing = List.copyOf(missing);
             locked = List.copyOf(locked);
+            Map<String, List<String>> copy = new LinkedHashMap<>();
+            lockedBy.forEach((item, recipes) -> copy.put(item, List.copyOf(recipes)));
+            lockedBy = Collections.unmodifiableMap(copy);
+        }
+
+        /**
+         * Each Locked item's reason, from the first of the recipes that Locked it which has one in
+         * {@code byRecipe}; an item none of them has a reason for is absent. In the order of {@link #locked}.
+         */
+        public <R> Map<String, R> lockReasons(Map<String, R> byRecipe) {
+            Map<String, R> byItem = new LinkedHashMap<>();
+            for (ItemAmount amount : locked) {
+                for (String recipe : lockedBy.getOrDefault(amount.item(), List.of())) {
+                    R reason = byRecipe.get(recipe);
+                    if (reason == null) continue;
+                    byItem.put(amount.item(), reason);
+                    break;
+                }
+            }
+            return byItem;
         }
 
         /** Whether the plan can be queued: nothing Missing and nothing Locked. */
