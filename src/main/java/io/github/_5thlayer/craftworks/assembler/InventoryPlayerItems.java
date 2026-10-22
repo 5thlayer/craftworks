@@ -3,6 +3,7 @@
 
 package io.github._5thlayer.craftworks.assembler;
 
+import io.github._5thlayer.craftworks.planner.ItemBag;
 import io.github._5thlayer.craftworks.planner.PlayerItems;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.world.entity.player.Inventory;
@@ -20,7 +21,8 @@ import net.minecraft.world.item.ItemStack;
  * delivered stack from it.
  *
  * <p>Only the main inventory and the hotbar count. Armour and the offhand are not storage the player
- * thinks of as stock, and taking a cost out of somebody's boots would be a surprise.
+ * thinks of as stock, and taking a cost out of somebody's boots would be a surprise. {@link #stock} walks
+ * the same slots as the rest.
  */
 public final class InventoryPlayerItems implements PlayerItems {
 
@@ -37,6 +39,18 @@ public final class InventoryPlayerItems implements PlayerItems {
     /** The item a key names, resolved once for a whole pass over the slots. */
     private ItemStack prototypeOf(String item) {
         return ItemKeys.toStack(item, 1, registries());
+    }
+
+    @Override
+    public ItemBag stock() {
+        ItemBag bag = new ItemBag();
+        for (ItemStack stack : inventory.getNonEquipmentItems()) {
+            if (stack.isEmpty()) continue;
+            // A stack the key format cannot name is stock nothing can plan against, so it is not stock.
+            String key = ItemKeys.of(stack, registries());
+            if (key != null) bag.add(key, stack.getCount());
+        }
+        return bag;
     }
 
     @Override

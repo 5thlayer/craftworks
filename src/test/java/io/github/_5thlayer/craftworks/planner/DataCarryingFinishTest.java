@@ -44,7 +44,7 @@ class DataCarryingFinishTest {
     private static PlanQueue queued(AssemblingRecipe recipe, int crafts, TestPlayerItems items) {
         Resolver resolver = new Resolver(AssemblingRecipeSet.builder().add(recipe).build(), Set.of()::contains);
         PlanQueue queue = new PlanQueue();
-        assertTrue(queue.enqueue(resolver.resolve(recipe.id(), crafts, ItemBag.of(items.contents()))
+        assertTrue(queue.enqueue(resolver.resolve(recipe.id(), crafts, items.stock())
                 .toPlan(UUID.randomUUID(), recipe.result().item(), crafts), items));
         return queue;
     }
@@ -104,7 +104,7 @@ class DataCarryingFinishTest {
         Resolver resolver = new Resolver(AssemblingRecipeSet.builder().add(toAdvanced).add(toElite).build(), Set.of()::contains);
         TestPlayerItems items = stocked(have("basic[full=1]", 1, "gold", 2));
         PlanQueue queue = new PlanQueue();
-        assertTrue(queue.enqueue(resolver.resolve("to_elite", 1, ItemBag.of(items.contents()))
+        assertTrue(queue.enqueue(resolver.resolve("to_elite", 1, items.stock())
                 .toPlan(UUID.randomUUID(), "elite", 1), items));
         List<List<ItemAmount>> asked = new ArrayList<>();
         CraftResult carrying = (recipe, consumed, planned) -> {

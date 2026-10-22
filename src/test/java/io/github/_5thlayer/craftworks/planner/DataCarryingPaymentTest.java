@@ -98,7 +98,7 @@ class DataCarryingPaymentTest {
     @Test
     void queueingTakesTheExactKeysAndACancelReturnsThemExactly() {
         TestPlayerItems items = stocked(have("diamond", 2, PRISTINE, 1, NAMED, 2));
-        Resolver.Resolution resolution = resolverOf(upgrade(true)).resolve("upgrade", 2, bagOf(items));
+        Resolver.Resolution resolution = resolverOf(upgrade(true)).resolve("upgrade", 2, items.stock());
         UUID id = UUID.randomUUID();
         PlanQueue queue = new PlanQueue();
 
@@ -115,11 +115,11 @@ class DataCarryingPaymentTest {
         Resolver resolver = resolverOf(upgrade(true));
         UUID id = UUID.randomUUID();
         PlanQueue queue = new PlanQueue();
-        assertTrue(queue.enqueue(resolver.resolve("upgrade", 2, bagOf(items)).toPlan(id, "diamond_sword", 2), items));
+        assertTrue(queue.enqueue(resolver.resolve("upgrade", 2, items.stock()).toPlan(id, "diamond_sword", 2), items));
         assertTrue(items.contents().isEmpty());
 
         PlanQueue.CancelResult result = queue.cancel(id, 1, items, (recipe, crafts, planId) ->
-                Optional.of(resolver.resolve(recipe, crafts, bagOf(items)).toPlan(planId, "diamond_sword", crafts)));
+                Optional.of(resolver.resolve(recipe, crafts, items.stock()).toPlan(planId, "diamond_sword", crafts)));
 
         // The refund held a Pristine and a named sword; the one craft left takes the Pristine one.
         assertTrue(result.cancelled());
@@ -131,7 +131,7 @@ class DataCarryingPaymentTest {
     void aQueueHoldingKeysWithDataRoundTripsThroughTheCodecs() {
         TestPlayerItems items = stocked(have("diamond", 1, NAMED, 1));
         PlanQueue queue = new PlanQueue();
-        assertTrue(queue.enqueue(plan(true, bagOf(items)).toPlan(UUID.randomUUID(), "diamond_sword", 1), items));
+        assertTrue(queue.enqueue(plan(true, items.stock()).toPlan(UUID.randomUUID(), "diamond_sword", 1), items));
 
         JsonElement json = AssemblerCodecs.QUEUE.encodeStart(JsonOps.INSTANCE, queue).getOrThrow();
         PlanQueue back = AssemblerCodecs.QUEUE.parse(JsonOps.INSTANCE, json).getOrThrow();
@@ -144,15 +144,11 @@ class DataCarryingPaymentTest {
     void aQueuedPlanRunsToTheEndOnItsDataKeys() {
         TestPlayerItems items = stocked(have("diamond", 1, NAMED, 1));
         PlanQueue queue = new PlanQueue();
-        assertTrue(queue.enqueue(plan(true, bagOf(items)).toPlan(UUID.randomUUID(), "diamond_sword", 1), items));
+        assertTrue(queue.enqueue(plan(true, items.stock()).toPlan(UUID.randomUUID(), "diamond_sword", 1), items));
 
         for (int tick = 0; tick < 100 && !queue.isEmpty(); tick++) queue.tick(items);
 
         assertEquals(Map.of("diamond_sword", 1), items.contents());
-    }
-
-    private static ItemBag bagOf(TestPlayerItems items) {
-        return ItemBag.of(items.contents());
     }
 
     @Test
@@ -180,7 +176,7 @@ class DataCarryingPaymentTest {
     void aQueueOfSeveralCraftsHoldingKeysWithDataRoundTripsWithItsPerCraftLayout() {
         TestPlayerItems items = stocked(have("diamond", 3, NAMED, 1, OTHER, 1, PRISTINE, 1));
         PlanQueue queue = new PlanQueue();
-        assertTrue(queue.enqueue(resolverOf(upgrade(true)).resolve("upgrade", 3, bagOf(items))
+        assertTrue(queue.enqueue(resolverOf(upgrade(true)).resolve("upgrade", 3, items.stock())
                 .toPlan(UUID.randomUUID(), "diamond_sword", 3), items));
         assertFalse(queue.entries().get(0).plan().steps().get(0).perCraft().isEmpty());
 
@@ -198,10 +194,10 @@ class DataCarryingPaymentTest {
         Resolver resolver = resolverOf(upgrade(true));
         UUID id = UUID.randomUUID();
         PlanQueue queue = new PlanQueue();
-        assertTrue(queue.enqueue(resolver.resolve("upgrade", 3, bagOf(items)).toPlan(id, "diamond_sword", 3), items));
+        assertTrue(queue.enqueue(resolver.resolve("upgrade", 3, items.stock()).toPlan(id, "diamond_sword", 3), items));
 
         PlanQueue.CancelResult result = queue.cancel(id, 1, items, (recipe, crafts, planId) ->
-                Optional.of(resolver.resolve(recipe, crafts, bagOf(items)).toPlan(planId, "diamond_sword", crafts)));
+                Optional.of(resolver.resolve(recipe, crafts, items.stock()).toPlan(planId, "diamond_sword", crafts)));
 
         assertTrue(result.cancelled());
         assertEquals(2, queue.entries().get(0).plan().amount());

@@ -4,13 +4,22 @@
 package io.github._5thlayer.craftworks.planner;
 
 /**
- * The player's items, as much of them as the Plan queue needs: a multiset that can also be full.
+ * The player's items, as much of them as the Plan queue and the Resolver need: a multiset that can also be
+ * full.
  *
  * <p>Being full is the whole reason this is an interface rather than a map. "A finished craft that
  * cannot fit pauses the queue" is a rule about slots, and a rule about slots cannot be asserted
  * against something that always has room.
  */
 public interface PlayerItems {
+
+    /**
+     * Everything held, by item, as the Resolver counts it.
+     *
+     * <p>The stock a plan is resolved against is exactly what this PlayerItems will spend from, so a
+     * plan that resolves complete is one {@link #take} can pay for.
+     */
+    ItemBag stock();
 
     /** How many of an item are held. */
     int count(String item);

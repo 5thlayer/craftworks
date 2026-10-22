@@ -34,6 +34,11 @@ final class TestPlayerItems implements PlayerItems {
     }
 
     @Override
+    public ItemBag stock() {
+        return ItemBag.of(items);
+    }
+
+    @Override
     public int count(String item) {
         return items.getOrDefault(item, 0);
     }

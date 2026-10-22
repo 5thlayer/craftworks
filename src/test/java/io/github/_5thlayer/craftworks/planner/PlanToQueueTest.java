@@ -118,7 +118,7 @@ class PlanToQueueTest {
         for (int tick = 0; tick < 12; tick++) queue.tick(items);
 
         PlanQueue.Replanner replan = (recipe, crafts, planId) -> {
-            Resolver.Resolution rest = RESOLVER.resolve(recipe, crafts, inventoryOf(items));
+            Resolver.Resolution rest = RESOLVER.resolve(recipe, crafts, items.stock());
             return rest.complete() ? Optional.of(rest.toPlan(planId, "inserter", crafts)) : Optional.empty();
         };
         assertTrue(queue.cancel(id, 1, items, replan).cancelled());
@@ -127,9 +127,5 @@ class PlanToQueueTest {
         runToCompletion(queue, items);
 
         assertEquals(2, items.count("inserter"));
-    }
-
-    private static ItemBag inventoryOf(TestPlayerItems items) {
-        return ItemBag.of(items.contents());
     }
 }

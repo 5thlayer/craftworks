@@ -18,7 +18,6 @@ import io.github._5thlayer.craftworks.planner.AssemblingRecipe;
 import io.github._5thlayer.craftworks.planner.AssemblingRecipeSet;
 import io.github._5thlayer.craftworks.planner.CraftingPlan;
 import io.github._5thlayer.craftworks.planner.ItemAmount;
-import io.github._5thlayer.craftworks.planner.ItemBag;
 import io.github._5thlayer.craftworks.planner.Locks;
 import io.github._5thlayer.craftworks.planner.PlanPreview;
 import io.github._5thlayer.craftworks.planner.Planning;
@@ -29,7 +28,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
 
 /**
  * Planning against one player's stock and Lock source as they are right now, on a running server.
@@ -66,7 +64,8 @@ public final class PlayerPlanning {
         this.player = player;
         this.recipes = RuntimeAssemblingRecipes.recipes(player.level());
         this.locks = locksFor(player);
-        this.planning = new Resolver(recipes, guarded(locks)).planning(inventoryOf(player));
+        this.planning = new Resolver(recipes, guarded(locks))
+                .planning(new InventoryPlayerItems(player.getInventory()).stock());
     }
 
     /** Reads the player's recipes, Lock source and inventory, now. */
@@ -170,23 +169,5 @@ public final class PlayerPlanning {
     private String rootItemOf(Identifier recipe) {
         AssemblingRecipe root = recipes.byId(recipe.toString());
         return root == null ? recipe.toString() : root.result().item();
-    }
-
-    /**
-     * The player's stock as the Resolver counts it: the same thirty-six slots
-     * {@link InventoryPlayerItems} will take the cost from.
-     *
-     * <p>They have to be the same slots. A plan resolved against armour the queue then cannot spend
-     * would resolve complete and then be refused when queued.
-     */
-    private static ItemBag inventoryOf(ServerPlayer player) {
-        ItemBag bag = new ItemBag();
-        for (ItemStack stack : player.getInventory().getNonEquipmentItems()) {
-            if (stack.isEmpty()) continue;
-            // A stack the key format cannot name is stock nothing can plan against, so it is not stock.
-            String key = ItemKeys.of(stack, player.registryAccess());
-            if (key != null) bag.add(key, stack.getCount());
-        }
-        return bag;
     }
 }
