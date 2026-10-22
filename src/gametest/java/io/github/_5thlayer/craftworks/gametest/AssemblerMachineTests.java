@@ -10,8 +10,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import com.mojang.authlib.GameProfile;
@@ -90,6 +92,8 @@ final class AssemblerMachineTests {
 
     /** Only players carrying this tag are locked out of the sapling by the tests' hook. */
     private static final String LOCKED = "craftworks.gametest.assembler_locked";
+    /** How often the Lock source was asked about each recipe, by the hook that only counts. */
+    private static final Map<Identifier, Integer> LOCK_ASKS = new ConcurrentHashMap<>();
 
     /** The origin stands at the middle of the platform's floor, so the 3x2x3 footprint fits whichever way it faces. */
     static final BlockPos ORIGIN = new BlockPos(4, 1, 4);
@@ -103,6 +107,11 @@ final class AssemblerMachineTests {
 
     static void register(CraftworksGameTests.Registrar tests) {
         LockHooks.register((player, recipe) -> player.entityTags().contains(LOCKED) && recipe.equals(SAPLING));
+        // Hooks are never unregistered, so this one only listens: it locks nothing.
+        LockHooks.register((player, recipe) -> {
+            LOCK_ASKS.merge(recipe, 1, Integer::sum);
+            return false;
+        });
         // Oak sapling: 10 ticks, so 20, 14 and 8 at 0.5, 0.75 and 1.25; 37.5, 75 and 187.5 FE a tick make 750, 1000 and 1500.
         tests.test("an_assembler_1_crafts_its_held_recipe_in_the_recipe_time_over_its_speed", 20,
                 helper -> craftsInTime(helper, AssemblerTier.ONE, 20, 750));
@@ -116,6 +125,8 @@ final class AssemblerMachineTests {
         tests.test("fill_recipe_with_a_recipe_locked_for_that_player_is_refused", 20, AssemblerMachineTests::lockedIsRefused);
         tests.test("a_held_recipe_is_never_checked_against_the_lock_again", 20, AssemblerMachineTests::heldIsNeverRechecked);
         tests.test("fill_recipe_refuses_more_than_five_ingredients_and_remainders_that_dont_fit", 20, AssemblerMachineTests::cannotRun);
+        tests.test("fill_refusal_a_recipe_wrong_in_several_ways_is_refused_by_category_first", 20, AssemblerMachineTests::categoryFirst);
+        tests.test("fill_refusal_a_recipe_the_assembler_can_never_run_is_refused_without_asking_the_lock", 20, AssemblerMachineTests::refusedBeforeTheLock);
         tests.test("an_assembler_holds_and_crafts_a_recipe_the_player_cannot_hand_craft", 20, AssemblerMachineTests::machineOnly);
         tests.test("breaking_an_assembler_drops_its_contents_and_the_item_keeps_its_held_recipe", 20, AssemblerMachineTests::breaking);
         tests.test("a_cake_craft_puts_its_buckets_in_the_outputs", 20, AssemblerMachineTests::cake);
@@ -242,6 +253,32 @@ final class AssemblerMachineTests {
         helper.assertTrue(assembler.player().heard.containsAll(List.of("craftworks.assembler.refused.too_many_ingredients",
                 "craftworks.assembler.refused.remainders_dont_fit", "craftworks.assembler.refused.not_assembling")),
                 "the player was told " + assembler.player().heard);
+        helper.succeed();
+    }
+
+    /** Six ingredients is too many for any tier, but a category the tier does not hold is the refusal told. */
+    private static void categoryFirst(GameTestHelper helper) {
+        withCategories(AssemblerTier.ONE, List.of(AssemblingCategory.CRAFTING_WITH_FLUID), () -> {
+            Placed assembler = place(helper, AssemblerTier.ONE);
+            HoldVerdict verdict = request(assembler, SIX_INGREDIENTS);
+            helper.assertTrue(verdict == HoldVerdict.WRONG_CATEGORY, "a crafting recipe of six ingredients on a tier without crafting was " + verdict);
+            helper.assertTrue(assembler.machine().heldRecipe().isEmpty(), "a refused recipe was held");
+        });
+        helper.succeed();
+    }
+
+    /** The Lock source is asked once a recipe could run at all, and not before: the hook that counts is asked for the sapling, never for these. */
+    private static void refusedBeforeTheLock(GameTestHelper helper) {
+        Placed assembler = place(helper, AssemblerTier.TWO);
+        LOCK_ASKS.clear();
+        HoldVerdict many = request(assembler, SIX_INGREDIENTS);
+        HoldVerdict remainders = request(assembler, TWO_REMAINDERS);
+        helper.assertTrue(many == HoldVerdict.TOO_MANY_INGREDIENTS, "six ingredients was " + many);
+        helper.assertTrue(remainders == HoldVerdict.REMAINDERS_DONT_FIT, "a bucket and a bottle left behind was " + remainders);
+        helper.assertTrue(!LOCK_ASKS.containsKey(SIX_INGREDIENTS) && !LOCK_ASKS.containsKey(TWO_REMAINDERS),
+                "the Lock source was asked about a recipe the Assembler can never run: " + LOCK_ASKS);
+        helper.assertTrue(request(assembler, SAPLING) == HoldVerdict.HELD, "a recipe it can run was refused");
+        helper.assertTrue(LOCK_ASKS.getOrDefault(SAPLING, 0) == 1, "the Lock source was asked about a recipe it could run " + LOCK_ASKS + " times");
         helper.succeed();
     }
 

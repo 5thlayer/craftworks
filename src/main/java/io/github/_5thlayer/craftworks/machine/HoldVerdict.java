@@ -8,9 +8,9 @@ package io.github._5thlayer.craftworks.machine;
  *
  * <p>One rule and one message rather than a button that silently does nothing. A recipe the Assembler
  * could never run is refused before its Lock is asked, so it is never reported as merely Locked. Locked
- * is asked here, once, of the player who presses (ADR-0013), and never again once the recipe is held.
+ * is asked last, once, of the player who presses (ADR-0013), and never again once the recipe is held.
  *
- * <p>Pure: the menu asks the world and hands the answers in.
+ * <p>The refusals are declared in the order they are checked: the first that applies is the one told.
  */
 public enum HoldVerdict {
     HELD(null),
@@ -33,79 +33,6 @@ public enum HoldVerdict {
 
     HoldVerdict(String refusal) {
         this.refusal = refusal;
-    }
-
-    /**
-     * What the world answered about a recipe, one flag for each refusal: every one true is a recipe that
-     * passes, and {@link #locked} is the Lock source's answer. Read with a name, never by position:
-     * {@code Checks.passing().fitsSlots(false)} is a recipe that fails only that.
-     */
-    public record Checks(boolean resolves, boolean categoryHeld, boolean fluidsHaveBoxes, boolean fluidVolumeFits,
-            boolean fitsSlots, boolean remaindersFit, boolean locked) {
-
-        /** A recipe that resolves, is in a category the tier holds, fits its fluids and the slots, and is not Locked. */
-        public static Checks passing() {
-            return new Checks(true, true, true, true, true, true, false);
-        }
-
-        public Checks resolves(boolean resolves) {
-            return new Checks(resolves, categoryHeld, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
-                    remaindersFit, locked);
-        }
-
-        public Checks categoryHeld(boolean categoryHeld) {
-            return new Checks(resolves, categoryHeld, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
-                    remaindersFit, locked);
-        }
-
-        /** Whether the Assembler has a box for each of the recipe's fluid ingredients and each of its fluid results. */
-        public Checks fluidsHaveBoxes(boolean fluidsHaveBoxes) {
-            return new Checks(resolves, categoryHeld, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
-                    remaindersFit, locked);
-        }
-
-        public Checks fluidVolumeFits(boolean fluidVolumeFits) {
-            return new Checks(resolves, categoryHeld, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
-                    remaindersFit, locked);
-        }
-
-        public Checks fitsSlots(boolean fitsSlots) {
-            return new Checks(resolves, categoryHeld, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
-                    remaindersFit, locked);
-        }
-
-        public Checks remaindersFit(boolean remaindersFit) {
-            return new Checks(resolves, categoryHeld, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
-                    remaindersFit, locked);
-        }
-
-        public Checks locked(boolean locked) {
-            return new Checks(resolves, categoryHeld, fluidsHaveBoxes, fluidVolumeFits, fitsSlots,
-                    remaindersFit, locked);
-        }
-    }
-
-    /** The first refusal that applies, in the order of this enum, or {@link #HELD}. */
-    public static HoldVerdict of(Checks checks) {
-        if (!checks.resolves()) {
-            return NOT_ASSEMBLING;
-        }
-        if (!checks.categoryHeld()) {
-            return WRONG_CATEGORY;
-        }
-        if (!checks.fluidsHaveBoxes()) {
-            return TOO_MANY_FLUIDS;
-        }
-        if (!checks.fluidVolumeFits()) {
-            return FLUID_TOO_LARGE;
-        }
-        if (!checks.fitsSlots()) {
-            return TOO_MANY_INGREDIENTS;
-        }
-        if (!checks.remaindersFit()) {
-            return REMAINDERS_DONT_FIT;
-        }
-        return checks.locked() ? LOCKED : HELD;
     }
 
     public boolean held() {

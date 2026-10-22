@@ -48,24 +48,9 @@ public final class HeldRecipes {
         return Optional.of(assembling);
     }
 
-    /** Whether the recipe has no more fluid ingredients than the layout has input boxes and no more fluid results than output boxes. */
-    public static boolean fluidsHaveBoxes(FluidLayout layout, AssemblingRecipe recipe) {
-        return recipe.fluidIngredients().size() <= layout.fluidInputs() && recipe.fluidResults().size() <= layout.fluidOutputs();
-    }
-
-    /** Whether one craft's fluid fits a box, in or out: at most {@link FluidBoxes#VOLUME} of each fluid. */
-    public static boolean fluidVolumeFits(AssemblingRecipe recipe) {
-        return recipe.fluidIngredients().stream().allMatch(fluid -> FluidBoxes.fits(fluid.amount()))
-                && recipe.fluidResults().stream().allMatch(fluid -> FluidBoxes.fits(fluid.amount()));
-    }
-
     /** Whether the tier's config lists the recipe's category. */
     public static boolean takesCategory(AssemblerTier tier, AssemblingRecipe recipe) {
         return CraftworksConfig.categories(tier).contains(recipe.category());
-    }
-
-    public static boolean fitsSlots(AssemblingRecipe recipe) {
-        return recipe.ingredients().size() <= AssemblerSlots.INPUTS;
     }
 
     /**
@@ -75,7 +60,7 @@ public final class HeldRecipes {
      * recipe held never jams on whichever one is put in. Not cheap: an Assembler asks once per recipe
      * instance, through {@link #canRun}.
      */
-    public static boolean remaindersFit(AssemblingRecipe recipe) {
+    private static boolean remaindersFit(AssemblingRecipe recipe) {
         ItemStackTemplate kind = null;
         int owed = 0;
         for (ItemStackTemplate extra : recipe.extraResults()) {
@@ -104,26 +89,51 @@ public final class HeldRecipes {
     }
 
     /**
-     * Whether an Assembler of any tier can run this recipe: its fluids fit the boxes of {@link
-     * FluidLayout#ASSEMBLER}, it fits the input slots, and its remainders fit. What a tier adds, its categories,
-     * is asked of the tier ({@link #takesCategory}).
+     * The first rule that keeps an Assembler of any tier from ever running this recipe, in the order of
+     * {@link HoldVerdict}, or empty when it can: it has no more fluid ingredients than the boxes of {@link
+     * FluidLayout#ASSEMBLER} have inputs and no more fluid results than outputs, no more of a fluid a craft
+     * than a box holds ({@link FluidBoxes#VOLUME}), no more distinct ingredients than the input slots, and
+     * remainders that fit. Each is asked only when the ones before it passed. What a tier adds, its
+     * categories, is asked of the tier ({@link #takesCategory}).
      */
-    public static boolean canRun(AssemblingRecipe recipe) {
-        return fluidsHaveBoxes(FluidLayout.ASSEMBLER, recipe) && fluidVolumeFits(recipe) && fitsSlots(recipe) && remaindersFit(recipe);
+    public static Optional<HoldVerdict> assemblerRefusal(AssemblingRecipe recipe) {
+        if (recipe.fluidIngredients().size() > FluidLayout.ASSEMBLER.fluidInputs()
+                || recipe.fluidResults().size() > FluidLayout.ASSEMBLER.fluidOutputs()) {
+            return Optional.of(HoldVerdict.TOO_MANY_FLUIDS);
+        }
+        if (!recipe.fluidIngredients().stream().allMatch(fluid -> FluidBoxes.fits(fluid.amount()))
+                || !recipe.fluidResults().stream().allMatch(fluid -> FluidBoxes.fits(fluid.amount()))) {
+            return Optional.of(HoldVerdict.FLUID_TOO_LARGE);
+        }
+        if (recipe.ingredients().size() > AssemblerSlots.INPUTS) {
+            return Optional.of(HoldVerdict.TOO_MANY_INGREDIENTS);
+        }
+        return remaindersFit(recipe) ? Optional.empty() : Optional.of(HoldVerdict.REMAINDERS_DONT_FIT);
     }
 
+    /** Whether an Assembler of any tier can run this recipe: it has no {@link #assemblerRefusal}. */
+    public static boolean canRun(AssemblingRecipe recipe) {
+        return assemblerRefusal(recipe).isEmpty();
+    }
 
-    /** What Fill Recipe on an open Assembler of this tier would answer for this player: the Lock source is asked here, and only here. */
+    /**
+     * What Fill Recipe on an open Assembler of this tier would answer for this player. The Lock source is
+     * asked here, and only here, and only when every rule before it passed.
+     */
     public static HoldVerdict verdict(ServerPlayer player, AssemblerTier tier, Identifier id) {
-        Optional<AssemblingRecipe> recipe = find(player.level(), id).map(RecipeHolder::value);
-        return HoldVerdict.of(recipe.map(found -> HoldVerdict.Checks.passing()
-                .categoryHeld(takesCategory(tier, found))
-                .fluidsHaveBoxes(fluidsHaveBoxes(FluidLayout.ASSEMBLER, found))
-                .fluidVolumeFits(fluidVolumeFits(found))
-                .fitsSlots(fitsSlots(found))
-                .remaindersFit(remaindersFit(found))
-                .locked(PlayerPlanning.lockedFor(player).test(id.toString())))
-                .orElse(HoldVerdict.Checks.passing().resolves(false)));
+        Optional<AssemblingRecipe> found = find(player.level(), id).map(RecipeHolder::value);
+        if (found.isEmpty()) {
+            return HoldVerdict.NOT_ASSEMBLING;
+        }
+        AssemblingRecipe recipe = found.get();
+        if (!takesCategory(tier, recipe)) {
+            return HoldVerdict.WRONG_CATEGORY;
+        }
+        Optional<HoldVerdict> refusal = assemblerRefusal(recipe);
+        if (refusal.isPresent()) {
+            return refusal.get();
+        }
+        return PlayerPlanning.lockedFor(player).test(id.toString()) ? HoldVerdict.LOCKED : HoldVerdict.HELD;
     }
 
     /** The recipe's name for a message: its product's, or else its id. */
