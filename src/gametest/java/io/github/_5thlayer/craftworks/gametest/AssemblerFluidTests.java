@@ -1028,7 +1028,7 @@ final class AssemblerFluidTests {
 
     // -- Fill Recipe ----------------------------------------------------------------------------
 
-    /** Under the default categories, all three on every tier: what a tier refuses is what no tier has the boxes for. */
+    /** Under the default categories, all four on every tier: what a tier refuses is what no tier has the boxes for. */
     private static void refusals(GameTestHelper helper) {
         for (AssemblerTier tier : AssemblerTier.values()) {
             Placed assembler = AssemblerMachineTests.place(helper, tier);

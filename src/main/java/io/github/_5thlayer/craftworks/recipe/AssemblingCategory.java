@@ -22,7 +22,8 @@ import com.mojang.serialization.DataResult;
 public enum AssemblingCategory {
     CRAFTING("crafting"),
     ADVANCED_CRAFTING("advanced-crafting"),
-    CRAFTING_WITH_FLUID("crafting-with-fluid");
+    CRAFTING_WITH_FLUID("crafting-with-fluid"),
+    BREWING("brewing");
 
     /**
      * The ids Craftworks 0.6 removed, with the category a recipe naming one should use: {@code chemistry} and
@@ -33,7 +34,7 @@ public enum AssemblingCategory {
             "oil-processing", CRAFTING_WITH_FLUID);
 
     /**
-     * Reads an id. An unknown one fails naming it and the three that are accepted; a removed one fails naming the
+     * Reads an id. An unknown one fails naming it and the four that are accepted; a removed one fails naming the
      * category to use instead.
      */
     public static final Codec<AssemblingCategory> CODEC = Codec.STRING.comapFlatMap(
@@ -57,12 +58,12 @@ public enum AssemblingCategory {
         return Arrays.stream(values()).filter(category -> category.id.equals(id)).findFirst();
     }
 
-    /** Whether a config entry names one of the three: what the tiers' {@code categories} accepts. */
+    /** Whether a config entry names one of the four: what the tiers' {@code categories} accepts. */
     public static boolean isId(Object value) {
         return value instanceof String id && byId(id).isPresent();
     }
 
-    /** The three ids, as the config's comment and an error name them. */
+    /** The four ids, as the config's comment and an error name them. */
     public static String ids() {
         return Arrays.stream(values()).map(AssemblingCategory::id).collect(Collectors.joining(", "));
     }

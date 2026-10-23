@@ -14,12 +14,12 @@ import com.mojang.serialization.JsonOps;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import org.junit.jupiter.api.Test;
 
-/** The three category names a recipe and the server config may write, and the tiers' defaults (#24). */
+/** The four category names a recipe and the server config may write, and the tiers' defaults (#24). */
 class AssemblingCategoryTest {
 
     @Test
-    void theThreeNamesReadAndNothingElseDoes() {
-        for (String name : List.of("crafting", "advanced-crafting", "crafting-with-fluid")) {
+    void theFourNamesReadAndNothingElseDoes() {
+        for (String name : List.of("crafting", "advanced-crafting", "crafting-with-fluid", "brewing")) {
             var read = AssemblingCategory.CODEC.parse(JsonOps.INSTANCE, new JsonPrimitive(name));
             assertEquals(name, read.result().orElseThrow().id());
         }
@@ -45,13 +45,14 @@ class AssemblingCategoryTest {
     void aCategoryNeverHeldIsStillUnknownRatherThanRemoved() {
         var read = AssemblingCategory.CODEC.parse(JsonOps.INSTANCE, new JsonPrimitive("refining"));
         assertTrue(read.isError());
-        assertEquals("Unknown category 'refining', expected one of crafting, advanced-crafting, crafting-with-fluid",
+        assertEquals("Unknown category 'refining', expected one of crafting, advanced-crafting, crafting-with-fluid, brewing",
                 read.error().orElseThrow().message());
     }
 
     @Test
-    void theConfigTakesOnlyTheThreeNames() {
+    void theConfigTakesOnlyTheFourNames() {
         assertTrue(AssemblingCategory.isId("crafting-with-fluid"));
+        assertTrue(AssemblingCategory.isId("brewing"));
         assertFalse(AssemblingCategory.isId("chemistry"));
         assertFalse(AssemblingCategory.isId("oil-processing"));
         assertFalse(AssemblingCategory.isId("advanced_crafting"));
@@ -60,9 +61,9 @@ class AssemblingCategoryTest {
     }
 
     @Test
-    void everyTierHoldsAllThreeCategoriesByDefault() {
+    void everyTierHoldsAllFourCategoriesByDefault() {
         List<AssemblingCategory> all = List.of(AssemblingCategory.CRAFTING, AssemblingCategory.ADVANCED_CRAFTING,
-                AssemblingCategory.CRAFTING_WITH_FLUID);
+                AssemblingCategory.CRAFTING_WITH_FLUID, AssemblingCategory.BREWING);
         assertEquals(all, AssemblerTier.ONE.defaultCategories());
         assertEquals(all, AssemblerTier.TWO.defaultCategories());
         assertEquals(all, AssemblerTier.THREE.defaultCategories());

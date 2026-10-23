@@ -49,7 +49,8 @@ import org.slf4j.Logger;
  *
  * <p>The server config loads after the first recipe load, so that load converts with the defaults.
  * {@link #follow} reloads the recipes once the server has started, and on a config edit, whenever the
- * settings the last load used are not the ones configured now.
+ * settings the last load used are not the ones configured now. It also brings in the Brewed recipes
+ * ({@link BrewedRecipes}), which need the server's brewing table and so wait for that reload.
  */
 public final class ModRecipes {
 
@@ -63,16 +64,22 @@ public final class ModRecipes {
     private ModRecipes() {
     }
 
-    private record Settings(boolean enabled, boolean vanillaPack, List<String> excluded) {
+    private record Settings(boolean enabled, boolean vanillaPack, List<String> excluded, boolean brewed) {
 
         static Settings configured() {
             return new Settings(CraftworksConfig.modRecipes(), CraftworksConfig.vanillaRecipes(),
-                    CraftworksConfig.modRecipesExcluded());
+                    CraftworksConfig.modRecipesExcluded(), CraftworksConfig.brewingRecipes());
         }
 
         boolean excludes(Identifier id) {
             return excluded.contains(id.getNamespace()) || excluded.contains(id.toString());
         }
+    }
+
+    /** Whether the settings the last load used keep this id out of the conversions: the namespace or the id is listed. */
+    static boolean excludes(Identifier id) {
+        Settings settings = applied;
+        return settings != null && settings.excludes(id);
     }
 
     /** The recipes with each crafting recipe that converts replaced at its id. */
@@ -93,9 +100,7 @@ public final class ModRecipes {
             // With the vanilla pack off, vanilla's ids stay at the table: that flag answers for them, not this one.
             boolean vanillaKept = !settings.vanillaPack() && id.getNamespace().equals(VANILLA);
             AssemblingRecipe assembling = vanillaKept || settings.excludes(id) ? null : toAssembling(holder.value());
-            if (assembling != null && (assembling.results().stream().anyMatch(result -> ItemStackTemplate.CODEC.encodeStart(ops, result).isError())
-                    || assembling.ingredients().stream()
-                            .anyMatch(sized -> SizedIngredient.NESTED_CODEC.encodeStart(ops, sized).isError()))) {
+            if (assembling != null && !representable(ops, assembling)) {
                 skipped.add(id.toString());
                 assembling = null;
             }
@@ -148,12 +153,18 @@ public final class ModRecipes {
                 AssemblingRecipe.DEFAULT_PRIORITY, List.of(), List.of(), true, AssemblingCategory.CRAFTING);
     }
 
+    /** Whether the recipe's results and ingredients can be written, as they are to reach a client. */
+    static boolean representable(DynamicOps<JsonElement> ops, AssemblingRecipe recipe) {
+        return recipe.results().stream().noneMatch(result -> ItemStackTemplate.CODEC.encodeStart(ops, result).isError())
+                && recipe.ingredients().stream().noneMatch(sized -> SizedIngredient.NESTED_CODEC.encodeStart(ops, sized).isError());
+    }
+
     /**
      * Ops over the registries that can encode an item tag while the recipes load (#58). The recipes' tags
      * belong to the item registry, but the reload hands out a stand-in lookup holding the tags it hasn't bound
      * yet, and a tag only encodes in its own registry's ops; so the items are looked up in the registry itself.
      */
-    private static DynamicOps<JsonElement> withItemTags(HolderLookup.Provider registries) {
+    static DynamicOps<JsonElement> withItemTags(HolderLookup.Provider registries) {
         RegistryOps.RegistryInfoLookup rest = new RegistryOps.HolderLookupAdapter(registries);
         return RegistryOps.create(JsonOps.INSTANCE, new RegistryOps.RegistryInfoLookup() {
             @Override
@@ -175,11 +186,15 @@ public final class ModRecipes {
         }
     }
 
-    /** Reloads the recipes with the same packs when the last load converted with other settings; done at once otherwise. */
+    /**
+     * Reloads the recipes with the same packs when the last load converted with other settings, or wanted Brewed
+     * recipes before the server had a brewing table to read them from; done at once otherwise.
+     */
     public static CompletableFuture<Void> follow(MinecraftServer server) {
         Settings wanted = Settings.configured();
-        if (wanted.equals(applied)) return CompletableFuture.completedFuture(null);
-        LOGGER.info("Personal Assembler: modRecipes is {}, excluding {}; reloading the recipes", wanted.enabled(), wanted.excluded());
+        if (wanted.equals(applied) && !(wanted.brewed() && !BrewedRecipes.tableRead())) return CompletableFuture.completedFuture(null);
+        LOGGER.info("Personal Assembler: modRecipes is {}, excluding {}, brewingRecipes is {}; reloading the recipes",
+                wanted.enabled(), wanted.excluded(), wanted.brewed());
         return server.reloadResources(List.copyOf(server.getPackRepository().getSelectedIds()));
     }
 }

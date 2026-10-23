@@ -3,6 +3,7 @@
 
 package io.github._5thlayer.craftworks.mixin.minecraft;
 
+import io.github._5thlayer.craftworks.recipe.BrewedRecipes;
 import io.github._5thlayer.craftworks.recipe.ModRecipes;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -17,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Converts mods' crafting recipes as the recipes load (ADR-0011): once every datapack has been read and
+ * Converts mods' crafting recipes (ADR-0011) and adds the Brewed recipes (ADR-0025) as the recipes load: once every datapack has been read and
  * KubeJS, which edits them while they are read, is done, and as the loaded map is handed on.
  */
 @Mixin(RecipeManager.class)
@@ -31,6 +32,6 @@ public abstract class RecipeManagerMixin {
             at = @At("RETURN"), cancellable = true)
     private void craftworks$convertModRecipes(ResourceManager manager, ProfilerFiller profiler,
             CallbackInfoReturnable<RecipeMap> cir) {
-        cir.setReturnValue(ModRecipes.convert(cir.getReturnValue(), registries));
+        cir.setReturnValue(BrewedRecipes.add(ModRecipes.convert(cir.getReturnValue(), registries), registries));
     }
 }

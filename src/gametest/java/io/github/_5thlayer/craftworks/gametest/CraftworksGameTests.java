@@ -107,6 +107,8 @@ public final class CraftworksGameTests {
         CraftingPlanTests.register(tests);
         VanillaPackTests.register(tests);
         ModRecipesTests.register(tests);
+        BrewedRecipesTests.register(tests);
+        BrewedAssemblerTests.register(tests);
         DataCarryingTests.register(tests);
         WrappedRecipeTests.register(tests);
         // KubeJS sends the mock player a payload of its own at login, which throws before the Mod's are checked (#51).
@@ -118,6 +120,7 @@ public final class CraftworksGameTests {
         var reloadingTests = new Registrar(event, reloading);
         VanillaPackTests.registerReloading(reloadingTests);
         ModRecipesTests.registerReloading(reloadingTests);
+        BrewedRecipesTests.registerReloading(reloadingTests);
     }
 
     private static Identifier id(String path) {

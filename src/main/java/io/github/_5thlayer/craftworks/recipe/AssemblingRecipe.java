@@ -41,7 +41,7 @@ import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
  * defaults to true, so a recipe written before it existed reads unchanged. Fluids are NeoForge's own types so that
  * Craftworks names no fluid Module (5thlayer/factoryworks#578).
  *
- * <p>{@code category} names the recipe's kind, one of {@link AssemblingCategory}'s three, and decides which
+ * <p>{@code category} names the recipe's kind, one of {@link AssemblingCategory}'s four, and decides which
  * Assemblers may hold it; omitted, it is {@code crafting}. {@code results} is a list of item stacks, empty only when
  * {@code fluid_results} is not. The first and the rest go to an Assembler's shared output slots; the Personal Assembler plans only a recipe with exactly one (GLOSSARY.md, Hand-craftable).
  *

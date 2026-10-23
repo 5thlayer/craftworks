@@ -4,6 +4,7 @@
 package io.github._5thlayer.craftworks.machine;
 
 import static io.github._5thlayer.craftworks.recipe.AssemblingCategory.ADVANCED_CRAFTING;
+import static io.github._5thlayer.craftworks.recipe.AssemblingCategory.BREWING;
 import static io.github._5thlayer.craftworks.recipe.AssemblingCategory.CRAFTING;
 import static io.github._5thlayer.craftworks.recipe.AssemblingCategory.CRAFTING_WITH_FLUID;
 
@@ -16,15 +17,15 @@ import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
  *
  * <p>Speed divides a recipe's time into the ticks a craft takes; power is FE a tick while crafting, at
  * 1 FE = 100 J: 75, 150 and 375 kW. The categories are the recipe kinds a tier may hold, and every tier holds all
- * three, {@code crafting}, {@code advanced-crafting} and {@code crafting-with-fluid}, until the server config says
+ * four, {@code crafting}, {@code advanced-crafting}, {@code crafting-with-fluid} and {@code brewing}, until the server config says
  * otherwise. Every tier has the fluid boxes and Fluid Connections of {@link FluidLayout#ASSEMBLER}, the Assembler's
  * one layout, so the tiers differ only in speed, power, buffer and art.
  * The rates are pure, so they are unit-tested.
  */
 public enum AssemblerTier {
-    ONE("assembler_1", 0.5, 37.5, 50_000, List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID)),
-    TWO("assembler_2", 0.75, 75.0, 50_000, List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID)),
-    THREE("assembler_3", 1.25, 187.5, 50_000, List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID));
+    ONE("assembler_1", 0.5, 37.5, 50_000, List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID, BREWING)),
+    TWO("assembler_2", 0.75, 75.0, 50_000, List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID, BREWING)),
+    THREE("assembler_3", 1.25, 187.5, 50_000, List.of(CRAFTING, ADVANCED_CRAFTING, CRAFTING_WITH_FLUID, BREWING));
 
     private final String blockName;
     private final double defaultSpeed;

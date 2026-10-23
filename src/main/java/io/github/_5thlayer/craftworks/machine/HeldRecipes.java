@@ -29,7 +29,7 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
  * whose category the tier's server config does not list, one with more fluid ingredients or results than the
  * boxes of {@link FluidLayout#ASSEMBLER} (two in, three out) or with more of a fluid a craft than an input box
  * holds, one with more distinct ingredients than the five input slots, and one whose remainders don't fit the
- * shared output slots (at most one kind of item, at most a stack).
+ * shared output slots (at most one kind of item, at most three stacks of it: the outputs the product leaves).
  */
 public final class HeldRecipes {
 
@@ -57,7 +57,9 @@ public final class HeldRecipes {
      * Whether one craft's remainders fit the shared outputs: all one item with the same components, so
      * they stack, and no more of it than a stack holds. The recipe's results after the first count with
      * them, since they share the leftovers' rule. Asked of every item each ingredient could be, so a
-     * recipe held never jams on whichever one is put in. Not cheap: an Assembler asks once per recipe
+     * recipe held never jams on whichever one is put in. The product takes one of the four shared outputs, so
+     * what is owed fits in the other three: two further potions of a brew that makes three, which stack to one.
+     * Not cheap: an Assembler asks once per recipe
      * instance, through {@link #canRun}.
      */
     private static boolean remaindersFit(AssemblingRecipe recipe) {
@@ -85,7 +87,7 @@ public final class HeldRecipes {
             }
             owed += most;
         }
-        return kind == null || owed <= kind.create().getMaxStackSize();
+        return kind == null || owed <= kind.create().getMaxStackSize() * (AssemblerSlots.OUTPUTS - 1);
     }
 
     /**

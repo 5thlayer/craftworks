@@ -55,7 +55,7 @@ final class AssemblingCategoryTests {
 
     static void register(CraftworksGameTests.Registrar tests) {
         tests.test("the_codec_reads_category_and_results_and_refuses_an_empty_results_with_no_fluid", 20, AssemblingCategoryTests::codec);
-        tests.test("every_tier_holds_all_three_categories_by_default", 20, AssemblingCategoryTests::configDefaults);
+        tests.test("every_tier_holds_all_four_categories_by_default", 20, AssemblingCategoryTests::configDefaults);
         tests.test("every_tier_takes_a_crafting_with_fluid_recipe_at_fill_recipe", 20, AssemblingCategoryTests::everyTierTakes);
         tests.test("a_tier_whose_config_leaves_out_crafting_with_fluid_refuses_such_a_recipe_at_fill_recipe", 20, AssemblingCategoryTests::restrictedRefuses);
         tests.test("a_fluid_only_recipe_is_refused_by_category_on_a_tier_whose_config_leaves_it_out", 20, AssemblingCategoryTests::fluidOnly);
@@ -173,7 +173,7 @@ final class AssemblingCategoryTests {
 
     private static void configDefaults(GameTestHelper helper) {
         List<AssemblingCategory> all = List.of(AssemblingCategory.CRAFTING, AssemblingCategory.ADVANCED_CRAFTING,
-                AssemblingCategory.CRAFTING_WITH_FLUID);
+                AssemblingCategory.CRAFTING_WITH_FLUID, AssemblingCategory.BREWING);
         for (AssemblerTier tier : AssemblerTier.values()) {
             helper.assertTrue(CraftworksConfig.categories(tier).equals(all), tier + " takes " + CraftworksConfig.categories(tier));
         }

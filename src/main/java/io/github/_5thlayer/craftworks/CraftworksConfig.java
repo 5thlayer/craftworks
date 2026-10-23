@@ -36,6 +36,8 @@ public final class CraftworksConfig {
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> MOD_RECIPES_EXCLUDED;
 
+    public static final ModConfigSpec.BooleanValue BREWING_RECIPES;
+
     /** One tier's figures, in the config's section for its block. */
     public record MachineSettings(ModConfigSpec.DoubleValue speed, ModConfigSpec.DoubleValue power,
             ModConfigSpec.IntValue buffer, ModConfigSpec.ConfigValue<List<? extends String>> categories) {
@@ -85,6 +87,11 @@ public final class CraftworksConfig {
                         value -> value instanceof String entry && (entry.contains(":")
                                 ? Identifier.tryParse(entry) != null
                                 : Identifier.isValidNamespace(entry)));
+        BREWING_RECIPES = builder
+                .comment("Whether the brewing stand's mixes, vanilla's and other mods', become Brewed recipes as recipes",
+                        "load (ADR-0025): Assembling recipes in the brewing category that brew from water. Off, brewing",
+                        "stays at the stand. modRecipesExcluded can name a Brewed recipe's id.")
+                .define("brewingRecipes", true);
         for (AssemblerTier tier : AssemblerTier.values()) {
             builder.comment("The " + tier.blockName() + " block.").push(tier.blockName());
             ModConfigSpec.DoubleValue speed = builder
@@ -132,6 +139,11 @@ public final class CraftworksConfig {
     /** Whether mods' crafting recipes convert; its default, on, until a world's config is loaded. */
     public static boolean modRecipes() {
         return !SPEC.isLoaded() || MOD_RECIPES.get();
+    }
+
+    /** Whether the brewing stand's mixes become Brewed recipes; its default, on, until a world's config is loaded. */
+    public static boolean brewingRecipes() {
+        return !SPEC.isLoaded() || BREWING_RECIPES.get();
     }
 
     /** The namespaces and recipe ids kept from conversion; none until a world's config is loaded. */
