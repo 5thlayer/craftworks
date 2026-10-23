@@ -11,6 +11,7 @@ Written for players and pack authors: what the Personal Assembler does, and what
 ## 0.10.8
 
 - With nothing queued, the inventory shows where the 2x2 grid was how to start a craft: "Queue empty. Find an item in EMI or JEI and press + to craft it.", cut to fit with a "…" and shown whole when you hover it. It goes as soon as something is queued. The README has a First steps section.
+- An Assembler of any tier brews: the brewing stand's mixes, vanilla's and other mods' (a NeoForge `BrewingRecipe`, such as Wireworks' Bioresin), become Brewed recipes in a new `brewing` category. Each chain of brews from a water bottle is one recipe, at `craftworks:brewing/...`: 3 glass bottles, 750 mB of water and one of each ingredient along the chain make 3 of what it ends in, in 400 ticks a step, on FE and no blaze powder; splash and lingering add their gunpowder and dragon's breath at the end. A potion two chains reach has a recipe for each. Every tier holds `brewing` by default (a pack that lists a tier's `categories` must add it), `brewingRecipes = false` in the server config keeps brewing at the stand, and `modRecipesExcluded` can name a Brewed recipe. A recipe whose result does not stack, such as a potion, lists it as one result a bottle, and an Assembler's recipe may leave behind up to three stacks beyond its product. (#76)
 
 ## 0.10.7
 

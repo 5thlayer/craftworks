@@ -47,3 +47,10 @@ exclude.
   `categories` must add `brewing` for that tier to brew.
 - The ids are part of a pack's data (exclude lists, KubeJS); changing the scheme later breaks a pack (ADR-0008).
 - Water bottles, potion bottles as inputs and the stand itself are unchanged; the stand still brews step by step.
+- A potion stacks to one, and a result template of three of it is no stack, so a Brewed recipe lists three results of
+  one for a potion and one result of three for an item that stacks. The Held recipe's leftover rule, at most a stack
+  of one kind (ADR-0021), now asks for at most the three stacks the product's output slot leaves.
+- The brewing table belongs to the server, which doesn't exist for the first recipe load: that load adds no Brewed
+  recipes, and the reload `ModRecipes.follow` makes once the server has started brings them in.
+- A chain of more than four distinct ingredients, with the bottles, is more than the Assembler's five input slots
+  and is refused at Fill Recipe, as any recipe of six ingredients is.
