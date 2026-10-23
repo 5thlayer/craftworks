@@ -115,8 +115,9 @@ container moves whole or not at all, and waits in the slot until one does. Its g
 _Avoid_: output tank slot, bucket slot, fluid output slot
 
 **Category**:
-The kind an Assembling recipe is, one of three names and no other: `crafting` (the default),
-`advanced-crafting` and `crafting-with-fluid`, the last for any recipe with a fluid in or out. Each tier of
+The kind an Assembling recipe is, one of four names and no other: `crafting` (the default),
+`advanced-crafting`, `crafting-with-fluid`, for any recipe with a fluid in or out that is not brewed, and
+`brewing`, for every **Brewed recipe**. Each tier of
 Assembler holds the categories its server config lists, all three by default, and Fill Recipe refuses a
 recipe outside them. The Personal Assembler ignores it: it is no machine, and plans through any Hand-craftable
 recipe whatever its category.
@@ -135,6 +136,15 @@ such a recipe (Sophisticated Backpacks' backpacks), at that recipe's own id, rep
 Vanilla's come built in; every other mod's are converted as recipes load, unless the pack excludes them or
 already has an Assembling recipe at that id.
 _Avoid_: imported recipe, ported recipe
+
+**Brewed recipe**:
+An Assembling recipe Craftworks makes from the brewing stand's mixes, vanilla's and other mods', at an id of its
+own: one for each chain of brews that starts from a water bottle, folded into a single craft. It takes water as a
+fluid, three glass bottles and one of each ingredient along the chain, and makes three of what the chain ends in, a
+bottled potion or another mod's item (Bioresin); no potion goes in and no potion is ever a fluid. A potion reached by
+two chains has two. It is never Hand-craftable, burns no blaze powder, and takes the stand's time for every step it
+folds.
+_Avoid_: brewing recipe (the stand's own mix), potion recipe
 
 **Data-carrying recipe**:
 A Converted recipe whose result is built from the stacks a craft consumed, as at a crafting table: a charged
