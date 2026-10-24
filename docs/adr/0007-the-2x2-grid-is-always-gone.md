@@ -21,3 +21,14 @@ or not.
 **Consequences.** Pacing is the pack author's job: craft time, Route priority, and removing or converting
 recipes. That includes making sure a new player can make their first planks. Nothing is stranded in the
 old grid, because vanilla returns its contents to the inventory on close and on logout.
+
+**Amended: Craftworks teaches the first craft.** Leaving a new player's first planks to the pack left them
+to nobody: a pack that ships no content of its own, such as the FactoryWorks Showcase, had no place to say
+it, and a player who opened the inventory found no grid and nothing pointing to Fill Recipe. While the
+Personal Assembler's queue is empty, the inventory screen now draws a hint where the queue's rows would be:
+find an item in EMI or JEI and press +. It names no one viewer, is cut to the blanked area with a trailing
+"…" measured by the font, so a GUI scale or a longer translation still fits, and shows its full text as a
+tooltip when cut. It is a standing placeholder, not a toast: it keeps no saved state, shows whenever the
+queue is empty and is gone as soon as it has a row. The hotbar overlay has none, since the inventory is
+where a craft starts. Pacing stays the pack's: craft time, Route priority, and removing or converting
+recipes.
