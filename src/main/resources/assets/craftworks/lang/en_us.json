@@ -11,6 +11,7 @@
   "craftworks.fill_recipe.shift": "Shift-click: queue all you can afford",
   "craftworks.fill_recipe.middle": "Middle-click: show the Crafting Plan",
   "craftworks.queue.and_more": "... and %s more",
+  "craftworks.queue.empty_hint": "Queue empty. Find an item in EMI or JEI and press + to craft it.",
   "craftworks.queue.cancel.left": "Left-click: cancel 1 craft",
   "craftworks.queue.cancel.right": "Right-click: cancel 5 crafts",
   "craftworks.queue.cancel.shift": "Shift-click: cancel all",

@@ -16,6 +16,7 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
+import net.neoforged.neoforge.client.event.ContainerScreenEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 
@@ -27,8 +28,13 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
  * way Factorio's hand-craft queue does -- see {@link CancelClick}. What does not fit shows as a
  * "+N more" line, as Factorio does; a side panel is the follow-up if two rows prove too few.
  *
- * <p>Drawn on {@code Render.Post} rather than the container's foreground, so it lands over
- * {@link InventoryGridBlank}'s grey whichever listener runs first, and in screen coordinates.
+ * <p>An empty queue shows a hint in its place instead, so a new player who finds no 2x2 grid learns where
+ * a craft starts (ADR-0007). It names no viewer's buttons beyond "+", and is cut to the blanked area with
+ * a trailing "…" by {@link Ellipsis}, its full text in a tooltip; the hotbar overlay has none.
+ *
+ * <p>Drawn on the container's foreground, in the menu's coordinates, at a lower priority than
+ * {@link InventoryGridBlank}'s grey so it lands over it. Not on {@code Render.Post}: that runs after the
+ * screen has spent its tooltip in a stratum of its own, so anything drawn there covers the tooltip.
  */
 final class InventoryQueue {
 
@@ -38,24 +44,34 @@ final class InventoryQueue {
     private static final int ROW_HEIGHT = 18;
     private static final int ROWS = 2;
     private static final int TEXT = 0xFF404040;
+    /** From {@link #LEFT} to the blanked area's right edge, less a pixel of margin ({@link GridCover}: 171). */
+    private static final int HINT_WIDTH = 72;
+    /** The hint sits where a row's text would. */
+    private static final int HINT_DOWN = 4;
+    private static final Component HINT = Component.translatable("craftworks.queue.empty_hint");
+    /** The tooltip wraps the full hint at this width. */
+    private static final int TOOLTIP_WIDTH = 170;
 
     private InventoryQueue() {
     }
 
-    static void onRender(ScreenEvent.Render.Post event) {
-        if (!(event.getScreen() instanceof InventoryScreen screen)) return;
+    static void onForeground(ContainerScreenEvent.Render.Foreground event) {
+        if (!(event.getContainerScreen() instanceof InventoryScreen)) return;
         List<QueueSyncPacket.Entry> entries = PlanQueueView.entries();
-        if (entries.isEmpty()) return;
         GuiGraphicsExtractor graphics = event.getGuiGraphics();
         Font font = Minecraft.getInstance().font;
+        if (entries.isEmpty()) {
+            graphics.text(font, Ellipsis.fit(HINT.getString(), HINT_WIDTH, font::width), LEFT, TOP + HINT_DOWN, TEXT, false);
+            return;
+        }
         int shown = Math.min(ROWS, entries.size());
         for (int index = 0; index < shown; index++) {
             QueueSyncPacket.Entry entry = entries.get(index);
-            QueueRow.draw(graphics, font, entry, index == 0, screen.getGuiLeft() + LEFT, rowTop(screen, index), TEXT, false);
+            QueueRow.draw(graphics, font, entry, index == 0, LEFT, TOP + index * ROW_HEIGHT, TEXT, false);
         }
         if (entries.size() > shown) {
             graphics.text(font, Component.translatable("craftworks.queue.and_more", entries.size() - shown),
-                    screen.getGuiLeft() + LEFT, rowTop(screen, shown) + 1, TEXT, false);
+                    LEFT, TOP + shown * ROW_HEIGHT + 1, TEXT, false);
         }
     }
 
@@ -67,6 +83,10 @@ final class InventoryQueue {
         if (!(event.getScreen() instanceof InventoryScreen screen)) return;
         List<QueueSyncPacket.Entry> entries = PlanQueueView.entries();
         Font font = Minecraft.getInstance().font;
+        if (entries.isEmpty()) {
+            hintTooltip(event, screen, font);
+            return;
+        }
         for (int index = 0; index < Math.min(ROWS, entries.size()); index++) {
             QueueSyncPacket.Entry entry = entries.get(index);
             if (!QueueRow.layout(font, entry, screen.getGuiLeft() + LEFT)
@@ -96,6 +116,23 @@ final class InventoryQueue {
             event.setCanceled(true);
             return;
         }
+    }
+
+    /** The full hint, wrapped, while the cut one is hovered. A hint that fits whole has no tooltip. */
+    private static void hintTooltip(ScreenEvent.Render.Pre event, InventoryScreen screen, Font font) {
+        String full = HINT.getString();
+        String shown = Ellipsis.fit(full, HINT_WIDTH, font::width);
+        if (shown.equals(full)) return;
+        int left = screen.getGuiLeft() + LEFT;
+        int top = hintTop(screen);
+        int mouseX = event.getMouseX();
+        int mouseY = event.getMouseY();
+        if (mouseX < left || mouseX >= left + font.width(shown) || mouseY < top || mouseY >= top + font.lineHeight) return;
+        event.getGuiGraphics().setTooltipForNextFrame(font.split(HINT, TOOLTIP_WIDTH), mouseX, mouseY);
+    }
+
+    private static int hintTop(InventoryScreen screen) {
+        return screen.getGuiTop() + TOP + HINT_DOWN;
     }
 
     private static int rowTop(InventoryScreen screen, int index) {

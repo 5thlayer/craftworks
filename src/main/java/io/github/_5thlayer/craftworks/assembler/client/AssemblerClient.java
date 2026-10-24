@@ -15,6 +15,7 @@ import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
 import io.github._5thlayer.craftworks.machine.client.RefinerScreen;
 import io.github._5thlayer.craftworks.network.QueueSyncPacket;
 import net.minecraft.resources.Identifier;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
@@ -41,7 +42,7 @@ public final class AssemblerClient {
         NeoForge.EVENT_BUS.addListener(InventoryGridBlank::onScreenOpening);
         NeoForge.EVENT_BUS.addListener(InventoryGridBlank::onScreenInit);
         NeoForge.EVENT_BUS.addListener(InventoryGridBlank::onScreenForeground);
-        NeoForge.EVENT_BUS.addListener(InventoryQueue::onRender);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOW, InventoryQueue::onForeground);
         NeoForge.EVENT_BUS.addListener(InventoryQueue::onTooltip);
         NeoForge.EVENT_BUS.addListener(InventoryQueue::onClick);
     }

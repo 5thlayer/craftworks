@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- With nothing queued, the inventory shows where the 2x2 grid was how to start a craft: "Queue empty. Find an item in EMI or JEI and press + to craft it.", cut to fit with a "…" and shown whole when you hover it. It goes as soon as something is queued. The README has a First steps section.
+
 ## 0.10.7
 
 - The Crafting Plan gives the right reason an item is Locked when a recolouring recipe also makes it: the reason of the recipe that Locked it, not of the first recipe listed for the item.

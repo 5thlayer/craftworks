@@ -8,6 +8,14 @@ To play Craftworks beside every other FactoryWorks mod, install the [FactoryWork
 
 > **Craftworks is built for modpacks.** The Assembler crafts `craftworks:assembling` recipes: vanilla's and other mods' crafting recipes out of the box, and whatever a pack or datapack adds or replaces.
 
+## First steps
+
+1. **Open your inventory: it is the Assembler.** There is no 2x2 crafting grid. While nothing is queued, a hint stands where it was.
+2. **Find the item in EMI or JEI and press +** (Fill Recipe; in JEI, the recipe button) on its Assembling recipe: left click queues 1, right click 5, Shift as many as your inventory covers. For your first planks, look up planks and press + with a log in your inventory.
+3. **Middle-click + to see the Crafting Plan** before you commit: what it would take, what it would make on the way, and anything Missing or Locked.
+4. **In EMI, turn on the Craftables sidebar page** to see everything you can make from what you carry.
+5. **A placed Assembler works the same way.** Open its screen and press + on a recipe: Fill Recipe there sets its Held recipe, which it then makes over and over.
+
 ## Features
 
 - **Ask for the item, not the steps.** Find an item in EMI or JEI and press Fill Recipe (JEI: the recipe button) on its Assembling recipe: left click queues 1, right click 5, Shift as many as your inventory covers. Every intermediate is resolved for you, so asking for a machine plans the plates, gears and circuits that go into it.
