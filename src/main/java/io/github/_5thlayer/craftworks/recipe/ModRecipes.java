@@ -21,10 +21,12 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CraftingRecipe;
@@ -41,7 +43,9 @@ import org.slf4j.Logger;
  * Other mods' crafting recipes as Converted recipes (ADR-0011, #13): at the end of every recipe load,
  * after every datapack and KubeJS script has had its say, each shaped or shapeless crafting recipe is
  * replaced at its own id by an Assembling recipe, its slots counted into a bag, with the default time
- * and Route priority; the Storage recipes among them, which undo each other, take one tick ({@link StorageRecipes}).
+ * and Route priority. The Storage recipes among the Converted recipes, which undo each other and may come from
+ * the vanilla pack or from this load, take one tick ({@link StorageRecipes}); the pack a recipe comes from is
+ * read off the resource that wins at its id, so a pack's own Assembling recipe at a vanilla id is not one.
  *
  * <p>Left alone: anything already an Assembling recipe, the built-in vanilla pack's among them; vanilla's
  * ids while that pack is off; a subclass that assembles its own result; the namespaces and ids {@code modRecipesExcluded} names; and a recipe
@@ -57,6 +61,8 @@ public final class ModRecipes {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private static final String VANILLA = Identifier.DEFAULT_NAMESPACE;
+
+    private static final FileToIdConverter RECIPE_LISTER = FileToIdConverter.registry(Registries.RECIPE);
 
     /** The settings the last recipe load converted with. */
     private static volatile Settings applied;
@@ -82,13 +88,17 @@ public final class ModRecipes {
         return settings != null && settings.excludes(id);
     }
 
-    /** The recipes with each crafting recipe that converts replaced at its id. */
-    public static RecipeMap convert(RecipeMap recipes, HolderLookup.Provider registries) {
+    /**
+     * The recipes with each crafting recipe that converts replaced at its id, and every Converted recipe, the
+     * vanilla pack's among them, that has its round trip given the Storage recipe time.
+     */
+    public static RecipeMap convert(RecipeMap recipes, HolderLookup.Provider registries, ResourceManager manager) {
         Settings settings = Settings.configured();
         applied = settings;
         if (!settings.enabled()) {
             DataCarryingRecipes.replace(Map.of());
-            return recipes;
+            List<RecipeHolder<?>> all = new ArrayList<>(recipes.values());
+            return timeStorageRecipes(all, new LinkedHashMap<>(), manager) == 0 ? recipes : RecipeMap.create(all);
         }
         var ops = withItemTags(registries);
         List<String> skipped = new ArrayList<>();
@@ -117,39 +127,51 @@ public final class ModRecipes {
                 }
             }
         }
-        int storage = timeStorageRecipes(holders, convertedAt);
+        int storage = timeStorageRecipes(holders, convertedAt, manager);
         DataCarryingRecipes.replace(kept);
         LOGGER.info("Personal Assembler: {} mod crafting recipe(s) converted to Assembling recipes, {} of them Data-carrying (the original assembles the result), {} of them Storage recipes.", converted, kept.size(), storage);
         if (!skipped.isEmpty()) {
             LOGGER.warn("Personal Assembler: {} mod crafting recipe(s) left at the crafting table, with an ingredient or "
                     + "result an Assembling recipe cannot hold: {}", skipped.size(), skipped);
         }
-        return converted == 0 ? recipes : RecipeMap.create(holders);
+        return converted == 0 && storage == 0 ? recipes : RecipeMap.create(holders);
     }
 
     /**
      * Gives the Converted recipes that have their round trip the Storage recipe time (#78), in place in
-     * {@code holders}; only those this load converted count, on either side of the trip. Returns how many.
+     * {@code holders}, and returns how many. A Converted recipe is one this load converted ({@code convertedAt},
+     * by index) or one of the vanilla pack's; an Assembling recipe a pack wrote, at a vanilla id or not, is
+     * neither timed nor the way back for another.
      */
-    private static int timeStorageRecipes(List<RecipeHolder<?>> holders, Map<Identifier, Integer> convertedAt) {
-        List<StorageRecipes.Trade<SizedIngredient, ItemStackTemplate>> trades = new ArrayList<>();
-        convertedAt.forEach((id, at) -> {
+    private static int timeStorageRecipes(List<RecipeHolder<?>> holders, Map<Identifier, Integer> convertedAt, ResourceManager manager) {
+        Map<Identifier, Integer> converted = new LinkedHashMap<>(convertedAt);
+        for (int at = 0; at < holders.size(); at++) {
+            Identifier id = holders.get(at).id().identifier();
+            if (holders.get(at).value() instanceof AssemblingRecipe && id.getNamespace().equals(VANILLA) && fromVanillaPack(manager, id)) {
+                converted.putIfAbsent(id, at);
+            }
+        }
+        List<StorageRecipes.Trade<Identifier, SizedIngredient, ItemStackTemplate>> trades = new ArrayList<>();
+        converted.forEach((id, at) -> {
             AssemblingRecipe recipe = (AssemblingRecipe) holders.get(at).value();
-            if (recipe.ingredients().size() == 1 && recipe.results().size() == 1 && recipe.fluidIngredients().isEmpty()
-                    && recipe.fluidResults().isEmpty() && recipe.results().getFirst().components().isEmpty()) {
+            if (recipe.isPlainTrade()) {
                 SizedIngredient ingredient = recipe.ingredients().getFirst();
                 ItemStackTemplate result = recipe.results().getFirst();
-                trades.add(new StorageRecipes.Trade<>(id.toString(), ingredient, ingredient.count(), result, result.count()));
+                trades.add(new StorageRecipes.Trade<>(id, ingredient, ingredient.count(), result, result.count()));
             }
         });
         var found = StorageRecipes.find(trades, (ingredient, result) -> ingredient.ingredient().acceptsItem(result.item()));
-        for (var entry : convertedAt.entrySet()) {
-            if (!found.contains(entry.getKey().toString())) continue;
-            RecipeHolder<?> holder = holders.get(entry.getValue());
-            holders.set(entry.getValue(), new RecipeHolder<>(holder.id(),
-                    ((AssemblingRecipe) holder.value()).withTime(AssemblingRecipe.STORAGE_TIME)));
+        for (Identifier id : found) {
+            int at = converted.get(id);
+            RecipeHolder<?> holder = holders.get(at);
+            holders.set(at, new RecipeHolder<>(holder.id(), ((AssemblingRecipe) holder.value()).withTime(AssemblingRecipe.STORAGE_TIME)));
         }
         return found.size();
+    }
+
+    /** Whether the recipe at this id comes from the built-in vanilla pack: the pack that wins at the id is that one. */
+    private static boolean fromVanillaPack(ResourceManager manager, Identifier id) {
+        return manager.getResource(RECIPE_LISTER.idToFile(id)).map(resource -> resource.sourcePackId().equals(VanillaPack.ID)).orElse(false);
     }
 
     /**

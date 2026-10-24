@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "AA",
+    "AA"
+  ],
+  "key": {
+    "A": "minecraft:oak_planks"
+  },
+  "result": {
+    "id": "minecraft:oak_log"
+  }
+}

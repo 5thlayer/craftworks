@@ -32,6 +32,6 @@ public abstract class RecipeManagerMixin {
             at = @At("RETURN"), cancellable = true)
     private void craftworks$convertModRecipes(ResourceManager manager, ProfilerFiller profiler,
             CallbackInfoReturnable<RecipeMap> cir) {
-        cir.setReturnValue(BrewedRecipes.add(ModRecipes.convert(cir.getReturnValue(), registries), registries));
+        cir.setReturnValue(BrewedRecipes.add(ModRecipes.convert(cir.getReturnValue(), registries, manager), registries));
     }
 }

@@ -35,3 +35,9 @@ Assembling category, invisible to KubeJS, and with no id a pack could give a Rou
 **Consequences.** Smelting and machine recipes are never converted; those stay the pack's to write. The
 conversion stays separate from #9's build task: the inputs differ (JSON from the game jar against decoded
 recipes) and the rule is small.
+
+**Storage recipes take one tick (#78).** The same pass gives the Converted recipes that undo each other, nine or
+four of one item making one of another and back, one tick instead of ten. It decides over every Converted recipe at
+load, this load's conversions and the built-in vanilla pack's together, so a round trip between the two is found;
+the vanilla pack's JSON carries no `time`. The pack a recipe comes from is read off the resource that wins at its
+id, so a pack's own Assembling recipe at a vanilla id is neither timed nor the way back for another.

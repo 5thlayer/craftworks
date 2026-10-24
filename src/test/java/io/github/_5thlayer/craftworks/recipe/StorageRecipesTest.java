@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 /** Which Converted recipes are Storage recipes: the ones with a round trip (#78), decided over all of them at once. */
 class StorageRecipesTest {
 
-    private static Set<String> found(List<Trade<String, String>> trades) {
+    private static Set<String> found(List<Trade<String, String, String>> trades) {
         return StorageRecipes.find(trades, String::equals);
     }
 

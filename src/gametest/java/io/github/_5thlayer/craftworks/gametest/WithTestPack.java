@@ -81,7 +81,7 @@ record WithTestPack(String name) implements TestEnvironmentDefinition<Unit> {
     }
 
     private static Pack pack(String name) {
-        var file = ModList.get().getModContainerById(Craftworks.MOD_ID).orElseThrow().getModInfo().getOwningFile().getFile();
+        var file = ModList.get().getModFileById(Craftworks.MOD_ID).getFile();
         var pack = Pack.readMetaAndCreate(
                 new PackLocationInfo(id(name), Component.literal(name), PackSource.BUILT_IN, Optional.empty()),
                 new JarContentsPackResources.JarContentsResourcesSupplier(file.getContents(), "gametest_packs/" + name),

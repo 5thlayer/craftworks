@@ -38,6 +38,8 @@ final class StorageRecipeTests {
         packed.test("storage_recipe_pack_tagged_round_trip_takes_one_tick_both_ways", 20, StorageRecipeTests::packTaggedRoundTrip);
         packed.test("storage_recipe_pack_one_way_and_mismatched_counts_keep_the_default", 20, StorageRecipeTests::packNotStorage);
         packed.test("storage_recipe_pack_assembling_recipes_keep_their_own_time", 20, StorageRecipeTests::packOwnTime);
+        packed.test("storage_recipe_a_replaced_direction_leaves_the_vanilla_other_one_at_the_default", 20, StorageRecipeTests::packReplaced);
+        packed.test("storage_recipe_a_pack_recipe_and_a_vanilla_pack_recipe_make_a_round_trip", 20, StorageRecipeTests::mixedOrigins);
     }
 
     private static void vanillaStorage(GameTestHelper helper) {
@@ -95,6 +97,21 @@ final class StorageRecipeTests {
     private static void packOwnTime(GameTestHelper helper) {
         check(helper, 7, "minecraft:iron_ingot_from_iron_block");
         check(helper, DEFAULT_TIME, "minecraft:iron_nugget");
+        helper.succeed();
+    }
+
+    /**
+     * The pack replaced the ways back from the iron block and from the ingot with its own Assembling recipes, so no
+     * Converted recipe undoes vanilla's iron block or nugget-to-ingot any more: they take the default.
+     */
+    private static void packReplaced(GameTestHelper helper) {
+        check(helper, DEFAULT_TIME, "minecraft:iron_block", "minecraft:iron_ingot_from_nuggets");
+        helper.succeed();
+    }
+
+    /** The pack's four planks to a log and the vanilla pack's log to four planks undo each other. */
+    private static void mixedOrigins(GameTestHelper helper) {
+        check(helper, STORAGE_TIME, "craftworks:storage_planks_to_log", "minecraft:oak_planks");
         helper.succeed();
     }
 

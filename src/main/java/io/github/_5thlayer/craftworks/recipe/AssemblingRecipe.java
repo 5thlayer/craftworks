@@ -69,6 +69,12 @@ public record AssemblingRecipe(
         fluidResults = List.copyOf(fluidResults);
     }
 
+    /** Whether it takes one item ingredient and makes one plain item, nothing else: the shape a Storage recipe has. */
+    public boolean isPlainTrade() {
+        return ingredients.size() == 1 && results.size() == 1 && fluidIngredients.isEmpty() && fluidResults.isEmpty()
+                && results.getFirst().components().isEmpty();
+    }
+
     /** The same recipe taking {@code time} ticks. */
     public AssemblingRecipe withTime(int time) {
         return new AssemblingRecipe(ingredients, results, time, priority, fluidIngredients, fluidResults, handCraftable, category);
