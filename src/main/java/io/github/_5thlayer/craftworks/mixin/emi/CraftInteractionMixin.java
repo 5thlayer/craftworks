@@ -35,7 +35,15 @@ import org.spongepowered.asm.mixin.injection.At;
  * the same +16 in EMI's scoring and a recipe that isn't Ready could beat a Ready sibling. A Craftables
  * entry carries its recipe, so its first evaluation already succeeds.
  *
- * <p>It only records; the click is never altered or rerouted. The tooltip's {@code getPreferredRecipe}
+ * <p><b>One Fill a press (#75).</b> The handler's {@code craft()} sends and returns false, so EMI's recipe
+ * screen stays open, and {@code craftInteraction} hands that false back to {@code stackInteraction}, which
+ * takes the press as unhandled and tries its next binds: view recipes, then {@code craftInteraction} again
+ * with the item's preferred recipe, which sends a second Fill whenever the press matches no bind in
+ * between, as a keyboard craft key or a left click with view recipes unbound does. So a call in which the
+ * handler sent answers true, and {@code stackInteraction} stops there. {@code performFill} has already
+ * returned false by then, so no {@code setScreen} follows.
+ *
+ * <p>Beyond that answer it only records; the click is never rerouted. The tooltip's {@code getPreferredRecipe}
  * call is outside {@code craftInteraction} and is untouched. {@code try/finally} clears the flag on any
  * exit, and on any screen but the Assembler's nothing reads it.
  */
@@ -47,7 +55,7 @@ public abstract class CraftInteractionMixin {
             EmiStackInteraction interaction, Function<EmiBind, Boolean> bind, Operation<Boolean> original) {
         CraftClick.begin();
         try {
-            return original.call(ingredient, recipe, interaction, bind);
+            return original.call(ingredient, recipe, interaction, bind) || CraftClick.sent();
         } finally {
             CraftClick.end();
         }

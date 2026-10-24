@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- With EMI, a craft shortcut on a Craftables entry or a favorite queues one craft, not two. It doubled on a craft key, and on left click once EMI's view-recipes bind is taken off left click, as the FactoryWorks Showcase does. With EMI's default binds, a left click that queues a craft no longer opens EMI's recipe screen as well. (#75)
+
 ## 0.10.8
 
 - With nothing queued, the inventory shows where the 2x2 grid was how to start a craft: "Queue empty. Find an item in EMI or JEI and press + to craft it.", cut to fit with a "…" and shown whole when you hover it. It goes as soon as something is queued. The README has a First steps section.

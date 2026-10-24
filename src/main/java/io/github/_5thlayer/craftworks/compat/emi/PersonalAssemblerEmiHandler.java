@@ -117,7 +117,8 @@ public final class PersonalAssemblerEmiHandler implements EmiRecipeHandler<Inven
      * inventory covers the request is the server's call.
      *
      * <p>Only a request for the plan returns true and hands the screen back to the inventory; a queueing
-     * click returns false so EMI's recipe screen stays open for the next one (see the class doc).
+     * click returns false so EMI's recipe screen stays open for the next one (see the class doc). The send
+     * is noted in {@link CraftClick}, so a craft shortcut that gets this false sends no second Fill (#75).
      */
     @Override
     public boolean craft(EmiRecipe recipe, EmiCraftContext<InventoryMenu> context) {
@@ -125,6 +126,7 @@ public final class PersonalAssemblerEmiHandler implements EmiRecipeHandler<Inven
         if (id == null) return false;
         FillRequest request = FillRequest.of(FillClick.button(), context.getAmount() == Integer.MAX_VALUE);
         ClientPacketDistributor.sendToServer(new FillRecipePacket(id, request));
+        CraftClick.markSent();
         if (request == FillRequest.PLAN) return true;
         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
         return false;
