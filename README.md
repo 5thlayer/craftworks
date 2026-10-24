@@ -34,7 +34,7 @@ To play Craftworks beside every other FactoryWorks mod, install the [FactoryWork
 - **Route priority.** When several recipes make the same item, the Assembler uses the highest-priority one the player can complete, at every level of the plan.
 - **Assemblers.** Three tiers of placed machine make one Assembling recipe each, their Held recipe, which you set with Fill Recipe on the open screen. Any FE source powers them, and each tier's speed, power and buffer are in the server config. Placing a higher or lower tier over one swaps it in place. Every tier also makes recipes with fluids, in or out, with or without items: two input fluid boxes and three output fluid boxes, on six Fluid Connections that pull the ingredients from a tank or pipe and push the results out. They stand at the ends of its front and back edges and the centres of its sides, so no two pipes beside them touch and each fluid of a recipe gets a network of its own. The tiers differ only in speed, power and buffer.
 - **The Refiner.** A placed machine that smelts what vanilla's furnace and blast furnace do, on FE and no fuel: any vanilla smelting or blasting recipe, blasting where an input has both. Its speed, power and buffer are in the server config. Pipes and hoppers put in what a recipe smelts, up to two smelts' worth, and take out only the result. It smelts one item into one result; smelting with several inputs or results is an Assembling recipe, made by an Assembler.
-- **Locking recipes.** The server config `lockSources` decides what keeps a recipe Locked for a player: `recipeBook` (until the recipe is in their recipe book) and `researchd` (while Researchd blocks it for their team). The Crafting Plan names the research that unlocks it. Other mods add their own locks, with or without a reason, through `io.github._5thlayer.craftworks.api.LockHooks`.
+- **Locking recipes.** The server config `lockSources` decides what keeps a recipe Locked for a player: `recipeBook` (until the recipe is in their recipe book). Other mods add their own locks, with or without a reason, through `io.github._5thlayer.craftworks.api.LockHooks`.
 
 ## Dependencies
 
@@ -43,7 +43,6 @@ To play Craftworks beside every other FactoryWorks mod, install the [FactoryWork
 - **Pipeworks**, optional: its pipes fill and drain the Assemblers' Fluid Connections, and any other mod's tanks and pipes do too.
 - **Jade**, optional: shows the machines' Held recipe, state, progress and energy in its tooltip.
 - **KubeJS**, optional: scripts create and edit Assembling recipes and lock recipes for a player.
-- **Researchd**, optional, only if a pack locks recipes behind research.
 
 ## License
 

@@ -70,7 +70,7 @@ public final class CraftworksGameTests {
 
     /**
      * Locks the one recipe {@code -Dcraftworks.devLockReason} names, with a reason, so a dev client can see
-     * the Crafting Plan show one without Researchd (#18). Only the client run passes it, and only when asked.
+     * the Crafting Plan show one (#18). Only the client run passes it, and only when asked.
      */
     private static void registerDevLockReason() {
         String recipe = System.getProperty("craftworks.devLockReason");

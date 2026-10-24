@@ -13,7 +13,6 @@ import java.util.function.Predicate;
 
 import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.api.LockHooks;
-import io.github._5thlayer.craftworks.compat.researchd.ResearchdLocks;
 import io.github._5thlayer.craftworks.planner.AssemblingRecipe;
 import io.github._5thlayer.craftworks.planner.AssemblingRecipeSet;
 import io.github._5thlayer.craftworks.planner.CraftingPlan;
@@ -141,7 +140,6 @@ public final class PlayerPlanning {
             switch (source) {
                 case recipeBook -> sources.add(recipe -> !player.getRecipeBook()
                         .contains(ResourceKey.create(Registries.RECIPE, Identifier.parse(recipe))));
-                case researchd -> reasoning.add(reasoned(recipe -> ResearchdLocks.lock(player, recipe)));
             }
         }
         List<Predicate<String>> hooks = new ArrayList<>();

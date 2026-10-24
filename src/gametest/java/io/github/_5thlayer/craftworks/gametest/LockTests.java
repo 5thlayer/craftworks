@@ -48,7 +48,6 @@ final class LockTests {
                 && recipe.equals(SLIME_BALL) ? LockHooks.Lock.because(Component.literal(REASON)) : Optional.empty());
         tests.test("the_recipe_book_and_a_hook_each_lock", 20, LockTests::bothLock);
         tests.test("a_reasoned_hook_s_reason_reaches_the_plan", 20, LockTests::reasonShown);
-        tests.test("researchd_listed_but_not_installed_locks_nothing", 20, LockTests::researchdAbsent);
     }
 
     private static void bothLock(GameTestHelper helper) {
@@ -102,20 +101,6 @@ final class LockTests {
             Component reason = menu.display().lockReasons().get(menu.display().locked().get(0).item());
             helper.assertTrue(reason != null && reason.getString().equals(REASON),
                     "the plan does not carry the hook's reason, got " + reason);
-        } finally {
-            CraftworksConfig.LOCK_SOURCES.set(before);
-        }
-        helper.succeed();
-    }
-
-    /** The game-test server has no Researchd, so listing it is logged and locks nothing, rather than crashing. */
-    private static void researchdAbsent(GameTestHelper helper) {
-        List<? extends String> before = CraftworksConfig.LOCK_SOURCES.get();
-        CraftworksConfig.LOCK_SOURCES.set(List.of("researchd"));
-        try {
-            ServerPlayer player = AssemblerTests.playerHolding(helper, ItemStack.EMPTY);
-            helper.assertFalse(PlayerPlanning.lockedFor(player).test(AssemblerTests.OAK_SAPLING.toString()),
-                    "researchd locked a recipe with Researchd not installed");
         } finally {
             CraftworksConfig.LOCK_SOURCES.set(before);
         }

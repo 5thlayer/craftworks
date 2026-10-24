@@ -23,9 +23,7 @@ public final class CraftworksConfig {
      */
     public enum LockSource {
         /** Locked until the recipe is in the player's vanilla recipe book. */
-        recipeBook,
-        /** Locked while Researchd says the recipe is blocked for the player's team (ADR-0010). */
-        researchd
+        recipeBook
     }
 
     static final ModConfigSpec SPEC;
@@ -68,9 +66,8 @@ public final class CraftworksConfig {
                 .comment("What locks a recipe for a player, on top of any hook a mod registers. A recipe is",
                         "Locked if any listed source says so. Empty (the default) locks nothing.",
                         "  recipeBook: Locked until the recipe is in the player's recipe book.",
-                        "  researchd:  Locked while Researchd blocks the recipe for the player's team.",
-                        "For example [\"researchd\"].")
-                .defineListAllowEmpty("lockSources", List.of(), () -> LockSource.researchd.name(),
+                        "For example [\"recipeBook\"].")
+                .defineListAllowEmpty("lockSources", List.of(), () -> LockSource.recipeBook.name(),
                         value -> value instanceof String name
                                 && Arrays.stream(LockSource.values()).anyMatch(source -> source.name().equals(name)));
         VANILLA_RECIPES = builder
