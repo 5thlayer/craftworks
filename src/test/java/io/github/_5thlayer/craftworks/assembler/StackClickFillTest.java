@@ -9,16 +9,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 /**
- * A right click on an EMI stack on the Assembler's screen queues five only when nothing else took the
+ * A right click on an EMI stack on the Personal Assembler's screen queues five only when nothing else took the
  * press (#77): which presses fall through.
  */
 class StackClickFillTest {
 
     private static final int LEFT = 0;
-    private static final int RIGHT = 1;
+    private static final int RIGHT = FillRequest.RIGHT_BUTTON;
     private static final int MIDDLE = 2;
     private static final int NO_MODIFIERS = 0;
-    private static final int SHIFT = 1;
+    // EMI's modifier bits: Ctrl 1, Alt 2, Shift 4.
+    private static final int CTRL = 1;
+    private static final int ALT = 2;
+    private static final int SHIFT = 4;
 
     @Test
     void aPlainRightClickNothingTookQueuesFive() {
@@ -37,7 +40,7 @@ class StackClickFillTest {
 
     @Test
     void anyModifierIsNotAdded() {
-        for (int modifiers = 1; modifiers < 16; modifiers++) {
+        for (int modifiers : new int[] {CTRL, ALT, SHIFT, CTRL | SHIFT, CTRL | ALT | SHIFT}) {
             assertFalse(StackClickFill.fallsThroughToFive(RIGHT, modifiers, false));
         }
     }

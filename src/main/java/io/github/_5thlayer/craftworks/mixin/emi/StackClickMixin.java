@@ -21,43 +21,58 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
 /**
- * A plain right click on a Craftables entry, a favorite or an index stack queues five, when no bind of
- * EMI's took the press (#77, ADR-0004).
+ * A plain right click on a Craftables entry, a favorite or an index stack queues five, when nothing of
+ * EMI's took the press (#77, ADR-0012).
  *
- * <p><b>On release.</b> EMI's {@code mouseClicked} only claims the press; {@code mouseReleased} calls
- * {@code stackInteraction} with the button, which tries every bind in turn and returns false when none
- * matched. This wraps that call: when it comes back false for a plain right button, it is run once more
- * with a bind function that matches only {@code craftOne}. That goes through EMI's own recipe picking
- * and {@code craftInteraction}, so {@link CraftInteractionMixin}'s Ready-first pick and its one Fill a
- * press (#75) apply unchanged, and {@link FillClick} holds button 1 so the handler reads it as the
- * right click of {@code + Fill Recipe}: five, or the Crafting Plan when the inventory doesn't cover them.
+ * <p><b>On release, after every EMI bind.</b> EMI's {@code mouseClicked} only claims the press;
+ * {@code mouseReleased} calls {@code stackInteraction} with the button, which tries the stack binds and
+ * returns false when none matched, and then {@code genericInteraction} (toggle visibility, search, tree,
+ * back, forward). Only when both decline does this run the stack's interaction once more with a bind
+ * function that matches only {@code craftOne}. That goes through EMI's own recipe picking and
+ * {@code craftInteraction}, so {@link CraftInteractionMixin}'s Ready-first pick and its one Fill a press
+ * (#75) apply unchanged, and {@link FillClick} holds button 1 so the handler reads it as the right click
+ * of {@code + Fill Recipe}: five, or the Crafting Plan when the inventory doesn't cover them.
  *
- * <p>A press an EMI bind took (view-uses on right click, by default) returns true first and is never
- * looked at again. With any modifier held, or on another button, nothing is added. A recipe that the
- * Personal Assembler's handler is not the one to craft on the open screen is refused ({@link
- * RightClickCraft#refuses}), so no other screen's click, and no recipe of another handler, moves ingredients.
- * {@code try/finally} clears both flags on any exit.
+ * <p>The wrap of {@code stackInteraction} only notes the stack it declined; the wrap of
+ * {@code genericInteraction} acts on it. A press an EMI bind took returns true at one or the other and
+ * adds nothing. With any modifier held, or on another button, nothing is added. A recipe that the Personal
+ * Assembler's handler is not the one to craft on the open screen is refused ({@link
+ * RightClickCraft#refuses}), so no other screen's click, and no recipe of another handler, moves
+ * ingredients. {@code try/finally} clears the noted button and stack on any exit.
  */
 @Mixin(value = EmiScreenManager.class, remap = false)
 public abstract class StackClickMixin {
 
     private static int craftworks$released = FillRequest.NO_BUTTON;
+    private static EmiStackInteraction craftworks$declined;
 
     @WrapMethod(method = "mouseReleased(Lnet/minecraft/client/input/MouseButtonEvent;)Z")
     private static boolean craftworks$noteRelease(MouseButtonEvent event, Operation<Boolean> original) {
         craftworks$released = event.button();
+        craftworks$declined = null;
         try {
             return original.call(event);
         } finally {
             craftworks$released = FillRequest.NO_BUTTON;
+            craftworks$declined = null;
         }
     }
 
     @WrapOperation(method = "mouseReleased(Lnet/minecraft/client/input/MouseButtonEvent;)Z",
             at = @At(value = "INVOKE", target = "Ldev/emi/emi/screen/EmiScreenManager;stackInteraction(Ldev/emi/emi/api/stack/EmiStackInteraction;Ljava/util/function/Function;)Z"))
-    private static boolean craftworks$rightClickCrafts(EmiStackInteraction interaction, Function<EmiBind, Boolean> bind,
+    private static boolean craftworks$noteDeclined(EmiStackInteraction interaction, Function<EmiBind, Boolean> bind,
             Operation<Boolean> original) {
         boolean consumed = original.call(interaction, bind);
+        craftworks$declined = consumed ? null : interaction;
+        return consumed;
+    }
+
+    @WrapOperation(method = "mouseReleased(Lnet/minecraft/client/input/MouseButtonEvent;)Z",
+            at = @At(value = "INVOKE", target = "Ldev/emi/emi/screen/EmiScreenManager;genericInteraction(Ljava/util/function/Function;)Z"))
+    private static boolean craftworks$rightClickCrafts(Function<EmiBind, Boolean> bind, Operation<Boolean> original) {
+        boolean consumed = original.call(bind);
+        EmiStackInteraction interaction = craftworks$declined;
+        craftworks$declined = null;
         if (!StackClickFill.fallsThroughToFive(craftworks$released, EmiInput.getCurrentModifiers(), consumed)
                 || interaction == null || interaction.getStack().isEmpty()) {
             return consumed;

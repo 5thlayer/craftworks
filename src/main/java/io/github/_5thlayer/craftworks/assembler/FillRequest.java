@@ -22,11 +22,14 @@ public enum FillRequest {
     /** EMI's craft hotkeys reach the handler with no click behind them. */
     public static final int NO_BUTTON = -1;
 
+    /** The button that asks for five: a right click on {@code + Fill Recipe}, or on a stack (#77). */
+    public static final int RIGHT_BUTTON = 1;
+
     public static FillRequest of(int button, boolean shift) {
         if (shift) return ALL;
         return switch (button) {
             case NO_BUTTON, 0 -> ONE;
-            case 1 -> FIVE;
+            case RIGHT_BUTTON -> FIVE;
             default -> PLAN;
         };
     }
