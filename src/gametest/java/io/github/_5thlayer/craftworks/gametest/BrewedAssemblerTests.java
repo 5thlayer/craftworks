@@ -3,7 +3,9 @@
 
 package io.github._5thlayer.craftworks.gametest;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.gametest.AssemblerMachineTests.Placed;
@@ -122,7 +124,11 @@ final class BrewedAssemblerTests {
     /** Sets tier 1's categories and the config version, runs the upgrade, checks both, and restores the config. */
     private static void upgrading(GameTestHelper helper, int version, List<String> before, List<String> expected) {
         var categories = CraftworksConfig.categoriesSetting(AssemblerTier.ONE);
-        List<? extends String> savedCategories = categories.get();
+        // The upgrade runs on every tier, so every tier is put back.
+        Map<AssemblerTier, List<? extends String>> savedCategories = new EnumMap<>(AssemblerTier.class);
+        for (AssemblerTier tier : AssemblerTier.values()) {
+            savedCategories.put(tier, CraftworksConfig.categoriesSetting(tier).get());
+        }
         int savedVersion = CraftworksConfig.CONFIG_VERSION.get();
         try {
             categories.set(before);
@@ -134,10 +140,8 @@ final class BrewedAssemblerTests {
             helper.assertTrue(CraftworksConfig.CONFIG_VERSION.get() == expectedVersion,
                     "the version was " + CraftworksConfig.CONFIG_VERSION.get() + " after the upgrade, not " + expectedVersion);
         } finally {
-            categories.set(savedCategories);
+            savedCategories.forEach((tier, saved) -> CraftworksConfig.categoriesSetting(tier).set(saved));
             CraftworksConfig.CONFIG_VERSION.set(savedVersion);
-            // The upgrade saved the file, so the restored values are saved over what it wrote.
-            CraftworksConfig.CONFIG_VERSION.save();
         }
         helper.succeed();
     }

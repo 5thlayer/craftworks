@@ -149,17 +149,18 @@ public final class CraftworksConfig {
     }
 
     static void onLoading(ModConfigEvent.Loading event) {
-        if (event.getConfig().getSpec() == SPEC) upgrade();
+        if (event.getConfig().getSpec() == SPEC && upgrade()) SPEC.save();
     }
 
     /**
      * Brings a config file written by an older Craftworks up to date, once, as NeoForge keeps the values
      * already in a file. Version 1: a tier whose {@code categories} are exactly the three there were
      * before {@code brewing} (so meant "every category") gains {@code brewing}. A list that left any out
-     * is kept as written, and once the file is at the latest version no list is touched again.
+     * is kept as written, and once the file is at the latest version no list is touched again. Returns whether
+     * it changed anything, which the caller saves.
      */
-    public static void upgrade() {
-        if (!SPEC.isLoaded() || CONFIG_VERSION.get() >= LATEST_VERSION) return;
+    public static boolean upgrade() {
+        if (!SPEC.isLoaded() || CONFIG_VERSION.get() >= LATEST_VERSION) return false;
         for (MachineSettings machine : MACHINES.values()) {
             var categories = machine.categories();
             if (!new HashSet<>(categories.get()).equals(BEFORE_BREWING)) continue;
@@ -168,7 +169,7 @@ public final class CraftworksConfig {
             categories.set(upgraded);
         }
         CONFIG_VERSION.set(LATEST_VERSION);
-        SPEC.save();
+        return true;
     }
 
     /** Whether the built-in vanilla pack is on; its default, on, until a world's config is loaded. */
