@@ -33,3 +33,14 @@ gated on it did nothing at all. The server already resolves every Fill and opens
 naming what is Missing or Locked (ADR-0004), so the lagging set is only a hint about what to list. A
 favorite with several Assembling recipes still prefers a Ready one; only when none is Ready does EMI's
 own choice stand.
+
+**Amended (#77): a plain right click on a stack queues five, after every EMI bind.** On the Personal
+Assembler's screen, a plain right click on a Craftables entry, a favorite or an index stack queues five
+the way a left click queues one, and a five the inventory can't cover opens the Crafting Plan, as on
+`+` (ADR-0004). EMI has no craft bind that carries a button, so Craftworks answers right click itself,
+but only on a press that none of EMI's binds took: with EMI's defaults view-uses keeps right click, and a
+player who wants five unbinds it. Taking right click ahead of EMI was rejected, since it would silently
+cost every Assembling item its view-uses on the inventory screen. The press crafts only through the
+Personal Assembler's handler; a recipe that would go to any other handler, EMI's 2x2 one included, gets
+nothing, so no ingredients move into a grid. Shift + right click adds nothing, since Shift + left click
+already queues all.
