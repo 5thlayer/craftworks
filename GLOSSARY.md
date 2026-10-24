@@ -118,7 +118,7 @@ _Avoid_: output tank slot, bucket slot, fluid output slot
 The kind an Assembling recipe is, one of four names and no other: `crafting` (the default),
 `advanced-crafting`, `crafting-with-fluid`, for any recipe with a fluid in or out that is not brewed, and
 `brewing`, for every **Brewed recipe**. Each tier of
-Assembler holds the categories its server config lists, all three by default, and Fill Recipe refuses a
+Assembler holds the categories its server config lists, all four by default, and Fill Recipe refuses a
 recipe outside them. The Personal Assembler ignores it: it is no machine, and plans through any Hand-craftable
 recipe whatever its category.
 _Avoid_: type (the recipe's `type` is its Minecraft recipe type), tag
@@ -132,10 +132,16 @@ _Avoid_: selected recipe, active recipe, machine recipe
 
 **Converted recipe**:
 An Assembling recipe Craftworks makes from a shaped or shapeless crafting recipe, or from one that wraps
-such a recipe (Sophisticated Backpacks' backpacks), at that recipe's own id, replacing it: its slots become a bag of ingredients, with the default craft time and Route priority.
+such a recipe (Sophisticated Backpacks' backpacks), at that recipe's own id, replacing it: its slots become a bag of ingredients, with the default craft time (a **Storage recipe**'s is shorter) and Route priority.
 Vanilla's come built in; every other mod's are converted as recipes load, unless the pack excludes them or
 already has an Assembling recipe at that id.
 _Avoid_: imported recipe, ported recipe
+
+**Storage recipe**:
+A Converted recipe that packs an item into its storage block or unpacks it, known by its round trip: nine or four of
+one item make one of another, and a Converted recipe makes that one back into as many. Both directions count (iron
+ingots and the iron block, nuggets and the ingot); a crafting table, from four planks, does not. It takes one tick.
+_Avoid_: compression recipe, packing recipe
 
 **Brewed recipe**:
 An Assembling recipe Craftworks makes from the brewing stand's mixes, vanilla's and other mods', at an id of its
