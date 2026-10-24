@@ -29,7 +29,7 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
 import net.neoforged.neoforge.fluids.FluidStack;
 
 /**
- * The brewing stand's mixes as Brewed recipes in the recipe map after a load (#76, ADR-0025): their ids, ingredients,
+ * The brewing stand's mixes as Brewed recipes in the recipe map after a load (#76, ADR-0026): their ids, ingredients,
  * water, results, time and category, the two chains to slowness, the container steps, the brews {@link TestBrews}
  * adds the way another mod would, and the flag and the exclude list that remove them.
  */

@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Converts mods' crafting recipes (ADR-0011) and adds the Brewed recipes (ADR-0025) as the recipes load: once every datapack has been read and
+ * Converts mods' crafting recipes (ADR-0011) and adds the Brewed recipes (ADR-0026) as the recipes load: once every datapack has been read and
  * KubeJS, which edits them while they are read, is done, and as the loaded map is handed on.
  */
 @Mixin(RecipeManager.class)

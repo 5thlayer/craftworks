@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * The brewing stand's mixes as a graph, and every chain of brews that starts from a water bottle (ADR-0025):
+ * The brewing stand's mixes as a graph, and every chain of brews that starts from a water bottle (ADR-0026):
  * what the Brewed recipes fold. No Minecraft types, so the rules are unit-tested; the converter names the
  * type parameters, {@code P} a potion, {@code I} an ingredient, {@code C} a bottle's container and {@code R} a
  * brew's result that is not a potion.

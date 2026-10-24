@@ -19,7 +19,7 @@ import io.github._5thlayer.craftworks.recipe.BrewingChains.PotionMix;
 import io.github._5thlayer.craftworks.recipe.BrewingChains.Table;
 import org.junit.jupiter.api.Test;
 
-/** The chains from water that Brewed recipes fold (ADR-0025, #76), over a table of plain strings. */
+/** The chains from water that Brewed recipes fold (ADR-0026, #76), over a table of plain strings. */
 class BrewingChainsTest {
 
     private static final List<ContainerMix<String, String>> CONTAINERS = List.of(

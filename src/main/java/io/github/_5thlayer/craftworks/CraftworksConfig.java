@@ -89,7 +89,7 @@ public final class CraftworksConfig {
                                 : Identifier.isValidNamespace(entry)));
         BREWING_RECIPES = builder
                 .comment("Whether the brewing stand's mixes, vanilla's and other mods', become Brewed recipes as recipes",
-                        "load (ADR-0025): Assembling recipes in the brewing category that brew from water. Off, brewing",
+                        "load (ADR-0026): Assembling recipes in the brewing category that brew from water. Off, brewing",
                         "stays at the stand. modRecipesExcluded can name a Brewed recipe's id.")
                 .define("brewingRecipes", true);
         for (AssemblerTier tier : AssemblerTier.values()) {

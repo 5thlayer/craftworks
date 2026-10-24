@@ -54,7 +54,7 @@ import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.slf4j.Logger;
 
 /**
- * The brewing stand's mixes as Brewed recipes (ADR-0025, #76): at the end of every recipe load, beside
+ * The brewing stand's mixes as Brewed recipes (ADR-0026, #76): at the end of every recipe load, beside
  * {@link ModRecipes}, each chain of brews from a water bottle ({@link BrewingChains}) is added as an
  * Assembling recipe in the {@code brewing} category. It takes 3 glass bottles, 750 mB of water and one of each
  * ingredient along the chain, and makes 3 of what the chain ends in (as three results where the item does not stack), in 400 ticks for every step.

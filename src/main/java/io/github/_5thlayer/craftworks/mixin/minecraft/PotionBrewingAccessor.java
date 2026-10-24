@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 /**
  * The brewing table's potion and container mixes, which {@link PotionBrewing} keeps private and answers only
- * by a source and an ingredient; for the Brewed recipes (ADR-0025). Each is a list of
+ * by a source and an ingredient; for the Brewed recipes (ADR-0026). Each is a list of
  * {@link PotionBrewingMixAccessor}.
  */
 @Mixin(PotionBrewing.class)
