@@ -247,7 +247,7 @@ final class AssemblerMachineTests {
         HoldVerdict remainders = request(assembler, TWO_REMAINDERS);
         HoldVerdict none = request(assembler, id("gametest/not_a_recipe"));
         helper.assertTrue(many == HoldVerdict.TOO_MANY_INGREDIENTS, "six ingredients was " + many);
-        helper.assertTrue(remainders == HoldVerdict.REMAINDERS_DONT_FIT, "a bucket and a bottle left behind was " + remainders);
+        helper.assertTrue(remainders == HoldVerdict.REMAINDERS_DONT_FIT, "33 buckets and a bottle left behind was " + remainders);
         helper.assertTrue(none == HoldVerdict.NOT_ASSEMBLING, "an id naming no recipe was " + none);
         helper.assertTrue(assembler.machine().heldRecipe().isEmpty(), "a refused recipe was held");
         helper.assertTrue(assembler.player().heard.containsAll(List.of("craftworks.assembler.refused.too_many_ingredients",
@@ -274,7 +274,7 @@ final class AssemblerMachineTests {
         HoldVerdict many = request(assembler, SIX_INGREDIENTS);
         HoldVerdict remainders = request(assembler, TWO_REMAINDERS);
         helper.assertTrue(many == HoldVerdict.TOO_MANY_INGREDIENTS, "six ingredients was " + many);
-        helper.assertTrue(remainders == HoldVerdict.REMAINDERS_DONT_FIT, "a bucket and a bottle left behind was " + remainders);
+        helper.assertTrue(remainders == HoldVerdict.REMAINDERS_DONT_FIT, "33 buckets and a bottle left behind was " + remainders);
         helper.assertTrue(!LOCK_ASKS.containsKey(SIX_INGREDIENTS) && !LOCK_ASKS.containsKey(TWO_REMAINDERS),
                 "the Lock source was asked about a recipe the Assembler can never run: " + LOCK_ASKS);
         helper.assertTrue(request(assembler, SAPLING) == HoldVerdict.HELD, "a recipe it can run was refused");

@@ -33,7 +33,7 @@ tick for each slot.
 ingredients' remainders, the recipe's further results, and the emptied and filled containers all land in any slot with
 room, a slot holding something before an empty one. A craft waits while its product and remainders do not all fit.
 The Held recipe's leftover rule stays (ADR-0018): its remainders and further results are at most one kind of item
-and at most a stack, which four slots only make easier (ADR-0026 amends it to the three stacks the product leaves). The outputs stand in the inventory where the product and the
+and at most a stack, which four slots only make easier (ADR-0026 amends it to three stacks, of any kinds, the outputs the product leaves). The outputs stand in the inventory where the product and the
 remainders did, as its first two slots, so a world saved earlier loads with nothing lost or moved.
 
 **Fluid boxes** are a flat 2,000 mB, input and output, so a bucket always swaps whole, like the Wireworks Boiler's

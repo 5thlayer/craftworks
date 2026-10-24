@@ -3,6 +3,8 @@
 
 package io.github._5thlayer.craftworks.machine;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import io.github._5thlayer.craftworks.CraftworksConfig;
@@ -29,7 +31,7 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
  * whose category the tier's server config does not list, one with more fluid ingredients or results than the
  * boxes of {@link FluidLayout#ASSEMBLER} (two in, three out) or with more of a fluid a craft than an input box
  * holds, one with more distinct ingredients than the five input slots, and one whose remainders don't fit the
- * shared output slots (at most one kind of item, at most three stacks of it: the outputs the product leaves).
+ * shared output slots (the stacks of every kind it leaves add up to at most three: the outputs the product leaves).
  */
 public final class HeldRecipes {
 
@@ -54,40 +56,57 @@ public final class HeldRecipes {
     }
 
     /**
-     * Whether one craft's remainders fit the shared outputs: all one item with the same components, so
-     * they stack, and no more of it than a stack holds. The recipe's results after the first count with
-     * them, since they share the leftovers' rule. Asked of every item each ingredient could be, so a
-     * recipe held never jams on whichever one is put in. The product takes one of the four shared outputs, so
-     * what is owed fits in the other three: two further potions of a brew that makes three, which stack to one.
+     * Whether one craft's remainders fit the shared outputs: grouped by item and components, since only
+     * those stack, the stacks each kind needs add up to no more than the outputs the product leaves. The recipe's
+     * results after the first count with them, since they share the leftovers' rule. Asked of every item each
+     * ingredient could be, so a recipe held never jams on whichever one is put in. The product takes one of the
+     * four shared outputs, so what is owed fits in the other three: two further potions of a brew that makes three
+     * stack to one each, a dragon's breath's bottle to another.
      * Not cheap: an Assembler asks once per recipe
      * instance, through {@link #canRun}.
      */
     private static boolean remaindersFit(AssemblingRecipe recipe) {
-        ItemStackTemplate kind = null;
-        int owed = 0;
+        List<ItemStack> kinds = new ArrayList<>();
         for (ItemStackTemplate extra : recipe.extraResults()) {
-            if (kind != null && !ItemStack.isSameItemSameComponents(kind.create(), extra.create())) {
-                return false;
-            }
-            kind = extra;
-            owed += extra.count();
+            owe(kinds, extra.create(), extra.count());
         }
         for (SizedIngredient sized : recipe.ingredients()) {
-            int most = 0;
+            // What this ingredient could leave at most, of each kind it could leave.
+            List<ItemStack> most = new ArrayList<>();
             for (Holder<Item> item : sized.ingredient().items().toList()) {
                 ItemStackTemplate remainder = item.value().getCraftingRemainder(new ItemStack(item));
                 if (remainder == null) {
                     continue;
                 }
-                if (kind != null && !ItemStack.isSameItemSameComponents(kind.create(), remainder.create())) {
-                    return false;
+                ItemStack owed = remainder.create();
+                int count = remainder.count() * sized.count();
+                ItemStack seen = most.stream().filter(m -> ItemStack.isSameItemSameComponents(m, owed)).findFirst().orElse(null);
+                if (seen == null) {
+                    most.add(owed.copyWithCount(count));
+                } else {
+                    seen.setCount(Math.max(seen.getCount(), count));
                 }
-                kind = remainder;
-                most = Math.max(most, remainder.count() * sized.count());
             }
-            owed += most;
+            for (ItemStack kind : most) {
+                owe(kinds, kind, kind.getCount());
+            }
         }
-        return kind == null || owed <= kind.create().getMaxStackSize() * (AssemblerSlots.OUTPUTS - 1);
+        int stacks = 0;
+        for (ItemStack kind : kinds) {
+            stacks += (kind.getCount() + kind.getMaxStackSize() - 1) / kind.getMaxStackSize();
+        }
+        return stacks <= AssemblerSlots.OUTPUTS - 1;
+    }
+
+    /** Adds {@code count} of this kind to what a craft owes. */
+    private static void owe(List<ItemStack> kinds, ItemStack kind, int count) {
+        for (ItemStack owed : kinds) {
+            if (ItemStack.isSameItemSameComponents(owed, kind)) {
+                owed.grow(count);
+                return;
+            }
+        }
+        kinds.add(kind.copyWithCount(count));
     }
 
     /**

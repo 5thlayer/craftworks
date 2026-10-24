@@ -44,7 +44,7 @@
   "craftworks.assembler.refused.wrong_category": "%s is in a recipe category this Assembler's tier can't make.",
   "craftworks.assembler.refused.too_many_fluids": "%s needs more fluids in or out than the Assembler's two input and three output boxes hold.",
   "craftworks.assembler.refused.fluid_too_large": "%s needs more than 2,000 mB of a fluid a craft, which is all an Assembler fluid box holds.",
-  "craftworks.assembler.refused.remainders_dont_fit": "%s leaves more behind than the Assembler's outputs take: one kind of item, and no more than three stacks.",
+  "craftworks.assembler.refused.remainders_dont_fit": "%s leaves more behind than the Assembler's outputs take: no more than three stacks, of any kinds.",
   "craftworks.assembler.refused.too_many_ingredients": "%s has more than 5 different ingredients, and the Assembler has 5 input slots.",
   "craftworks.assembler.refused.locked": "%s is Locked for you.",
   "craftworks.jade.no_held_recipe": "No Held recipe",

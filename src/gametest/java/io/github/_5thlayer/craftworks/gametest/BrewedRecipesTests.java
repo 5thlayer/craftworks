@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.github._5thlayer.craftworks.CraftworksConfig;
+import io.github._5thlayer.craftworks.machine.AssemblerSlots;
 import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import io.github._5thlayer.craftworks.recipe.ModRecipes;
@@ -157,8 +158,13 @@ final class BrewedRecipesTests {
             helper.assertTrue(recipe.category() == AssemblingCategory.BREWING && !recipe.handCraftable()
                     && recipe.fluidIngredients().size() == 1 && recipe.fluidIngredients().getFirst().amount() == 750
                     && recipe.time() % 400 == 0 && takes(recipe, Items.GLASS_BOTTLE, 3), id + " is " + describe(recipe));
+            helper.assertTrue(recipe.ingredients().size() <= AssemblerSlots.INPUTS, id + " takes " + recipe.ingredients().size() + " ingredients");
         }
         helper.assertTrue(seen > 50, "only " + seen + " Brewed recipes");
+        // Bottles, wart, carrot, redstone, gunpowder and dragon's breath: six, more than the input slots.
+        helper.assertTrue(at(helper.getLevel().getServer(), BREWING + "lingering_potion/minecraft/long_night_vision/"
+                + "minecraft.nether_wart/minecraft.golden_carrot/minecraft.redstone/minecraft.gunpowder/minecraft.dragon_breath") == null,
+                "a chain of six ingredients has a recipe");
         helper.succeed();
     }
 

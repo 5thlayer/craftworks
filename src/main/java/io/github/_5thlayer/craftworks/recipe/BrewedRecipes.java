@@ -14,6 +14,7 @@ import java.util.Set;
 
 import com.mojang.logging.LogUtils;
 import io.github._5thlayer.craftworks.CraftworksConfig;
+import io.github._5thlayer.craftworks.machine.AssemblerSlots;
 import io.github._5thlayer.craftworks.mixin.minecraft.PotionBrewingAccessor;
 import io.github._5thlayer.craftworks.mixin.minecraft.PotionBrewingMixAccessor;
 import io.github._5thlayer.craftworks.recipe.BrewingChains.Chain;
@@ -58,6 +59,7 @@ import org.slf4j.Logger;
  * {@link ModRecipes}, each chain of brews from a water bottle ({@link BrewingChains}) is added as an
  * Assembling recipe in the {@code brewing} category. It takes 3 glass bottles, 750 mB of water and one of each
  * ingredient along the chain, and makes 3 of what the chain ends in (as three results where the item does not stack), in 400 ticks for every step.
+ * A chain with more distinct ingredients, the bottles included, than an Assembler has input slots is left out and counted in the log.
  *
  * <p>Read are vanilla's potion and container mixes and NeoForge's {@link BrewingRecipe}s, each of which is a step
  * from every potion its bottle ingredient accepts. Any other {@link IBrewingRecipe} answers only for an input
@@ -170,11 +172,21 @@ public final class BrewedRecipes {
         });
 
         Map<Identifier, AssemblingRecipe> brewed = new LinkedHashMap<>();
+        int tooDeep = 0;
         for (Chain<Identifier, Ingredient, Item, ItemStackTemplate> chain : BrewingChains.chains(table)) {
             Identifier id = idOf(chain);
-            if (brewed.putIfAbsent(id, toRecipe(chain, potions)) != null) {
+            AssemblingRecipe recipe = toRecipe(chain, potions);
+            if (recipe.ingredients().size() > AssemblerSlots.INPUTS) {
+                tooDeep++;
+                continue;
+            }
+            if (brewed.putIfAbsent(id, recipe) != null) {
                 LOGGER.warn("Personal Assembler: two brewing chains share the id {}; the first is kept.", id);
             }
+        }
+        if (tooDeep > 0) {
+            LOGGER.info("Personal Assembler: {} brewing chain(s) left at the brewing stand, since they take more than the {} "
+                    + "ingredients an Assembler holds.", tooDeep, AssemblerSlots.INPUTS);
         }
         return brewed;
     }

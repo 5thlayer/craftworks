@@ -254,7 +254,7 @@ final class AssemblingCategoryTests {
     private static void extraResultsAndRemainders(GameTestHelper helper) {
         Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.THREE);
         HoldVerdict clash = AssemblerMachineTests.request(assembler, CLASH);
-        helper.assertTrue(clash == HoldVerdict.REMAINDERS_DONT_FIT, "a stick and a bucket left behind was " + clash);
+        helper.assertTrue(clash == HoldVerdict.REMAINDERS_DONT_FIT, "64 sticks and 33 buckets owed was " + clash);
         helper.assertTrue(assembler.player().heard.contains("craftworks.assembler.refused.remainders_dont_fit"),
                 "the player was told " + assembler.player().heard);
 

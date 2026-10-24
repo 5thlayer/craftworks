@@ -29,6 +29,9 @@ import net.neoforged.neoforge.transfer.energy.SimpleEnergyHandler;
 final class BrewedAssemblerTests {
 
     private static final Identifier NIGHT_VISION = Identifier.parse(BrewedRecipesTests.NIGHT_VISION);
+    private static final Identifier LINGERING_NIGHT_VISION = Identifier.parse(
+            "craftworks:brewing/lingering_potion/minecraft/night_vision/minecraft.nether_wart/minecraft.golden_carrot/"
+                    + "minecraft.gunpowder/minecraft.dragon_breath");
     private static final List<AssemblingCategory> WITHOUT_BREWING =
             List.of(AssemblingCategory.CRAFTING, AssemblingCategory.ADVANCED_CRAFTING, AssemblingCategory.CRAFTING_WITH_FLUID);
 
@@ -38,6 +41,7 @@ final class BrewedAssemblerTests {
     static void register(CraftworksGameTests.Registrar tests) {
         tests.test("brewed_a_tier_1_assembler_brews_three_night_vision_from_piped_water_in_the_recipes_time", 20, BrewedAssemblerTests::brews);
         tests.test("brewed_a_tier_whose_config_leaves_out_brewing_refuses_the_recipe_at_fill_recipe", 20, BrewedAssemblerTests::refusedWithoutTheCategory);
+        tests.test("brewed_a_tier_1_assembler_holds_a_lingering_recipe_whose_dragons_breath_leaves_a_bottle", 20, BrewedAssemblerTests::holdsLingering);
     }
 
     private static void brews(GameTestHelper helper) {
@@ -83,6 +87,14 @@ final class BrewedAssemblerTests {
         int total = 0;
         for (int n = 0; n < AssemblerSlots.OUTPUTS; n++) total += AssemblerMachineTests.count(assembler, AssemblerSlots.output(n));
         return total;
+    }
+
+    /** Two more lingering potions and a glass bottle are owed beside the product: three output slots, two kinds. */
+    private static void holdsLingering(GameTestHelper helper) {
+        Placed assembler = AssemblerMachineTests.place(helper, AssemblerTier.ONE);
+        HoldVerdict verdict = AssemblerMachineTests.request(assembler, LINGERING_NIGHT_VISION);
+        helper.assertTrue(verdict == HoldVerdict.HELD, "a lingering Brewed recipe was answered with " + verdict);
+        helper.succeed();
     }
 
     private static void refusedWithoutTheCategory(GameTestHelper helper) {

@@ -16,7 +16,9 @@ one of each ingredient along the chain make three of what the chain ends in, a b
 potion goes in and none is a fluid. Splash adds one gunpowder at the end of the chain, lingering one dragon's breath
 after it. A chain never visits a potion twice; a potion two chains reach has two recipes. A brew takes 400 ticks for
 each step it folds, pays in FE and burns no blaze powder, and is never Hand-craftable. Its id names the chain:
-`craftworks:brewing/<bottle>/<potion ns>/<potion path>/<ingredient ns>.<ingredient path>/...`. Vanilla's potion and
+`craftworks:brewing/<bottle>/<potion ns>/<potion path>/<ingredient ns>.<ingredient path>/...` for a potion
+chain, and `craftworks:brewing/<item ns>/<item path>/<ingredient ns>.<ingredient path>/...` for a chain that ends in
+an item (no bottle segment, the item in place of the potion). Vanilla's potion and
 container mixes and NeoForge `BrewingRecipe`s convert; any other `IBrewingRecipe`, which can't be listed, is skipped
 with a log line, as is a mod brew no chain from water reaches. A `brewingRecipes` server flag, on by default, and the
 existing exclude list turn them off.
@@ -49,8 +51,11 @@ exclude.
 - Water bottles, potion bottles as inputs and the stand itself are unchanged; the stand still brews step by step.
 - A potion stacks to one, and a result template of three of it is no stack, so a Brewed recipe lists three results of
   one for a potion and one result of three for an item that stacks. The Held recipe's leftover rule, at most a stack
-  of one kind (ADR-0021), now asks for at most the three stacks the product's output slot leaves.
+  of one kind (ADR-0021), now asks that what a craft owes, of any kinds, fills at most the three output slots the
+  product leaves, a stack counting once per item and components: a lingering recipe owes two more potions and the
+  glass bottle of its dragon's breath.
 - The brewing table belongs to the server, which doesn't exist for the first recipe load: that load adds no Brewed
   recipes, and the reload `ModRecipes.follow` makes once the server has started brings them in.
 - A chain of more than four distinct ingredients, with the bottles, is more than the Assembler's five input slots
-  and is refused at Fill Recipe, as any recipe of six ingredients is.
+  and could never be held, so no Brewed recipe is added for it and one log line counts those skipped, such as a
+  lingering long potion (nether wart, a second item, redstone, gunpowder and dragon's breath).

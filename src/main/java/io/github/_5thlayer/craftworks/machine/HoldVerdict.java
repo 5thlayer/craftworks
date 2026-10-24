@@ -24,7 +24,7 @@ public enum HoldVerdict {
     FLUID_TOO_LARGE("fluid_too_large"),
     /** The recipe names more distinct ingredients than the Assembler has input slots. */
     TOO_MANY_INGREDIENTS("too_many_ingredients"),
-    /** One craft's remainders are two kinds of item, or more than three stacks, so the shared outputs' leftover rule refuses them. */
+    /** One craft's remainders need more than the three outputs the product leaves, counting the stacks of every kind, so the shared outputs' leftover rule refuses them. */
     REMAINDERS_DONT_FIT("remainders_dont_fit"),
     /** The Lock source says the recipe is Locked for the player pressing. */
     LOCKED("locked");
