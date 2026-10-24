@@ -26,6 +26,7 @@ public final class Craftworks {
 
     public Craftworks(IEventBus modBus, ModContainer container) {
         container.registerConfig(ModConfig.Type.SERVER, CraftworksConfig.SPEC);
+        modBus.addListener(CraftworksConfig::onLoading);
         CraftworksRecipes.register(modBus);
         VanillaPack.register(modBus);
         CraftworksNetwork.register(modBus);

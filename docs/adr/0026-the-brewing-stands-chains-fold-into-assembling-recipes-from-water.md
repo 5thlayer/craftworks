@@ -45,8 +45,11 @@ exclude.
 
 **Consequences.**
 
-- `crafting-with-fluid` is now any recipe with a fluid that is not a Brewed recipe. A pack that lists a tier's
-  `categories` must add `brewing` for that tier to brew.
+- `crafting-with-fluid` is now any recipe with a fluid that is not a Brewed recipe. NeoForge keeps the values a config file
+  already holds, so a one-time upgrade (`configVersion` in the server config, 0 to 1) adds `brewing` to a tier whose
+  `categories` are exactly the three there were before, which then meant every category. A list that left something
+  out is kept as written, so a pack that lists a tier's `categories` must add `brewing` for that tier to brew; and once
+  the file is at version 1, a pack can list those three to drop it.
 - The ids are part of a pack's data (exclude lists, KubeJS); changing the scheme later breaks a pack (ADR-0008).
 - Water bottles, potion bottles as inputs and the stand itself are unchanged; the stand still brews step by step.
 - A potion stacks to one, and a result template of three of it is no stack, so a Brewed recipe lists three results of

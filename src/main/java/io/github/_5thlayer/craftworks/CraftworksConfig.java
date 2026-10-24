@@ -6,12 +6,15 @@ package io.github._5thlayer.craftworks;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.recipe.AssemblingCategory;
 import net.minecraft.resources.Identifier;
+import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /** Craftworks' server config, {@code craftworks-server.toml} in a world's {@code serverconfig}. */
@@ -27,6 +30,17 @@ public final class CraftworksConfig {
     }
 
     static final ModConfigSpec SPEC;
+
+    /** The config upgrade the file has run through; see {@link #upgrade()}. */
+    public static final ModConfigSpec.IntValue CONFIG_VERSION;
+
+    /** The upgrades there are: a file at this version has run them all. */
+    private static final int LATEST_VERSION = 1;
+
+    /** The categories every tier could hold before {@code brewing} existed, which then meant "every category". */
+    private static final Set<String> BEFORE_BREWING = Set.of(
+            AssemblingCategory.CRAFTING.id(), AssemblingCategory.ADVANCED_CRAFTING.id(),
+            AssemblingCategory.CRAFTING_WITH_FLUID.id());
 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> LOCK_SOURCES;
 
@@ -64,6 +78,9 @@ public final class CraftworksConfig {
 
     static {
         var builder = new ModConfigSpec.Builder();
+        CONFIG_VERSION = builder
+                .comment("Which of Craftworks' config upgrades have run on this file. Leave it alone.")
+                .defineInRange("configVersion", 0, 0, Integer.MAX_VALUE);
         LOCK_SOURCES = builder
                 .comment("What locks a recipe for a player, on top of any hook a mod registers. A recipe is",
                         "Locked if any listed source says so. Empty (the default) locks nothing.",
@@ -129,6 +146,29 @@ public final class CraftworksConfig {
     }
 
     private CraftworksConfig() {
+    }
+
+    static void onLoading(ModConfigEvent.Loading event) {
+        if (event.getConfig().getSpec() == SPEC) upgrade();
+    }
+
+    /**
+     * Brings a config file written by an older Craftworks up to date, once, as NeoForge keeps the values
+     * already in a file. Version 1: a tier whose {@code categories} are exactly the three there were
+     * before {@code brewing} (so meant "every category") gains {@code brewing}. A list that left any out
+     * is kept as written, and once the file is at the latest version no list is touched again.
+     */
+    public static void upgrade() {
+        if (!SPEC.isLoaded() || CONFIG_VERSION.get() >= LATEST_VERSION) return;
+        for (MachineSettings machine : MACHINES.values()) {
+            var categories = machine.categories();
+            if (!new HashSet<>(categories.get()).equals(BEFORE_BREWING)) continue;
+            List<String> upgraded = new ArrayList<>(categories.get());
+            upgraded.add(AssemblingCategory.BREWING.id());
+            categories.set(upgraded);
+        }
+        CONFIG_VERSION.set(LATEST_VERSION);
+        SPEC.save();
     }
 
     /** Whether the built-in vanilla pack is on; its default, on, until a world's config is loaded. */

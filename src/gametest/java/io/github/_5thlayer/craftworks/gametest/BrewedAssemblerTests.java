@@ -42,6 +42,15 @@ final class BrewedAssemblerTests {
         tests.test("brewed_a_tier_1_assembler_brews_three_night_vision_from_piped_water_in_the_recipes_time", 20, BrewedAssemblerTests::brews);
         tests.test("brewed_a_tier_whose_config_leaves_out_brewing_refuses_the_recipe_at_fill_recipe", 20, BrewedAssemblerTests::refusedWithoutTheCategory);
         tests.test("brewed_a_tier_1_assembler_holds_a_lingering_recipe_whose_dragons_breath_leaves_a_bottle", 20, BrewedAssemblerTests::holdsLingering);
+        tests.test("brewed_a_config_at_version_0_listing_the_three_old_categories_gains_brewing_and_version_1", 20,
+                helper -> upgrading(helper, 0, List.of("crafting", "advanced-crafting", "crafting-with-fluid"),
+                        List.of("crafting", "advanced-crafting", "crafting-with-fluid", "brewing")));
+        tests.test("brewed_a_config_at_version_1_listing_the_three_old_categories_is_left_as_written", 20,
+                helper -> upgrading(helper, 1, List.of("crafting", "advanced-crafting", "crafting-with-fluid"),
+                        List.of("crafting", "advanced-crafting", "crafting-with-fluid")));
+        tests.test("brewed_a_config_at_version_0_that_dropped_a_category_is_left_as_written", 20,
+                helper -> upgrading(helper, 0, List.of("crafting", "crafting-with-fluid"),
+                        List.of("crafting", "crafting-with-fluid")));
     }
 
     private static void brews(GameTestHelper helper) {
@@ -107,6 +116,29 @@ final class BrewedAssemblerTests {
             helper.assertTrue(verdict == HoldVerdict.WRONG_CATEGORY, "a tier 1 without brewing answered a Brewed recipe with " + verdict);
             helper.assertTrue(restricted.machine().heldRecipe().isEmpty(), "a refused recipe was held");
         });
+        helper.succeed();
+    }
+
+    /** Sets tier 1's categories and the config version, runs the upgrade, checks both, and restores the config. */
+    private static void upgrading(GameTestHelper helper, int version, List<String> before, List<String> expected) {
+        var categories = CraftworksConfig.categoriesSetting(AssemblerTier.ONE);
+        List<? extends String> savedCategories = categories.get();
+        int savedVersion = CraftworksConfig.CONFIG_VERSION.get();
+        try {
+            categories.set(before);
+            CraftworksConfig.CONFIG_VERSION.set(version);
+            CraftworksConfig.upgrade();
+            helper.assertTrue(List.copyOf(categories.get()).equals(expected),
+                    "tier 1 listed " + categories.get() + " after the upgrade, not " + expected);
+            int expectedVersion = Math.max(version, 1);
+            helper.assertTrue(CraftworksConfig.CONFIG_VERSION.get() == expectedVersion,
+                    "the version was " + CraftworksConfig.CONFIG_VERSION.get() + " after the upgrade, not " + expectedVersion);
+        } finally {
+            categories.set(savedCategories);
+            CraftworksConfig.CONFIG_VERSION.set(savedVersion);
+            // The upgrade saved the file, so the restored values are saved over what it wrote.
+            CraftworksConfig.CONFIG_VERSION.save();
+        }
         helper.succeed();
     }
 }
