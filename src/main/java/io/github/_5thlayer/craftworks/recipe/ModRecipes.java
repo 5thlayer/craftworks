@@ -41,7 +41,7 @@ import org.slf4j.Logger;
  * Other mods' crafting recipes as Converted recipes (ADR-0011, #13): at the end of every recipe load,
  * after every datapack and KubeJS script has had its say, each shaped or shapeless crafting recipe is
  * replaced at its own id by an Assembling recipe, its slots counted into a bag, with the default time
- * and Route priority.
+ * and Route priority; the Storage recipes among them, which undo each other, take one tick ({@link StorageRecipes}).
  *
  * <p>Left alone: anything already an Assembling recipe, the built-in vanilla pack's among them; vanilla's
  * ids while that pack is off; a subclass that assembles its own result; the namespaces and ids {@code modRecipesExcluded} names; and a recipe
@@ -95,6 +95,7 @@ public final class ModRecipes {
         int converted = 0;
         List<RecipeHolder<?>> holders = new ArrayList<>(recipes.values().size());
         Map<Identifier, CraftingRecipe> kept = new LinkedHashMap<>();
+        Map<Identifier, Integer> convertedAt = new LinkedHashMap<>();
         for (RecipeHolder<?> holder : recipes.values()) {
             Identifier id = holder.id().identifier();
             // With the vanilla pack off, vanilla's ids stay at the table: that flag answers for them, not this one.
@@ -107,6 +108,7 @@ public final class ModRecipes {
             if (assembling == null) {
                 holders.add(holder);
             } else {
+                convertedAt.put(id, holders.size());
                 holders.add(new RecipeHolder<>(holder.id(), assembling));
                 converted++;
                 // A Data-carrying recipe: the original is kept, for a craft to ask what it made (ADR-0022).
@@ -115,13 +117,39 @@ public final class ModRecipes {
                 }
             }
         }
+        int storage = timeStorageRecipes(holders, convertedAt);
         DataCarryingRecipes.replace(kept);
-        LOGGER.info("Personal Assembler: {} mod crafting recipe(s) converted to Assembling recipes, {} of them Data-carrying (the original assembles the result).", converted, kept.size());
+        LOGGER.info("Personal Assembler: {} mod crafting recipe(s) converted to Assembling recipes, {} of them Data-carrying (the original assembles the result), {} of them Storage recipes.", converted, kept.size(), storage);
         if (!skipped.isEmpty()) {
             LOGGER.warn("Personal Assembler: {} mod crafting recipe(s) left at the crafting table, with an ingredient or "
                     + "result an Assembling recipe cannot hold: {}", skipped.size(), skipped);
         }
         return converted == 0 ? recipes : RecipeMap.create(holders);
+    }
+
+    /**
+     * Gives the Converted recipes that have their round trip the Storage recipe time (#78), in place in
+     * {@code holders}; only those this load converted count, on either side of the trip. Returns how many.
+     */
+    private static int timeStorageRecipes(List<RecipeHolder<?>> holders, Map<Identifier, Integer> convertedAt) {
+        List<StorageRecipes.Trade<SizedIngredient, ItemStackTemplate>> trades = new ArrayList<>();
+        convertedAt.forEach((id, at) -> {
+            AssemblingRecipe recipe = (AssemblingRecipe) holders.get(at).value();
+            if (recipe.ingredients().size() == 1 && recipe.results().size() == 1 && recipe.fluidIngredients().isEmpty()
+                    && recipe.fluidResults().isEmpty() && recipe.results().getFirst().components().isEmpty()) {
+                SizedIngredient ingredient = recipe.ingredients().getFirst();
+                ItemStackTemplate result = recipe.results().getFirst();
+                trades.add(new StorageRecipes.Trade<>(id.toString(), ingredient, ingredient.count(), result, result.count()));
+            }
+        });
+        var found = StorageRecipes.find(trades, (ingredient, result) -> ingredient.ingredient().acceptsItem(result.item()));
+        for (var entry : convertedAt.entrySet()) {
+            if (!found.contains(entry.getKey().toString())) continue;
+            RecipeHolder<?> holder = holders.get(entry.getValue());
+            holders.set(entry.getValue(), new RecipeHolder<>(holder.id(),
+                    ((AssemblingRecipe) holder.value()).withTime(AssemblingRecipe.STORAGE_TIME)));
+        }
+        return found.size();
     }
 
     /**

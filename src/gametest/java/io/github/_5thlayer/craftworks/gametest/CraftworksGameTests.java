@@ -4,7 +4,9 @@
 package io.github._5thlayer.craftworks.gametest;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import com.mojang.serialization.MapCodec;
@@ -45,8 +47,12 @@ public final class CraftworksGameTests {
     private static final DeferredRegister<MapCodec<? extends GameTestInstance>> TEST_TYPES =
             DeferredRegister.create(Registries.TEST_INSTANCE_TYPE, Craftworks.MOD_ID);
 
+    private static final DeferredRegister<MapCodec<? extends TestEnvironmentDefinition<?>>> ENVIRONMENT_TYPES =
+            DeferredRegister.create(Registries.TEST_ENVIRONMENT_DEFINITION_TYPE, Craftworks.MOD_ID);
+
     static {
         TEST_TYPES.register("code", () -> CodeGameTest.CODEC);
+        ENVIRONMENT_TYPES.register("with_test_pack", () -> WithTestPack.CODEC);
     }
 
     private CraftworksGameTests() {
@@ -59,6 +65,8 @@ public final class CraftworksGameTests {
 
     public static void register(IEventBus modBus) {
         TEST_TYPES.register(modBus);
+        ENVIRONMENT_TYPES.register(modBus);
+        modBus.addListener(WithTestPack::addPackFinders);
         // The tests' own fluid-handler block, which a player's world never has.
         TestTank.register(modBus);
         // And the fluids a five-fluid recipe needs beyond water and lava.
@@ -84,7 +92,7 @@ public final class CraftworksGameTests {
     private static void registerTests(RegisterGameTestsEvent event) {
         // Registered rather than borrowed, since the event hands out no lookup for vanilla's.
         var environment = event.registerEnvironment(id("default"), new TestEnvironmentDefinition.AllOf(List.of()));
-        var tests = new Registrar(event, environment);
+        var tests = new Registrar(event, environment, new ConcurrentHashMap<>());
         boolean kubeJS = Boolean.getBoolean(KUBEJS_TESTS);
         LoadTests.register(tests);
         PlaysAloneTests.register(tests, kubeJS);
@@ -107,6 +115,7 @@ public final class CraftworksGameTests {
         CraftingPlanTests.register(tests);
         VanillaPackTests.register(tests);
         ModRecipesTests.register(tests);
+        StorageRecipeTests.register(tests);
         BrewedRecipesTests.register(tests);
         BrewedAssemblerTests.register(tests);
         DataCarryingTests.register(tests);
@@ -117,7 +126,7 @@ public final class CraftworksGameTests {
         // Its own environment, so its own batch: it reloads the server's recipes, which no test running
         // beside it could stand.
         var reloading = event.registerEnvironment(id("reloads_recipes"), new TestEnvironmentDefinition.AllOf(List.of()));
-        var reloadingTests = new Registrar(event, reloading);
+        var reloadingTests = new Registrar(event, reloading, tests.packEnvironments());
         VanillaPackTests.registerReloading(reloadingTests);
         ModRecipesTests.registerReloading(reloadingTests);
         BrewedRecipesTests.registerReloading(reloadingTests);
@@ -128,7 +137,17 @@ public final class CraftworksGameTests {
     }
 
     /** What a test class is handed: a name, a tick budget and a body per test. */
-    record Registrar(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> environment) {
+    record Registrar(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> environment,
+                     Map<String, Holder<TestEnvironmentDefinition<?>>> packEnvironments) {
+
+        /**
+         * The same, for tests that run in a batch of their own with one of the tests' datapacks switched on.
+         * The tests of every class that asks for one pack share its batch.
+         */
+        Registrar withPack(String pack) {
+            return new Registrar(event, packEnvironments.computeIfAbsent(pack,
+                    name -> event.registerEnvironment(id("with_" + name), new WithTestPack(name))), packEnvironments);
+        }
 
         void test(String name, int maxTicks, Consumer<GameTestHelper> body) {
             var id = id(name);

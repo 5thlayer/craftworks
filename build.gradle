@@ -121,6 +121,7 @@ def generateVanillaPack = tasks.register('generateVanillaPack') {
         recipes.mkdirs()
         def slurper = new groovy.json.JsonSlurper()
         def converted = 0
+        def assemblings = [:]
         new java.util.zip.ZipFile(gameJar.get().asFile).withCloseable { zip ->
             zip.entries().findAll { !it.directory && it.name ==~ 'data/minecraft/recipe/.+\\.json' }.each { entry ->
                 def recipe = slurper.parse(zip.getInputStream(entry), 'UTF-8')
@@ -143,16 +144,40 @@ def generateVanillaPack = tasks.register('generateVanillaPack') {
                     sized.count++
                 }
                 def assembling = [type: 'craftworks:assembling', ingredients: bag.values() as List, results: [recipe.result]]
-                def file = new File(recipes, entry.name.substring('data/minecraft/recipe/'.length()))
-                file.parentFile.mkdirs()
-                file.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(assembling)) + '\n'
+                assemblings[entry.name.substring('data/minecraft/recipe/'.length())] = assembling
                 converted++
             }
+        }
+        // A Storage recipe (#78) packs an item into its block or unpacks it: nine or four of one item make one of
+        // another, and a recipe makes that one back into as many. Both directions take one tick. ModRecipes decides
+        // the same for other mods' recipes at load; this can't call it, so the two stay in step by hand, and the
+        // game tests check vanilla's. Only plain item ingredients and results count here, which vanilla's are.
+        def trades = assemblings.findAll { name, assembling ->
+            assembling.ingredients.size() == 1 && assembling.results.size() == 1 && assembling.ingredients[0].ingredient instanceof String
+                    && !assembling.ingredients[0].ingredient.startsWith('#') && assembling.results[0] instanceof Map && assembling.results[0].components == null
+        }.collectEntries { name, assembling ->
+            [(name): [from: assembling.ingredients[0].ingredient, take: assembling.ingredients[0].count,
+                      to: assembling.results[0].id, make: assembling.results[0].count ?: 1]]
+        }
+        def storage = trades.findAll { name, pack ->
+            (pack.take == 9 || pack.take == 4) && pack.make == 1 && trades.any { otherName, unpack ->
+                unpack.take == 1 && unpack.from == pack.to && unpack.to == pack.from && unpack.make == pack.take
+            }
+        }.keySet() + trades.findAll { name, unpack ->
+            unpack.take == 1 && (unpack.make == 9 || unpack.make == 4) && trades.any { otherName, pack ->
+                pack.take == unpack.make && pack.make == 1 && pack.from == unpack.to && pack.to == unpack.from
+            }
+        }.keySet()
+        assemblings.each { name, assembling ->
+            if (storage.contains(name)) assembling.time = 1
+            def file = new File(recipes, name)
+            file.parentFile.mkdirs()
+            file.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(assembling)) + '\n'
         }
         if (converted == 0) throw new GradleException('No vanilla crafting recipes found in ' + gameJar.get().asFile)
         new File(root, 'pack.mcmeta').text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(
                 [pack: [description: 'Craftworks: vanilla crafting as Assembling recipes', min_format: [101, 1], max_format: [101, 1]]])) + '\n'
-        logger.lifecycle("Built-in vanilla pack: $converted recipe(s) converted")
+        logger.lifecycle("Built-in vanilla pack: $converted recipe(s) converted, ${storage.size()} of them Storage recipes")
     }
 }
 sourceSets.main.resources.srcDir(files(vanillaPackDir).builtBy(generateVanillaPack))

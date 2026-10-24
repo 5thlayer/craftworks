@@ -59,12 +59,19 @@ public record AssemblingRecipe(
         AssemblingCategory category) implements Recipe<RecipeInput> {
 
     public static final int DEFAULT_TIME = 10;
+    /** What a Storage recipe takes: packing an item into its block or unpacking it (GLOSSARY.md). */
+    public static final int STORAGE_TIME = 1;
     public static final int DEFAULT_PRIORITY = 0;
 
     public AssemblingRecipe {
         results = List.copyOf(results);
         fluidIngredients = List.copyOf(fluidIngredients);
         fluidResults = List.copyOf(fluidResults);
+    }
+
+    /** The same recipe taking {@code time} ticks. */
+    public AssemblingRecipe withTime(int time) {
+        return new AssemblingRecipe(ingredients, results, time, priority, fluidIngredients, fluidResults, handCraftable, category);
     }
 
     @Override

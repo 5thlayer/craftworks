@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:poisonous_potato",
+    "minecraft:poisonous_potato",
+    "minecraft:poisonous_potato",
+    "minecraft:poisonous_potato",
+    "minecraft:poisonous_potato",
+    "minecraft:poisonous_potato",
+    "minecraft:poisonous_potato",
+    "minecraft:poisonous_potato",
+    "minecraft:poisonous_potato"
+  ],
+  "result": {
+    "id": "minecraft:netherrack",
+    "count": 1
+  }
+}
