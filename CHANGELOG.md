@@ -4,6 +4,7 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- With EMI, a plain right click on a Craftables entry, a favorite or an index stack queues 5 crafts, like right click on +; an unaffordable 5 opens the Crafting Plan. EMI's own binds win, and its view-uses holds right click by default, so unbind it (EMI config, Binds) to use this. Left, Shift + left and + are as before. (#77)
 - With EMI, a craft shortcut on a Craftables entry or a favorite queues one craft, not two. It doubled on a craft key, and on left click once EMI's view-recipes bind is taken off left click, as the FactoryWorks Showcase does. With EMI's default binds, a left click that queues a craft no longer opens EMI's recipe screen as well. (#75)
 
 ## 0.10.8

@@ -15,6 +15,7 @@ import dev.emi.emi.api.stack.EmiStackInteraction;
 import dev.emi.emi.input.EmiBind;
 import dev.emi.emi.screen.EmiScreenManager;
 import io.github._5thlayer.craftworks.compat.emi.CraftClick;
+import io.github._5thlayer.craftworks.compat.emi.RightClickCraft;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
@@ -43,7 +44,11 @@ import org.spongepowered.asm.mixin.injection.At;
  * handler sent answers true, and {@code stackInteraction} stops there. {@code performFill} has already
  * returned false by then, so no {@code setScreen} follows.
  *
- * <p>Beyond that answer it only records; the click is never rerouted. The tooltip's {@code getPreferredRecipe}
+ * <p>The right click that falls through to a craft (#77, {@code StackClickMixin}) runs this same call, and
+ * there the picked recipe is dropped unless the Personal Assembler's handler is the one that would craft it
+ * ({@link RightClickCraft#refuses}), so EMI crafts nothing rather than fill a grid.
+ *
+ * <p>Beyond those it only records; the click is never rerouted. The tooltip's {@code getPreferredRecipe}
  * call is outside {@code craftInteraction} and is untouched. {@code try/finally} clears the flag on any
  * exit, and on any screen but the Assembler's nothing reads it.
  */
@@ -71,6 +76,7 @@ public abstract class CraftInteractionMixin {
         } finally {
             CraftClick.pickingFavoriteRecipe(false);
         }
-        return ready != null ? ready : original.call(supplier);
+        Object recipe = ready != null ? ready : original.call(supplier);
+        return RightClickCraft.refuses(recipe) ? null : recipe;
     }
 }
