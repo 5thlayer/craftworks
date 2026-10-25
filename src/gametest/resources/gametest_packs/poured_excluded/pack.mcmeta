@@ -1,0 +1,13 @@
+{
+  "pack": {
+    "description": "Craftworks poured_excluded game test recipes",
+    "min_format": [
+      101,
+      1
+    ],
+    "max_format": [
+      101,
+      1
+    ]
+  }
+}

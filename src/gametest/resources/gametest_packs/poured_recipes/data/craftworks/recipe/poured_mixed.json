@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "neoforge:ingredient_type": "neoforge:compound",
+      "children": [
+        "minecraft:lava_bucket",
+        "minecraft:dirt"
+      ]
+    }
+  ],
+  "result": {
+    "id": "minecraft:obsidian",
+    "count": 1
+  }
+}

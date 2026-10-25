@@ -116,6 +116,7 @@ public final class CraftworksGameTests {
         VanillaPackTests.register(tests);
         ModRecipesTests.register(tests);
         StorageRecipeTests.register(tests);
+        PouredRecipesTests.register(tests);
         BrewedRecipesTests.register(tests);
         BrewedAssemblerTests.register(tests);
         DataCarryingTests.register(tests);
@@ -130,6 +131,7 @@ public final class CraftworksGameTests {
         VanillaPackTests.registerReloading(reloadingTests);
         ModRecipesTests.registerReloading(reloadingTests);
         BrewedRecipesTests.registerReloading(reloadingTests);
+        PouredRecipesTests.registerReloading(reloadingTests);
     }
 
     private static Identifier id(String path) {
