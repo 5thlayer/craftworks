@@ -1,0 +1,6 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": ["minecraft:lava_bucket", "minecraft:dirt", "minecraft:dirt"],
+  "result": { "id": "minecraft:water_bucket" }
+}

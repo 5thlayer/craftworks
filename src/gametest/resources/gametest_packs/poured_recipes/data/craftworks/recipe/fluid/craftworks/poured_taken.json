@@ -1,0 +1,7 @@
+{
+  "type": "craftworks:assembling",
+  "category": "crafting-with-fluid",
+  "time": 77,
+  "ingredients": [ { "ingredient": "minecraft:clay_ball", "count": 1 } ],
+  "results": [ { "id": "minecraft:obsidian", "count": 1 } ]
+}

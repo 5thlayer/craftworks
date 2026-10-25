@@ -43,6 +43,8 @@ final class PouredRecipesTests {
     private static final String THREE_LAVA = "craftworks:poured_three_lava";
     private static final String LAVA_AND_WATER = "craftworks:poured_lava_and_water";
     private static final String KEEPS_DATA = "craftworks:poured_keeps_data";
+    private static final String WRAPS = "craftworks:poured_wraps";
+    private static final String TAKEN = "craftworks:poured_taken";
     private static final String MIXED = "craftworks:poured_mixed";
     private static final String POURED_EXCLUDED = "craftworks:poured_poured_excluded";
     private static final String SOURCE_EXCLUDED = "craftworks:poured_source_excluded";
@@ -60,6 +62,8 @@ final class PouredRecipesTests {
         packed.test("poured_an_ingredient_mixing_a_bucket_with_a_plain_item_gets_none", 20, PouredRecipesTests::mixed);
         packed.test("poured_a_recipe_with_no_filled_bucket_gets_none", 20, PouredRecipesTests::noBucket);
         packed.test("poured_a_data_carrying_recipe_gets_none", 20, PouredRecipesTests::dataCarrying);
+        packed.test("poured_a_wrapped_recipe_is_data_carrying_and_gets_none", 20, PouredRecipesTests::wrapped);
+        packed.test("poured_an_id_already_taken_is_left_alone", 20, PouredRecipesTests::taken);
     }
 
     static void registerReloading(CraftworksGameTests.Registrar tests) {
@@ -193,6 +197,23 @@ final class PouredRecipesTests {
         helper.succeed();
     }
 
+    private static void wrapped(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        helper.assertTrue(at(server, WRAPS) != null, WRAPS + " should be a Converted recipe");
+        helper.assertTrue(poured(server, WRAPS) == null, "a wrapped recipe is Data-carrying and still got a Poured recipe");
+        helper.succeed();
+    }
+
+    /** The pack has its own Assembling recipe at the Poured id of {@code poured_taken}: it stays as the pack wrote it. */
+    private static void taken(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        helper.assertTrue(at(server, TAKEN) != null, TAKEN + " should be a Converted recipe");
+        AssemblingRecipe there = poured(server, TAKEN);
+        helper.assertTrue(there != null && there.time() == 77 && there.fluidIngredients().isEmpty() && there.results().size() == 1
+                && there.results().getFirst().is(Items.OBSIDIAN), "the pack's own recipe at " + pouredId(TAKEN) + " was replaced by " + there);
+        helper.succeed();
+    }
+
     /**
      * Excludes one Poured id and one source id, reading the recipes after the reload, then puts the config back
      * and checks both return, since the rest of the run expects the defaults.
@@ -217,7 +238,6 @@ final class PouredRecipesTests {
                         failure.compareAndSet(null, "excluding " + SOURCE_EXCLUDED + " should leave it at the table and derive nothing; "
                                 + "the Converted recipe is " + at(server, SOURCE_EXCLUDED) + " and the Poured " + poured(server, SOURCE_EXCLUDED));
                     }
-                    CraftworksConfig.MOD_RECIPES_EXCLUDED.set(excludedBefore);
                 })
                 .handle((ignored, thrown) -> {
                     if (thrown != null) failure.compareAndSet(null, "the reload failed: " + thrown);

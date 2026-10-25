@@ -40,7 +40,7 @@ Conventional commits: `<type>(<optional scope>): <summary>`, with the summary in
 - `-PwithKubeJS` puts KubeJS on both runs; `-PwithAE2` puts AE2 there, `-PwithCurios` puts Curios and Dark Utilities there, and `-PwithSophisticated` puts Sophisticated Backpacks there.
 - Neither run loads a client, EMI, JEI or Jade, so a change to their compat code, a screen, or a model or texture isn't done when the tests pass: list it for the user to check in the dev client, which they open (the `quicklaunch` skill, only at their word).
 - The `skillworks:quicklaunch` skill opens the dev client into the most recent save in `run/saves`, one client per checkout.
-- The dev client loads `dev_pack/` (`craftworks:dev/with_fluid`, `craftworks:dev/two_fluids`, `craftworks:dev/fluid_only`, `craftworks:dev/two_results`) for the cases vanilla's recipes don't cover; add a recipe there when a change needs one to be seen.
+- The dev client loads `dev_pack/` (`craftworks:dev/with_fluid`, `craftworks:dev/two_fluids`, `craftworks:dev/fluid_only`, `craftworks:dev/two_results`, `craftworks:dev/bucket_craft`) for the cases vanilla's recipes don't cover; add a recipe there when a change needs one to be seen.
 - EMI builds its recipes on a loading thread of its own: nothing in a plugin's registration or a recipe's constructor may touch the font or `RenderSystem`, which only the render thread may, or EMI drops the whole plugin (as #33's text measuring did).
 
 ### Vanilla and NeoForge sources

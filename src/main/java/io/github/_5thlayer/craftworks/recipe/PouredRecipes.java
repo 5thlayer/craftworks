@@ -9,8 +9,8 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 
 import com.mojang.logging.LogUtils;
 import io.github._5thlayer.craftworks.machine.FluidBoxes;
@@ -69,31 +69,10 @@ public final class PouredRecipes {
         return read;
     }
 
-    private static boolean componentsBound() {
-        try {
-            Items.BUCKET.components();
-            return true;
-        } catch (NullPointerException e) {
-            return false;
-        }
-    }
-
-    /** Why a source has no Poured recipe, or that it has one. */
-    enum Verdict {
-        POURED,
-        /** It takes and makes no filled bucket. */
-        NO_BUCKET,
-        /** An ingredient or result mixes a filled bucket with something else, or two fluids. */
-        MIXED,
-        /** Its fluids would not fit an Assembler's boxes. */
-        TOO_MUCH
-    }
-
-    /** The verdict on one source, and the Poured recipe when it is {@link Verdict#POURED}. */
-    record Pour(Verdict verdict, @Nullable AssemblingRecipe recipe) {
-        static final Pour NO_BUCKET = new Pour(Verdict.NO_BUCKET, null);
-        static final Pour MIXED = new Pour(Verdict.MIXED, null);
-        static final Pour TOO_MUCH = new Pour(Verdict.TOO_MUCH, null);
+    /** The Poured recipe of a source, or none: for want of a filled bucket, or because its fluids are too much. */
+    record Pour(@Nullable AssemblingRecipe recipe, boolean tooMuch) {
+        static final Pour NONE = new Pour(null, false);
+        static final Pour TOO_MUCH = new Pour(null, true);
     }
 
     /**
@@ -101,28 +80,27 @@ public final class PouredRecipes {
      * have one, unless its id is excluded or already there; returns how many were added.
      */
     static int add(List<RecipeHolder<?>> holders, Set<Identifier> sources, HolderLookup.Provider registries) {
-        read = componentsBound();
+        // The item registry binds its components after the first load, which the server's start reloads for.
+        read = Items.BUCKET.builtInRegistryHolder().areComponentsBound();
         if (!read) return 0;
         Map<Identifier, AssemblingRecipe> converted = new LinkedHashMap<>();
-        Set<Identifier> taken = new HashSet<>();
+        Set<Identifier> existing = new HashSet<>();
         for (RecipeHolder<?> holder : holders) {
             Identifier id = holder.id().identifier();
-            taken.add(id);
+            existing.add(id);
             if (sources.contains(id) && holder.value() instanceof AssemblingRecipe recipe) converted.put(id, recipe);
         }
-        Map<Item, FluidResource> buckets = new HashMap<>();
-        Function<Item, @Nullable FluidResource> lookup = item -> buckets.computeIfAbsent(item, PouredRecipes::filledBucket);
-        Function<Ingredient, @Nullable List<Holder<Item>>> itemsOf = ingredient -> itemsOf(ingredient, registries);
+        BucketLookup buckets = new BucketLookup(registries);
         int added = 0;
         int tooMuch = 0;
         for (Map.Entry<Identifier, AssemblingRecipe> source : converted.entrySet()) {
             Identifier poured = idOf(source.getKey());
-            if (ModRecipes.excludes(source.getKey()) || ModRecipes.excludes(poured) || taken.contains(poured)) continue;
-            Pour pour = pour(source.getValue(), lookup, itemsOf);
-            if (pour.verdict() == Verdict.TOO_MUCH) tooMuch++;
+            if (ModRecipes.excludes(source.getKey()) || ModRecipes.excludes(poured) || existing.contains(poured)) continue;
+            Pour pour = pour(source.getValue(), buckets);
+            if (pour.tooMuch()) tooMuch++;
             if (pour.recipe() == null) continue;
             holders.add(new RecipeHolder<>(ResourceKey.create(Registries.RECIPE, poured), pour.recipe()));
-            taken.add(poured);
+            existing.add(poured);
             added++;
         }
         LOGGER.info("Personal Assembler: {} Poured recipe(s) added from bucket crafts, {} left as bucket crafts, since they "
@@ -136,46 +114,45 @@ public final class PouredRecipes {
     }
 
     /**
-     * The Poured recipe of {@code source}, given what fluid an item holds as a filled bucket ({@code lookup} answers
-     * null for an item that is none).
+     * The Poured recipe of {@code source}: none when it takes and makes no filled bucket, or has an ingredient or
+     * result that mixes one with anything else.
      */
-    static Pour pour(AssemblingRecipe source, Function<Item, @Nullable FluidResource> lookup,
-            Function<Ingredient, @Nullable List<Holder<Item>>> itemsOf) {
-        if (!source.fluidIngredients().isEmpty() || !source.fluidResults().isEmpty()) return Pour.NO_BUCKET;
-        Map<FluidResource, Integer> taken = new LinkedHashMap<>();
-        Map<FluidResource, Integer> made = new LinkedHashMap<>();
+    static Pour pour(AssemblingRecipe source, BucketLookup buckets) {
+        if (!source.fluidIngredients().isEmpty() || !source.fluidResults().isEmpty()) return Pour.NONE;
+        Map<FluidResource, Integer> fluidsIn = new LinkedHashMap<>();
+        Map<FluidResource, Integer> fluidsOut = new LinkedHashMap<>();
         List<SizedIngredient> ingredients = new ArrayList<>();
         for (SizedIngredient sized : source.ingredients()) {
-            Kind kind = classify(sized.ingredient(), lookup, itemsOf);
-            if (kind == Kind.MIXED) return Pour.MIXED;
-            if (kind.fluid == null) {
+            Contents contents = buckets.contentsOf(sized.ingredient());
+            if (contents.mixed()) return Pour.NONE;
+            if (contents.fluid() == null) {
                 ingredients.add(sized);
             } else {
-                taken.merge(kind.fluid, sized.count() * FluidType.BUCKET_VOLUME, Integer::sum);
+                fluidsIn.merge(contents.fluid(), sized.count() * FluidType.BUCKET_VOLUME, Integer::sum);
             }
         }
         List<ItemStackTemplate> results = new ArrayList<>();
         int bucketsMade = 0;
         for (ItemStackTemplate result : source.results()) {
-            FluidResource fluid = lookup.apply(result.item().value());
+            FluidResource fluid = buckets.fluidIn(result.item().value());
             if (fluid == null) {
                 results.add(result);
             } else if (!result.components().equals(DataComponentPatch.EMPTY)) {
-                return Pour.MIXED;
+                return Pour.NONE;
             } else {
-                made.merge(fluid, result.count() * FluidType.BUCKET_VOLUME, Integer::sum);
+                fluidsOut.merge(fluid, result.count() * FluidType.BUCKET_VOLUME, Integer::sum);
                 bucketsMade += result.count();
             }
         }
-        if (taken.isEmpty() && made.isEmpty()) return Pour.NO_BUCKET;
-        if (taken.size() > FluidLayout.ASSEMBLER.fluidInputs() || made.size() > FluidLayout.ASSEMBLER.fluidOutputs()
-                || !taken.values().stream().allMatch(FluidBoxes::fits) || !made.values().stream().allMatch(FluidBoxes::fits)) {
+        if (fluidsIn.isEmpty() && fluidsOut.isEmpty()) return Pour.NONE;
+        if (fluidsIn.size() > FluidLayout.ASSEMBLER.fluidInputs() || fluidsOut.size() > FluidLayout.ASSEMBLER.fluidOutputs()
+                || !fluidsIn.values().stream().allMatch(FluidBoxes::fits) || !fluidsOut.values().stream().allMatch(FluidBoxes::fits)) {
             return Pour.TOO_MUCH;
         }
         // No bucket carries the fluid out, so the empty bucket that would have is not asked for.
         for (int at = 0; at < ingredients.size() && bucketsMade > 0; at++) {
             SizedIngredient sized = ingredients.get(at);
-            if (!isEmptyBucket(sized.ingredient(), itemsOf)) continue;
+            if (!buckets.isEmptyBucket(sized.ingredient())) continue;
             int dropped = Math.min(sized.count(), bucketsMade);
             bucketsMade -= dropped;
             if (dropped == sized.count()) {
@@ -185,62 +162,80 @@ public final class PouredRecipes {
             }
         }
         List<SizedFluidIngredient> fluidIngredients = new ArrayList<>();
-        taken.forEach((fluid, amount) -> fluidIngredients.add(SizedFluidIngredient.of(fluid.getFluid(), amount)));
+        fluidsIn.forEach((fluid, amount) -> fluidIngredients.add(SizedFluidIngredient.of(fluid.getFluid(), amount)));
         List<FluidStackTemplate> fluidResults = new ArrayList<>();
-        made.forEach((fluid, amount) -> fluidResults.add(new FluidStackTemplate(fluid.typeHolder(), amount)));
-        return new Pour(Verdict.POURED, new AssemblingRecipe(ingredients, results, source.time(), source.priority(),
-                fluidIngredients, fluidResults, false, AssemblingCategory.CRAFTING_WITH_FLUID));
+        fluidsOut.forEach((fluid, amount) -> fluidResults.add(new FluidStackTemplate(fluid.typeHolder(), amount)));
+        return new Pour(new AssemblingRecipe(ingredients, results, source.time(), source.priority(),
+                fluidIngredients, fluidResults, false, AssemblingCategory.CRAFTING_WITH_FLUID), false);
     }
 
-    /** What an ingredient is: plain, a filled bucket of one fluid, or a mix. */
-    private record Kind(@Nullable FluidResource fluid) {
-        static final Kind PLAIN = new Kind(null);
-        static final Kind MIXED = new Kind(FluidResource.EMPTY);
-    }
-
-    private static Kind classify(Ingredient ingredient, Function<Item, @Nullable FluidResource> lookup,
-            Function<Ingredient, @Nullable List<Holder<Item>>> itemsOf) {
-        List<Holder<Item>> accepted = itemsOf.apply(ingredient);
-        // An ingredient whose items cannot be listed might hold a bucket: it leaves its recipe unpoured.
-        if (accepted == null) return Kind.MIXED;
-        FluidResource found = null;
-        boolean plain = false;
-        for (Holder<Item> item : accepted) {
-            FluidResource fluid = lookup.apply(item.value());
-            if (fluid == null) {
-                plain = true;
-            } else if (found == null) {
-                found = fluid;
-            } else if (!found.equals(fluid)) {
-                return Kind.MIXED;
-            }
-        }
-        if (found == null) return Kind.PLAIN;
-        return plain ? Kind.MIXED : new Kind(found);
+    /** What an ingredient accepts: plain items, or filled buckets of one fluid, or a mix (or items that cannot be listed). */
+    record Contents(boolean mixed, @Nullable FluidResource fluid) {
+        static final Contents PLAIN = new Contents(false, null);
+        static final Contents MIXED = new Contents(true, null);
     }
 
     /**
-     * The items an ingredient accepts, or null when they cannot be listed. A tag is read through the load's own
-     * lookup, since the item registry's tags are not bound while the recipes load (#58).
+     * What a load can tell about buckets: which fluid an item holds as a filled bucket, and what an ingredient
+     * accepts. Remembers the first, since a load asks it of the same items again and again.
      */
-    private static @Nullable List<Holder<Item>> itemsOf(Ingredient ingredient, HolderLookup.Provider registries) {
-        try {
-            if (!ingredient.isCustom()) {
-                var tag = ingredient.getValues().unwrapKey();
-                if (tag.isPresent()) {
-                    return registries.lookupOrThrow(Registries.ITEM).get(tag.get()).map(set -> set.stream().toList()).orElse(List.of());
+    static final class BucketLookup {
+
+        private final HolderLookup.Provider registries;
+        private final Map<Item, Optional<FluidResource>> fluids = new HashMap<>();
+
+        BucketLookup(HolderLookup.Provider registries) {
+            this.registries = registries;
+        }
+
+        /** The fluid {@code item} holds as a filled bucket, or null when it is none. */
+        @Nullable FluidResource fluidIn(Item item) {
+            return fluids.computeIfAbsent(item, held -> Optional.ofNullable(filledBucket(held))).orElse(null);
+        }
+
+        Contents contentsOf(Ingredient ingredient) {
+            List<Holder<Item>> accepted = itemsOf(ingredient);
+            // An ingredient whose items cannot be listed might hold a bucket: it leaves its recipe unpoured.
+            if (accepted == null) return Contents.MIXED;
+            FluidResource found = null;
+            boolean plain = false;
+            for (Holder<Item> item : accepted) {
+                FluidResource fluid = fluidIn(item.value());
+                if (fluid == null) {
+                    plain = true;
+                } else if (found == null) {
+                    found = fluid;
+                } else if (!found.equals(fluid)) {
+                    return Contents.MIXED;
                 }
             }
-            return ingredient.items().toList();
-        } catch (IllegalStateException | NullPointerException e) {
-            return null;
+            if (found == null) return Contents.PLAIN;
+            return plain ? Contents.MIXED : new Contents(false, found);
         }
-    }
 
-    /** Whether the ingredient accepts the empty bucket and nothing else. */
-    private static boolean isEmptyBucket(Ingredient ingredient, Function<Ingredient, @Nullable List<Holder<Item>>> itemsOf) {
-        List<Holder<Item>> items = itemsOf.apply(ingredient);
-        return items != null && !items.isEmpty() && items.stream().allMatch(item -> item.value() == Items.BUCKET);
+        /** Whether the ingredient accepts the empty bucket and nothing else. */
+        boolean isEmptyBucket(Ingredient ingredient) {
+            List<Holder<Item>> items = itemsOf(ingredient);
+            return items != null && !items.isEmpty() && items.stream().allMatch(item -> item.value() == Items.BUCKET);
+        }
+
+        /**
+         * The items an ingredient accepts, or null when they cannot be listed. A tag is read through the load's own
+         * lookup, since the item registry's tags are not bound while the recipes load (#58).
+         */
+        private @Nullable List<Holder<Item>> itemsOf(Ingredient ingredient) {
+            try {
+                if (!ingredient.isCustom()) {
+                    var tag = ingredient.getValues().unwrapKey();
+                    if (tag.isPresent()) {
+                        return registries.lookupOrThrow(Registries.ITEM).get(tag.get()).map(set -> set.stream().toList()).orElse(List.of());
+                    }
+                }
+                return ingredient.items().toList();
+            } catch (IllegalStateException | NullPointerException e) {
+                return null;
+            }
+        }
     }
 
     /**

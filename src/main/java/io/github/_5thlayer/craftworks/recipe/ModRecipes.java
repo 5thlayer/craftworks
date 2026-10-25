@@ -4,7 +4,6 @@
 package io.github._5thlayer.craftworks.recipe;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -116,7 +115,6 @@ public final class ModRecipes {
         List<RecipeHolder<?>> holders = new ArrayList<>(recipes.values().size());
         Map<Identifier, CraftingRecipe> kept = new LinkedHashMap<>();
         Map<Identifier, Integer> convertedAt = new LinkedHashMap<>();
-        Set<Identifier> dataCarrying = new HashSet<>();
         for (RecipeHolder<?> holder : recipes.values()) {
             Identifier id = holder.id().identifier();
             // With the vanilla pack off, vanilla's ids stay at the table: that flag answers for them, not this one.
@@ -135,15 +133,16 @@ public final class ModRecipes {
                 // A Data-carrying recipe: the original is kept, for a craft to ask what it made (ADR-0022).
                 if (WrapperRecipes.unwrap(holder.value()) != null || assemblesItsOwn(holder.value())) {
                     kept.put(id, (CraftingRecipe) holder.value());
-                    // A wrapped recipe is kept too, but pours as the recipe it wraps (ADR-0027).
-                    if (WrapperRecipes.unwrap(holder.value()) == null) dataCarrying.add(id);
                 }
             }
         }
         Map<Identifier, Integer> convertedAll = convertedRecipes(holders, convertedAt, manager);
         int storage = timeStorageRecipes(holders, convertedAll);
         // The Poured recipes come last, from the Converted recipes as they now are, a Storage recipe's time included.
-        int poured = PouredRecipes.add(holders, convertedAll.keySet().stream().filter(id -> !dataCarrying.contains(id)).collect(Collectors.toSet()), registries);
+        // A Data-carrying recipe, a wrapped one too, does not pour.
+        Set<Identifier> pourable = convertedAll.keySet().stream().filter(id -> !kept.containsKey(id))
+                .collect(Collectors.toSet());
+        int poured = PouredRecipes.add(holders, pourable, registries);
         DataCarryingRecipes.replace(kept);
         LOGGER.info("Personal Assembler: {} mod crafting recipe(s) converted to Assembling recipes, {} of them Data-carrying (the original assembles the result), {} of them Storage recipes.", converted, kept.size(), storage);
         if (!skipped.isEmpty()) {
@@ -265,7 +264,10 @@ public final class ModRecipes {
      */
     public static CompletableFuture<Void> follow(MinecraftServer server) {
         Settings wanted = Settings.configured();
-        if (wanted.equals(applied) && PouredRecipes.bucketsRead() && !(wanted.brewed() && !BrewedRecipes.tableRead())) return CompletableFuture.completedFuture(null);
+        boolean brewedWaiting = wanted.brewed() && !BrewedRecipes.tableRead();
+        if (wanted.equals(applied) && PouredRecipes.bucketsRead() && !brewedWaiting) {
+            return CompletableFuture.completedFuture(null);
+        }
         LOGGER.info("Personal Assembler: modRecipes is {}, excluding {}, brewingRecipes is {}; reloading the recipes",
                 wanted.enabled(), wanted.excluded(), wanted.brewed());
         return server.reloadResources(List.copyOf(server.getPackRepository().getSelectedIds()));
