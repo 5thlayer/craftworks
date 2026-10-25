@@ -8,7 +8,7 @@ Craftworks requires Groundworks (not bundled, never jar-in-jar, from `~/.m2` onl
 
 ## The changelog
 
-Each change a Consumer can use or will notice adds its line under `## Unreleased` in `CHANGELOG.md` when it lands, written for a Consumer's author in the glossary's terms, with its issue number. A release ships what Unreleased lists, so the changelog is written as the work is done and never reconstructed from commits.
+Each change a Consumer can use or will notice adds its line under `## Unreleased` in `CHANGELOG.md` when it lands, with its issue number, written for a Consumer's author in the glossary's terms. A Module whose changelog has other readers too, such as the players who read a release's notes on Modrinth and CurseForge, names them here, and how it writes for them. A release ships what Unreleased lists, so the changelog is written as the work is done and never reconstructed from commits.
 
 Craftworks' Consumers are packs, so its changelog is written for players and pack authors: a change a player notices adds its line too, written in the glossary's terms rather than as the commit subject.
 
