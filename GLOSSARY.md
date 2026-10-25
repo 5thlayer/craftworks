@@ -116,7 +116,7 @@ _Avoid_: output tank slot, bucket slot, fluid output slot
 
 **Category**:
 The kind an Assembling recipe is, one of four names and no other: `crafting` (the default),
-`advanced-crafting`, `crafting-with-fluid`, for any recipe with a fluid in or out that is not brewed, and
+`advanced-crafting`, `crafting-with-fluid`, for any recipe with a fluid in or out that is not brewed (every **Poured recipe**), and
 `brewing`, for every **Brewed recipe**. Each tier of
 Assembler holds the categories its server config lists, all four by default, and Fill Recipe refuses a
 recipe outside them. The Personal Assembler ignores it: it is no machine, and plans through any Hand-craftable
@@ -151,6 +151,13 @@ bottled potion or another mod's item (Bioresin); no potion goes in and no potion
 two chains has two. It is never Hand-craftable, burns no blaze powder, and takes the stand's time for every step it
 folds.
 _Avoid_: brewing recipe (the stand's own mix), potion recipe
+
+**Poured recipe**:
+An Assembling recipe Craftworks makes from a Converted recipe that takes or makes a filled bucket, at an id of its
+own, beside the Converted recipe, which stays: each filled bucket becomes 1000 mB of its fluid, and no bucket goes in
+or comes out. It is in `crafting-with-fluid`, keeps its source's craft time and Route priority, and is never
+Hand-craftable. A recipe whose fluids an Assembler could never hold has none.
+_Avoid_: fluid recipe, bucketless recipe
 
 **Data-carrying recipe**:
 A Converted recipe whose result is built from the stacks a craft consumed, as at a crafting table: a charged
