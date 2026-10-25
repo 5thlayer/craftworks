@@ -23,7 +23,7 @@ bucket also gives a **Poured recipe** at `craftworks:fluid/<source ns>/<source p
   ingredient and its remainder stays as it is.
 - The source's craft time and Route priority carry over. A Poured recipe has a fluid, so it is never Hand-craftable.
 - A Data-carrying recipe, a pack's own Assembling recipe and an id that is excluded or already taken get none. Nor does
-  a recipe whose fluids no Assembler could hold, more than two input fluids or more than 2,000 mB of one; those are
+  a recipe whose fluids no Assembler could hold, more than two input fluids, more than three output fluids or more than 2,000 mB of one; those are
   counted in one log line.
 - The exclude list opts out either id: the source's, which keeps the bucket craft at the table and so derives
   nothing, or the Poured recipe's alone. There is no flag of its own.
