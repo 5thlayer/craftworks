@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:water_bucket",
+    "minecraft:bucket",
+    "minecraft:soul_sand"
+  ],
+  "result": {
+    "id": "minecraft:lava_bucket",
+    "count": 1
+  }
+}

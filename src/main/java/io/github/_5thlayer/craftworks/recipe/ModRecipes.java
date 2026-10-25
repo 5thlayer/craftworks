@@ -8,7 +8,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import com.google.gson.JsonElement;
 import com.mojang.logging.LogUtils;
@@ -47,13 +49,17 @@ import org.slf4j.Logger;
  * the vanilla pack or from this load, take one tick ({@link StorageRecipes}); the pack a recipe comes from is
  * read off the resource that wins at its id, so a pack's own Assembling recipe at a vanilla id is not one.
  *
+ * <p>Last, each Converted recipe that takes or makes a filled bucket also gets a Poured recipe beside it
+ * ({@link PouredRecipes}).
+ *
  * <p>Left alone: anything already an Assembling recipe, the built-in vanilla pack's among them; vanilla's
  * ids while that pack is off; a subclass that assembles its own result; the namespaces and ids {@code modRecipesExcluded} names; and a recipe
  * with an ingredient or result the Assembling codec cannot write, which is logged.
  *
  * <p>The server config loads after the first recipe load, so that load converts with the defaults.
  * {@link #follow} reloads the recipes once the server has started, and on a config edit, whenever the
- * settings the last load used are not the ones configured now. It also brings in the Brewed recipes
+ * settings the last load used are not the ones configured now, or when it could not yet read buckets for the Poured
+ * recipes. It also brings in the Brewed recipes
  * ({@link BrewedRecipes}), which need the server's brewing table and so wait for that reload.
  */
 public final class ModRecipes {
@@ -98,7 +104,10 @@ public final class ModRecipes {
         if (!settings.enabled()) {
             DataCarryingRecipes.replace(Map.of());
             List<RecipeHolder<?>> all = new ArrayList<>(recipes.values());
-            return timeStorageRecipes(all, new LinkedHashMap<>(), manager) == 0 ? recipes : RecipeMap.create(all);
+            Map<Identifier, Integer> converted = convertedRecipes(all, new LinkedHashMap<>(), manager);
+            int storage = timeStorageRecipes(all, converted);
+            int poured = PouredRecipes.add(all, converted.keySet(), registries);
+            return storage == 0 && poured == 0 ? recipes : RecipeMap.create(all);
         }
         var ops = withItemTags(registries);
         List<String> skipped = new ArrayList<>();
@@ -127,23 +136,27 @@ public final class ModRecipes {
                 }
             }
         }
-        int storage = timeStorageRecipes(holders, convertedAt, manager);
+        Map<Identifier, Integer> convertedAll = convertedRecipes(holders, convertedAt, manager);
+        int storage = timeStorageRecipes(holders, convertedAll);
+        // The Poured recipes come last, from the Converted recipes as they now are, a Storage recipe's time included.
+        // A Data-carrying recipe, a wrapped one too, does not pour.
+        Set<Identifier> pourable = convertedAll.keySet().stream().filter(id -> !kept.containsKey(id))
+                .collect(Collectors.toSet());
+        int poured = PouredRecipes.add(holders, pourable, registries);
         DataCarryingRecipes.replace(kept);
         LOGGER.info("Personal Assembler: {} mod crafting recipe(s) converted to Assembling recipes, {} of them Data-carrying (the original assembles the result), {} of them Storage recipes.", converted, kept.size(), storage);
         if (!skipped.isEmpty()) {
             LOGGER.warn("Personal Assembler: {} mod crafting recipe(s) left at the crafting table, with an ingredient or "
                     + "result an Assembling recipe cannot hold: {}", skipped.size(), skipped);
         }
-        return converted == 0 && storage == 0 ? recipes : RecipeMap.create(holders);
+        return converted == 0 && storage == 0 && poured == 0 ? recipes : RecipeMap.create(holders);
     }
 
     /**
-     * Gives the Converted recipes that have their round trip the Storage recipe time (#78), in place in
-     * {@code holders}, and returns how many. A Converted recipe is one this load converted ({@code convertedAt},
-     * by index) or one of the vanilla pack's; an Assembling recipe a pack wrote, at a vanilla id or not, is
-     * neither timed nor the way back for another.
+     * The Converted recipes among {@code holders}, by index: those this load converted ({@code convertedAt}) and
+     * the vanilla pack's. An Assembling recipe a pack wrote, at a vanilla id or not, is not one.
      */
-    private static int timeStorageRecipes(List<RecipeHolder<?>> holders, Map<Identifier, Integer> convertedAt, ResourceManager manager) {
+    private static Map<Identifier, Integer> convertedRecipes(List<RecipeHolder<?>> holders, Map<Identifier, Integer> convertedAt, ResourceManager manager) {
         Map<Identifier, Integer> converted = new LinkedHashMap<>(convertedAt);
         for (int at = 0; at < holders.size(); at++) {
             Identifier id = holders.get(at).id().identifier();
@@ -151,6 +164,15 @@ public final class ModRecipes {
                 converted.putIfAbsent(id, at);
             }
         }
+        return converted;
+    }
+
+    /**
+     * Gives the Converted recipes that have their round trip the Storage recipe time (#78), in place in
+     * {@code holders}, and returns how many. A Converted recipe is one of {@code converted}, by index; an
+     * Assembling recipe a pack wrote is neither timed nor the way back for another.
+     */
+    private static int timeStorageRecipes(List<RecipeHolder<?>> holders, Map<Identifier, Integer> converted) {
         List<StorageRecipes.Trade<Identifier, SizedIngredient, ItemStackTemplate>> trades = new ArrayList<>();
         converted.forEach((id, at) -> {
             AssemblingRecipe recipe = (AssemblingRecipe) holders.get(at).value();
@@ -242,7 +264,10 @@ public final class ModRecipes {
      */
     public static CompletableFuture<Void> follow(MinecraftServer server) {
         Settings wanted = Settings.configured();
-        if (wanted.equals(applied) && !(wanted.brewed() && !BrewedRecipes.tableRead())) return CompletableFuture.completedFuture(null);
+        boolean brewedWaiting = wanted.brewed() && !BrewedRecipes.tableRead();
+        if (wanted.equals(applied) && PouredRecipes.bucketsRead() && !brewedWaiting) {
+            return CompletableFuture.completedFuture(null);
+        }
         LOGGER.info("Personal Assembler: modRecipes is {}, excluding {}, brewingRecipes is {}; reloading the recipes",
                 wanted.enabled(), wanted.excluded(), wanted.brewed());
         return server.reloadResources(List.copyOf(server.getPackRepository().getSelectedIds()));

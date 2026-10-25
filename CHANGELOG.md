@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- A crafting recipe that takes or makes a filled bucket also gives a Poured recipe, an Assembling recipe in `crafting-with-fluid` at `craftworks:fluid/<namespace>/<path>` that takes and makes the fluid, 1000 mB a bucket, with no bucket in or out, so an Assembler fed through pipes can run Fieldworks' magma slurry (lava and soul soil) and drilling mud (water and a clay ball). The bucket craft stays beside it. A craft needing more than 2 input fluids, 3 output fluids or 2,000 mB of one gets none; `modRecipesExcluded` opts out the source's id or the Poured recipe's. (#80)
+
 ## 0.11.0
 
 - Packing an item into its storage block and unpacking it takes 1 tick, not 10, in the Personal Assembler and the Assemblers: iron ingots and the iron block, nuggets and the ingot, redstone, lapis, coal, wheat and hay, slime, and the same in other mods' crafting recipes, 64 iron blocks in 64 ticks. A Converted recipe counts when its round trip exists, 9 or 4 of one item making 1 of another and another recipe making that 1 back into as many; a crafting table's 4 planks, with no way back, takes 10. An Assembling recipe a pack writes keeps its own `time`. (#78)

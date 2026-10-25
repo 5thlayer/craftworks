@@ -130,7 +130,11 @@ final class AssemblingCategoryTests {
         for (var file : files) {
             DataResult<AssemblingRecipe> result;
             try {
-                result = read(helper, Files.readString(file));
+                String json = Files.readString(file);
+                // A crafting recipe there is one to be converted, as a bucket craft is to be poured: no Assembling recipe yet.
+                String type = JsonParser.parseString(json).getAsJsonObject().get("type").getAsString();
+                if (type.startsWith("minecraft:crafting_")) continue;
+                result = read(helper, json);
             } catch (IOException e) {
                 helper.fail("could not read " + file + ": " + e);
                 return;
