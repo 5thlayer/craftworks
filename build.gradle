@@ -7,8 +7,6 @@ plugins {
 // What the Mod requires of the other Modules, each as a range whose lower bound is a released version:
 // the one the Mod is built and run against and the one CI builds from its tag. neoforge.mods.toml names each as ${<name>_range}.
 libworks {
-    // Craftworks' own tags are v<version>.
-    tagPrefix = 'v'
     // Required, and never jar-in-jar: the Mod and the other mods on Groundworks share one copy (FactoryWorks
     // ADR-0115). Capped below the next minor, 0.6, which moves when the Mod takes it.
     upstream('groundworks') {

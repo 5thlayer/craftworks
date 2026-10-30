@@ -45,4 +45,4 @@ A version in `~/.m2` never changes. A fix is the next patch version. `publishToM
 
 ## Tags
 
-A release is tagged `<archives_name>-v<version>` (the plugin's `tagPrefix`), annotated with its jar's sha256. `git tag -l '*v*' -n9` lists them.
+A release is tagged `<archives_name>-v<version>` (the plugin's `tagPrefix`), annotated with its jar's sha256. `git tag -l '*v*' -n9` lists them. Releases up to 0.11.1 were tagged `v<version>`, before Craftworks took the plugin's default; those tags stay as they are.
