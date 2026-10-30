@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- Craftworks requires Groundworks 0.7.0 or later, below 0.8. With it, a sheet of paper copies, cuts and pastes a box of blocks as a Blueprint, and Next Assembly is now Next Choice, still on `V` (5thlayer/groundworks#76).
+
 - A crafting recipe that takes or makes a filled bucket also gives a Poured recipe, an Assembling recipe in `crafting-with-fluid` at `craftworks:fluid/<namespace>/<path>` that takes and makes the fluid, 1000 mB a bucket, with no bucket in or out, so an Assembler fed through pipes can run Fieldworks' magma slurry (lava and soul soil) and drilling mud (water and a clay ball). The bucket craft stays beside it. A craft needing more than 2 input fluids, 3 output fluids or 2,000 mB of one gets none; `modRecipesExcluded` opts out the source's id or the Poured recipe's. (#80)
 
 ## 0.11.0

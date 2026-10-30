@@ -14,7 +14,7 @@ libworks {
     upstream('groundworks') {
         // Groundworks' tags are v<version> too.
         tagPrefix = 'v'
-        range = '[0.6.0,0.7)'
+        range = '[0.7.0,0.8)'
     }
     // Optional to players, and on the dev client so a Fluid Connection can be tried against its pipes, which
     // draw an arm toward one. The Mod names no Pipeworks type: a pipe reaches a connection through the fluid
