@@ -143,6 +143,12 @@ one item make one of another, and a Converted recipe makes that one back into as
 ingots and the iron block, nuggets and the ingot); a crafting table, from four planks, does not. It takes one tick.
 _Avoid_: compression recipe, packing recipe
 
+**Storage crafting recipe**:
+The crafting-table recipe Craftworks adds beside each Storage recipe, at an id of its own, so other mods that pack
+and unpack items (compacting drawers, compacting upgrades) still find it. A crafting table makes it at once; the
+recipe viewer and the recipe book don't show it.
+_Avoid_: compacting recipe, table copy
+
 **Brewed recipe**:
 An Assembling recipe Craftworks makes from the brewing stand's mixes, vanilla's and other mods', at an id of its
 own: one for each chain of brews that starts from a water bottle, folded into a single craft. It takes water as a

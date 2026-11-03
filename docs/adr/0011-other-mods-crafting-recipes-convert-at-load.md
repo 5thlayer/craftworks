@@ -41,3 +41,20 @@ four of one item making one of another and back, one tick instead of ten. It dec
 load, this load's conversions and the built-in vanilla pack's together, so a round trip between the two is found;
 the vanilla pack's JSON carries no `time`. The pack a recipe comes from is read off the resource that wins at its
 id, so a pack's own Assembling recipe at a vanilla id is neither timed nor the way back for another.
+
+**Amended: each Storage recipe gets a Storage crafting recipe back (#83).** Replacing the crafting recipes left
+other mods that pack and unpack items with nothing to find: Functional Storage's and Storage Drawers' compacting
+drawers and Sophisticated Backpacks' compacting upgrade read the loaded recipes themselves and keep only crafting
+recipes, a shaped one for the way down. So beside every Storage recipe, the vanilla pack's included, the same pass adds
+a real crafting recipe at `craftworks:storage/<namespace>/<path>`, built from the Storage recipe rather than kept from
+the original, so vanilla's and every mod's come out alike: packing as a shaped grid of its one ingredient, unpacking
+as a shapeless recipe of one item. A crafting table and vanilla's Crafter make them at once, which gives nothing away
+when a Storage recipe takes one tick; telling a table from a drawer was not worth it. The recipe viewer and the
+recipe book don't show them, so a metal is not listed twice. `modRecipesExcluded` can name one to leave it out, since
+they arrive after KubeJS. A pack's own Assembling recipe is not a Converted recipe and gets none.
+
+*Considered: a mixin on the recipe lookup.* Vanilla's `getRecipeFor` is a choke point for the table and the Crafter
+only; the drawers read the recipe map directly and check the recipe's class, so no lookup hook reaches them.
+
+*Considered: every Converted recipe, for autocrafting mods.* That reopens an instant way round the Personal
+Assembler for everything (ADR-0007). Only the Storage recipes, already one tick, come back.
