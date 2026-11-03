@@ -13,6 +13,7 @@ import io.github._5thlayer.craftworks.machine.AssemblerTab;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
 import io.github._5thlayer.craftworks.recipe.AssemblingRecipe;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
+import io.github._5thlayer.craftworks.recipe.StorageCraftingRecipes;
 import io.github._5thlayer.libworks.ghost.Ghost;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
@@ -20,6 +21,7 @@ import mezz.jei.api.gui.builder.IClickableIngredientFactory;
 import mezz.jei.api.gui.handlers.IGuiContainerHandler;
 import mezz.jei.api.recipe.types.IRecipeHolderType;
 import mezz.jei.api.runtime.IClickableIngredient;
+import mezz.jei.api.runtime.IJeiRuntime;
 import mezz.jei.api.registration.IAdvancedRegistration;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.constants.RecipeTypes;
@@ -30,7 +32,9 @@ import mezz.jei.api.registration.IRecipeTransferRegistration;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeMap;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.neoforged.neoforge.client.event.RecipesReceivedEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
@@ -126,6 +130,14 @@ public final class AssemblingJeiPlugin implements IModPlugin {
 
     private static List<RecipeHolder<AssemblingRecipe>> assemblingRecipes() {
         return List.copyOf(received.byType(CraftworksRecipes.ASSEMBLING_TYPE.get()));
+    }
+
+    /** The Storage crafting recipes are hidden from JEI's crafting tab (#83): the Assembler's tab already lists each Storage recipe. */
+    @Override
+    public void onRuntimeAvailable(IJeiRuntime runtime) {
+        List<RecipeHolder<CraftingRecipe>> storageCrafting = received.byType(RecipeType.CRAFTING).stream()
+                .filter(holder -> StorageCraftingRecipes.is(holder.id().identifier())).toList();
+        if (!storageCrafting.isEmpty()) runtime.getRecipeManager().hideRecipes(RecipeTypes.CRAFTING, storageCrafting);
     }
 
     /** The recipe button, on Assembling recipes and no other (see {@link AssemblingRecipeButton}). */

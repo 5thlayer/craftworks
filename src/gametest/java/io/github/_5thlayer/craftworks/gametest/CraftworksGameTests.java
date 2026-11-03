@@ -132,6 +132,7 @@ public final class CraftworksGameTests {
         ModRecipesTests.registerReloading(reloadingTests);
         BrewedRecipesTests.registerReloading(reloadingTests);
         PouredRecipesTests.registerReloading(reloadingTests);
+        StorageRecipeTests.registerReloading(reloadingTests);
     }
 
     private static Identifier id(String path) {

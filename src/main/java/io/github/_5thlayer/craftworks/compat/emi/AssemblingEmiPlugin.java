@@ -19,6 +19,7 @@ import io.github._5thlayer.craftworks.machine.Refiners;
 import io.github._5thlayer.craftworks.machine.AssemblerTab;
 import io.github._5thlayer.craftworks.machine.client.AssemblerScreen;
 import io.github._5thlayer.craftworks.recipe.CraftworksRecipes;
+import io.github._5thlayer.craftworks.recipe.StorageCraftingRecipes;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
@@ -42,6 +43,9 @@ import net.minecraft.resources.Identifier;
  * <p>The Assembler screen's ghosts answer Recipe and Uses as a real stack does, and a click on one reaches its slot:
  * {@link AssemblerScreen} is a libworks {@code GhostScreen}, whose ghosts libworks-runtime offers to EMI itself, not
  * clickable (libworks ADR 0007), so this registers no stack provider for them.
+ *
+ * <p>The Storage crafting recipes are taken out of EMI's crafting tab (#83): the Assembler's tab already lists each
+ * Storage recipe.
  */
 @EmiEntrypoint
 public final class AssemblingEmiPlugin implements EmiPlugin {
@@ -75,6 +79,12 @@ public final class AssemblingEmiPlugin implements EmiPlugin {
         // The Refiner smelts what vanilla's furnace and blast furnace do, so it is their tabs' workstation (ADR-0020).
         registry.addWorkstation(VanillaEmiRecipeCategories.SMELTING, EmiStack.of(Refiners.ITEM.get()));
         registry.addWorkstation(VanillaEmiRecipeCategories.BLASTING, EmiStack.of(Refiners.ITEM.get()));
+        registry.removeRecipes(recipe -> isStorageCrafting(recipe.getId())
+                || recipe.getBackingRecipe() != null && isStorageCrafting(recipe.getBackingRecipe().id().identifier()));
         ReadyRecipeIds.onChange(AssemblingEmiPlugin::craftablesAgain);
+    }
+
+    private static boolean isStorageCrafting(Identifier id) {
+        return id != null && StorageCraftingRecipes.is(id);
     }
 }

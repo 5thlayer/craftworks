@@ -50,7 +50,8 @@ import org.slf4j.Logger;
  * read off the resource that wins at its id, so a pack's own Assembling recipe at a vanilla id is not one.
  *
  * <p>Last, each Converted recipe that takes or makes a filled bucket also gets a Poured recipe beside it
- * ({@link PouredRecipes}).
+ * ({@link PouredRecipes}). Each Storage recipe also gets a Storage crafting recipe beside it, at an id of its own, for
+ * the mods that pack and unpack items through crafting recipes ({@link StorageCraftingRecipes}).
  *
  * <p>Left alone: anything already an Assembling recipe, the built-in vanilla pack's among them; vanilla's
  * ids while that pack is off; a subclass that assembles its own result; the namespaces and ids {@code modRecipesExcluded} names; and a recipe
@@ -105,7 +106,7 @@ public final class ModRecipes {
             DataCarryingRecipes.replace(Map.of());
             List<RecipeHolder<?>> all = new ArrayList<>(recipes.values());
             Map<Identifier, Integer> converted = convertedRecipes(all, new LinkedHashMap<>(), manager);
-            int storage = timeStorageRecipes(all, converted);
+            int storage = timeStorageRecipes(all, converted, settings);
             int poured = PouredRecipes.add(all, converted.keySet(), registries);
             return storage == 0 && poured == 0 ? recipes : RecipeMap.create(all);
         }
@@ -137,7 +138,7 @@ public final class ModRecipes {
             }
         }
         Map<Identifier, Integer> convertedAll = convertedRecipes(holders, convertedAt, manager);
-        int storage = timeStorageRecipes(holders, convertedAll);
+        int storage = timeStorageRecipes(holders, convertedAll, settings);
         // The Poured recipes come last, from the Converted recipes as they now are, a Storage recipe's time included.
         // A Data-carrying recipe, a wrapped one too, does not pour.
         Set<Identifier> pourable = convertedAll.keySet().stream().filter(id -> !kept.containsKey(id))
@@ -169,10 +170,11 @@ public final class ModRecipes {
 
     /**
      * Gives the Converted recipes that have their round trip the Storage recipe time (#78), in place in
-     * {@code holders}, and returns how many. A Converted recipe is one of {@code converted}, by index; an
+     * {@code holders}, adds each one's Storage crafting recipe at the end unless the settings exclude its id (#83),
+     * and returns how many Storage recipes there are. A Converted recipe is one of {@code converted}, by index; an
      * Assembling recipe a pack wrote is neither timed nor the way back for another.
      */
-    private static int timeStorageRecipes(List<RecipeHolder<?>> holders, Map<Identifier, Integer> converted) {
+    private static int timeStorageRecipes(List<RecipeHolder<?>> holders, Map<Identifier, Integer> converted, Settings settings) {
         List<StorageRecipes.Trade<Identifier, SizedIngredient, ItemStackTemplate>> trades = new ArrayList<>();
         converted.forEach((id, at) -> {
             AssemblingRecipe recipe = (AssemblingRecipe) holders.get(at).value();
@@ -187,6 +189,12 @@ public final class ModRecipes {
             int at = converted.get(id);
             RecipeHolder<?> holder = holders.get(at);
             holders.set(at, new RecipeHolder<>(holder.id(), ((AssemblingRecipe) holder.value()).withTime(AssemblingRecipe.STORAGE_TIME)));
+        }
+        Set<Identifier> taken = holders.stream().map(holder -> holder.id().identifier()).collect(Collectors.toSet());
+        for (Identifier id : found) {
+            Identifier crafting = StorageCraftingRecipes.idOf(id);
+            if (settings.excludes(crafting) || taken.contains(crafting)) continue;
+            holders.add(StorageCraftingRecipes.of(id, (AssemblingRecipe) holders.get(converted.get(id)).value()));
         }
         return found.size();
     }

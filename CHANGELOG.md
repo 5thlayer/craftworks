@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- Compacting drawers and upgrades (Functional Storage, Storage Drawers, Sophisticated Backpacks) fill their block and nugget slots again: every Storage recipe, iron ingots to the iron block and back, nuggets to the ingot and back, also gets a plain crafting recipe at `craftworks:storage/<namespace>/<path>`, which a crafting table makes at once and EMI, JEI and the recipe book don't list. `modRecipesExcluded` can name one to leave it out. A storage block whose recipe a pack writes as its own Assembling recipe gets none: that pack adds a crafting recipe for it. (#83)
+
 ## 0.11.1
 
 - Craftworks requires Groundworks 0.7.0 or later, below 0.8. With it, a sheet of paper copies, cuts and pastes a box of blocks as a Blueprint, and Next Assembly is now Next Choice, still on `V` (5thlayer/groundworks#76).
