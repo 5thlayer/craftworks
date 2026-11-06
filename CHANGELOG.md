@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+## 0.11.3
+
 - A new server's first start, the one that writes a fresh `craftworks-server.toml`, no longer logs a `NullPointerException`. `vanillaRecipes` and the other recipe settings still apply once the server is up, and an edit to the file while it runs still reloads the recipes. (#84)
 
 ## 0.11.2
