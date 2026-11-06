@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:lava_bucket",
+    "craftworks:gametest_throwing_flask"
+  ],
+  "result": {
+    "id": "minecraft:obsidian",
+    "count": 1
+  }
+}

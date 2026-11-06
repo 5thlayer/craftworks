@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
+import com.mojang.logging.LogUtils;
 import io.github._5thlayer.libworks.machine.FluidContainers;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
@@ -21,6 +23,7 @@ import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
 
 /**
  * The work of an Assembler's drain and fill slots (ADR-0021), in its tick: a filled container
@@ -30,6 +33,8 @@ import org.jspecify.annotations.Nullable;
  * move waiting in its slot; this picks the output slot it goes to. Each call moves at most one container.
  */
 public final class AssemblerContainers {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     private AssemblerContainers() {
     }
@@ -85,8 +90,15 @@ public final class AssemblerContainers {
             List<ItemStack> found = new ArrayList<>();
             for (var item : BuiltInRegistries.ITEM) {
                 ItemStack stack = new ItemStack(item);
-                if (!stack.isEmpty() && sources.stream().anyMatch(fluid -> FluidContainers.takes(stack, fluid))) {
-                    found.add(stack);
+                try {
+                    if (!stack.isEmpty() && sources.stream().anyMatch(fluid -> FluidContainers.takes(stack, fluid))) {
+                        found.add(stack);
+                    }
+                } catch (RuntimeException e) {
+                    // One item's capability throwing would fail this class for the rest of the game.
+                    Identifier id = BuiltInRegistries.ITEM.getKey(item);
+                    LOGGER.warn("Assembler: the fluid capability of {}, from mod {}, threw when asked whether it is an empty "
+                            + "container, so the fill slot shows no ghost of it.", id, id.getNamespace(), e);
                 }
             }
             return List.copyOf(found);

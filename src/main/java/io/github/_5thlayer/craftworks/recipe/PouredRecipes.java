@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.mojang.logging.LogUtils;
 import io.github._5thlayer.craftworks.machine.FluidBoxes;
@@ -19,6 +20,7 @@ import io.github._5thlayer.libworks.machine.FluidContainers;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -57,6 +59,9 @@ public final class PouredRecipes {
 
     /** Whether the last recipe load could read items' components, which a bucket's fluid handler needs. */
     private static volatile boolean read;
+
+    /** The items whose fluid capability has thrown, each warned of once a game. */
+    private static final Set<Identifier> THREW = ConcurrentHashMap.newKeySet();
 
     private PouredRecipes() {
     }
@@ -240,14 +245,25 @@ public final class PouredRecipes {
 
     /**
      * The fluid an item holds as a filled bucket: exactly 1000 mB of one fluid, with nothing else on it, that it
-     * empties into a plain {@code minecraft:bucket}; null for any other item.
+     * empties into a plain {@code minecraft:bucket}; null for any other item, and for one whose fluid capability
+     * throws, as Just Dire Things' Polymorphic Wand does when it reads a server config that no recipe load has yet.
      */
     static @Nullable FluidResource filledBucket(Item item) {
         ItemStack stack = new ItemStack(item);
         if (stack.isEmpty()) return null;
         // Room for twice a bucket, so a container holding more than one shows as more.
         FluidStacksResourceHandler tank = new FluidStacksResourceHandler(1, FluidType.BUCKET_VOLUME * 2);
-        ItemStack emptied = FluidContainers.drain(stack, ItemStack.EMPTY, tank);
+        ItemStack emptied;
+        try {
+            emptied = FluidContainers.drain(stack, ItemStack.EMPTY, tank);
+        } catch (RuntimeException e) {
+            Identifier id = BuiltInRegistries.ITEM.getKey(item);
+            if (THREW.add(id)) {
+                LOGGER.warn("Personal Assembler: the fluid capability of {}, from mod {}, threw when asked whether it is a filled "
+                        + "bucket, so it is taken for none in Poured recipes.", id, id.getNamespace(), e);
+            }
+            return null;
+        }
         if (emptied == null || !emptied.is(Items.BUCKET) || emptied.getCount() != 1 || !emptied.getComponentsPatch().isEmpty()) return null;
         FluidResource fluid = tank.getResource(0);
         if (fluid.isEmpty() || tank.getAmountAsInt(0) != FluidType.BUCKET_VOLUME || !fluid.isComponentsPatchEmpty()) return null;

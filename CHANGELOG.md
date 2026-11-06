@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- A world no longer fails to load ("Errors in currently selected data packs prevented the world from loading") when a mod's item throws as Craftworks asks whether it is a filled bucket, as Just Dire Things' Polymorphic Wand does before the server configs load: the item is taken for no bucket in Poured recipes, and the log warns of it once, naming the item and its mod. An Assembler's fill slot likewise skips such an item when it lists the empty containers it shows, instead of crashing the server the first time it does.
+
 ## 0.11.4
 
 - On CurseForge, Craftworks now requires the unofficial EMI port for 26.1 (`emi-unofficial-port-unstable`) instead of official EMI, which has no 26.1 file: the CurseForge app no longer installs EMI's 1.21.1 jar into a 26.1.2 pack beside its real EMI, or puts it back after a delete. A pack that already got that jar removes it once from the instance's mod list in the app. (#69)

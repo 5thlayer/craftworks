@@ -46,6 +46,7 @@ final class PouredRecipesTests {
     private static final String WRAPS = "craftworks:poured_wraps";
     private static final String TAKEN = "craftworks:poured_taken";
     private static final String MIXED = "craftworks:poured_mixed";
+    private static final String THROWS = "craftworks:poured_throws";
     private static final String POURED_EXCLUDED = "craftworks:poured_poured_excluded";
     private static final String SOURCE_EXCLUDED = "craftworks:poured_source_excluded";
 
@@ -64,6 +65,7 @@ final class PouredRecipesTests {
         packed.test("poured_a_data_carrying_recipe_gets_none", 20, PouredRecipesTests::dataCarrying);
         packed.test("poured_a_wrapped_recipe_is_data_carrying_and_gets_none", 20, PouredRecipesTests::wrapped);
         packed.test("poured_an_id_already_taken_is_left_alone", 20, PouredRecipesTests::taken);
+        packed.test("poured_an_item_whose_fluid_capability_throws_is_no_bucket", 20, PouredRecipesTests::throwingCapability);
     }
 
     static void registerReloading(CraftworksGameTests.Registrar tests) {
@@ -211,6 +213,22 @@ final class PouredRecipesTests {
         AssemblingRecipe there = poured(server, TAKEN);
         helper.assertTrue(there != null && there.time() == 77 && there.fluidIngredients().isEmpty() && there.results().size() == 1
                 && there.results().getFirst().is(Items.OBSIDIAN), "the pack's own recipe at " + pouredId(TAKEN) + " was replaced by " + there);
+        helper.succeed();
+    }
+
+    /**
+     * A lava bucket and the test flask, whose fluid capability throws: the load gets past it, which a whole batch
+     * failing would show, and takes the flask for a plain item, so the recipe pours the lava and keeps the flask.
+     */
+    private static void throwingCapability(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        helper.assertTrue(at(server, THROWS) != null, THROWS + " should be a Converted recipe");
+        AssemblingRecipe pour = poured(server, THROWS);
+        helper.assertTrue(pour != null, "a lava bucket and an item whose fluid capability throws should still pour");
+        helper.assertTrue(pour.fluidIngredients().size() == 1 && pour.fluidIngredients().getFirst().test(new FluidStack(Fluids.LAVA, 1000))
+                && pour.ingredients().size() == 1
+                && pour.ingredients().getFirst().ingredient().test(new ItemStack(TestThrowingFlask.ITEM.get())),
+                "it should take 1000 mB of lava and the flask as an item, and is " + pour);
         helper.succeed();
     }
 

@@ -71,6 +71,8 @@ public final class CraftworksGameTests {
         TestTank.register(modBus);
         // And the fluids a five-fluid recipe needs beyond water and lava.
         TestFluids.register(modBus);
+        // And an item whose fluid capability throws, which a Poured recipe load must get past.
+        TestThrowingFlask.register(modBus);
         // Posted only when game tests are enabled, which a production game never is.
         modBus.addListener(CraftworksGameTests::registerTests);
         registerDevLockReason();
