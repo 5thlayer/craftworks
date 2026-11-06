@@ -246,7 +246,7 @@ public final class PouredRecipes {
     /**
      * The fluid an item holds as a filled bucket: exactly 1000 mB of one fluid, with nothing else on it, that it
      * empties into a plain {@code minecraft:bucket}; null for any other item, and for one whose fluid capability
-     * throws, as Just Dire Things' Polymorphic Wand does when it reads a server config that no recipe load has yet.
+     * throws, as one may that reads a server config the recipe load runs before.
      */
     static @Nullable FluidResource filledBucket(Item item) {
         ItemStack stack = new ItemStack(item);

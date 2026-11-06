@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.github._5thlayer.craftworks.CraftworksConfig;
 import io.github._5thlayer.craftworks.gametest.AssemblerMachineTests.Placed;
+import io.github._5thlayer.craftworks.machine.AssemblerContainers;
 import io.github._5thlayer.craftworks.machine.AssemblerSlots;
 import io.github._5thlayer.craftworks.machine.AssemblerTier;
 import io.github._5thlayer.craftworks.machine.FluidLayout;
@@ -229,6 +230,8 @@ final class PouredRecipesTests {
                 && pour.ingredients().size() == 1
                 && pour.ingredients().getFirst().ingredient().test(new ItemStack(TestThrowingFlask.ITEM.get())),
                 "it should take 1000 mB of lava and the flask as an item, and is " + pour);
+        helper.assertTrue(AssemblerContainers.emptyContainers().stream().noneMatch(stack -> stack.is(TestThrowingFlask.ITEM.get())),
+                "the fill slot's empty containers should skip the flask, whose capability throws");
         helper.succeed();
     }
 

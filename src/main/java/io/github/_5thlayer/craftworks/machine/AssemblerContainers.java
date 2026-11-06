@@ -90,12 +90,12 @@ public final class AssemblerContainers {
             List<ItemStack> found = new ArrayList<>();
             for (var item : BuiltInRegistries.ITEM) {
                 ItemStack stack = new ItemStack(item);
+                // One item's capability throwing would fail this class for the rest of the game.
                 try {
                     if (!stack.isEmpty() && sources.stream().anyMatch(fluid -> FluidContainers.takes(stack, fluid))) {
                         found.add(stack);
                     }
                 } catch (RuntimeException e) {
-                    // One item's capability throwing would fail this class for the rest of the game.
                     Identifier id = BuiltInRegistries.ITEM.getKey(item);
                     LOGGER.warn("Assembler: the fluid capability of {}, from mod {}, threw when asked whether it is an empty "
                             + "container, so the fill slot shows no ghost of it.", id, id.getNamespace(), e);

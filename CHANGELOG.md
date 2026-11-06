@@ -4,7 +4,7 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
-- A world no longer fails to load ("Errors in currently selected data packs prevented the world from loading") when a mod's item throws as Craftworks asks whether it is a filled bucket, as Just Dire Things' Polymorphic Wand does before the server configs load: the item is taken for no bucket in Poured recipes, and the log warns of it once, naming the item and its mod. An Assembler's fill slot likewise skips such an item when it lists the empty containers it shows, instead of crashing the server the first time it does.
+- A world no longer fails to load ("Errors in currently selected data packs prevented the world from loading") when a mod's item throws as Craftworks asks whether it is a filled bucket, as Just Dire Things' Polymorphic Wand does before the server configs load: the item is taken for no bucket in Poured recipes, and the log warns of it once, naming the item and its mod. An Assembler's fill slot likewise skips any item whose fluid capability throws when it lists the empty containers it shows.
 
 ## 0.11.4
 
