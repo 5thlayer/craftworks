@@ -133,6 +133,8 @@ public final class CraftworksGameTests {
         BrewedRecipesTests.registerReloading(reloadingTests);
         PouredRecipesTests.registerReloading(reloadingTests);
         StorageRecipeTests.registerReloading(reloadingTests);
+        var editing = event.registerEnvironment(id("edits_config"), new TestEnvironmentDefinition.AllOf(List.of()));
+        VanillaPackTests.registerConfigEdit(new Registrar(event, editing, tests.packEnvironments()));
     }
 
     private static Identifier id(String path) {

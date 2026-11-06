@@ -72,10 +72,18 @@ public final class VanillaPack {
         followConfig(event.getServer());
     }
 
+    /**
+     * A config edit while running. A save before the levels exist, such as a fresh file's upgrade as the
+     * server starts (#84), is left to {@link #onServerStarted}, since a reload then fails its datapack
+     * sync; one once the server is halting is dropped, as its levels are closing.
+     */
     private static void onConfigReloaded(ModConfigEvent.Reloading event) {
         if (event.getConfig().getType() != ModConfig.Type.SERVER) return;
         MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-        if (server != null) server.execute(() -> followConfig(server));
+        if (server == null) return;
+        server.execute(() -> {
+            if (server.overworld() != null && server.isRunning()) followConfig(server);
+        });
     }
 
     /**
