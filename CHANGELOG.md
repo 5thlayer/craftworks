@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- On CurseForge, Craftworks now requires the unofficial EMI port for 26.1 (`emi-unofficial-port-unstable`) instead of official EMI, which has no 26.1 file: the CurseForge app no longer installs EMI's 1.21.1 jar into a 26.1.2 pack beside its real EMI, or puts it back after a delete. A pack that already got that jar removes it once from the instance's mod list in the app. (#69)
+
 ## 0.11.3
 
 - A new server's first start, the one that writes a fresh `craftworks-server.toml`, no longer logs a `NullPointerException`. `vanillaRecipes` and the other recipe settings still apply once the server is up, and an edit to the file while it runs still reloads the recipes. (#84)
