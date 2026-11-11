@@ -62,8 +62,7 @@ public final class HeldRecipes {
      * keeping whichever leaves the most, so a recipe held never jams on whichever one is put in. The product takes
      * one of the four shared outputs, so what is owed fits in the other three: two further potions of a brew that
      * makes three stack to one each, a dragon's breath's bottle to another.
-     * Not cheap: an Assembler asks once per recipe
-     * instance, through {@link #canRun}.
+     * Not cheap: an Assembler asks once per recipe instance, through {@link #canRun}.
      */
     private static boolean remaindersFit(AssemblingRecipe recipe) {
         List<ItemStack> kinds = new ArrayList<>();
