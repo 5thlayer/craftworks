@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+## 0.11.6
+
 - A recipe whose ingredient decides for itself which items it takes, such as Neo Vitae's Blank Rune (any blood orb of a tier), now works in both Assemblers. The Assembler no longer refuses it for remainders that don't fit, counting the leftovers of every item the ingredient could be when a craft only takes one. The Personal Assembler now pays for it with the player's own stacks, a bound orb included (ADR-0028).
 
 ## 0.11.5
