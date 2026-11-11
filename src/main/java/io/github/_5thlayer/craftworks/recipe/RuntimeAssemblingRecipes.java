@@ -47,10 +47,17 @@ public final class RuntimeAssemblingRecipes {
     private static volatile List<Tested> tested = List.of();
     /**
      * Each widened set by what widened it, so a player planning again with the same stock gets the same set, and
-     * its Reach with it. Cleared with every rebuild.
+     * its Reach with it. Kept with the set they widen, so a reload starts afresh.
      */
-    private static final Map<List<io.github._5thlayer.craftworks.planner.AssemblingRecipe>, AssemblingRecipeSet> widened =
-            new ConcurrentHashMap<>();
+    private static volatile Widened widened = new Widened(AssemblingRecipeSet.empty());
+
+    private record Widened(AssemblingRecipeSet base,
+            Map<List<io.github._5thlayer.craftworks.planner.AssemblingRecipe>, AssemblingRecipeSet> sets) {
+
+        Widened(AssemblingRecipeSet base) {
+            this(base, new ConcurrentHashMap<>());
+        }
+    }
 
     /**
      * A recipe with an ingredient that decides for itself which stacks it takes, such as Neo Vitae's
@@ -108,9 +115,10 @@ public final class RuntimeAssemblingRecipes {
             if (any) changed.add(recipe.recipe().withIngredients(ingredients));
         }
         if (changed.isEmpty()) return base;
+        Widened cache = widened;
         // A bound orb's key moves with the fluid it holds, so the stocks seen are not few: forget them all now and then.
-        if (widened.size() > 64) widened.clear();
-        return widened.computeIfAbsent(List.copyOf(changed), recipes -> {
+        if (cache.base() != base || cache.sets().size() > 64) widened = cache = new Widened(base);
+        return cache.sets().computeIfAbsent(List.copyOf(changed), recipes -> {
             AssemblingRecipeSet.Builder builder = AssemblingRecipeSet.builder();
             // The widened recipes go in first, and a second recipe under an id already added is ignored.
             recipes.forEach(builder::add);
@@ -132,8 +140,6 @@ public final class RuntimeAssemblingRecipes {
         AssemblingRecipeSet built = build(manager, registries, found);
         recipes = built;
         tested = List.copyOf(found);
-        // After the new set is out, so nothing built from the old one outlives the clear.
-        widened.clear();
         builtFrom = manager;
         LOGGER.info("Personal Assembler: {} Assembling recipe(s) loaded.", built.size());
         return built;
