@@ -1,0 +1,10 @@
+{
+  "type": "craftworks:assembling",
+  "ingredients": [
+    {
+      "ingredient": { "neoforge:ingredient_type": "neoforge:compound", "children": ["minecraft:milk_bucket", "minecraft:water_bucket"] },
+      "count": 1
+    }
+  ],
+  "results": [ "minecraft:cake" ]
+}

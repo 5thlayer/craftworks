@@ -61,7 +61,7 @@ public final class PlayerPlanning {
 
     private PlayerPlanning(ServerPlayer player) {
         this.player = player;
-        this.recipes = RuntimeAssemblingRecipes.recipes(player.level());
+        this.recipes = RuntimeAssemblingRecipes.recipesFor(player);
         this.locks = locksFor(player);
         this.planning = new Resolver(recipes, guarded(locks))
                 .planning(new InventoryPlayerItems(player.getInventory()).stock());
