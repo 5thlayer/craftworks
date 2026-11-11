@@ -59,7 +59,7 @@ public final class HeldRecipes {
      * Whether one craft's remainders fit the shared outputs: grouped by item and components, since only
      * those stack, the stacks each kind needs add up to no more than the outputs the product leaves. The recipe's
      * results after the first count with them, since they share the leftovers' rule. Asked of every item each
-     * ingredient could be, so a recipe held never jams on whichever one is put in. The product takes one of the
+     * ingredient could be, keeping whichever leaves the most, so a recipe held never jams on whichever one is put in. The product takes one of the
      * four shared outputs, so what is owed fits in the other three: two further potions of a brew that makes three
      * stack to one each, a dragon's breath's bottle to another.
      * Not cheap: an Assembler asks once per recipe
@@ -71,31 +71,41 @@ public final class HeldRecipes {
             owe(kinds, extra.create(), extra.count());
         }
         for (SizedIngredient sized : recipe.ingredients()) {
-            // What this ingredient could leave at most, of each kind it could leave.
-            List<ItemStack> most = new ArrayList<>();
+            // One craft takes one of the items this ingredient could be, so it leaves one of their remainders, not
+            // all of them: the one that costs the most stacks on top of what is owed so far. An ingredient that is
+            // any blood orb of a tier is six orbs, each left behind as itself, and only one of them goes in.
+            List<ItemStack> worst = null;
             for (Holder<Item> item : sized.ingredient().items().toList()) {
                 ItemStackTemplate remainder = item.value().getCraftingRemainder(new ItemStack(item));
                 if (remainder == null) {
                     continue;
                 }
-                ItemStack owed = remainder.create();
-                int count = remainder.count() * sized.count();
-                ItemStack seen = most.stream().filter(m -> ItemStack.isSameItemSameComponents(m, owed)).findFirst().orElse(null);
-                if (seen == null) {
-                    most.add(owed.copyWithCount(count));
-                } else {
-                    seen.setCount(Math.max(seen.getCount(), count));
+                List<ItemStack> with = copies(kinds);
+                owe(with, remainder.create(), remainder.count() * sized.count());
+                if (worst == null || stacks(with) > stacks(worst)) {
+                    worst = with;
                 }
             }
-            for (ItemStack kind : most) {
-                owe(kinds, kind, kind.getCount());
+            if (worst != null) {
+                kinds = worst;
             }
         }
+        return stacks(kinds) <= AssemblerSlots.OUTPUTS - 1;
+    }
+
+    private static List<ItemStack> copies(List<ItemStack> kinds) {
+        List<ItemStack> copies = new ArrayList<>();
+        for (ItemStack kind : kinds) copies.add(kind.copy());
+        return copies;
+    }
+
+    /** The stacks these kinds take. */
+    private static int stacks(List<ItemStack> kinds) {
         int stacks = 0;
         for (ItemStack kind : kinds) {
             stacks += (kind.getCount() + kind.getMaxStackSize() - 1) / kind.getMaxStackSize();
         }
-        return stacks <= AssemblerSlots.OUTPUTS - 1;
+        return stacks;
     }
 
     /** Adds {@code count} of this kind to what a craft owes. */

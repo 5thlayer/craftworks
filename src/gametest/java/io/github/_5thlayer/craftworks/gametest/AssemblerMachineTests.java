@@ -89,6 +89,8 @@ final class AssemblerMachineTests {
     private static final Identifier MACHINE_ONLY = id("gametest/machine_only");
     private static final Identifier SIX_INGREDIENTS = id("gametest/six_ingredients");
     private static final Identifier TWO_REMAINDERS = id("gametest/two_remainders");
+    /** 33 milk buckets or 33 honey bottles: three stacks of buckets or one of bottles, never both. */
+    private static final Identifier EITHER_REMAINDER = id("gametest/either_remainder");
 
     /** Only players carrying this tag are locked out of the sapling by the tests' hook. */
     private static final String LOCKED = "craftworks.gametest.assembler_locked";
@@ -250,6 +252,8 @@ final class AssemblerMachineTests {
         helper.assertTrue(remainders == HoldVerdict.REMAINDERS_DONT_FIT, "33 buckets and a bottle left behind was " + remainders);
         helper.assertTrue(none == HoldVerdict.NOT_ASSEMBLING, "an id naming no recipe was " + none);
         helper.assertTrue(assembler.machine().heldRecipe().isEmpty(), "a refused recipe was held");
+        HoldVerdict either = request(assembler, EITHER_REMAINDER);
+        helper.assertTrue(either == HoldVerdict.HELD, "33 buckets or 33 bottles left behind, not both, was " + either);
         helper.assertTrue(assembler.player().heard.containsAll(List.of("craftworks.assembler.refused.too_many_ingredients",
                 "craftworks.assembler.refused.remainders_dont_fit", "craftworks.assembler.refused.not_assembling")),
                 "the player was told " + assembler.player().heard);
