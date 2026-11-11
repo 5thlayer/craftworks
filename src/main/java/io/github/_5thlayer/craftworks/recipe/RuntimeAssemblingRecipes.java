@@ -47,7 +47,7 @@ public final class RuntimeAssemblingRecipes {
     private static volatile List<Tested> tested = List.of();
     /**
      * Each widened set by what widened it, so a player planning again with the same stock gets the same set, and
-     * its Reach with it. Kept with the set they widen, so a reload starts afresh.
+     * its Reach with it. Replaced when the base set changes, so a reload starts afresh.
      */
     private static volatile Widened widened = new Widened(AssemblingRecipeSet.empty());
 
