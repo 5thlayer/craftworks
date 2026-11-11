@@ -130,9 +130,10 @@ public final class RuntimeAssemblingRecipes {
         if (manager == builtFrom) return recipes;
         List<Tested> found = new ArrayList<>();
         AssemblingRecipeSet built = build(manager, registries, found);
-        widened.clear();
         recipes = built;
         tested = List.copyOf(found);
+        // After the new set is out, so nothing built from the old one outlives the clear.
+        widened.clear();
         builtFrom = manager;
         LOGGER.info("Personal Assembler: {} Assembling recipe(s) loaded.", built.size());
         return built;
