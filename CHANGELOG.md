@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- A recipe whose ingredient decides for itself which items it takes, such as Neo Vitae's Blank Rune (any blood orb of a tier), now works in both Assemblers. The Assembler no longer refuses it for remainders that don't fit, counting the leftovers of every item the ingredient could be when a craft only takes one. The Personal Assembler now pays for it with the player's own stacks, a bound orb included (ADR-0028).
+
 ## 0.11.5
 
 - A world no longer fails to load ("Errors in currently selected data packs prevented the world from loading") when a mod's item throws as Craftworks asks whether it is a filled bucket, as Just Dire Things' Polymorphic Wand does before the server configs load: the item is taken for no bucket in Poured recipes, and the log warns of it once, naming the item and its mod. An Assembler's fill slot likewise skips any item whose fluid capability throws when it lists the empty containers it shows.
