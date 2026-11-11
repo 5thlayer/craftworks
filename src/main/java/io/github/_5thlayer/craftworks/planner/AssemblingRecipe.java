@@ -36,4 +36,9 @@ public record AssemblingRecipe(
         if (time < 0) throw new IllegalArgumentException("recipe " + id + " cannot take " + time + " ticks");
         ingredients = List.copyOf(ingredients);
     }
+
+    /** This recipe taking {@code ingredients} instead. */
+    public AssemblingRecipe withIngredients(List<Ingredient> ingredients) {
+        return new AssemblingRecipe(id, ingredients, result, time, priority, handCraftable, dataCarrying);
+    }
 }

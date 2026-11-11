@@ -4,10 +4,11 @@
 package io.github._5thlayer.craftworks.recipe;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.mojang.logging.LogUtils;
 import io.github._5thlayer.craftworks.assembler.ItemKeys;
@@ -44,6 +45,12 @@ public final class RuntimeAssemblingRecipes {
     private static volatile AssemblingRecipeSet recipes = AssemblingRecipeSet.empty();
     /** The recipes in {@link #recipes} with a Tested ingredient, built with it. */
     private static volatile List<Tested> tested = List.of();
+    /**
+     * Each widened set by what widened it, so a player planning again with the same stock gets the same set, and
+     * its Reach with it. Cleared with every rebuild.
+     */
+    private static final Map<List<io.github._5thlayer.craftworks.planner.AssemblingRecipe>, AssemblingRecipeSet> widened =
+            new ConcurrentHashMap<>();
 
     /**
      * A recipe with an ingredient that decides for itself which stacks it takes, such as Neo Vitae's
@@ -71,11 +78,12 @@ public final class RuntimeAssemblingRecipes {
         HolderLookup.Provider registries = player.registryAccess();
         List<ItemStack> stock = player.getInventory().getNonEquipmentItems().stream()
                 .filter(stack -> !stack.isEmpty()).toList();
-        AssemblingRecipeSet.Builder widened = null;
-        Map<ItemStack, String> keys = new HashMap<>();
+        // Keyed by the stack itself: the same stack is asked about by every recipe that tests it.
+        Map<ItemStack, String> keys = new IdentityHashMap<>();
+        List<io.github._5thlayer.craftworks.planner.AssemblingRecipe> changed = new ArrayList<>();
         for (Tested recipe : found) {
             List<Ingredient> ingredients = new ArrayList<>(recipe.recipe().ingredients());
-            boolean changed = false;
+            boolean any = false;
             for (int n = 0; n < ingredients.size(); n++) {
                 net.minecraft.world.item.crafting.Ingredient slot = recipe.slots().get(n);
                 if (slot == null) continue;
@@ -92,20 +100,23 @@ public final class RuntimeAssemblingRecipes {
                     // After the listed items: a shortfall is still reported as the first of those.
                     items.add(key);
                     if (left != null) remainders.put(key, left);
-                    changed = true;
                 }
+                if (items.size() == listed.items().size()) continue;
                 ingredients.set(n, new Ingredient(items, listed.count(), remainders));
+                any = true;
             }
-            if (!changed) continue;
-            if (widened == null) widened = AssemblingRecipeSet.builder();
-            var old = recipe.recipe();
-            widened.add(new io.github._5thlayer.craftworks.planner.AssemblingRecipe(old.id(), ingredients, old.result(),
-                    old.time(), old.priority(), old.handCraftable(), old.dataCarrying()));
+            if (any) changed.add(recipe.recipe().withIngredients(ingredients));
         }
-        if (widened == null) return base;
-        // The widened recipes went in first, and a second recipe under an id already added is ignored.
-        for (String id : base.ids()) widened.add(base.byId(id));
-        return widened.build();
+        if (changed.isEmpty()) return base;
+        // A bound orb's key moves with the fluid it holds, so the stocks seen are not few: forget them all now and then.
+        if (widened.size() > 64) widened.clear();
+        return widened.computeIfAbsent(List.copyOf(changed), recipes -> {
+            AssemblingRecipeSet.Builder builder = AssemblingRecipeSet.builder();
+            // The widened recipes go in first, and a second recipe under an id already added is ignored.
+            recipes.forEach(builder::add);
+            for (String id : base.ids()) builder.add(base.byId(id));
+            return builder.build();
+        });
     }
 
     /** The set for the level's current datapack state, rebuilt when the recipes reload. */
@@ -119,6 +130,7 @@ public final class RuntimeAssemblingRecipes {
         if (manager == builtFrom) return recipes;
         List<Tested> found = new ArrayList<>();
         AssemblingRecipeSet built = build(manager, registries, found);
+        widened.clear();
         recipes = built;
         tested = List.copyOf(found);
         builtFrom = manager;
@@ -141,6 +153,7 @@ public final class RuntimeAssemblingRecipes {
                 slots.add(tests ? sized.ingredient() : null);
                 any |= tests;
             }
+            // Only a Hand-craftable recipe is in the set the Personal Assembler plans with.
             if (any && read.handCraftable()) found.add(new Tested(read, slots));
         }
         if (!refused.isEmpty()) {

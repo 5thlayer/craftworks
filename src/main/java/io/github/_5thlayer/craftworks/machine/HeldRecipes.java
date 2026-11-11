@@ -59,7 +59,8 @@ public final class HeldRecipes {
      * Whether one craft's remainders fit the shared outputs: grouped by item and components, since only
      * those stack, the stacks each kind needs add up to no more than the outputs the product leaves. The recipe's
      * results after the first count with them, since they share the leftovers' rule. Asked of every item each
-     * ingredient could be, keeping whichever leaves the most, so a recipe held never jams on whichever one is put in. The product takes one of the
+     * ingredient could be, keeping whichever leaves the most, so a recipe held never jams on whichever one is
+     * put in. The product takes one of the
      * four shared outputs, so what is owed fits in the other three: two further potions of a brew that makes three
      * stack to one each, a dragon's breath's bottle to another.
      * Not cheap: an Assembler asks once per recipe
