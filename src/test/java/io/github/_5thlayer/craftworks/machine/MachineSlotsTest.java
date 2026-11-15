@@ -89,4 +89,59 @@ class MachineSlotsTest {
         assertFalse(RefinerSlots.LAYOUT.isOutput(RefinerSlots.INPUT));
         assertEquals(List.of(RefinerSlots.OUTPUT), RefinerSlots.LAYOUT.outputOrder(slot -> false));
     }
+
+    // -- spare inputs (#87) ---------------------------------------------------------------------
+
+    /** Items stand for themselves; a variant is the item and its components, as "cheese+gold". */
+    private static final List<String> CHEESE_PIZZA = List.of("cheese", "dough");
+
+    private static boolean sameItem(String ingredient, String variant) {
+        return variant.split("\\+")[0].equals(ingredient);
+    }
+
+    private static java.util.function.IntFunction<Optional<String>> holding(String... slots) {
+        return slot -> slot < slots.length ? Optional.ofNullable(slots[slot]) : Optional.empty();
+    }
+
+    @Test
+    void aSpareInputTakesAVariantItsOwnSlotHasNoRoomFor() {
+        assertEquals(Optional.of("cheese"),
+                ASSEMBLER.spareFor(2, CHEESE_PIZZA, "cheese+gold", MachineSlotsTest::sameItem, holding("cheese", "dough")));
+    }
+
+    @Test
+    void aSpareInputTakesNothingTheOwnSlotCanStillTake() {
+        assertEquals(Optional.empty(),
+                ASSEMBLER.spareFor(2, CHEESE_PIZZA, "cheese", MachineSlotsTest::sameItem, holding("cheese", "dough")));
+        assertEquals(Optional.empty(),
+                ASSEMBLER.spareFor(2, CHEESE_PIZZA, "cheese+gold", MachineSlotsTest::sameItem, holding(null, "dough")));
+    }
+
+    @Test
+    void aSpareInputHoldingOneVariantTakesNoOther() {
+        assertEquals(Optional.empty(), ASSEMBLER.spareFor(2, CHEESE_PIZZA, "cheese+iron", MachineSlotsTest::sameItem,
+                holding("cheese", "dough", "cheese+gold")));
+        assertEquals(Optional.of("cheese"), ASSEMBLER.spareFor(2, CHEESE_PIZZA, "cheese+gold", MachineSlotsTest::sameItem,
+                holding("cheese", "dough", "cheese+gold")));
+    }
+
+    @Test
+    void anInputTheRecipeUsesIsNeverSpare() {
+        assertEquals(Optional.empty(),
+                ASSEMBLER.spareFor(1, CHEESE_PIZZA, "cheese+gold", MachineSlotsTest::sameItem, holding("cheese", null)));
+        assertFalse(ASSEMBLER.isSpare(1, CHEESE_PIZZA.size()));
+        assertTrue(ASSEMBLER.isSpare(2, CHEESE_PIZZA.size()));
+        assertFalse(ASSEMBLER.isSpare(AssemblerSlots.OUTPUT, CHEESE_PIZZA.size()));
+    }
+
+    @Test
+    void anIngredientIsTakenFromItsOwnSlotThenTheSpares() {
+        assertEquals(List.of(1, 2, 3, 4), ASSEMBLER.sources(1, CHEESE_PIZZA.size()));
+    }
+
+    @Test
+    void aResultOverflowsIntoTheSparesAfterTheOutputs() {
+        assertEquals(List.of(5, 6, 7, 8, 3, 2, 4),
+                ASSEMBLER.overflowOrder(CHEESE_PIZZA.size(), slot -> slot == 3));
+    }
 }

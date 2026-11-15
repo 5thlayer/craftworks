@@ -4,6 +4,7 @@
 package io.github._5thlayer.craftworks.recipe;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -46,6 +47,11 @@ public final class RuntimeAssemblingRecipes {
     /** The recipes in {@link #recipes} with a Tested ingredient, built with it. */
     private static volatile List<Tested> tested = List.of();
     /**
+     * The recipes in {@link #recipes} with a plain ingredient, by each item it lists, built with it: only a held
+     * stack carrying components can widen one, so only those stacks' items are looked up (#87).
+     */
+    private static volatile Map<Item, List<Tested>> plain = Map.of();
+    /**
      * Each widened set by what widened it, so a player planning again with the same stock gets the same set, and
      * its Reach with it. Replaced when the base set changes, so a reload starts afresh.
      */
@@ -62,7 +68,9 @@ public final class RuntimeAssemblingRecipes {
     /**
      * A recipe with an ingredient that decides for itself which stacks it takes, such as Neo Vitae's
      * {@code orb_tier}: any blood orb of a tier, bound to its owner or not. Its listed items are bare, and
-     * a bare key matches only a pristine stack (ADR-0002), so a bound orb would never pay for it.
+     * a bare key matches only a pristine stack (ADR-0002), so a bound orb would never pay for it. A plain
+     * ingredient is one too: it takes its items whatever components they carry, as a configured
+     * Functional Storage pusher pays for its puller (ADR-0029).
      *
      * @param slots the Minecraft ingredient at each index of {@code recipe}'s ingredients, null where
      *              the listed keys say all there is to say
@@ -75,16 +83,25 @@ public final class RuntimeAssemblingRecipes {
     }
 
     /**
-     * The set for this player: {@link #recipes(Level)}, with each Tested ingredient also taking the keys of
-     * the stacks the player holds that it accepts. The same set when the player holds none.
+     * The set for this player: {@link #recipes(Level)}, with each Tested or plain ingredient also taking the keys
+     * of the stacks the player holds that it accepts. The same set when the player holds none.
      */
     public static AssemblingRecipeSet recipesFor(ServerPlayer player) {
         AssemblingRecipeSet base = recipes(player.level());
-        List<Tested> found = tested;
-        if (found.isEmpty()) return base;
         HolderLookup.Provider registries = player.registryAccess();
         List<ItemStack> stock = player.getInventory().getNonEquipmentItems().stream()
                 .filter(stack -> !stack.isEmpty()).toList();
+        // Every Tested recipe, then the plain ones a stack carrying components could widen, each once.
+        Map<io.github._5thlayer.craftworks.planner.AssemblingRecipe, Tested> candidates = new IdentityHashMap<>();
+        for (Tested recipe : tested) candidates.put(recipe.recipe(), recipe);
+        Map<Item, List<Tested>> byItem = plain;
+        for (ItemStack stack : stock) {
+            if (stack.isComponentsPatchEmpty()) continue;
+            for (Tested recipe : byItem.getOrDefault(stack.getItem(), List.of())) candidates.putIfAbsent(recipe.recipe(), recipe);
+        }
+        if (candidates.isEmpty()) return base;
+        List<Tested> found = new ArrayList<>(candidates.values());
+        found.sort(Comparator.comparing(recipe -> recipe.recipe().id()));
         // Keyed by the stack itself: the same stack is asked about by every recipe that tests it.
         Map<ItemStack, String> keys = new IdentityHashMap<>();
         List<io.github._5thlayer.craftworks.planner.AssemblingRecipe> changed = new ArrayList<>();
@@ -137,31 +154,47 @@ public final class RuntimeAssemblingRecipes {
     private static synchronized AssemblingRecipeSet rebuild(RecipeManager manager, HolderLookup.Provider registries) {
         if (manager == builtFrom) return recipes;
         List<Tested> found = new ArrayList<>();
-        AssemblingRecipeSet built = build(manager, registries, found);
+        Map<Item, List<Tested>> byItem = new IdentityHashMap<>();
+        AssemblingRecipeSet built = build(manager, registries, found, byItem);
         recipes = built;
         tested = List.copyOf(found);
+        plain = byItem;
         builtFrom = manager;
         LOGGER.info("Personal Assembler: {} Assembling recipe(s) loaded.", built.size());
         return built;
     }
 
-    private static AssemblingRecipeSet build(RecipeManager manager, HolderLookup.Provider registries, List<Tested> found) {
+    private static AssemblingRecipeSet build(RecipeManager manager, HolderLookup.Provider registries, List<Tested> found,
+            Map<Item, List<Tested>> byItem) {
         AssemblingRecipeSet.Builder builder = AssemblingRecipeSet.builder();
         List<String> refused = new ArrayList<>();
         for (RecipeHolder<AssemblingRecipe> holder : manager.recipeMap().byType(CraftworksRecipes.ASSEMBLING_TYPE.get())) {
             var read = read(holder.id().identifier().toString(), holder.value(), registries, refused);
             if (read == null) continue;
             builder.add(read);
-            List<net.minecraft.world.item.crafting.Ingredient> slots = new ArrayList<>();
-            boolean any = false;
-            for (SizedIngredient sized : holder.value().ingredients()) {
-                boolean tests = sized.ingredient().isCustom()
-                        && !(sized.ingredient().getCustomIngredient() instanceof DataComponentIngredient);
-                slots.add(tests ? sized.ingredient() : null);
-                any |= tests;
-            }
             // Only a Hand-craftable recipe is in the set the Personal Assembler plans with.
-            if (any && read.handCraftable()) found.add(new Tested(read, slots));
+            if (!read.handCraftable()) continue;
+            List<net.minecraft.world.item.crafting.Ingredient> slots = new ArrayList<>();
+            boolean custom = false;
+            List<Item> listed = new ArrayList<>();
+            for (SizedIngredient sized : holder.value().ingredients()) {
+                net.minecraft.world.item.crafting.Ingredient ingredient = sized.ingredient();
+                // A component ingredient matches its components exactly, a deliberate divergence (ADR-0002).
+                boolean takesAny = !(ingredient.getCustomIngredient() instanceof DataComponentIngredient);
+                slots.add(takesAny ? ingredient : null);
+                if (!takesAny) continue;
+                if (ingredient.isCustom()) {
+                    custom = true;
+                } else {
+                    ingredient.items().forEach(item -> listed.add(item.value()));
+                }
+            }
+            Tested widenable = new Tested(read, slots);
+            if (custom) found.add(widenable);
+            for (Item item : listed) {
+                List<Tested> under = byItem.computeIfAbsent(item, any -> new ArrayList<>());
+                if (under.isEmpty() || under.getLast() != widenable) under.add(widenable);
+            }
         }
         if (!refused.isEmpty()) {
             // Named, not counted. A recipe the Assembler will not plan reaches the player as a Crafting

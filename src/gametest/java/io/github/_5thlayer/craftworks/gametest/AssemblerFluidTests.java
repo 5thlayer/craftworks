@@ -887,6 +887,7 @@ final class AssemblerFluidTests {
         AssemblerMachineTests.hold(assembler, FULL);
         AssemblerMachineTests.insert(assembler, 0, Items.IRON_INGOT, 1);
         AssemblerMachineTests.fillOutputs(assembler, 0, AssemblerSlots.OUTPUTS, Items.GOLD_INGOT);
+        AssemblerMachineTests.fillSpares(assembler, 1, Items.GOLD_INGOT);
         tick(helper, assembler, 40);
         helper.assertTrue(AssemblerMachineTests.outputTotal(assembler) == 64 * AssemblerSlots.OUTPUTS && AssemblerMachineTests.count(assembler, 0) == 1,
                 "a craft went on with the outputs full");

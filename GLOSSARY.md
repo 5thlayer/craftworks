@@ -97,6 +97,13 @@ before an empty one, and only they extract. A craft waits while its product and 
 product slot and the remainders slot once were; an older save's two read back as the first two.
 _Avoid_: product slot, remainder slot, output buffer (Fieldworks' word)
 
+**Spare input**:
+An **Assembler** input slot its Held recipe doesn't use. It takes a second variant of an ingredient (the same item
+with other components) whose own slot holds another, one variant at a time, and a craft takes from it after the
+ingredient's own slot. A result the **Shared outputs** have no room for lands in one too, unless an ingredient takes
+it, and extracts from there (ADR-0029).
+_Avoid_: overflow slot, extra input
+
 **Container slot**:
 A **Drain slot** or a **Fill slot**: the two slots of an **Assembler** that take a fluid container,
 under the input gauges.

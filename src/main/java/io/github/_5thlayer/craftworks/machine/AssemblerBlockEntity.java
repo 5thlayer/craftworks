@@ -83,8 +83,8 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         super(Assemblers.BLOCK_ENTITY.get(), pos, state);
         inventory = new MachineInventory(AssemblerSlots.LAYOUT, new MachineInventory.Owner() {
             @Override
-            public Optional<SizedIngredient> ingredientAt(int slot) {
-                return runnable().flatMap(recipe -> ingredientFor(slot, recipe));
+            public Optional<SizedIngredient> ingredientAt(int slot, ItemResource resource) {
+                return runnable().flatMap(recipe -> ingredientTaking(slot, resource, recipe));
             }
 
             @Override
@@ -197,6 +197,27 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     }
 
     /**
+     * The ingredient {@code slot} takes {@code resource} as: its own, or, in a spare input, the ingredient whose own
+     * slot holds another variant of it (#87).
+     */
+    private Optional<SizedIngredient> ingredientTaking(int slot, ItemResource resource, AssemblingRecipe recipe) {
+        Optional<SizedIngredient> own = ingredientFor(slot, recipe);
+        if (own.isPresent()) {
+            return own;
+        }
+        return inventory.slots().spareFor(slot, recipe.ingredients(), resource, AssemblerBlockEntity::takes, this::heldAt);
+    }
+
+    private static boolean takes(SizedIngredient ingredient, ItemResource resource) {
+        return ingredient.ingredient().test(resource.toStack(1));
+    }
+
+    private Optional<ItemResource> heldAt(int slot) {
+        ItemResource resource = inventory.getResource(slot);
+        return resource.isEmpty() ? Optional.empty() : Optional.of(resource);
+    }
+
+    /**
      * Holds {@code next}. A change hands every ingredient already in the input slots back to {@code player},
      * what does not fit dropping at their feet, and starts the craft over; the outputs stay. Setting the
      * recipe already held moves nothing. The Lock is not asked here: {@link AssemblerMenu#request} asked
@@ -256,8 +277,17 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             return takesContainer(slot, resource.toStack(1));
         }
         return runnable()
-                .flatMap(recipe -> ingredientFor(slot, recipe))
-                .filter(ingredient -> ingredient.ingredient().test(resource.toStack(1)))
+                .flatMap(recipe -> ingredientTaking(slot, resource, recipe))
+                .filter(ingredient -> takes(ingredient, resource))
+                .isPresent();
+    }
+
+    /** A spare input gives up what no ingredient of the Held recipe takes: a result the outputs had no room for (#87). */
+    @Override
+    public boolean releases(int slot, ItemResource resource) {
+        return !resource.isEmpty() && runnable()
+                .filter(recipe -> inventory.slots().isSpare(slot, recipe.ingredients().size()))
+                .filter(recipe -> recipe.ingredients().stream().noneMatch(ingredient -> takes(ingredient, resource)))
                 .isPresent();
     }
 
@@ -296,10 +326,26 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             return Integer.MAX_VALUE;
         }
         return runnable()
-                .flatMap(recipe -> ingredientFor(slot, recipe)
+                .flatMap(recipe -> ingredientTaking(slot, resource, recipe)
                         .map(ingredient -> OverloadLimit.room(ingredient.count(), overloadCrafts(recipe),
-                                inventory.getAmountAsInt(slot))))
+                                heldFor(ingredient, recipe))))
                 .orElse(0);
+    }
+
+    /**
+     * How much of {@code ingredient} its own slot and the Spare inputs hold together, so a variant in a spare
+     * doesn't raise the Overload Limit (ADR-0029).
+     */
+    private int heldFor(SizedIngredient ingredient, AssemblingRecipe recipe) {
+        int n = recipe.ingredients().indexOf(ingredient);
+        int held = 0;
+        for (int source : inventory.slots().sources(n, recipe.ingredients().size())) {
+            ItemResource resource = inventory.getResource(source);
+            if (source == n || !resource.isEmpty() && takes(ingredient, resource)) {
+                held += inventory.getAmountAsInt(source);
+            }
+        }
+        return held;
     }
 
     /** How many crafts of {@code recipe} the Overload Limit lets this Assembler hold. */
@@ -435,16 +481,16 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
         ItemResource product = !assembled.isEmpty() ? ItemResource.of(assembled)
                 : listed != null ? ItemResource.of(listed) : null;
         int count = !assembled.isEmpty() ? assembled.getCount() : listed != null ? listed.count() : 0;
-        if (product != null && !place(product, count, tx)) {
+        if (product != null && !place(recipe, product, count, tx)) {
             return MachineState.OUTPUT_FULL;
         }
         for (ItemStackTemplate extra : recipe.extraResults()) {
-            if (!place(ItemResource.of(extra), extra.count(), tx)) {
+            if (!place(recipe, ItemResource.of(extra), extra.count(), tx)) {
                 return MachineState.OUTPUT_FULL;
             }
         }
         for (Leftover leftover : remainders) {
-            if (!place(leftover.resource(), leftover.count(), tx)) {
+            if (!place(recipe, leftover.resource(), leftover.count(), tx)) {
                 return MachineState.OUTPUT_FULL;
             }
         }
@@ -457,11 +503,18 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
 
     /**
      * Puts {@code count} of {@code resource} in the shared outputs, in whichever slots have room, a slot holding
-     * something before an empty one so a stack grows first; whether all of it went.
+     * something before an empty one so a stack grows first, and then in the spare inputs, so a variant the
+     * outputs hold no stack of still has somewhere to go (#87). Never in a spare as something an ingredient takes,
+     * which the next craft would spend. Whether all of it went.
      */
-    private boolean place(ItemResource resource, int count, TransactionContext tx) {
+    private boolean place(AssemblingRecipe recipe, ItemResource resource, int count, TransactionContext tx) {
+        int ingredients = recipe.ingredients().size();
+        boolean spares = recipe.ingredients().stream().noneMatch(ingredient -> takes(ingredient, resource));
         int placed = 0;
-        for (int slot : inventory.outputOrder()) {
+        for (int slot : inventory.slots().overflowOrder(ingredients, at -> inventory.getAmountAsInt(at) > 0)) {
+            if (inventory.isInput(slot) && !spares) {
+                continue;
+            }
             placed += inventory.insert(slot, resource, count - placed, tx);
             if (placed == count) {
                 return true;
@@ -471,7 +524,8 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
     }
 
     /**
-     * Takes the {@code n}th item ingredient from the {@code n}th input slot, noting each one's remainder in
+     * Takes the {@code n}th item ingredient from the {@code n}th input slot and then from the spares, any variant it
+     * takes (#87), noting each one's remainder in
      * {@code remainders}: cake's buckets, honey block's bottles. Returns null if they all went, and otherwise
      * what stopped it.
      */
@@ -479,15 +533,25 @@ public final class AssemblerBlockEntity extends BlockEntity implements MenuProvi
             List<ItemStack> consumed) {
         for (int slot = 0; slot < recipe.ingredients().size(); slot++) {
             SizedIngredient sized = recipe.ingredients().get(slot);
-            ItemResource resource = inventory.getResource(slot);
-            if (resource.isEmpty() || !sized.ingredient().test(resource.toStack(1))
-                    || inventory.extract(slot, resource, sized.count(), tx) != sized.count()) {
-                return MachineState.MISSING_INGREDIENTS;
+            int owed = sized.count();
+            for (int source : inventory.slots().sources(slot, recipe.ingredients().size())) {
+                ItemResource resource = inventory.getResource(source);
+                if (resource.isEmpty() || !takes(sized, resource)) {
+                    continue;
+                }
+                int took = inventory.extract(source, resource, owed, tx);
+                for (int i = 0; i < took; i++) consumed.add(resource.toStack(1));
+                ItemStackTemplate remainder = resource.getItem().getCraftingRemainder(resource.toStack(1));
+                if (remainder != null && took > 0) {
+                    remainders.add(new Leftover(ItemResource.of(remainder), remainder.count() * took));
+                }
+                owed -= took;
+                if (owed == 0) {
+                    break;
+                }
             }
-            for (int i = 0; i < sized.count(); i++) consumed.add(resource.toStack(1));
-            ItemStackTemplate remainder = resource.getItem().getCraftingRemainder(resource.toStack(1));
-            if (remainder != null) {
-                remainders.add(new Leftover(ItemResource.of(remainder), remainder.count() * sized.count()));
+            if (owed > 0) {
+                return MachineState.MISSING_INGREDIENTS;
             }
         }
         return null;

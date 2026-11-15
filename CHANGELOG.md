@@ -4,6 +4,8 @@ Written for players and pack authors: what the Personal Assembler does, and what
 
 ## Unreleased
 
+- An item carrying data components now pays for a plain ingredient of it in both Assemblers, as it does in a crafting table: a Functional Storage pusher with its settings changed makes a puller, and a gold-quality cheese goes into a pizza (#87, ADR-0029). The Personal Assembler plans with the player's own stacks. A placed Assembler puts a second variant of an ingredient into an input its recipe doesn't use, and a result its outputs have no room for goes there too, extracting from it. A recipe that uses all five inputs has none to spare, so there a second variant still waits for its input to empty.
+
 ## 0.11.6
 
 - A recipe whose ingredient decides for itself which items it takes, such as Neo Vitae's Blank Rune (any blood orb of a tier), now works in both Assemblers. The Assembler no longer refuses it for remainders that don't fit, counting the leftovers of every item the ingredient could be when a craft only takes one. The Personal Assembler now pays for it with the player's own stacks, a bound orb included (ADR-0028).

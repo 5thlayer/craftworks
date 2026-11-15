@@ -61,7 +61,7 @@ public final class RefinerBlockEntity extends BlockEntity implements MenuProvide
         super(Refiners.BLOCK_ENTITY.get(), pos, state);
         inventory = new MachineInventory(RefinerSlots.LAYOUT, new MachineInventory.Owner() {
             @Override
-            public Optional<SizedIngredient> ingredientAt(int slot) {
+            public Optional<SizedIngredient> ingredientAt(int slot, ItemResource resource) {
                 return Optional.empty();
             }
 

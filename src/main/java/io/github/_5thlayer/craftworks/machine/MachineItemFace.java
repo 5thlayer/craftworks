@@ -10,7 +10,7 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 /**
  * A machine's item capability, on every face of every block of its footprint: inputs are filtered
  * by the Held recipe and held to the Overload Limit, an Assembler's drain and fill slots take the containers its
- * Gate says they do, and only the outputs extract.
+ * Gate says they do, and the outputs extract, with whatever else the Gate releases.
  */
 final class MachineItemFace implements ResourceHandler<ItemResource> {
 
@@ -22,6 +22,11 @@ final class MachineItemFace implements ResourceHandler<ItemResource> {
 
         /** How many more of {@code resource} an insert may put in {@code slot}: the Overload Limit less what an input holds. */
         int overloadRoom(int slot, ItemResource resource);
+
+        /** Whether {@code slot}, which is no output, gives up {@code resource}: an Assembler's result in a spare input. */
+        default boolean releases(int slot, ItemResource resource) {
+            return false;
+        }
     }
 
     private final Gate machine;
@@ -67,7 +72,7 @@ final class MachineItemFace implements ResourceHandler<ItemResource> {
 
     @Override
     public int extract(int index, ItemResource resource, int amount, TransactionContext transaction) {
-        if (!inventory.isOutput(index)) {
+        if (!inventory.isOutput(index) && !machine.releases(index, inventory.getResource(index))) {
             return 0;
         }
         return inventory.extract(index, resource, amount, transaction);

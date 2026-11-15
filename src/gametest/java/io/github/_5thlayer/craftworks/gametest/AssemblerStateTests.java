@@ -87,6 +87,7 @@ final class AssemblerStateTests {
         AssemblerMachineTests.hold(assembler, AssemblerTests.OAK_SAPLING);
         AssemblerMachineTests.insert(assembler, 0, Items.OAK_LOG, 2);
         AssemblerMachineTests.fillOutputs(assembler, 0, AssemblerSlots.OUTPUTS, Items.OAK_SAPLING);
+        AssemblerMachineTests.fillSpares(assembler, 1, Items.OAK_SAPLING);
         expect(helper, assembler, MachineState.OUTPUT_FULL, false);
         power(assembler);
         expect(helper, assembler, MachineState.OUTPUT_FULL, false);
@@ -103,6 +104,7 @@ final class AssemblerStateTests {
                     bag.get(slot).count());
         }
         AssemblerMachineTests.fillOutputs(assembler, 0, AssemblerSlots.OUTPUTS - 1, Items.STICK);
+        AssemblerMachineTests.fillSpares(assembler, bag.size(), Items.STICK);
         power(assembler);
         expect(helper, assembler, MachineState.OUTPUT_FULL, false);
         helper.succeed();

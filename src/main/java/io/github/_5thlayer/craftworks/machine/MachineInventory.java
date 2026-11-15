@@ -24,8 +24,11 @@ final class MachineInventory extends ItemStacksResourceHandler {
     /** What the machine says about its slots: the Held recipe's ingredient in one, and that something changed. */
     interface Owner {
 
-        /** The ingredient the Held recipe puts in input {@code slot}, if the machine can run it. Empty off the server. */
-        Optional<SizedIngredient> ingredientAt(int slot);
+        /**
+         * The ingredient the Held recipe takes {@code resource} as in input {@code slot}, if the machine can run it:
+         * the slot's own, or the one a spare holds it for. Empty off the server.
+         */
+        Optional<SizedIngredient> ingredientAt(int slot, ItemResource resource);
 
         void changed();
     }
@@ -80,7 +83,7 @@ final class MachineInventory extends ItemStacksResourceHandler {
         if (!isInput(index) || resource.isEmpty()) {
             return stack;
         }
-        return owner.ingredientAt(index)
+        return owner.ingredientAt(index, resource)
                 .map(ingredient -> Math.min(Item.ABSOLUTE_MAX_STACK_SIZE,
                         Math.max(stack, ingredient.count() * OverloadLimit.MINIMUM)))
                 .orElse(stack);

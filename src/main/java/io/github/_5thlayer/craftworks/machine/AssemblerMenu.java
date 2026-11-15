@@ -321,6 +321,12 @@ public final class AssemblerMenu extends AbstractContainerMenu {
         return player.isWithinBlockInteractionRange(pos, 4.0);
     }
 
+    /** What machine slot {@code slot} holds, as the client last heard. */
+    private Optional<ItemResource> machineResource(int slot) {
+        ItemStack stack = getSlot(slot).getItem();
+        return stack.isEmpty() ? Optional.empty() : Optional.of(ItemResource.of(stack));
+    }
+
     /**
      * The server asks the Assembler; the client asks the Held recipe it was sent through the same rule, so a
      * wrong item is refused in the hand rather than placed and put back by the sync.
@@ -338,8 +344,12 @@ public final class AssemblerMenu extends AbstractContainerMenu {
             if (assembler != null) {
                 return assembler.accepts(getSlotIndex(), ItemResource.of(stack));
             }
+            ItemResource resource = ItemResource.of(stack);
             return held.filter(recipe -> SLOTS.accepts(getSlotIndex(), recipe.ingredients(), stack,
-                    (SizedIngredient sized, ItemStack item) -> sized.ingredient().test(item))).isPresent();
+                    (SizedIngredient sized, ItemStack item) -> sized.ingredient().test(item))
+                    || SLOTS.spareFor(getSlotIndex(), recipe.ingredients(), resource,
+                            (SizedIngredient sized, ItemResource item) -> sized.ingredient().test(item.toStack(1)),
+                            AssemblerMenu.this::machineResource).isPresent()).isPresent();
         }
     }
 

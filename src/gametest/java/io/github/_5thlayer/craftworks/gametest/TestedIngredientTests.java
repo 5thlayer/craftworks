@@ -16,30 +16,34 @@ import net.minecraft.world.item.Items;
 /**
  * An ingredient that decides for itself which stacks it takes, {@code craftworks:gametest/tested_ingredient} (a milk
  * or water bucket, through a compound ingredient), is paid for by a stack carrying components it accepts: a named milk
- * bucket, as Neo Vitae's {@code orb_tier} is by a bound orb.
+ * bucket, as Neo Vitae's {@code orb_tier} is by a bound orb. A plain ingredient, {@code craftworks:gametest/plain_ingredient}
+ * (a milk bucket), is paid for by one too, as Functional Storage's pusher pays for its puller (#87).
  */
 final class TestedIngredientTests {
 
     private static final Identifier TESTED = Identifier.parse("craftworks:gametest/tested_ingredient");
+    private static final Identifier PLAIN = Identifier.parse("craftworks:gametest/plain_ingredient");
 
     private TestedIngredientTests() {
     }
 
     static void register(CraftworksGameTests.Registrar tests) {
-        tests.test("a_stack_a_tested_ingredient_accepts_completes_the_plan", 20, TestedIngredientTests::plans);
-        tests.test("a_stack_a_tested_ingredient_accepts_is_spent", 20, TestedIngredientTests::spent);
+        tests.test("a_stack_a_tested_ingredient_accepts_completes_the_plan", 20, helper -> plans(helper, TESTED));
+        tests.test("a_stack_a_tested_ingredient_accepts_is_spent", 20, helper -> spent(helper, TESTED));
+        tests.test("a_stack_a_plain_ingredient_accepts_completes_the_plan", 20, helper -> plans(helper, PLAIN));
+        tests.test("a_stack_a_plain_ingredient_accepts_is_spent", 20, helper -> spent(helper, PLAIN));
     }
 
-    private static void plans(GameTestHelper helper) {
+    private static void plans(GameTestHelper helper, Identifier recipe) {
         ServerPlayer player = AssemblerTests.playerHolding(helper, named());
-        helper.assertTrue(PlayerPlanning.of(player).view(TESTED).display().complete(),
-                "a named milk bucket should pay for a milk or water bucket");
+        helper.assertTrue(PlayerPlanning.of(player).view(recipe).display().complete(),
+                "a named milk bucket should pay for " + recipe);
         helper.succeed();
     }
 
-    private static void spent(GameTestHelper helper) {
+    private static void spent(GameTestHelper helper, Identifier recipe) {
         ServerPlayer player = AssemblerTests.playerHolding(helper, named());
-        helper.assertTrue(PersonalAssembler.craft(player, TESTED, 1), "the craft should queue");
+        helper.assertTrue(PersonalAssembler.craft(player, recipe, 1), "the craft should queue");
         helper.assertTrue(AssemblerTests.count(player, Items.MILK_BUCKET) == 0, "the named milk bucket was not taken");
         helper.succeed();
     }

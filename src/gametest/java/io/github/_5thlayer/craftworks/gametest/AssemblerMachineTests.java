@@ -362,6 +362,7 @@ final class AssemblerMachineTests {
         hold(assembler, SAPLING);
         insert(assembler, 0, Items.OAK_LOG, 2);
         fillOutputs(assembler, 0, AssemblerSlots.OUTPUTS, Items.OAK_SAPLING);
+        fillSpares(assembler, 1, Items.OAK_SAPLING);
         expectWaiting(helper, assembler);
     }
 
@@ -369,6 +370,13 @@ final class AssemblerMachineTests {
     static void fillOutputs(Placed assembler, int from, int to, Item item) {
         for (int output = from; output < to; output++) {
             assembler.machine().inventory().set(AssemblerSlots.output(output), ItemResource.of(item), 64);
+        }
+    }
+
+    /** The input slots from {@code from}, the spares of a recipe of {@code from} ingredients, a full stack of {@code item} each (#87). */
+    static void fillSpares(Placed assembler, int from, Item item) {
+        for (int slot = from; slot < AssemblerSlots.INPUTS; slot++) {
+            assembler.machine().inventory().set(slot, ItemResource.of(item), 64);
         }
     }
 
@@ -381,6 +389,7 @@ final class AssemblerMachineTests {
             insert(assembler, slot, firstItem(bag.get(slot)), bag.get(slot).count());
         }
         fillOutputs(assembler, 0, AssemblerSlots.OUTPUTS - 1, Items.STICK);
+        fillSpares(assembler, bag.size(), Items.STICK);
         expectWaiting(helper, assembler);
         helper.assertTrue(count(assembler, 0) == 3, "the milk buckets were spent");
     }
